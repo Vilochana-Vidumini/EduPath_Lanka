@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard | EduPath Lanka</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="student-dashboard.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+            <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
+        </div>
+        <ul class="sidebar-links">
+            <li><a href="student-dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="#"><i class="fas fa-user"></i> My Profile</a></li>
+            <li><a href="pathway.html"><i class="fas fa-route"></i> Pathway Finder</a></li>
+            <li><a href="#latest-result"><i class="fas fa-poll-h"></i> My Pathway Results</a></li>
+            <li><a href="#courses"><i class="fas fa-book-open"></i> Courses</a></li>
+            <li><a href="#scholarships"><i class="fas fa-hand-holding-usd"></i> Scholarships</a></li>
+            <li><a href="#mentors"><i class="fas fa-chalkboard-teacher"></i> Mentors</a></li>
+            <li><a href="#"><i class="fas fa-bookmark"></i> Saved Courses</a></li>
+            <li><a href="#skills"><i class="fas fa-tools"></i> Skill Resources</a></li>
+            <li><a href="#career-guide"><i class="fas fa-compass"></i> Career Guide</a></li>
+            <li><a href="#"><i class="fas fa-envelope"></i> Messages</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#" id="logout-btn-sidebar" class="text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <i class="fas fa-bars sidebar-toggle" id="sidebar-toggle"></i>
+                <h2 class="page-title">Student Dashboard</h2>
+            </div>
+            <div class="topbar-right">
+                <div class="notifications">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </div>
+                <div class="user-profile">
+                    <div class="avatar"><i class="fas fa-user"></i></div>
+                    <span class="user-name" id="top-user-name">Loading...</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-container">
+            
+            <!-- 1. Welcome Hero Card -->
+            <section class="welcome-card glass">
+                <div class="welcome-content">
+                    <h1 id="welcome-name">Welcome back, Student</h1>
+                    <p class="motivational-text">"Your future has many paths. Let’s find the best one for you. No student is left behind."</p>
+                    <div class="welcome-buttons">
+                        <a href="pathway.html" class="btn btn-primary">Continue Pathway Finder <i class="fas fa-arrow-right"></i></a>
+                        <a href="#latest-result" class="btn btn-outline">View My Results</a>
+                    </div>
+                </div>
+                <div class="welcome-image">
+                    <i class="fas fa-graduation-cap welcome-icon"></i>
+                </div>
+            </section>
+
+            <!-- 2. Profile & Stats Grid -->
+            <div class="stats-grid">
+                <!-- Profile Completion -->
+                <div class="stat-card profile-card glass">
+                    <h3>Profile Completion</h3>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" style="width: 60%;"></div>
+                    </div>
+                    <ul class="checklist mt-3">
+                        <li><i class="fas fa-check-circle text-success"></i> Personal details</li>
+                        <li><i class="fas fa-check-circle text-success"></i> Education details</li>
+                        <li><i class="fas fa-check-circle text-success"></i> Interest selected</li>
+                        <li><i class="far fa-circle text-muted"></i> Skills added</li>
+                        <li><i class="far fa-circle text-muted"></i> Pathway result generated</li>
+                    </ul>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stat-card glass">
+                    <div class="stat-icon bg-blue"><i class="fas fa-poll"></i></div>
+                    <div class="stat-info">
+                        <h4>Saved Results</h4>
+                        <h2 id="stat-results">0</h2>
+                    </div>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-icon bg-cyan"><i class="fas fa-book"></i></div>
+                    <div class="stat-info">
+                        <h4>Recommended Courses</h4>
+                        <h2 id="stat-courses">5+</h2>
+                    </div>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-icon bg-orange"><i class="fas fa-users"></i></div>
+                    <div class="stat-info">
+                        <h4>Available Mentors</h4>
+                        <h2 id="stat-mentors">12</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. My Latest Pathway Result -->
+            <section id="latest-result" class="content-section">
+                <div class="section-header">
+                    <h2>My Latest Pathway Result</h2>
+                    <span class="badge badge-primary">Future Path Score: <span id="res-score">--</span>%</span>
+                </div>
+                <div class="result-card glass" id="result-container">
+                    <div class="text-center p-4" id="no-result-msg">
+                        <i class="fas fa-search-location fa-3x text-muted mb-3"></i>
+                        <p>You have not generated a pathway result yet.</p>
+                        <a href="pathway.html" class="btn btn-primary mt-2">Start Pathway Finder</a>
+                    </div>
+                    <div id="has-result-data" class="hidden">
+                        <div class="result-grid">
+                            <div class="result-item">
+                                <span class="label">Interest Area:</span>
+                                <strong id="res-interest">--</strong>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">Future Goal:</span>
+                                <strong id="res-goal">--</strong>
+                            </div>
+                            <div class="result-item">
+                                <span class="label">Financial Guidance:</span>
+                                <strong id="res-finance" class="text-warning">--</strong>
+                            </div>
+                            <div class="result-item full-width">
+                                <span class="label">Recommended Courses:</span>
+                                <div class="tag-list" id="res-courses-tags"></div>
+                            </div>
+                            <div class="result-item full-width">
+                                <span class="label">Recommended Skills:</span>
+                                <div class="tag-list" id="res-skills-tags"></div>
+                            </div>
+                            <div class="result-item full-width">
+                                <span class="label">Career Paths:</span>
+                                <div class="tag-list" id="res-careers-tags"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. Recommended Courses Section -->
+            <section id="courses" class="content-section">
+                <div class="section-header">
+                    <h2>Recommended Courses</h2>
+                    <a href="#" class="view-all">View All</a>
+                </div>
+                <div class="cards-grid">
+                    <div class="item-card glass">
+                        <span class="badge badge-success">Scholarship Available</span>
+                        <h4>ICT Diploma</h4>
+                        <p class="institute"><i class="fas fa-university"></i> National Institute of IT</p>
+                        <div class="card-meta">
+                            <span><i class="far fa-clock"></i> 1 Year</span>
+                            <span><i class="fas fa-laptop"></i> Hybrid</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-outline btn-sm">Save</button>
+                            <button class="btn btn-primary btn-sm">Details</button>
+                        </div>
+                    </div>
+                    <div class="item-card glass">
+                        <h4>Business Management</h4>
+                        <p class="institute"><i class="fas fa-university"></i> Colombo Business School</p>
+                        <div class="card-meta">
+                            <span><i class="far fa-clock"></i> 6 Months</span>
+                            <span><i class="fas fa-chalkboard-teacher"></i> Physical</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-outline btn-sm">Save</button>
+                            <button class="btn btn-primary btn-sm">Details</button>
+                        </div>
+                    </div>
+                    <div class="item-card glass">
+                        <span class="badge badge-primary">Low Cost</span>
+                        <h4>Graphic Design NVQ Level 4</h4>
+                        <p class="institute"><i class="fas fa-university"></i> Vocational Training Authority</p>
+                        <div class="card-meta">
+                            <span><i class="far fa-clock"></i> 6 Months</span>
+                            <span><i class="fas fa-laptop"></i> Physical</span>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-outline btn-sm">Save</button>
+                            <button class="btn btn-primary btn-sm">Details</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Scholarship & Mentor Split -->
+            <div class="split-section">
+                <!-- Scholarships -->
+                <section id="scholarships" class="content-section half-width">
+                    <div class="section-header">
+                        <h2>Scholarships & Aid <i class="fas fa-exclamation-circle text-warning" title="Scholarship Need Alert"></i></h2>
+                    </div>
+                    <div class="list-card glass">
+                        <div class="list-item">
+                            <div class="list-icon bg-green"><i class="fas fa-landmark"></i></div>
+                            <div class="list-content">
+                                <h4>Mahapola Scholarship</h4>
+                                <p>Government support for university students.</p>
+                            </div>
+                            <button class="btn btn-outline btn-sm">View</button>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-icon bg-cyan"><i class="fas fa-globe"></i></div>
+                            <div class="list-content">
+                                <h4>NGO Education Fund</h4>
+                                <p>Support for rural district students.</p>
+                            </div>
+                            <button class="btn btn-outline btn-sm">View</button>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-icon bg-orange"><i class="fas fa-laptop-code"></i></div>
+                            <div class="list-content">
+                                <h4>Free Online Coursera</h4>
+                                <p>Access to global certifications.</p>
+                            </div>
+                            <button class="btn btn-outline btn-sm">View</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Mentors -->
+                <section id="mentors" class="content-section half-width">
+                    <div class="section-header">
+                        <h2>Mentor Match</h2>
+                    </div>
+                    <div class="list-card glass">
+                        <div class="list-item">
+                            <img src="https://ui-avatars.com/api/?name=Kasun+Perera&background=e0e7ff&color=3730a3" alt="Mentor" class="avatar-sm">
+                            <div class="list-content">
+                                <h4>Kasun Perera</h4>
+                                <span class="badge badge-purple">University Mentor</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm req-mentor-btn" data-mentor="Kasun Perera">Request</button>
+                        </div>
+                        <div class="list-item">
+                            <img src="https://ui-avatars.com/api/?name=Sarah+Fernando&background=dcfce7&color=166534" alt="Mentor" class="avatar-sm">
+                            <div class="list-content">
+                                <h4>Sarah Fernando</h4>
+                                <span class="badge badge-cyan">Career Mentor</span>
+                            </div>
+                            <button class="btn btn-primary btn-sm req-mentor-btn" data-mentor="Sarah Fernando">Request</button>
+                        </div>
+                        <div class="list-item">
+                            <div class="list-icon bg-blue"><i class="fas fa-search"></i></div>
+                            <div class="list-content">
+                                <h4>Find More Mentors</h4>
+                                <p>Browse by field of interest.</p>
+                            </div>
+                            <a href="mentors.html" class="btn btn-outline btn-sm">Browse</a>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- 6. Skill Development Progress -->
+            <section id="skills" class="content-section">
+                <div class="section-header">
+                    <h2>Skill Gap Tracker</h2>
+                </div>
+                <div class="skills-grid glass">
+                    <div class="skill-item">
+                        <div class="skill-info">
+                            <span>English Communication</span>
+                            <span class="skill-status text-warning">In Progress</span>
+                        </div>
+                        <div class="progress-bar-container"><div class="progress-bar bg-warning" style="width: 40%;"></div></div>
+                        <button class="btn btn-outline btn-sm mt-2">Update</button>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-info">
+                            <span>Computer Literacy</span>
+                            <span class="skill-status text-success">Completed</span>
+                        </div>
+                        <div class="progress-bar-container"><div class="progress-bar bg-success" style="width: 100%;"></div></div>
+                        <button class="btn btn-outline btn-sm mt-2" disabled>Update</button>
+                    </div>
+                    <div class="skill-item">
+                        <div class="skill-info">
+                            <span>Leadership</span>
+                            <span class="skill-status text-muted">Not Started</span>
+                        </div>
+                        <div class="progress-bar-container"><div class="progress-bar bg-gray" style="width: 0%;"></div></div>
+                        <button class="btn btn-outline btn-sm mt-2">Start</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. Career Guidance Hub Preview -->
+            <section id="career-guide" class="content-section">
+                <div class="section-header">
+                    <h2>Next Step Plan (Guidance Hub)</h2>
+                </div>
+                <div class="cards-grid">
+                    <div class="guide-card glass">
+                        <i class="fas fa-file-alt"></i>
+                        <h4>How to build a CV</h4>
+                        <a href="#">Read Article <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    <div class="guide-card glass">
+                        <i class="fas fa-university"></i>
+                        <h4>University Admission Guide</h4>
+                        <a href="#">Read Article <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    <div class="guide-card glass">
+                        <i class="fas fa-tools"></i>
+                        <h4>Vocational Training in SL</h4>
+                        <a href="#">Read Article <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    <div class="guide-card glass">
+                        <i class="fas fa-laptop-code"></i>
+                        <h4>How to start freelancing</h4>
+                        <a href="#">Read Article <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script type="module" src="student-dashboard.js"></script>
+</body>
+</html>

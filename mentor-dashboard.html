@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mentor Dashboard | EduPath Lanka</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS (Reusing some structure from student, but separate file) -->
+    <link rel="stylesheet" href="mentor-dashboard.css">
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+            <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
+        </div>
+        <ul class="sidebar-links">
+            <li><a href="mentor-dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="#profile"><i class="fas fa-user-tie"></i> Mentor Profile</a></li>
+            <li><a href="#requests"><i class="fas fa-user-plus"></i> Student Requests <span class="badge badge-warning" id="req-count">0</span></a></li>
+            <li><a href="#accepted"><i class="fas fa-users"></i> Accepted Students</a></li>
+            <li><a href="#availability"><i class="fas fa-calendar-check"></i> Availability</a></li>
+            <li><a href="#sessions"><i class="fas fa-video"></i> Sessions</a></li>
+            <li><a href="#messages"><i class="fas fa-envelope"></i> Messages</a></li>
+            <li><a href="#resources"><i class="fas fa-book-reader"></i> Guidance Resources</a></li>
+            <li><a href="#"><i class="fas fa-bell"></i> Notifications</a></li>
+            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="#" id="logout-btn-sidebar" class="text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Topbar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <i class="fas fa-bars sidebar-toggle" id="sidebar-toggle"></i>
+                <h2 class="page-title">Mentor Dashboard</h2>
+            </div>
+            <div class="topbar-right">
+                <div class="user-profile">
+                    <div class="avatar"><i class="fas fa-user-tie"></i></div>
+                    <span class="user-name" id="top-user-name">Loading...</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-container">
+            
+            <!-- 1. Welcome Card -->
+            <section class="welcome-card glass">
+                <div class="welcome-content">
+                    <h1 id="welcome-name">Welcome, Mentor</h1>
+                    <p class="motivational-text">"Thank you for helping students find their future path. Your guidance makes a difference."</p>
+                    <div id="status-alert" class="alert hidden"></div>
+                </div>
+                <div class="welcome-image">
+                    <i class="fas fa-hands-helping welcome-icon"></i>
+                </div>
+            </section>
+
+            <!-- 2. Status & Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card glass">
+                    <div class="stat-icon bg-cyan"><i class="fas fa-id-badge"></i></div>
+                    <div class="stat-info">
+                        <h4>Profile Status</h4>
+                        <h2 id="stat-status" class="text-warning">Pending</h2>
+                    </div>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-icon bg-orange"><i class="fas fa-user-clock"></i></div>
+                    <div class="stat-info">
+                        <h4>Pending Requests</h4>
+                        <h2 id="stat-requests">0</h2>
+                    </div>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-icon bg-green"><i class="fas fa-user-check"></i></div>
+                    <div class="stat-info">
+                        <h4>Accepted Students</h4>
+                        <h2 id="stat-accepted">0</h2>
+                    </div>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-icon bg-blue"><i class="fas fa-comments"></i></div>
+                    <div class="stat-info">
+                        <h4>Completed Sessions</h4>
+                        <h2>0</h2>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Mentor Profile Summary -->
+            <section id="profile" class="content-section">
+                <div class="section-header">
+                    <h2>Mentor Profile</h2>
+                    <button class="btn btn-primary btn-sm" id="save-profile-btn">Save Changes</button>
+                </div>
+                <div class="form-card glass">
+                    <form id="mentor-profile-form" class="grid-form">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="prof-name" class="form-control" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="prof-email" class="form-control" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number</label>
+                            <input type="text" id="prof-phone" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Mentoring Field</label>
+                            <input type="text" id="prof-field" class="form-control" placeholder="e.g. IT, Business, Engineering">
+                        </div>
+                        <div class="form-group">
+                            <label>University or Company</label>
+                            <input type="text" id="prof-org" class="form-control" placeholder="e.g. University of Colombo">
+                        </div>
+                        <div class="form-group">
+                            <label>Years of Experience</label>
+                            <input type="number" id="prof-exp" class="form-control" placeholder="Years">
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Short Bio</label>
+                            <textarea id="prof-bio" class="form-control" rows="3" placeholder="Tell students about yourself and how you can help..."></textarea>
+                        </div>
+                    </form>
+                    <div id="profile-msg" class="mt-2 text-success hidden">Profile updated successfully!</div>
+                </div>
+            </section>
+
+            <!-- 4. Student Requests -->
+            <section id="requests" class="content-section">
+                <div class="section-header">
+                    <h2>Student Requests</h2>
+                </div>
+                <div class="table-card glass">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Student Name</th>
+                                <th>Message</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="requests-tbody">
+                            <tr>
+                                <td colspan="5" class="text-center py-4">Loading requests...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 5. Accepted Students -->
+            <section id="accepted" class="content-section">
+                <div class="section-header">
+                    <h2>Accepted Students</h2>
+                </div>
+                <div class="cards-grid" id="accepted-grid">
+                    <!-- Loaded dynamically -->
+                    <div class="text-muted p-4">No students accepted yet.</div>
+                </div>
+            </section>
+
+            <!-- 6. Availability Management -->
+            <section id="availability" class="content-section">
+                <div class="section-header">
+                    <h2>Availability Management</h2>
+                </div>
+                <div class="form-card glass">
+                    <div class="grid-form">
+                        <div class="form-group">
+                            <label>Available Days</label>
+                            <input type="text" class="form-control" placeholder="e.g. Weekends only">
+                        </div>
+                        <div class="form-group">
+                            <label>Available Times</label>
+                            <input type="text" class="form-control" placeholder="e.g. 6 PM - 8 PM">
+                        </div>
+                        <div class="form-group">
+                            <label>Mentoring Mode</label>
+                            <select class="form-control">
+                                <option>Online (Zoom/Meet)</option>
+                                <option>Physical Meeting</option>
+                                <option>Hybrid</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Current Status</label>
+                            <select class="form-control">
+                                <option value="available">Available to take new students</option>
+                                <option value="unavailable">Currently Unavailable</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width">
+                            <button class="btn btn-primary">Update Availability</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 7. Guidance Resources (Placeholders) -->
+            <section id="resources" class="content-section">
+                <div class="section-header">
+                    <h2>Guidance Resources for Mentors</h2>
+                </div>
+                <div class="cards-grid">
+                    <div class="guide-card glass">
+                        <i class="fas fa-hands-helping text-primary"></i>
+                        <h4>How to guide O/L students</h4>
+                        <a href="#">Read Guide <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    <div class="guide-card glass">
+                        <i class="fas fa-brain text-success"></i>
+                        <h4>Mental health friendly communication</h4>
+                        <a href="#">Read Guide <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                    <div class="guide-card glass">
+                        <i class="fas fa-briefcase text-orange"></i>
+                        <h4>Career counseling basics</h4>
+                        <a href="#">Read Guide <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <script type="module" src="mentor-dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduPath Lanka | Guiding Every Student Towards a Brighter Future</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- 1. Header / Navigation Bar -->
+    <header class="header">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="about.html">About Us</a>
+                <a href="pathway.html">Pathway Finder</a>
+                <a href="courses.html">Courses</a>
+                <a href="mentors.html">Mentors</a>
+                <a href="scholarships.html">Scholarships</a>
+            </nav>
+
+            <div class="nav-buttons">
+                <a href="login.html" class="btn btn-login">Login</a>
+                <a href="signup.html" class="btn btn-signup">Sign Up</a>
+            </div>
+
+            <!-- Hamburger Menu for Mobile -->
+            <div class="hamburger">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu">
+            <div class="close-btn"><i class="fas fa-times"></i></div>
+            <nav class="mobile-links">
+                <a href="index.html">Home</a>
+                <a href="about.html">About Us</a>
+                <a href="pathway.html">Pathway Finder</a>
+                <a href="courses.html">Courses</a>
+                <a href="mentors.html">Mentors</a>
+                <a href="scholarships.html">Scholarships</a>
+                <a href="login.html" class="btn btn-login">Login</a>
+                <a href="signup.html" class="btn btn-signup">Sign Up</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- 2. Hero Section -->
+    <section id="home" class="hero">
+
+        <div class="container hero-container">
+            <div class="hero-content fade-in-left">
+                <h1>Find Your Right Education & Career Path After O/L or A/L</h1>
+                <p>EduPath Lanka helps Sri Lankan students discover personalized education pathways, mentors,
+                    scholarships, skills, and career opportunities — even when results are not perfect.</p>
+                <div class="hero-buttons">
+                    <a href="pathway.html" class="btn btn-primary btn-large">Start Path Finder</a>
+                    <a href="#features" class="btn btn-outline-dark btn-large">Explore Opportunities</a>
+                </div>
+            </div>
+
+            <div class="hero-image-wrapper fade-in-right">
+
+                <!-- Floating Glass Cards -->
+                <div class="floating-card glass card-1">
+                    <i class="fas fa-robot"></i>
+                    <span>AI Path Finder</span>
+                </div>
+                <div class="floating-card glass card-2">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Mentor Connected</span>
+                </div>
+                <div class="floating-card glass card-3">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Scholarship Available</span>
+                </div>
+                <div class="floating-card glass card-4">
+                    <i class="fas fa-bullseye"></i>
+                    <span>Career Match 86%</span>
+                </div>
+            </div>
+        </div>
+        <!-- Decorative Background Elements -->
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+    </section>
+
+    <!-- 3. Problem Section -->
+    <section id="problems" class="problems section">
+        <div class="container">
+            <div class="section-title text-center scroll-reveal">
+                <h2>Why Do We Need EduPath Lanka?</h2>
+                <p>Many students face these common struggles after completing their exams.</p>
+            </div>
+
+            <div class="problems-grid">
+                <div class="problem-card scroll-reveal">
+                    <div class="icon-box"><i class="fas fa-map-signs"></i></div>
+                    <h3>Lack of Guidance</h3>
+                    <p>Feeling lost and confused about what to do after exams.</p>
+                </div>
+                <div class="problem-card scroll-reveal">
+                    <div class="icon-box"><i class="fas fa-wallet"></i></div>
+                    <h3>Financial Struggles</h3>
+                    <p>Inability to fund higher education without proper scholarships.</p>
+                </div>
+                <div class="problem-card scroll-reveal">
+                    <div class="icon-box"><i class="fas fa-university"></i></div>
+                    <h3>University Confusion</h3>
+                    <p>Not knowing how university admissions and alternatives work.</p>
+                </div>
+                <div class="problem-card scroll-reveal">
+                    <div class="icon-box"><i class="fas fa-tools"></i></div>
+                    <h3>Lack of Skills</h3>
+                    <p>Not having the modern skills required by the current job market.</p>
+                </div>
+                <div class="problem-card scroll-reveal">
+                    <div class="icon-box"><i class="fas fa-brain"></i></div>
+                    <h3>Mental Pressure</h3>
+                    <p>Experiencing high stress due to societal and parental expectations.</p>
+                </div>
+                <div class="problem-card scroll-reveal">
+                    <div class="icon-box"><i class="fas fa-globe-asia"></i></div>
+                    <h3>Opportunity Gap</h3>
+                    <p>Rural students missing out on opportunities available in urban areas.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Features Section -->
+    <section id="features" class="features section bg-darker">
+        <div class="container">
+            <div class="section-title text-center scroll-reveal">
+                <h2>Platform Features</h2>
+                <p>Everything you need to navigate your future successfully.</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card glass scroll-reveal">
+                    <i class="fas fa-compass feature-icon"></i>
+                    <h3>Personalized Path Finder</h3>
+                    <p>Discover courses and careers tailored to your interests and results.</p>
+                </div>
+                <div class="feature-card glass scroll-reveal">
+                    <i class="fas fa-hands-helping feature-icon"></i>
+                    <h3>Mentorship Program</h3>
+                    <p>Connect with professionals and uni students for direct guidance.</p>
+                </div>
+                <div class="feature-card glass scroll-reveal">
+                    <i class="fas fa-book-open feature-icon"></i>
+                    <h3>Course & Institute DB</h3>
+                    <p>Explore thousands of verified diplomas, degrees, and vocational courses.</p>
+                </div>
+                <div class="feature-card glass scroll-reveal">
+                    <i class="fas fa-hand-holding-usd feature-icon"></i>
+                    <h3>Scholarships & Aid</h3>
+                    <p>Find financial support, student loans, and free learning resources.</p>
+                </div>
+                <div class="feature-card glass scroll-reveal">
+                    <i class="fas fa-building feature-icon"></i>
+                    <h3>University Guidance</h3>
+                    <p>Step-by-step help with local and foreign university admissions.</p>
+                </div>
+                <div class="feature-card glass scroll-reveal">
+                    <i class="fas fa-laptop-code feature-icon"></i>
+                    <h3>Skill Development</h3>
+                    <p>Identify and learn the skills most demanded by employers today.</p>
+                </div>
+                <div class="feature-card glass scroll-reveal">
+                    <i class="fas fa-briefcase feature-icon"></i>
+                    <h3>Career Awareness</h3>
+                    <p>Explore modern career options, salary expectations, and job roles.</p>
+                </div>
+                <div class="feature-card glass scroll-reveal">
+                    <i class="fas fa-heart feature-icon"></i>
+                    <h3>Mental Health Support</h3>
+                    <p>Access free counseling and stress-management resources.</p>
+                </div>
+                <div class="feature-card glass scroll-reveal">
+                    <i class="fas fa-broadcast-tower feature-icon"></i>
+                    <h3>Rural Outreach</h3>
+                    <p>Special initiatives connecting rural students to national opportunities.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Path Finder Preview Section -->
+    <section id="path-finder" class="path-finder section">
+        <div class="container">
+            <div class="path-finder-wrapper">
+                <div class="path-finder-text scroll-reveal">
+                    <h2>How the Path Finder Works</h2>
+                    <p>Finding your future is as easy as 1-2-3-4. Try our interactive tool to get personalized
+                        recommendations.</p>
+
+                    <ul class="steps-list">
+                        <li>
+                            <div class="step-num">1</div>
+                            <div class="step-content">
+                                <h4>Enter Results</h4>
+                                <p>Input your O/L or A/L results, even if they aren't perfect.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-num">2</div>
+                            <div class="step-content">
+                                <h4>Select Interests</h4>
+                                <p>Tell us what you love doing and your future goals.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-num">3</div>
+                            <div class="step-content">
+                                <h4>Get Recommendations</h4>
+                                <p>Instantly receive tailored courses, jobs, and scholarships.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="step-num">4</div>
+                            <div class="step-content">
+                                <h4>Connect & Grow</h4>
+                                <p>Reach out to mentors and start your journey.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="path-finder-interactive glass scroll-reveal">
+                    <div class="pf-header">
+                        <h3>Interactive Path Finder</h3>
+                        <p>Try a preview right now</p>
+                    </div>
+                    <form id="pf-form" class="pf-form">
+                        <div class="form-group">
+                            <label for="education">Education Level</label>
+                            <select id="education">
+                                <option value="">Select Level</option>
+                                <option value="ol">O/L Completed</option>
+                                <option value="al">A/L Completed</option>
+                                <option value="failed">Did Not Pass Exams</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="interest">Interest Area</label>
+                            <select id="interest">
+                                <option value="">Select Interest</option>
+                                <option value="tech">Technology & IT</option>
+                                <option value="business">Business & Management</option>
+                                <option value="arts">Creative Arts & Design</option>
+                                <option value="science">Science & Health</option>
+                                <option value="vocational">Vocational & Technical</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="goal">Future Goal</label>
+                            <select id="goal">
+                                <option value="">Select Goal</option>
+                                <option value="job">Find a Job Quickly</option>
+                                <option value="degree">Complete a Degree</option>
+                                <option value="business">Start a Business</option>
+                                <option value="skills">Develop Skills</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">Find My Path <i
+                                class="fas fa-arrow-right"></i></button>
+                    </form>
+                    <div id="pf-result" class="pf-result hidden">
+                        <i class="fas fa-check-circle text-cyan"></i>
+                        <h4>Analyzing Matches...</h4>
+                        <p>In the full platform, you will see a detailed dashboard with courses, mentors, and jobs here!
+                        </p>
+                        <button id="pf-reset" class="btn btn-outline btn-small mt-3">Try Again</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Mentorship Section -->
+    <section id="mentors" class="mentors section bg-darker">
+        <div class="container">
+            <div class="section-title text-center scroll-reveal">
+                <h2>Meet Our Mentors</h2>
+                <p>Connect with university students, graduates, professionals, and volunteers who have walked your path.
+                </p>
+            </div>
+
+            <div class="mentors-grid">
+                <div class="mentor-card glass scroll-reveal">
+                    <div class="mentor-img-wrapper">
+                        <!-- Replace src -->
+                        <img src="images\Mentor-Kasunperera.png" alt="University Mentor">
+                    </div>
+                    <div class="mentor-info">
+                        <span class="badge badge-purple">University Mentor</span>
+                        <h3>Kasun Perera</h3>
+                        <p>Undergraduate at University of Colombo, guiding O/L and A/L students on campus life and
+                            degrees.</p>
+                    </div>
+                </div>
+
+                <div class="mentor-card glass scroll-reveal" style="transition-delay: 0.1s;">
+                    <div class="mentor-img-wrapper">
+                        <!-- Replace src -->
+                        <img src="images\Mentor-Sarahfernando.png" alt="Career Mentor">
+                    </div>
+                    <div class="mentor-info">
+                        <span class="badge badge-cyan">Career Mentor</span>
+                        <h3>Sarah Fernando</h3>
+                        <p>Software Engineer helping school leavers transition into the booming IT sector.</p>
+                    </div>
+                </div>
+
+                <div class="mentor-card glass scroll-reveal" style="transition-delay: 0.2s;">
+                    <div class="mentor-img-wrapper">
+                        <!-- Replace src -->
+                        <img src="images\Mentor-Mohammedrizwan.png" alt="Skill Mentor">
+                    </div>
+                    <div class="mentor-info">
+                        <span class="badge badge-blue">Skill Mentor</span>
+                        <h3>Mohammed Rizwan</h3>
+                        <p>Vocational Training Instructor focusing on practical skills for direct employment.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 7. Scholarship / Financial Aid Section -->
+    <section id="scholarships" class="scholarships section">
+        <div class="container">
+            <div class="split-layout">
+                <div class="split-text scroll-reveal">
+                    <h2>Financial Support for Your Dreams</h2>
+                    <p>Money should not be a barrier to education. We aggregate and guide you through various funding
+                        options available in Sri Lanka and abroad.</p>
+
+                    <ul class="aid-list">
+                        <li><i class="fas fa-landmark"></i> <strong>Government Scholarships:</strong> Mahapola,
+                            Bursaries, and Presidential Funds.</li>
+                        <li><i class="fas fa-hand-holding-heart"></i> <strong>NGO Support:</strong> Grants for rural and
+                            underprivileged students.</li>
+                        <li><i class="fas fa-laptop"></i> <strong>Free Courses:</strong> High-quality online courses
+                            with free certificates.</li>
+                        <li><i class="fas fa-file-invoice-dollar"></i> <strong>Student Loans:</strong> Low-interest
+                            educational loan schemes.</li>
+                        <li><i class="fas fa-tags"></i> <strong>Low-cost Learning:</strong> Subsidized vocational
+                            training (NVQ).</li>
+                    </ul>
+
+                    <a href="#" class="btn btn-primary mt-4">View Scholarships</a>
+                </div>
+                <div class="split-visual scroll-reveal">
+                    <div class="glass visual-card">
+                        <div class="visual-header">
+                            <h3><i class="fas fa-medal"></i> Scholarship Alerts</h3>
+                        </div>
+                        <div class="visual-body">
+                            <div class="alert-item">
+                                <div class="alert-icon"><i class="fas fa-graduation-cap"></i></div>
+                                <div class="alert-text">
+                                    <h4>Ministry of Higher Education</h4>
+                                    <p>Deadline: Oct 30, 2024</p>
+                                </div>
+                                <span class="badge badge-cyan">New</span>
+                            </div>
+                            <div class="alert-item">
+                                <div class="alert-icon"><i class="fas fa-laptop-code"></i></div>
+                                <div class="alert-text">
+                                    <h4>Tech Startup Grant</h4>
+                                    <p>Deadline: Nov 15, 2024</p>
+                                </div>
+                            </div>
+                            <div class="alert-item">
+                                <div class="alert-icon"><i class="fas fa-globe-asia"></i></div>
+                                <div class="alert-text">
+                                    <h4>Foreign Uni Scholarship</h4>
+                                    <p>Deadline: Dec 01, 2024</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 8. Impact Section -->
+    <section id="impact" class="impact section bg-darker">
+        <div class="container text-center">
+            <div class="section-title scroll-reveal">
+                <h2>Our Impact</h2>
+                <p>Building a skilled workforce for Sri Lanka with equal opportunities for everyone.</p>
+            </div>
+
+            <div class="impact-benefits scroll-reveal">
+                <span class="benefit-tag">Reduced Wasted Talent</span>
+                <span class="benefit-tag">Better Uni Choices</span>
+                <span class="benefit-tag">Employment Readiness</span>
+                <span class="benefit-tag">Mental Health Support</span>
+                <span class="benefit-tag">Equal Opportunities</span>
+                <span class="benefit-tag">Skilled Workforce</span>
+            </div>
+
+            <div class="stats-grid mt-5">
+                <div class="stat-card glass scroll-reveal">
+                    <h3 class="counter" data-target="10000">0</h3>
+                    <p>Students Guided</p>
+                </div>
+                <div class="stat-card glass scroll-reveal" style="transition-delay: 0.1s;">
+                    <h3 class="counter" data-target="500">0</h3>
+                    <p>Courses Listed</p>
+                </div>
+                <div class="stat-card glass scroll-reveal" style="transition-delay: 0.2s;">
+                    <h3 class="counter" data-target="100">0</h3>
+                    <p>Active Mentors</p>
+                </div>
+                <div class="stat-card glass scroll-reveal" style="transition-delay: 0.3s;">
+                    <h3 class="counter" data-target="50">0</h3>
+                    <p>Scholarship Opportunities</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 9. Call-to-Action Section -->
+    <section id="cta" class="cta section">
+        <div class="container">
+            <div class="cta-card glass text-center scroll-reveal">
+                <h2>Your future still has a path. Let’s find it together.</h2>
+                <p>Start your journey with EduPath Lanka and discover the opportunities waiting for you.</p>
+                <a href="pathway.html" class="btn btn-primary btn-large cta-btn">Get Started Now</a>
+            </div>
+        </div>
+        <!-- Decorative blobs -->
+        <div class="blob blob-3"></div>
+        <div class="blob blob-4"></div>
+    </section>
+
+    <!-- 10. Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <a href="#" class="logo">EduPath<span>Lanka</span></a>
+                    <p>Guiding Every Student Towards a Brighter Future</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="pathway.html">Path Finder</a></li>
+                        <li><a href="#mentors">Mentors</a></li>
+                        <li><a href="#scholarships">Scholarships</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-contact" id="contact">
+                    <h4>Contact Us</h4>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt"></i> Colombo, Sri Lanka</li>
+                        <li><i class="fas fa-envelope"></i> hello@edupathlanka.lk</li>
+                        <li><i class="fas fa-phone-alt"></i> +94 11 234 5678</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2024 EduPath Lanka. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Custom JS -->
+    <script src="script.js"></script>
+    <script type="module" src="auth-nav.js"></script>
+</body>
+
+</html>
