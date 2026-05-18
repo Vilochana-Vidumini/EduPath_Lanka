@@ -1,6 +1,6 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { ref, push, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { ref, push, update, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
@@ -8,8 +8,19 @@ document.addEventListener('DOMContentLoaded', () => {
     onAuthStateChanged(auth, (user) => {
         if (user) {
             currentUser = user;
+            // Verify role - only students and admins are allowed here
+            get(ref(database, 'users/' + user.uid)).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const type = snapshot.val().userType.toLowerCase();
+                    if (type !== 'student' && type !== 'admin') {
+                        alert("Access denied. The Pathway Finder is only available for students.");
+                        window.location.href = 'student-dashboard.html'; // fallback
+                    }
+                }
+            });
         } else {
             currentUser = null;
+            window.location.href = 'login.html?redirect=pathway.html';
         }
     });
     // --- Mobile Menu Toggle ---
@@ -108,33 +119,105 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- Multi-step Wizard Navigation Logic ---
+    const steps = document.querySelectorAll('.form-step');
+    const stepDots = document.querySelectorAll('.step-dot');
+    const progressFill = document.getElementById('progress-line');
+    let currentStep = 1;
+
+    const stepFields = {
+        1: ['fullname', 'email', 'district'],
+        2: ['education-level'],
+        3: ['interest-area'],
+        4: ['future-goal', 'financial', 'learning-mode']
+    };
+
+    function validateStep(stepNum) {
+        let isStepValid = true;
+        const fields = stepFields[stepNum];
+        
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            const err = document.getElementById(`${id}-error`);
+            if (!el) return;
+
+            if (el.value.trim() === '') {
+                el.parentElement.classList.add('error');
+                err.textContent = 'This field is required';
+                err.classList.add('visible');
+                isStepValid = false;
+            } else if (id === 'email' && !isValidEmail(el.value.trim())) {
+                el.parentElement.classList.add('error');
+                err.textContent = 'Invalid email address';
+                err.classList.add('visible');
+                isStepValid = false;
+            } else {
+                el.parentElement.classList.remove('error');
+                err.classList.remove('visible');
+            }
+        });
+        return isStepValid;
+    }
+
+    function updateStepIndicator() {
+        if (!steps.length) return;
+        const percent = ((currentStep - 1) / (steps.length - 1)) * 100;
+        if (progressFill) {
+            progressFill.style.width = `${percent}%`;
+        }
+
+        stepDots.forEach(dot => {
+            const dotStep = parseInt(dot.getAttribute('data-step'));
+            dot.classList.remove('active', 'completed');
+            if (dotStep === currentStep) {
+                dot.classList.add('active');
+            } else if (dotStep < currentStep) {
+                dot.classList.add('completed');
+            }
+        });
+    }
+
+    function goToStep(stepNum) {
+        steps.forEach(step => {
+            step.classList.remove('active');
+            if (parseInt(step.getAttribute('data-step')) === stepNum) {
+                step.classList.add('active');
+            }
+        });
+        currentStep = stepNum;
+        updateStepIndicator();
+        
+        // Scroll to form card to focus
+        const formCard = document.querySelector('.form-card');
+        if (formCard) {
+            formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }
+
+    // Attach click listeners to Next buttons
+    const nextBtns = document.querySelectorAll('.next-step-btn');
+    nextBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (validateStep(currentStep)) {
+                const nextVal = parseInt(btn.getAttribute('data-next'));
+                goToStep(nextVal);
+            }
+        });
+    });
+
+    // Attach click listeners to Prev buttons
+    const prevBtns = document.querySelectorAll('.prev-step-btn');
+    prevBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const prevVal = parseInt(btn.getAttribute('data-prev'));
+            goToStep(prevVal);
+        });
+    });
+
     if (pathwayForm) {
         pathwayForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            let isValid = true;
-
-            // Basic Validation
-            reqFields.forEach(id => {
-                const el = document.getElementById(id);
-                const err = document.getElementById(`${id}-error`);
-                
-                if (el.value.trim() === '') {
-                    el.parentElement.classList.add('error');
-                    err.textContent = 'This field is required';
-                    err.classList.add('visible');
-                    isValid = false;
-                } else if (id === 'email' && !isValidEmail(el.value.trim())) {
-                    el.parentElement.classList.add('error');
-                    err.textContent = 'Invalid email';
-                    err.classList.add('visible');
-                    isValid = false;
-                } else {
-                    el.parentElement.classList.remove('error');
-                    err.classList.remove('visible');
-                }
-            });
-
-            if (isValid) {
+            if (validateStep(4)) {
                 generateResults();
             }
         });
@@ -142,20 +225,27 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear errors on input
         reqFields.forEach(id => {
             const el = document.getElementById(id);
-            el.addEventListener('input', () => {
-                el.parentElement.classList.remove('error');
-                document.getElementById(`${id}-error`).classList.remove('visible');
-            });
+            if (el) {
+                el.addEventListener('input', () => {
+                    el.parentElement.classList.remove('error');
+                    const err = document.getElementById(`${id}-error`);
+                    if (err) err.classList.remove('visible');
+                });
+            }
         });
 
         resetBtn.addEventListener('click', () => {
             pathwayForm.reset();
             resultsSection.classList.add('hidden');
             reqFields.forEach(id => {
-                document.getElementById(id).parentElement.classList.remove('error');
-                document.getElementById(`${id}-error`).classList.remove('visible');
+                const el = document.getElementById(id);
+                if (el) {
+                    el.parentElement.classList.remove('error');
+                    const err = document.getElementById(`${id}-error`);
+                    if (err) err.classList.remove('visible');
+                }
             });
-            window.scrollTo({ top: pathwayForm.offsetTop - 100, behavior: 'smooth' });
+            goToStep(1);
         });
     }
 

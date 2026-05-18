@@ -38,12 +38,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Form Validation ---
     const loginForm = document.getElementById('login-form');
     const emailInput = document.getElementById('email');
     const emailError = document.getElementById('email-error');
     const pwdError = document.getElementById('password-error');
     const alertMessage = document.getElementById('alert-message');
+
+    // Show redirect message if redirected from Pathway Finder or other restricted services
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectUrl = urlParams.get('redirect');
+    if (redirectUrl && redirectUrl.includes('pathway')) {
+        alertMessage.textContent = 'Please login or create an account to use the Pathway Finder.';
+        alertMessage.className = 'alert alert-info';
+        alertMessage.classList.remove('hidden');
+        alertMessage.style.display = 'block';
+        alertMessage.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
+        alertMessage.style.color = '#2563eb';
+        alertMessage.style.border = '1px solid rgba(37, 99, 235, 0.2)';
+        alertMessage.style.padding = '12px';
+        alertMessage.style.borderRadius = '8px';
+        alertMessage.style.marginBottom = '20px';
+        alertMessage.style.fontSize = '14px';
+        alertMessage.style.fontWeight = '500';
+    } else if (redirectUrl) {
+        alertMessage.textContent = 'Please login or create an account to access this feature.';
+        alertMessage.className = 'alert alert-info';
+        alertMessage.classList.remove('hidden');
+        alertMessage.style.display = 'block';
+        alertMessage.style.backgroundColor = 'rgba(37, 99, 235, 0.1)';
+        alertMessage.style.color = '#2563eb';
+        alertMessage.style.border = '1px solid rgba(37, 99, 235, 0.2)';
+        alertMessage.style.padding = '12px';
+        alertMessage.style.borderRadius = '8px';
+        alertMessage.style.marginBottom = '20px';
+        alertMessage.style.fontSize = '14px';
+        alertMessage.style.fontWeight = '500';
+    }
 
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {

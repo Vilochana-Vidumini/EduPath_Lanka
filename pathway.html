@@ -133,199 +133,228 @@
                     <p>Fill in the details below to receive tailored recommendations.</p>
                 </div>
 
+                <!-- Step Progress Bar -->
+                <div class="step-progress-container">
+                    <div class="progress-line-bg">
+                        <div class="progress-line-fill" id="progress-line"></div>
+                    </div>
+                    <div class="step-dot active" data-step="1">1<span>Profile</span></div>
+                    <div class="step-dot" data-step="2">2<span>Education</span></div>
+                    <div class="step-dot" data-step="3">3<span>Interests</span></div>
+                    <div class="step-dot" data-step="4">4<span>Goals</span></div>
+                </div>
+
                 <form id="pathwayForm" novalidate>
-                    <!-- A. Student Information -->
-                    <div class="form-group-section">
-                        <h4 class="section-subheading"><i class="fas fa-user-circle"></i> Student Information</h4>
-                        <div class="form-row">
-                            <div class="input-group">
-                                <label for="fullname">Full Name *</label>
-                                <input type="text" id="fullname" placeholder="Enter your full name" required>
-                                <span class="error-msg" id="fullname-error"></span>
+                    <!-- STEP 1: Student Information -->
+                    <div class="form-step active" data-step="1">
+                        <div class="form-group-section">
+                            <h4 class="section-subheading"><i class="fas fa-user-circle"></i> Student Information</h4>
+                            <div class="form-row">
+                                <div class="input-group">
+                                    <label for="fullname">Full Name *</label>
+                                    <input type="text" id="fullname" placeholder="Enter your full name" required>
+                                    <span class="error-msg" id="fullname-error"></span>
+                                </div>
+                                <div class="input-group">
+                                    <label for="email">Email Address *</label>
+                                    <input type="email" id="email" placeholder="you@example.com" required>
+                                    <span class="error-msg" id="email-error"></span>
+                                </div>
                             </div>
-                            <div class="input-group">
-                                <label for="email">Email Address *</label>
-                                <input type="email" id="email" placeholder="you@example.com" required>
-                                <span class="error-msg" id="email-error"></span>
+                            <div class="form-row">
+                                <div class="input-group">
+                                    <label for="district">District *</label>
+                                    <select id="district" required>
+                                        <option value="">Select District</option>
+                                        <option value="Ampara">Ampara</option>
+                                        <option value="Anuradhapura">Anuradhapura</option>
+                                        <option value="Badulla">Badulla</option>
+                                        <option value="Batticaloa">Batticaloa</option>
+                                        <option value="Colombo">Colombo</option>
+                                        <option value="Galle">Galle</option>
+                                        <option value="Gampaha">Gampaha</option>
+                                        <option value="Hambantota">Hambantota</option>
+                                        <option value="Jaffna">Jaffna</option>
+                                        <option value="Kalutara">Kalutara</option>
+                                        <option value="Kandy">Kandy</option>
+                                        <option value="Kegalle">Kegalle</option>
+                                        <option value="Kilinochchi">Kilinochchi</option>
+                                        <option value="Kurunegala">Kurunegala</option>
+                                        <option value="Mannar">Mannar</option>
+                                        <option value="Matale">Matale</option>
+                                        <option value="Matara">Matara</option>
+                                        <option value="Monaragala">Monaragala</option>
+                                        <option value="Mullaitivu">Mullaitivu</option>
+                                        <option value="Nuwara Eliya">Nuwara Eliya</option>
+                                        <option value="Polonnaruwa">Polonnaruwa</option>
+                                        <option value="Puttalam">Puttalam</option>
+                                        <option value="Ratnapura">Ratnapura</option>
+                                        <option value="Trincomalee">Trincomalee</option>
+                                        <option value="Vavuniya">Vavuniya</option>
+                                    </select>
+                                    <span class="error-msg" id="district-error"></span>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="input-group">
-                                <label for="district">District *</label>
-                                <select id="district" required>
-                                    <option value="">Select District</option>
-                                    <option value="Ampara">Ampara</option>
-                                    <option value="Anuradhapura">Anuradhapura</option>
-                                    <option value="Badulla">Badulla</option>
-                                    <option value="Batticaloa">Batticaloa</option>
-                                    <option value="Colombo">Colombo</option>
-                                    <option value="Galle">Galle</option>
-                                    <option value="Gampaha">Gampaha</option>
-                                    <option value="Hambantota">Hambantota</option>
-                                    <option value="Jaffna">Jaffna</option>
-                                    <option value="Kalutara">Kalutara</option>
-                                    <option value="Kandy">Kandy</option>
-                                    <option value="Kegalle">Kegalle</option>
-                                    <option value="Kilinochchi">Kilinochchi</option>
-                                    <option value="Kurunegala">Kurunegala</option>
-                                    <option value="Mannar">Mannar</option>
-                                    <option value="Matale">Matale</option>
-                                    <option value="Matara">Matara</option>
-                                    <option value="Monaragala">Monaragala</option>
-                                    <option value="Mullaitivu">Mullaitivu</option>
-                                    <option value="Nuwara Eliya">Nuwara Eliya</option>
-                                    <option value="Polonnaruwa">Polonnaruwa</option>
-                                    <option value="Puttalam">Puttalam</option>
-                                    <option value="Ratnapura">Ratnapura</option>
-                                    <option value="Trincomalee">Trincomalee</option>
-                                    <option value="Vavuniya">Vavuniya</option>
-                                </select>
-                                <span class="error-msg" id="district-error"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- B. Education Situation -->
-                    <div class="form-group-section">
-                        <h4 class="section-subheading"><i class="fas fa-graduation-cap"></i> Education Situation</h4>
-                        <div class="form-row three-cols">
-                            <div class="input-group">
-                                <label for="education-level">Education Level *</label>
-                                <select id="education-level" required>
-                                    <option value="">Select Level</option>
-                                    <option value="After O/L">After O/L</option>
-                                    <option value="After A/L">After A/L</option>
-                                    <option value="Awaiting O/L Results">Awaiting O/L Results</option>
-                                    <option value="Awaiting A/L Results">Awaiting A/L Results</option>
-                                    <option value="Failed O/L">Failed O/L</option>
-                                    <option value="Failed A/L">Failed A/L</option>
-                                    <option value="School Leaver">School Leaver</option>
-                                    <option value="Dropout">Dropout</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                                <span class="error-msg" id="education-level-error"></span>
-                            </div>
-                            <div class="input-group">
-                                <label for="exam-stream">Exam Stream (Optional)</label>
-                                <select id="exam-stream">
-                                    <option value="Not Selected">Not Selected</option>
-                                    <option value="Maths">Maths</option>
-                                    <option value="Bio Science">Bio Science</option>
-                                    <option value="Commerce">Commerce</option>
-                                    <option value="Arts">Arts</option>
-                                    <option value="Technology">Technology</option>
-                                    <option value="General">General</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label for="result-status">Result Status</label>
-                                <select id="result-status">
-                                    <option value="">Select Status</option>
-                                    <option value="Passed">Passed</option>
-                                    <option value="Failed">Failed</option>
-                                    <option value="Awaiting Results">Awaiting Results</option>
-                                    <option value="Qualified for University">Qualified for University</option>
-                                    <option value="Not Qualified for University">Not Qualified for University</option>
-                                    <option value="Need Alternative Path">Need Alternative Path</option>
-                                </select>
-                            </div>
+                        <div class="step-buttons">
+                            <div></div>
+                            <button type="button" class="btn btn-primary next-step-btn" data-next="2">Next Step <i class="fas fa-arrow-right"></i></button>
                         </div>
                     </div>
 
-                    <!-- C. Interests and Skills -->
-                    <div class="form-group-section">
-                        <h4 class="section-subheading"><i class="fas fa-heart"></i> Interests & Skills</h4>
-                        <div class="form-row">
+                    <!-- STEP 2: Education Situation -->
+                    <div class="form-step" data-step="2">
+                        <div class="form-group-section">
+                            <h4 class="section-subheading"><i class="fas fa-graduation-cap"></i> Education Situation</h4>
+                            <div class="form-row three-cols">
+                                <div class="input-group">
+                                    <label for="education-level">Education Level *</label>
+                                    <select id="education-level" required>
+                                        <option value="">Select Level</option>
+                                        <option value="After O/L">After O/L</option>
+                                        <option value="After A/L">After A/L</option>
+                                        <option value="Awaiting O/L Results">Awaiting O/L Results</option>
+                                        <option value="Awaiting A/L Results">Awaiting A/L Results</option>
+                                        <option value="Failed O/L">Failed O/L</option>
+                                        <option value="Failed A/L">Failed A/L</option>
+                                        <option value="School Leaver">School Leaver</option>
+                                        <option value="Dropout">Dropout</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    <span class="error-msg" id="education-level-error"></span>
+                                </div>
+                                <div class="input-group">
+                                    <label for="exam-stream">Exam Stream (Optional)</label>
+                                    <select id="exam-stream">
+                                        <option value="Not Selected">Not Selected</option>
+                                        <option value="Maths">Maths</option>
+                                        <option value="Bio Science">Bio Science</option>
+                                        <option value="Commerce">Commerce</option>
+                                        <option value="Arts">Arts</option>
+                                        <option value="Technology">Technology</option>
+                                        <option value="General">General</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label for="result-status">Result Status</label>
+                                    <select id="result-status">
+                                        <option value="">Select Status</option>
+                                        <option value="Passed">Passed</option>
+                                        <option value="Failed">Failed</option>
+                                        <option value="Awaiting Results">Awaiting Results</option>
+                                        <option value="Qualified for University">Qualified for University</option>
+                                        <option value="Not Qualified for University">Not Qualified for University</option>
+                                        <option value="Need Alternative Path">Need Alternative Path</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="step-buttons">
+                            <button type="button" class="btn btn-outline-dark prev-step-btn" data-prev="1"><i class="fas fa-arrow-left"></i> Back</button>
+                            <button type="button" class="btn btn-primary next-step-btn" data-next="3">Next Step <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: Interests & Skills -->
+                    <div class="form-step" data-step="3">
+                        <div class="form-group-section">
+                            <h4 class="section-subheading"><i class="fas fa-heart"></i> Interests & Skills</h4>
+                            <div class="form-row">
+                                <div class="input-group full-width">
+                                    <label for="interest-area">Primary Interest Area *</label>
+                                    <select id="interest-area" required>
+                                        <option value="">Select Area</option>
+                                        <option value="Information Technology">Information Technology</option>
+                                        <option value="Engineering">Engineering</option>
+                                        <option value="Business & Management">Business & Management</option>
+                                        <option value="Health & Care">Health & Care</option>
+                                        <option value="Teaching & Education">Teaching & Education</option>
+                                        <option value="Design & Creative Media">Design & Creative Media</option>
+                                        <option value="Tourism & Hospitality">Tourism & Hospitality</option>
+                                        <option value="Agriculture">Agriculture</option>
+                                        <option value="Automobile & Technical">Automobile & Technical</option>
+                                        <option value="Entrepreneurship">Entrepreneurship</option>
+                                        <option value="Sports">Sports</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    <span class="error-msg" id="interest-area-error"></span>
+                                </div>
+                            </div>
                             <div class="input-group full-width">
-                                <label for="interest-area">Primary Interest Area *</label>
-                                <select id="interest-area" required>
-                                    <option value="">Select Area</option>
-                                    <option value="Information Technology">Information Technology</option>
-                                    <option value="Engineering">Engineering</option>
-                                    <option value="Business & Management">Business & Management</option>
-                                    <option value="Health & Care">Health & Care</option>
-                                    <option value="Teaching & Education">Teaching & Education</option>
-                                    <option value="Design & Creative Media">Design & Creative Media</option>
-                                    <option value="Tourism & Hospitality">Tourism & Hospitality</option>
-                                    <option value="Agriculture">Agriculture</option>
-                                    <option value="Automobile & Technical">Automobile & Technical</option>
-                                    <option value="Entrepreneurship">Entrepreneurship</option>
-                                    <option value="Sports">Sports</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                                <span class="error-msg" id="interest-area-error"></span>
+                                <label>Current Skills (Select up to 3)</label>
+                                <div class="checkbox-grid">
+                                    <label class="custom-checkbox"><input type="checkbox" value="Communication" class="skill-cb"><span>Communication</span></label>
+                                    <label class="custom-checkbox"><input type="checkbox" value="Leadership" class="skill-cb"><span>Leadership</span></label>
+                                    <label class="custom-checkbox"><input type="checkbox" value="Computer Skills" class="skill-cb"><span>Computer Skills</span></label>
+                                    <label class="custom-checkbox"><input type="checkbox" value="English" class="skill-cb"><span>English</span></label>
+                                    <label class="custom-checkbox"><input type="checkbox" value="Creativity" class="skill-cb"><span>Creativity</span></label>
+                                    <label class="custom-checkbox"><input type="checkbox" value="Problem Solving" class="skill-cb"><span>Problem Solving</span></label>
+                                    <label class="custom-checkbox"><input type="checkbox" value="Teamwork" class="skill-cb"><span>Teamwork</span></label>
+                                    <label class="custom-checkbox"><input type="checkbox" value="Technical Skills" class="skill-cb"><span>Technical Skills</span></label>
+                                    <label class="custom-checkbox"><input type="checkbox" value="Business Skills" class="skill-cb"><span>Business Skills</span></label>
+                                </div>
                             </div>
                         </div>
-                        <div class="input-group full-width">
-                            <label>Current Skills (Select up to 3)</label>
-                            <div class="checkbox-grid">
-                                <label class="custom-checkbox"><input type="checkbox" value="Communication" class="skill-cb"><span>Communication</span></label>
-                                <label class="custom-checkbox"><input type="checkbox" value="Leadership" class="skill-cb"><span>Leadership</span></label>
-                                <label class="custom-checkbox"><input type="checkbox" value="Computer Skills" class="skill-cb"><span>Computer Skills</span></label>
-                                <label class="custom-checkbox"><input type="checkbox" value="English" class="skill-cb"><span>English</span></label>
-                                <label class="custom-checkbox"><input type="checkbox" value="Creativity" class="skill-cb"><span>Creativity</span></label>
-                                <label class="custom-checkbox"><input type="checkbox" value="Problem Solving" class="skill-cb"><span>Problem Solving</span></label>
-                                <label class="custom-checkbox"><input type="checkbox" value="Teamwork" class="skill-cb"><span>Teamwork</span></label>
-                                <label class="custom-checkbox"><input type="checkbox" value="Technical Skills" class="skill-cb"><span>Technical Skills</span></label>
-                                <label class="custom-checkbox"><input type="checkbox" value="Business Skills" class="skill-cb"><span>Business Skills</span></label>
-                            </div>
+                        <div class="step-buttons">
+                            <button type="button" class="btn btn-outline-dark prev-step-btn" data-prev="2"><i class="fas fa-arrow-left"></i> Back</button>
+                            <button type="button" class="btn btn-primary next-step-btn" data-next="4">Next Step <i class="fas fa-arrow-right"></i></button>
                         </div>
                     </div>
 
-                    <!-- D. Future Goal -->
-                    <div class="form-group-section">
-                        <h4 class="section-subheading"><i class="fas fa-flag-checkered"></i> Goals & Preferences</h4>
-                        <div class="form-row three-cols">
-                            <div class="input-group">
-                                <label for="future-goal">Future Goal *</label>
-                                <select id="future-goal" required>
-                                    <option value="">Select Goal</option>
-                                    <option value="Government University">Government University</option>
-                                    <option value="Private Degree">Private Degree</option>
-                                    <option value="Diploma">Diploma</option>
-                                    <option value="Vocational Training">Vocational Training</option>
-                                    <option value="Professional Course">Professional Course</option>
-                                    <option value="Job After Training">Job After Training</option>
-                                    <option value="Start a Business">Start a Business</option>
-                                    <option value="Freelancing">Freelancing</option>
-                                    <option value="Study Abroad">Study Abroad</option>
-                                    <option value="Not Sure Yet">Not Sure Yet</option>
-                                </select>
-                                <span class="error-msg" id="future-goal-error"></span>
-                            </div>
-                            <div class="input-group">
-                                <label for="financial">Financial Support Needed? *</label>
-                                <select id="financial" required>
-                                    <option value="">Select Option</option>
-                                    <option value="No">No</option>
-                                    <option value="Yes">Yes</option>
-                                    <option value="Maybe">Maybe</option>
-                                    <option value="Need Scholarship">Need Scholarship</option>
-                                    <option value="Need Free or Low-Cost Options">Need Free or Low-Cost Options</option>
-                                </select>
-                                <span class="error-msg" id="financial-error"></span>
-                            </div>
-                            <div class="input-group">
-                                <label for="learning-mode">Preferred Learning Mode *</label>
-                                <select id="learning-mode" required>
-                                    <option value="">Select Mode</option>
-                                    <option value="Physical">Physical</option>
-                                    <option value="Online">Online</option>
-                                    <option value="Hybrid">Hybrid</option>
-                                    <option value="Weekend">Weekend</option>
-                                    <option value="Part-time">Part-time</option>
-                                    <option value="Full-time">Full-time</option>
-                                </select>
-                                <span class="error-msg" id="learning-mode-error"></span>
+                    <!-- STEP 4: Goals & Preferences -->
+                    <div class="form-step" data-step="4">
+                        <div class="form-group-section">
+                            <h4 class="section-subheading"><i class="fas fa-flag-checkered"></i> Goals & Preferences</h4>
+                            <div class="form-row three-cols">
+                                <div class="input-group">
+                                    <label for="future-goal">Future Goal *</label>
+                                    <select id="future-goal" required>
+                                        <option value="">Select Goal</option>
+                                        <option value="Government University">Government University</option>
+                                        <option value="Private Degree">Private Degree</option>
+                                        <option value="Diploma">Diploma</option>
+                                        <option value="Vocational Training">Vocational Training</option>
+                                        <option value="Professional Course">Professional Course</option>
+                                        <option value="Job After Training">Job After Training</option>
+                                        <option value="Start a Business">Start a Business</option>
+                                        <option value="Freelancing">Freelancing</option>
+                                        <option value="Study Abroad">Study Abroad</option>
+                                        <option value="Not Sure Yet">Not Sure Yet</option>
+                                    </select>
+                                    <span class="error-msg" id="future-goal-error"></span>
+                                </div>
+                                <div class="input-group">
+                                    <label for="financial">Financial Support Needed? *</label>
+                                    <select id="financial" required>
+                                        <option value="">Select Option</option>
+                                        <option value="No">No</option>
+                                        <option value="Yes">Yes</option>
+                                        <option value="Maybe">Maybe</option>
+                                        <option value="Need Scholarship">Need Scholarship</option>
+                                        <option value="Need Free or Low-Cost Options">Need Free or Low-Cost Options</option>
+                                    </select>
+                                    <span class="error-msg" id="financial-error"></span>
+                                </div>
+                                <div class="input-group">
+                                    <label for="learning-mode">Preferred Learning Mode *</label>
+                                    <select id="learning-mode" required>
+                                        <option value="">Select Mode</option>
+                                        <option value="Physical">Physical</option>
+                                        <option value="Online">Online</option>
+                                        <option value="Hybrid">Hybrid</option>
+                                        <option value="Weekend">Weekend</option>
+                                        <option value="Part-time">Part-time</option>
+                                        <option value="Full-time">Full-time</option>
+                                    </select>
+                                    <span class="error-msg" id="learning-mode-error"></span>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Form Actions -->
-                    <div class="form-actions text-center">
-                        <button type="submit" class="btn btn-primary btn-large">Find My Pathway <i class="fas fa-search"></i></button>
-                        <button type="button" id="resetFormBtn" class="btn btn-outline-dark">Reset Form</button>
+                        <div class="step-buttons">
+                            <button type="button" class="btn btn-outline-dark prev-step-btn" data-prev="3"><i class="fas fa-arrow-left"></i> Back</button>
+                            <button type="submit" class="btn btn-primary">Find My Pathway <i class="fas fa-search"></i></button>
+                        </div>
                     </div>
                 </form>
             </div>

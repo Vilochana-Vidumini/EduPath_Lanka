@@ -25,7 +25,7 @@
     --hero-gradient: linear-gradient(135deg, #e0f2fe 0%, #eff6ff 50%, #dbeafe 100%);
     
     --font-main: 'Poppins', sans-serif;
-    --nav-height: 70px;
+    --nav-height: 64px;
     --section-padding: 80px 0;
     --transition: all 0.3s ease;
 }
@@ -310,4 +310,104 @@ input:focus, select:focus { outline: none; border-color: var(--primary-blue); ba
     .nav-links, .nav-buttons { display: none; }
     .hamburger { display: block; }
     .form-card { padding: 2rem 1.5rem; }
+}
+
+/* --- Multi-step Wizard Styles --- */
+.step-progress-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto 3.5rem;
+    padding: 0 10px;
+}
+
+.progress-line-bg {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #e2e8f0;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.progress-line-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--gradient-primary);
+    transition: width 0.4s ease;
+}
+
+.step-dot {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-muted);
+    position: relative;
+    z-index: 2;
+    transition: var(--transition);
+}
+
+.step-dot.active {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+    box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.15);
+}
+
+.step-dot.completed {
+    background: var(--primary-blue);
+    border-color: var(--primary-blue);
+    color: #ffffff;
+}
+
+.step-dot span {
+    position: absolute;
+    top: 44px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--text-muted);
+    transition: var(--transition);
+}
+
+.step-dot.active span, .step-dot.completed span {
+    color: var(--text-heading);
+}
+
+/* Step container hiding */
+.form-step {
+    display: none;
+    animation: fadeInStep 0.4s ease forwards;
+}
+
+.form-step.active {
+    display: block;
+}
+
+@keyframes fadeInStep {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.step-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    gap: 1rem;
+}
+
+.step-buttons .btn {
+    min-width: 120px;
 }

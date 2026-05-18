@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Get Guidance From Professional Mentors | EduPath Lanka</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="mentors.css">
+</head>
+<body>
+    <!-- Navbar (Will be dynamically hydrated by auth-nav.js) -->
+    <header class="header">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="about.html">About Us</a>
+                <a href="pathway.html">Pathway Finder</a>
+                <a href="courses.html">Courses</a>
+                <a href="mentors.html" class="active">Mentors</a>
+                <a href="scholarships.html">Scholarships</a>
+            </nav>
+            <div class="nav-buttons">
+                <a href="login.html" class="btn btn-login">Login</a>
+                <a href="signup.html" class="btn btn-signup">Sign Up</a>
+            </div>
+            <div class="hamburger">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div class="mobile-menu">
+            <div class="close-btn"><i class="fas fa-times"></i></div>
+            <nav class="mobile-links">
+                <a href="index.html">Home</a>
+                <a href="about.html">About Us</a>
+                <a href="pathway.html">Pathway Finder</a>
+                <a href="courses.html">Courses</a>
+                <a href="mentors.html" class="active">Mentors</a>
+                <a href="scholarships.html">Scholarships</a>
+                <a href="login.html" class="btn btn-login" style="margin-top: 1.5rem;">Login</a>
+                <a href="signup.html" class="btn btn-signup" style="margin-top: 0.5rem;">Sign Up</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Hero -->
+    <main class="mentors-hero">
+        <div class="container hero-content">
+            <span class="badge badge-purple">Elite Mentor Network</span>
+            <h1>Get Direct Guidance, Not Exam Confusion</h1>
+            <p>Connect with successful Sri Lankan professionals, vocational counselors, and university graduates who have navigated alternative pathways to success.</p>
+            
+            <div class="search-bar-wrapper glass">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="mentor-search" placeholder="Search by name, expertise, company, or advice area...">
+            </div>
+        </div>
+    </main>
+
+    <!-- Content Section -->
+    <section class="mentors-section section">
+        <div class="container">
+            <!-- Category Chips -->
+            <div class="category-filters">
+                <button class="chip active" data-category="all">All Mentors</button>
+                <button class="chip" data-category="tech">Software & Tech</button>
+                <button class="chip" data-category="vocational">NVQ & Vocational Support</button>
+                <button class="chip" data-category="business">Entrepreneurship & Startups</button>
+                <button class="chip" data-category="creative">Design & Creative Fields</button>
+            </div>
+
+            <!-- Grid Layout -->
+            <div class="mentors-grid" id="mentors-grid">
+                <!-- Mentor Cards will be rendered dynamically by JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer" id="contact">
+        <div class="container footer-content">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+                    <p>Empowering Sri Lankan students to find alternative education and success pathways. No student left behind.</p>
+                    <div class="social-icons">
+                        <a href="#"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="index.html">Home</a></li>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="pathway.html" class="restricted-link">Pathway Finder</a></li>
+                        <li><a href="courses.html">Courses</a></li>
+                    </ul>
+                </div>
+                <div class="footer-contact">
+                    <h4>Contact Us</h4>
+                    <p><i class="fas fa-envelope"></i> info@edupath.lk</p>
+                    <p><i class="fas fa-phone"></i> +94 11 234 5678</p>
+                    <p><i class="fas fa-map-marker-alt"></i> Colombo, Sri Lanka</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <div class="footer-links-simple">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms & Conditions</a>
+                </div>
+                <p>&copy; 2026 EduPath Lanka. All rights reserved. Your results do not define your future.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK Config & App Logic -->
+    <script type="module" src="mentors.js"></script>
+    <script type="module" src="auth-nav.js"></script>
+</body>
+</html>
