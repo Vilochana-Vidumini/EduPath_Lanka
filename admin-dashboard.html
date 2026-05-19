@@ -32,7 +32,8 @@
             <li><a href="#requests"><i class="fas fa-user-friends"></i> Mentor Requests</a></li>
             <li><a href="#reports"><i class="fas fa-chart-bar"></i> Platform Reports</a></li>
             <li><a href="#messages"><i class="fas fa-envelope"></i> Contact Messages</a></li>
-            <li><a href="#"><i class="fas fa-cog"></i> System Settings</a></li>
+            <li><a href="profile.html"><i class="fas fa-user-shield"></i> My Profile</a></li>
+            <li><a href="profile.html#security"><i class="fas fa-cog"></i> Settings</a></li>
             <li><a href="#" id="logout-btn-sidebar" class="text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </aside>
@@ -65,6 +66,37 @@
                 </div>
                 <div class="welcome-image">
                     <i class="fas fa-cogs welcome-icon"></i>
+                </div>
+            </section>
+
+            <!-- Profile Strength & Checklist Section -->
+            <section class="content-section" style="width: 100%;">
+                <div class="stat-card profile-card glass" style="grid-column: span 2; display: flex; flex-direction: column; align-items: stretch; gap: 1.5rem; width: 100%;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-dark);"><i class="fas fa-chart-line text-primary" style="margin-right: 8px;"></i>Admin Profile Strength & Guided Checklist</h3>
+                        <span id="profile-strength-badge" class="badge" style="font-size: 0.85rem; font-weight: 800;">0% Complete</span>
+                    </div>
+                    
+                    <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                        <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 12px; justify-content: center;">
+                            <div class="progress-bar-container" style="height: 14px; border-radius: 10px;">
+                                <div id="dynamic-profile-progress-bar" class="progress-bar" style="width: 0%;"></div>
+                            </div>
+                            <p id="profile-strength-message" style="font-size: 0.9rem; font-weight: 600; line-height: 1.4; color: var(--text-dark); margin: 0;"></p>
+                            <button id="complete-profile-card-btn" class="btn btn-primary" style="width: fit-content; padding: 8px 16px; font-size: 0.85rem; margin-top: 8px;"><i class="fas fa-edit"></i> Edit Profile</button>
+                        </div>
+                        
+                        <div style="flex: 1.2; min-width: 280px; background: rgba(255,255,255,0.4); border-radius: var(--radius-md); padding: 16px; border: 1px solid rgba(255,255,255,0.5);">
+                            <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-clipboard-list text-primary" style="margin-right: 8px;"></i> guided tasks</h4>
+                            <ul id="guided-task-list" class="checklist" style="display: grid; grid-template-columns: 1fr; gap: 8px; margin: 0; padding: 0;">
+                                <li id="task-phone"><i class="far fa-circle text-muted"></i> Add phone number</li>
+                                <li id="task-photo"><i class="far fa-circle text-muted"></i> Add profile photo</li>
+                                <li id="task-review-mentors"><i class="far fa-circle text-muted"></i> Review pending mentors</li>
+                                <li id="task-add-course"><i class="far fa-circle text-muted"></i> Add first course</li>
+                                <li id="task-add-scholarship"><i class="far fa-circle text-muted"></i> Add first scholarship</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -320,6 +352,56 @@
                 </div>
             </section>
             
+            <!-- 6.5. Student Mentor Requests -->
+            <section id="requests" class="content-section">
+                <div class="section-header">
+                    <h2>Student Mentor Requests</h2>
+                </div>
+                <div class="table-card glass">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Requested Mentor</th>
+                                    <th>Message</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-requests-tbody">
+                                <tr><td colspan="5" class="text-center py-4">Loading mentor requests...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6.6. Contact Messages -->
+            <section id="messages" class="content-section">
+                <div class="section-header">
+                    <h2>Contact Messages</h2>
+                </div>
+                <div class="table-card glass">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Sender</th>
+                                    <th>Email</th>
+                                    <th>Subject</th>
+                                    <th>Message</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-messages-tbody">
+                                <tr><td colspan="5" class="text-center py-4">Loading messages...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            
             <!-- 7. Reports Section -->
             <section id="reports" class="content-section">
                 <div class="section-header">
@@ -343,6 +425,8 @@
 
         </div>
     </main>
+
+
 
     <script type="module" src="admin-dashboard.js"></script>
 </body>

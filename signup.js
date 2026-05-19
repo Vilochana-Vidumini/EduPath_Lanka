@@ -153,6 +153,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             updatedAt: serverTimestamp()
                         };
 
+                        if (usertype.value === 'mentor') {
+                            userData.mentorStatus = 'pending';
+                        }
+
                         // Realtime DB Promises
                         const promises = [];
 

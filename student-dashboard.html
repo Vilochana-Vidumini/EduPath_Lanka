@@ -23,7 +23,7 @@
         </div>
         <ul class="sidebar-links">
             <li><a href="student-dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="#"><i class="fas fa-user"></i> My Profile</a></li>
+            <li><a href="profile.html"><i class="fas fa-user"></i> My Profile</a></li>
             <li><a href="pathway.html"><i class="fas fa-route"></i> Pathway Finder</a></li>
             <li><a href="#latest-result"><i class="fas fa-poll-h"></i> My Pathway Results</a></li>
             <li><a href="#courses"><i class="fas fa-book-open"></i> Courses</a></li>
@@ -33,7 +33,7 @@
             <li><a href="#skills"><i class="fas fa-tools"></i> Skill Resources</a></li>
             <li><a href="#career-guide"><i class="fas fa-compass"></i> Career Guide</a></li>
             <li><a href="#"><i class="fas fa-envelope"></i> Messages</a></li>
-            <li><a href="#"><i class="fas fa-cog"></i> Settings</a></li>
+            <li><a href="profile.html#security"><i class="fas fa-cog"></i> Settings</a></li>
             <li><a href="#" id="logout-btn-sidebar" class="text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
         </ul>
     </aside>
@@ -79,19 +79,39 @@
 
             <!-- 2. Profile & Stats Grid -->
             <div class="stats-grid">
-                <!-- Profile Completion -->
-                <div class="stat-card profile-card glass">
-                    <h3>Profile Completion</h3>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: 60%;"></div>
+                <!-- Dynamic Profile Completion & Task Checklist Card -->
+                <div class="stat-card profile-card glass" style="grid-column: span 2; display: flex; flex-direction: column; align-items: stretch; gap: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-dark);"><i class="fas fa-chart-line text-primary" style="margin-right: 8px;"></i>Profile Strength</h3>
+                        <span id="profile-strength-badge" class="badge" style="font-size: 0.85rem; font-weight: 800;">0% Complete</span>
                     </div>
-                    <ul class="checklist mt-3">
-                        <li><i class="fas fa-check-circle text-success"></i> Personal details</li>
-                        <li><i class="fas fa-check-circle text-success"></i> Education details</li>
-                        <li><i class="fas fa-check-circle text-success"></i> Interest selected</li>
-                        <li><i class="far fa-circle text-muted"></i> Skills added</li>
-                        <li><i class="far fa-circle text-muted"></i> Pathway result generated</li>
-                    </ul>
+                    
+                    <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                        <!-- Progress Circle / Bar -->
+                        <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 12px; justify-content: center;">
+                            <div class="progress-bar-container" style="height: 14px; border-radius: 10px;">
+                                <div id="dynamic-profile-progress-bar" class="progress-bar" style="width: 0%;"></div>
+                            </div>
+                            <p id="profile-strength-message" style="font-size: 0.9rem; font-weight: 600; line-height: 1.4; color: var(--text-dark); margin: 0;"></p>
+                            <button id="complete-profile-card-btn" class="btn btn-primary" style="width: fit-content; padding: 8px 16px; font-size: 0.85rem; margin-top: 8px;"><i class="fas fa-edit"></i> Complete Profile</button>
+                        </div>
+                        
+                        <!-- Missing Fields / Guided Checklist -->
+                        <div style="flex: 1.2; min-width: 280px; background: rgba(255,255,255,0.4); border-radius: var(--radius-md); padding: 16px; border: 1px solid rgba(255,255,255,0.5);">
+                            <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-clipboard-list text-primary" style="margin-right: 8px;"></i> guided tasks</h4>
+                            <ul id="guided-task-list" class="checklist" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; padding: 0;">
+                                <li id="task-phone"><i class="far fa-circle text-muted"></i> Phone Number</li>
+                                <li id="task-district"><i class="far fa-circle text-muted"></i> District</li>
+                                <li id="task-education"><i class="far fa-circle text-muted"></i> Education Level</li>
+                                <li id="task-stream"><i class="far fa-circle text-muted"></i> Exam Stream</li>
+                                <li id="task-interest"><i class="far fa-circle text-muted"></i> Interest Area</li>
+                                <li id="task-goal"><i class="far fa-circle text-muted"></i> Future Goal</li>
+                                <li id="task-skills"><i class="far fa-circle text-muted"></i> Skills</li>
+                                <li id="task-photo"><i class="far fa-circle text-muted"></i> Profile Photo</li>
+                                <li id="task-pathway" style="grid-column: span 2;"><i class="far fa-circle text-muted"></i> First Pathway Result</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Quick Stats -->
@@ -342,6 +362,8 @@
 
         </div>
     </main>
+
+
 
     <script type="module" src="student-dashboard.js"></script>
 </body>

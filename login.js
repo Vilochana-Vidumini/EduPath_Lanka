@@ -1,5 +1,5 @@
 import { auth, database, googleProvider } from "./firebase-config.js";
-import { signInWithEmailAndPassword, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { signInWithEmailAndPassword, signInWithPopup, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -47,7 +47,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Show redirect message if redirected from Pathway Finder or other restricted services
     const urlParams = new URLSearchParams(window.location.search);
     const redirectUrl = urlParams.get('redirect');
-    if (redirectUrl && redirectUrl.includes('pathway')) {
+    const sessionExpired = urlParams.get('sessionExpired');
+
+    if (sessionExpired === 'true') {
+        alertMessage.textContent = 'Session expired. Please login again.';
+        alertMessage.className = 'alert alert-warning';
+        alertMessage.classList.remove('hidden');
+        alertMessage.style.display = 'block';
+        alertMessage.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+        alertMessage.style.color = '#d97706';
+        alertMessage.style.border = '1px solid rgba(245, 158, 11, 0.2)';
+        alertMessage.style.padding = '12px';
+        alertMessage.style.borderRadius = '8px';
+        alertMessage.style.marginBottom = '20px';
+        alertMessage.style.fontSize = '14px';
+        alertMessage.style.fontWeight = '500';
+    } else if (redirectUrl && redirectUrl.includes('pathway')) {
         alertMessage.textContent = 'Please login or create an account to use the Pathway Finder.';
         alertMessage.className = 'alert alert-info';
         alertMessage.classList.remove('hidden');
@@ -122,7 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
                 btn.disabled = true;
 
-                signInWithEmailAndPassword(auth, emailValue, pwdInput.value)
+                setPersistence(auth, browserSessionPersistence)
+                    .then(() => {
+                        return signInWithEmailAndPassword(auth, emailValue, pwdInput.value);
+                    })
                     .then((userCredential) => {
                         const user = userCredential.user;
                         
@@ -172,7 +190,10 @@ document.addEventListener('DOMContentLoaded', () => {
             googleBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
             googleBtn.disabled = true;
 
-            signInWithPopup(auth, googleProvider)
+            setPersistence(auth, browserSessionPersistence)
+                .then(() => {
+                    return signInWithPopup(auth, googleProvider);
+                })
                 .then((result) => {
                     const user = result.user;
                     // Check if user exists in DB
