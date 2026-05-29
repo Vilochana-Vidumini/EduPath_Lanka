@@ -1,563 +1,676 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduPath Lanka | Guiding Every Student Towards a Brighter Future</title>
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=1920, height=1080, initial-scale=1.0">
+    <title>Wire Harness Production Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon-cyan: #00f2fe;
+            --neon-blue: #4facfe;
+            --neon-purple: #c02425; /* Wait, purple is #8e2de2 */
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: radial-gradient(circle at top left, #0f172a 0%, #020617 50%, #000000 100%);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            color: #e2e8f0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Glassmorphism utility classes */
+        .glass {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 1rem;
+        }
+
+        .glass-dark {
+            background: rgba(2, 6, 23, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 1rem;
+        }
+
+        .glass-glow {
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.05), inset 0 0 20px rgba(0, 242, 254, 0.02);
+            border: 1px solid rgba(0, 242, 254, 0.15);
+        }
+
+        .glass-glow-purple {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.05), inset 0 0 20px rgba(168, 85, 247, 0.02);
+            border: 1px solid rgba(168, 85, 247, 0.15);
+        }
+
+        /* Text Gradients */
+        .text-gradient-cyan {
+            background: linear-gradient(to right, #00f2fe, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .text-gradient-green {
+            background: linear-gradient(to right, #10b981, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Circular Progress */
+        .circular-chart {
+            display: block;
+            margin: 0 auto;
+            max-width: 80%;
+            max-height: 250px;
+        }
+        .circle-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.05);
+            stroke-width: 2.5;
+        }
+        .circle {
+            fill: none;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke: #10b981;
+            animation: progress 1s ease-out forwards;
+            box-shadow: 0 0 10px #10b981;
+            filter: drop-shadow(0 0 4px rgba(16,185,129,0.6));
+        }
+        @keyframes progress {
+            0% { stroke-dasharray: 0 100; }
+        }
+
+        /* Chart Canvas Size */
+        #hourlyChart {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* Custom Scrollbar just in case, though overflow is hidden */
+        ::-webkit-scrollbar { width: 0px; }
+
+        /* Wires Logo */
+        .wire { height: 3px; border-radius: 2px; }
+        .wire-cyan { background-color: #06b6d4; box-shadow: 0 0 5px #06b6d4; }
+        .wire-blue { background-color: #3b82f6; box-shadow: 0 0 5px #3b82f6; }
+        .wire-green { background-color: #10b981; box-shadow: 0 0 5px #10b981; }
+        .wire-yellow { background-color: #eab308; box-shadow: 0 0 5px #eab308; }
+        .wire-red { background-color: #ef4444; box-shadow: 0 0 5px #ef4444; }
+
+        .connector { background: linear-gradient(to bottom, #475569, #1e293b); border: 1px solid #64748b; }
+
+        /* Animations */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-glow {
+            animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
 </head>
+<body class="p-4 gap-4 box-border">
 
-<body>
-
-    <!-- 1. Header / Navigation Bar -->
-    <header class="header">
-        <div class="container nav-container">
-            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
-
-            <nav class="nav-links">
-                <a href="index.html">Home</a>
-                <a href="about.html">About Us</a>
-                <a href="pathway.html">Pathway Finder</a>
-                <a href="courses.html">Courses</a>
-                <a href="mentors.html">Mentors</a>
-                <a href="scholarships.html">Scholarships</a>
-            </nav>
-
-            <div class="nav-buttons">
-                <a href="login.html" class="btn btn-login">Login</a>
-                <a href="signup.html" class="btn btn-signup">Sign Up</a>
+    <!-- HEADER -->
+    <header class="glass flex items-center justify-between px-6 py-3 h-[80px] shrink-0">
+        <!-- Left: Logo & Titles -->
+        <div class="flex items-center gap-6">
+            <!-- Logo -->
+            <div class="flex items-center gap-2">
+                <div class="connector w-3 h-10 rounded-sm"></div>
+                <div class="flex flex-col gap-[3px] w-8">
+                    <div class="wire wire-cyan w-full"></div>
+                    <div class="wire wire-blue w-full"></div>
+                    <div class="wire wire-green w-full"></div>
+                    <div class="wire wire-yellow w-full"></div>
+                    <div class="wire wire-red w-full"></div>
+                </div>
+                <div class="connector w-3 h-10 rounded-sm"></div>
             </div>
-
-            <!-- Hamburger Menu for Mobile -->
-            <div class="hamburger">
-                <i class="fas fa-bars"></i>
+            <div>
+                <h1 class="text-xl font-bold tracking-wider text-white">WIRE HARNESS PRODUCTION</h1>
+                <p class="text-xs font-semibold tracking-widest text-cyan-400">LIVE KPI CONTROL DASHBOARD</p>
             </div>
         </div>
 
-        <!-- Mobile Menu Overlay -->
-        <div class="mobile-menu">
-            <div class="close-btn"><i class="fas fa-times"></i></div>
-            <nav class="mobile-links">
-                <a href="index.html">Home</a>
-                <a href="about.html">About Us</a>
-                <a href="pathway.html">Pathway Finder</a>
-                <a href="courses.html">Courses</a>
-                <a href="mentors.html">Mentors</a>
-                <a href="scholarships.html">Scholarships</a>
-                <a href="login.html" class="btn btn-login">Login</a>
-                <a href="signup.html" class="btn btn-signup">Sign Up</a>
-            </nav>
+        <!-- Center: Command Center Label -->
+        <div class="flex items-center gap-4">
+            <div class="glass-dark px-6 py-2 rounded-full border border-slate-700">
+                <span class="text-sm font-medium tracking-wide text-slate-300 uppercase">Production KPI Command Center</span>
+            </div>
+            <div class="glass px-4 py-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 shadow-[0_0_10px_rgba(6,182,212,0.2)]">
+                <span class="text-sm font-bold tracking-wider text-cyan-400">LINE 5</span>
+            </div>
+        </div>
+
+        <!-- Right: Time, Date, Status -->
+        <div class="flex items-center gap-3">
+            <div class="glass-dark px-4 py-2 rounded-lg flex items-center gap-2">
+                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                <span class="text-sm font-medium text-slate-200">May 06, 2026 | Tuesday</span>
+            </div>
+            <div class="glass-dark px-4 py-2 rounded-lg flex items-center gap-2">
+                <svg class="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="text-sm font-bold text-cyan-400 font-mono text-lg leading-none" id="clock">03:53:38 PM</span>
+            </div>
+            <div class="glass px-5 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 flex items-center gap-2 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse-glow shadow-[0_0_8px_#10b981]"></div>
+                <span class="text-sm font-bold tracking-wider text-emerald-400">RUNNING</span>
+            </div>
         </div>
     </header>
 
-    <!-- 2. Hero Section -->
-    <section id="home" class="hero">
+    <!-- MAIN CONTENT -->
+    <main class="flex flex-1 gap-4 overflow-hidden min-h-0">
 
-        <div class="container hero-container">
-            <div class="hero-content fade-in-left">
-                <h1>Find Your Right Education & Career Path After O/L or A/L</h1>
-                <p>EduPath Lanka helps Sri Lankan students discover personalized education pathways, mentors,
-                    scholarships, skills, and career opportunities — even when results are not perfect.</p>
-                <div class="hero-buttons">
-                    <a href="pathway.html" class="btn btn-primary btn-large restricted-link">Start Path Finder</a>
-                    <a href="courses.html" class="btn btn-outline-dark btn-large">Explore Courses</a>
-                </div>
-            </div>
-
-            <div class="hero-image-wrapper fade-in-right">
-
-                <!-- Floating Glass Cards -->
-                <div class="floating-card glass card-1">
-                    <i class="fas fa-robot"></i>
-                    <span>AI Path Finder</span>
-                </div>
-                <div class="floating-card glass card-2">
-                    <i class="fas fa-user-tie"></i>
-                    <span>Mentor Connected</span>
-                </div>
-                <div class="floating-card glass card-3">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>Scholarship Available</span>
-                </div>
-                <div class="floating-card glass card-4">
-                    <i class="fas fa-bullseye"></i>
-                    <span>Career Match 86%</span>
-                </div>
-            </div>
-        </div>
-        <!-- Decorative Background Elements -->
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-    </section>
-
-    <!-- 3. Problem Section -->
-    <section id="problems" class="problems section">
-        <div class="container">
-            <div class="section-title text-center scroll-reveal">
-                <h2>Why Do We Need EduPath Lanka?</h2>
-                <p>Many students face these common struggles after completing their exams.</p>
-            </div>
-
-            <div class="problems-grid">
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-map-signs"></i></div>
-                    <h3>Lack of Guidance</h3>
-                    <p>Feeling lost and confused about what to do after exams.</p>
-                </div>
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-wallet"></i></div>
-                    <h3>Financial Struggles</h3>
-                    <p>Inability to fund higher education without proper scholarships.</p>
-                </div>
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-university"></i></div>
-                    <h3>University Confusion</h3>
-                    <p>Not knowing how university admissions and alternatives work.</p>
-                </div>
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-tools"></i></div>
-                    <h3>Lack of Skills</h3>
-                    <p>Not having the modern skills required by the current job market.</p>
-                </div>
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-brain"></i></div>
-                    <h3>Mental Pressure</h3>
-                    <p>Experiencing high stress due to societal and parental expectations.</p>
-                </div>
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-globe-asia"></i></div>
-                    <h3>Opportunity Gap</h3>
-                    <p>Rural students missing out on opportunities available in urban areas.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Inspiring Section: No Student Left Behind -->
-    <section class="no-student-left-behind section bg-light-alt" style="padding: var(--section-padding); background-color: var(--bg-darker); border-top: 1px solid rgba(226, 232, 240, 0.5); border-bottom: 1px solid rgba(226, 232, 240, 0.5);">
-        <div class="container" style="display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 4rem; align-items: center;">
-            <div class="inspiration-content scroll-reveal">
-                <span class="badge badge-purple" style="background: rgba(139, 92, 246, 0.15); color: var(--primary-purple); margin-bottom: 1rem;">Social Impact Initiative</span>
-                <h2 style="color: var(--deep-blue); font-size: clamp(2rem, 3.5vw, 2.5rem); margin-bottom: 1.5rem;">No Student Left Behind</h2>
-                <p class="lead-text" style="font-size: 1.15rem; font-weight: 600; color: var(--text-light); margin-bottom: 1.5rem; line-height: 1.4; border-left: 4px solid var(--primary-blue); padding-left: 1rem;">
-                    "Your results do not define your future. Every Sri Lankan student has a unique set of skills and a path to a bright career."
-                </p>
-                <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 15px;">
-                    EduPath Lanka is built on the core belief that exams like O/L and A/L are checkpoints, not endpoints. If your results weren't what you hoped for, or if you feel uncertain about your stream, there are thousands of non-traditional options, vocational training, international certifications, and scholarships waiting for you.
-                </p>
+        <!-- LEFT SIDEBAR -->
+        <aside class="w-[320px] flex flex-col gap-4 shrink-0">
+            <!-- Project Details -->
+            <div class="glass p-5 flex-1 flex flex-col relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-cyan-500 shadow-[0_0_10px_#06b6d4]"></div>
                 
-                <div class="inspiration-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
-                    <div class="inspire-item">
-                        <i class="fas fa-heartbeat" style="font-size: 1.75rem; color: var(--primary-cyan); margin-bottom: 0.75rem;"></i>
-                        <h4 style="margin-bottom: 0.5rem; color: var(--deep-blue);">Supportive & Empathetic</h4>
-                        <p style="font-size: 13.5px; color: var(--text-muted);">Exams cause massive societal pressure. We provide non-judgmental guidance and mental well-being support.</p>
-                    </div>
-                    <div class="inspire-item">
-                        <i class="fas fa-route" style="font-size: 1.75rem; color: var(--primary-purple); margin-bottom: 0.75rem;"></i>
-                        <h4 style="margin-bottom: 0.5rem; color: var(--deep-blue);">Alternative Career Roads</h4>
-                        <p style="font-size: 13.5px; color: var(--text-muted);">Explore government NVQ qualification levels, professional diplomas, and fast-track employment courses.</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="inspiration-visual scroll-reveal">
-                <div class="inspiring-card glass" style="padding: 2.25rem; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.8); background: rgba(255, 255, 255, 0.75); box-shadow: 0 15px 35px rgba(31, 38, 135, 0.05);">
-                    <h3 style="color: var(--deep-blue); font-size: 1.35rem; margin-bottom: 1rem; border-bottom: 1px solid rgba(226, 232, 240, 0.7); padding-bottom: 0.5rem;">Your Future Options</h3>
-                    <p style="font-size: 13.5px; color: var(--text-muted); margin-bottom: 1.5rem;">No matter what happened in your exams, look at these incredible pathways open to you:</p>
-                    
-                    <div class="path-option" style="display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.25rem;">
-                        <span class="option-num" style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0;">1</span>
-                        <div>
-                            <strong style="font-size: 14.5px; color: var(--text-light);">Professional Diplomas</strong>
-                            <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 0.25rem;">Fast-track entry into IT, software engineering, digital marketing, or business management.</p>
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                    Running Project
+                </h2>
+
+                <div class="space-y-5">
+                    <div>
+                        <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Project Number</div>
+                        <div class="glass-dark border-cyan-500/30 inline-block px-4 py-2 rounded-lg">
+                            <span class="text-2xl font-bold text-white tracking-wider font-mono">9032072</span>
                         </div>
                     </div>
                     
-                    <div class="path-option" style="display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.25rem;">
-                        <span class="option-num" style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary-cyan); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0;">2</span>
+                    <div class="space-y-3">
                         <div>
-                            <strong style="font-size: 14.5px; color: var(--text-light);">NVQ Vocational Levels</strong>
-                            <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 0.25rem;">Practical skills recognized nationally and globally, like electrical, tech, and automotive.</p>
+                            <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Customer</div>
+                            <div class="text-base font-semibold text-slate-200">ABC Wiring Systems</div>
                         </div>
-                    </div>
-                    
-                    <div class="path-option" style="display: flex; gap: 1rem; align-items: flex-start;">
-                        <span class="option-num" style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary-purple); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0;">3</span>
                         <div>
-                            <strong style="font-size: 14.5px; color: var(--text-light);">Modern Freelancing & Skills</strong>
-                            <p style="font-size: 12.5px; color: var(--text-muted); margin-top: 0.25rem;">Learn graphic design, content writing, or UI/UX and work for international clients.</p>
+                            <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Customer Description</div>
+                            <div class="text-sm font-medium text-slate-300">Model ZX-120</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Project Order No.</div>
+                            <div class="text-sm font-medium text-slate-300 font-mono">1207842</div>
+                        </div>
+                        <div>
+                            <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5">Build Type</div>
+                            <div class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700">Standard Build</div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- 4. Features Section -->
-    <section id="features" class="features section bg-darker">
-        <div class="container">
-            <div class="section-title text-center scroll-reveal">
-                <h2>Platform Features</h2>
-                <p>Everything you need to navigate your future successfully.</p>
-            </div>
+                <hr class="border-slate-700/50 my-6">
 
-            <div class="features-grid">
-                <div class="feature-card glass scroll-reveal">
-                    <i class="fas fa-compass feature-icon"></i>
-                    <h3>Personalized Path Finder</h3>
-                    <p>Discover courses and careers tailored to your interests and results.</p>
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    Project Schedule
+                </h2>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Daily Target</span>
+                        <span class="text-sm font-bold text-white">240 PCS</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Start Date</span>
+                        <span class="text-sm font-medium text-slate-300">03/06/2026</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">End Date</span>
+                        <span class="text-sm font-medium text-slate-300">03/09/2026</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Start Time</span>
+                        <span class="text-sm font-medium text-slate-300">11:15 AM</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">End Time</span>
+                        <span class="text-sm font-medium text-slate-300">05:30 PM</span>
+                    </div>
                 </div>
-                <div class="feature-card glass scroll-reveal">
-                    <i class="fas fa-hands-helping feature-icon"></i>
-                    <h3>Mentorship Program</h3>
-                    <p>Connect with professionals and uni students for direct guidance.</p>
-                </div>
-                <div class="feature-card glass scroll-reveal">
-                    <i class="fas fa-book-open feature-icon"></i>
-                    <h3>Course & Institute DB</h3>
-                    <p>Explore thousands of verified diplomas, degrees, and vocational courses.</p>
-                </div>
-                <div class="feature-card glass scroll-reveal">
-                    <i class="fas fa-hand-holding-usd feature-icon"></i>
-                    <h3>Scholarships & Aid</h3>
-                    <p>Find financial support, student loans, and free learning resources.</p>
-                </div>
-                <div class="feature-card glass scroll-reveal">
-                    <i class="fas fa-building feature-icon"></i>
-                    <h3>University Guidance</h3>
-                    <p>Step-by-step help with local and foreign university admissions.</p>
-                </div>
-                <div class="feature-card glass scroll-reveal">
-                    <i class="fas fa-laptop-code feature-icon"></i>
-                    <h3>Skill Development</h3>
-                    <p>Identify and learn the skills most demanded by employers today.</p>
-                </div>
-                <div class="feature-card glass scroll-reveal">
-                    <i class="fas fa-briefcase feature-icon"></i>
-                    <h3>Career Awareness</h3>
-                    <p>Explore modern career options, salary expectations, and job roles.</p>
-                </div>
-                <div class="feature-card glass scroll-reveal">
-                    <i class="fas fa-heart feature-icon"></i>
-                    <h3>Mental Health Support</h3>
-                    <p>Access free counseling and stress-management resources.</p>
-                </div>
-                <div class="feature-card glass scroll-reveal">
-                    <i class="fas fa-broadcast-tower feature-icon"></i>
-                    <h3>Rural Outreach</h3>
-                    <p>Special initiatives connecting rural students to national opportunities.</p>
+
+                <div class="mt-auto pt-6 flex justify-center">
+                    <div class="glass-dark px-6 py-2 rounded border border-slate-600 shadow-inner">
+                        <span class="text-xl font-black text-slate-500 tracking-widest">BRP</span>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </aside>
 
-    <!-- 5. Path Finder Preview Section -->
-    <section id="path-finder" class="path-finder section">
-        <div class="container">
-            <div class="path-finder-wrapper">
-                <div class="path-finder-text scroll-reveal">
-                    <h2>How the Path Finder Works</h2>
-                    <p>Finding your future is as easy as 1-2-3-4. Try our interactive tool to get personalized
-                        recommendations.</p>
+        <!-- RIGHT MAIN AREA -->
+        <div class="flex-1 flex flex-col gap-4 overflow-hidden">
 
-                    <ul class="steps-list">
-                        <li>
-                            <div class="step-num">1</div>
-                            <div class="step-content">
-                                <h4>Enter Results</h4>
-                                <p>Input your O/L or A/L results, even if they aren't perfect.</p>
+            <!-- TOP ROW: Hero KPI & Quality Panel -->
+            <div class="flex gap-4 h-[320px] shrink-0">
+                <!-- HERO CARD -->
+                <div class="glass glass-glow flex-1 p-6 relative overflow-hidden flex flex-col justify-center">
+                    <!-- Background accent -->
+                    <div class="absolute -right-20 -top-20 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl"></div>
+                    <div class="absolute -left-20 -bottom-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
+
+                    <div class="flex justify-between items-center h-full relative z-10">
+                        <!-- Left Stats -->
+                        <div class="flex flex-col justify-center w-1/2">
+                            <h2 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                                Current Output
+                            </h2>
+                            <div class="flex items-baseline gap-3 mb-1">
+                                <span class="text-7xl font-bold text-white tracking-tighter drop-shadow-[0_0_15px_rgba(0,242,254,0.5)] font-mono">173</span>
+                                <span class="text-lg text-cyan-400 font-medium">PCS completed today</span>
                             </div>
-                        </li>
-                        <li>
-                            <div class="step-num">2</div>
-                            <div class="step-content">
-                                <h4>Select Interests</h4>
-                                <p>Tell us what you love doing and your future goals.</p>
-                            </div>
-                        </li>
-                        <li>
-                            <div class="step-num">3</div>
-                            <div class="step-content">
-                                <h4>Get Recommendations</h4>
-                                <p>Instantly receive tailored courses, jobs, and scholarships.</p>
-                            </div>
-                        </li>
-                        <li>
-                            <div class="step-num">4</div>
-                            <div class="step-content">
-                                <h4>Connect & Grow</h4>
-                                <p>Reach out to mentors and start your journey.</p>
-                            </div>
-                        </li>
-                    </ul>
-                </div>
 
-                <div class="path-finder-interactive glass scroll-reveal">
-                    <div class="pf-header">
-                        <h3>Interactive Path Finder</h3>
-                        <p>Try a preview right now</p>
-                    </div>
-                    <form id="pf-form" class="pf-form">
-                        <div class="form-group">
-                            <label for="education">Education Level</label>
-                            <select id="education">
-                                <option value="">Select Level</option>
-                                <option value="ol">O/L Completed</option>
-                                <option value="al">A/L Completed</option>
-                                <option value="failed">Did Not Pass Exams</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="interest">Interest Area</label>
-                            <select id="interest">
-                                <option value="">Select Interest</option>
-                                <option value="tech">Technology & IT</option>
-                                <option value="business">Business & Management</option>
-                                <option value="arts">Creative Arts & Design</option>
-                                <option value="science">Science & Health</option>
-                                <option value="vocational">Vocational & Technical</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="goal">Future Goal</label>
-                            <select id="goal">
-                                <option value="">Select Goal</option>
-                                <option value="job">Find a Job Quickly</option>
-                                <option value="degree">Complete a Degree</option>
-                                <option value="business">Start a Business</option>
-                                <option value="skills">Develop Skills</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary btn-block">Find My Path <i
-                                class="fas fa-arrow-right"></i></button>
-                    </form>
-                    <div id="pf-result" class="pf-result hidden">
-                        <i class="fas fa-check-circle text-cyan"></i>
-                        <h4>Analyzing Matches...</h4>
-                        <p>In the full platform, you will see a detailed dashboard with courses, mentors, and jobs here!
-                        </p>
-                        <button id="pf-reset" class="btn btn-outline btn-small mt-3">Try Again</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 6. Mentorship Section -->
-    <section id="mentors" class="mentors section bg-darker">
-        <div class="container">
-            <div class="section-title text-center scroll-reveal">
-                <h2>Meet Our Mentors</h2>
-                <p>Connect with university students, graduates, professionals, and volunteers who have walked your path.
-                </p>
-            </div>
-
-            <div class="mentors-grid">
-                <div class="mentor-card glass scroll-reveal">
-                    <div class="mentor-img-wrapper">
-                        <!-- Replace src -->
-                        <img src="images\Mentor-Kasunperera.png" alt="University Mentor">
-                    </div>
-                    <div class="mentor-info">
-                        <span class="badge badge-purple">University Mentor</span>
-                        <h3>Kasun Perera</h3>
-                        <p>Undergraduate at University of Colombo, guiding O/L and A/L students on campus life and
-                            degrees.</p>
-                    </div>
-                </div>
-
-                <div class="mentor-card glass scroll-reveal" style="transition-delay: 0.1s;">
-                    <div class="mentor-img-wrapper">
-                        <!-- Replace src -->
-                        <img src="images\Mentor-Sarahfernando.png" alt="Career Mentor">
-                    </div>
-                    <div class="mentor-info">
-                        <span class="badge badge-cyan">Career Mentor</span>
-                        <h3>Sarah Fernando</h3>
-                        <p>Software Engineer helping school leavers transition into the booming IT sector.</p>
-                    </div>
-                </div>
-
-                <div class="mentor-card glass scroll-reveal" style="transition-delay: 0.2s;">
-                    <div class="mentor-img-wrapper">
-                        <!-- Replace src -->
-                        <img src="images\Mentor-Mohammedrizwan.png" alt="Skill Mentor">
-                    </div>
-                    <div class="mentor-info">
-                        <span class="badge badge-blue">Skill Mentor</span>
-                        <h3>Mohammed Rizwan</h3>
-                        <p>Vocational Training Instructor focusing on practical skills for direct employment.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 7. Scholarship / Financial Aid Section -->
-    <section id="scholarships" class="scholarships section">
-        <div class="container">
-            <div class="split-layout">
-                <div class="split-text scroll-reveal">
-                    <h2>Financial Support for Your Dreams</h2>
-                    <p>Money should not be a barrier to education. We aggregate and guide you through various funding
-                        options available in Sri Lanka and abroad.</p>
-
-                    <ul class="aid-list">
-                        <li><i class="fas fa-landmark"></i> <strong>Government Scholarships:</strong> Mahapola,
-                            Bursaries, and Presidential Funds.</li>
-                        <li><i class="fas fa-hand-holding-heart"></i> <strong>NGO Support:</strong> Grants for rural and
-                            underprivileged students.</li>
-                        <li><i class="fas fa-laptop"></i> <strong>Free Courses:</strong> High-quality online courses
-                            with free certificates.</li>
-                        <li><i class="fas fa-file-invoice-dollar"></i> <strong>Student Loans:</strong> Low-interest
-                            educational loan schemes.</li>
-                        <li><i class="fas fa-tags"></i> <strong>Low-cost Learning:</strong> Subsidized vocational
-                            training (NVQ).</li>
-                    </ul>
-
-                    <a href="#" class="btn btn-primary mt-4">View Scholarships</a>
-                </div>
-                <div class="split-visual scroll-reveal">
-                    <div class="glass visual-card">
-                        <div class="visual-header">
-                            <h3><i class="fas fa-medal"></i> Scholarship Alerts</h3>
-                        </div>
-                        <div class="visual-body">
-                            <div class="alert-item">
-                                <div class="alert-icon"><i class="fas fa-graduation-cap"></i></div>
-                                <div class="alert-text">
-                                    <h4>Ministry of Higher Education</h4>
-                                    <p>Deadline: Oct 30, 2024</p>
+                            <div class="mt-6 grid grid-cols-3 gap-4">
+                                <div class="glass-dark p-3 rounded-lg border border-slate-700/50">
+                                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Daily Target</div>
+                                    <div class="text-lg font-bold text-white font-mono">240</div>
                                 </div>
-                                <span class="badge badge-cyan">New</span>
-                            </div>
-                            <div class="alert-item">
-                                <div class="alert-icon"><i class="fas fa-laptop-code"></i></div>
-                                <div class="alert-text">
-                                    <h4>Tech Startup Grant</h4>
-                                    <p>Deadline: Nov 15, 2024</p>
+                                <div class="glass-dark p-3 rounded-lg border border-slate-700/50">
+                                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Cycle Time</div>
+                                    <div class="text-lg font-bold text-white font-mono">A <span class="text-slate-500">|</span> 23m</div>
                                 </div>
-                            </div>
-                            <div class="alert-item">
-                                <div class="alert-icon"><i class="fas fa-globe-asia"></i></div>
-                                <div class="alert-text">
-                                    <h4>Foreign Uni Scholarship</h4>
-                                    <p>Deadline: Dec 01, 2024</p>
+                                <div class="glass-dark p-3 rounded-lg border border-slate-700/50">
+                                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">1st Pass Yield</div>
+                                    <div class="text-lg font-bold text-emerald-400 font-mono">98%</div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- 8. Impact Section -->
-    <section id="impact" class="impact section bg-darker">
-        <div class="container text-center">
-            <div class="section-title scroll-reveal">
-                <h2>Our Impact</h2>
-                <p>Building a skilled workforce for Sri Lanka with equal opportunities for everyone.</p>
-            </div>
-
-            <div class="impact-benefits scroll-reveal">
-                <span class="benefit-tag">Reduced Wasted Talent</span>
-                <span class="benefit-tag">Better Uni Choices</span>
-                <span class="benefit-tag">Employment Readiness</span>
-                <span class="benefit-tag">Mental Health Support</span>
-                <span class="benefit-tag">Equal Opportunities</span>
-                <span class="benefit-tag">Skilled Workforce</span>
-            </div>
-
-            <div class="stats-grid mt-5">
-                <div class="stat-card glass scroll-reveal">
-                    <h3 class="counter" data-target="10000">0</h3>
-                    <p>Students Guided</p>
-                </div>
-                <div class="stat-card glass scroll-reveal" style="transition-delay: 0.1s;">
-                    <h3 class="counter" data-target="500">0</h3>
-                    <p>Courses Listed</p>
-                </div>
-                <div class="stat-card glass scroll-reveal" style="transition-delay: 0.2s;">
-                    <h3 class="counter" data-target="100">0</h3>
-                    <p>Active Mentors</p>
-                </div>
-                <div class="stat-card glass scroll-reveal" style="transition-delay: 0.3s;">
-                    <h3 class="counter" data-target="50">0</h3>
-                    <p>Scholarship Opportunities</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- 9. Call-to-Action Section -->
-    <section id="cta" class="cta section">
-        <div class="container">
-            <div class="cta-card glass text-center scroll-reveal">
-                <h2>Your future still has a path. Let’s find it together.</h2>
-                <p>Start your journey with EduPath Lanka and discover the opportunities waiting for you.</p>
-                <a href="pathway.html" class="btn btn-primary btn-large cta-btn restricted-link">Get Started Now</a>
-            </div>
-        </div>
-        <!-- Decorative blobs -->
-        <div class="blob blob-3"></div>
-        <div class="blob blob-4"></div>
-    </section>
-
-    <!-- 10. Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-top">
-                <div class="footer-brand">
-                    <a href="#" class="logo">EduPath<span>Lanka</span></a>
-                    <p>Guiding Every Student Towards a Brighter Future</p>
-                    <div class="social-icons">
-                        <a href="#"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#"><i class="fab fa-twitter"></i></a>
-                        <a href="#"><i class="fab fa-instagram"></i></a>
-                        <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                        <!-- Right Chart (Circular Progress) -->
+                        <div class="w-1/2 flex items-center justify-center relative">
+                            <svg viewBox="0 0 36 36" class="circular-chart text-emerald-400 w-48 h-48 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                                <path class="circle-bg"
+                                    d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                />
+                                <path class="circle"
+                                    stroke-dasharray="49, 100"
+                                    d="M18 2.0845
+                                    a 15.9155 15.9155 0 0 1 0 31.831
+                                    a 15.9155 15.9155 0 0 1 0 -31.831"
+                                />
+                            </svg>
+                            <div class="absolute flex flex-col items-center justify-center">
+                                <span class="text-4xl font-bold text-white font-mono">49%</span>
+                                <span class="text-xs text-emerald-400 uppercase tracking-widest mt-1">Completed</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="footer-links">
-                    <h4>Quick Links</h4>
-                    <ul>
-                        <li><a href="#home">Home</a></li>
-                        <li><a href="#features">Features</a></li>
-                        <li><a href="pathway.html" class="restricted-link">Path Finder</a></li>
-                        <li><a href="#mentors">Mentors</a></li>
-                        <li><a href="#scholarships">Scholarships</a></li>
-                    </ul>
-                </div>
+                <!-- QUALITY MONITOR -->
+                <div class="glass w-[360px] p-5 flex flex-col relative overflow-hidden shrink-0">
+                    <div class="absolute top-0 right-0 w-1 h-full bg-purple-500 shadow-[0_0_10px_#a855f7]"></div>
 
-                <div class="footer-contact" id="contact">
-                    <h4>Contact Us</h4>
-                    <ul>
-                        <li><i class="fas fa-map-marker-alt"></i> Colombo, Sri Lanka</li>
-                        <li><i class="fas fa-envelope"></i> hello@edupathlanka.lk</li>
-                        <li><i class="fas fa-phone-alt"></i> +94 11 234 5678</li>
-                    </ul>
+                    <div class="mb-4">
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.957 11.957 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            Quality Monitor
+                        </h2>
+                        <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-1">Defect Breakdown</div>
+                    </div>
+
+                    <div class="flex-1 flex flex-col justify-between gap-2">
+                        <!-- Row 1 -->
+                        <div class="glass-dark px-4 py-2.5 rounded-lg border border-red-500/20 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 h-6 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div>
+                                <span class="text-sm text-slate-200">Test Fail</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-lg font-bold text-white font-mono">2</span>
+                                <span class="text-xs text-red-400 w-10 text-right">1.0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Row 2 -->
+                        <div class="glass-dark px-4 py-2.5 rounded-lg border border-orange-500/20 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"></div>
+                                <span class="text-sm text-slate-200">Visual Fail</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-lg font-bold text-white font-mono">1</span>
+                                <span class="text-xs text-orange-400 w-10 text-right">0.5%</span>
+                            </div>
+                        </div>
+
+                        <!-- Row 3 -->
+                        <div class="glass-dark px-4 py-2.5 rounded-lg border border-yellow-500/20 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 h-6 bg-yellow-500 rounded-full shadow-[0_0_8px_rgba(234,179,8,0.5)]"></div>
+                                <span class="text-sm text-slate-200">Length Fail</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-lg font-bold text-white font-mono">1</span>
+                                <span class="text-xs text-yellow-400 w-10 text-right">0.5%</span>
+                            </div>
+                        </div>
+
+                        <!-- Total Row -->
+                        <div class="glass px-4 py-3 rounded-lg border border-slate-600 flex items-center justify-between mt-1 bg-slate-800/50">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 h-6 bg-slate-400 rounded-full"></div>
+                                <span class="text-sm font-bold text-white uppercase tracking-wider">Total Fail</span>
+                            </div>
+                            <div class="flex items-center gap-4">
+                                <span class="text-xl font-bold text-red-400 font-mono">4</span>
+                                <span class="text-sm font-bold text-red-400 w-10 text-right">2.0%</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="footer-bottom">
-                <p>&copy; 2024 EduPath Lanka. All rights reserved.</p>
+            <!-- CENTER CHART -->
+            <div class="glass glass-glow-purple flex-1 p-5 flex flex-col relative min-h-[300px]">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-sm font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                            Hourly Output
+                        </h2>
+                        <div class="text-[11px] text-indigo-300/70 uppercase tracking-wider mt-1">Final 02 PASS output by production hour</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="glass-dark px-3 py-1 rounded text-xs text-indigo-300 border border-indigo-500/30">Today</div>
+                        <div class="glass px-3 py-1 rounded text-xs text-white bg-indigo-500/20 border border-indigo-500/50">Hourly</div>
+                    </div>
+                </div>
+
+                <div class="flex-1 w-full relative">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- BOTTOM KPI SECTION -->
+            <div class="flex gap-4 h-[120px] shrink-0">
+                <!-- Card 1: CONWIP -->
+                <div class="glass flex-1 p-4 flex flex-col justify-center relative overflow-hidden group">
+                    <div class="absolute -right-6 -top-6 w-16 h-16 bg-blue-500/10 rounded-full blur-xl group-hover:bg-blue-500/20 transition-all"></div>
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1 flex justify-between">
+                        <span>CONWIP</span>
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-bold text-white font-mono">23</span>
+                        <span class="text-xs text-slate-500">Cards</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1 mt-3 rounded-full overflow-hidden">
+                        <div class="bg-blue-500 w-[60%] h-full rounded-full shadow-[0_0_5px_#3b82f6]"></div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Running WIP -->
+                <div class="glass flex-1 p-4 flex flex-col justify-center relative overflow-hidden group">
+                    <div class="absolute -right-6 -top-6 w-16 h-16 bg-cyan-500/10 rounded-full blur-xl group-hover:bg-cyan-500/20 transition-all"></div>
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1 flex justify-between">
+                        <span>Running WIP</span>
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-bold text-white font-mono">8</span>
+                        <span class="text-xs text-slate-500">PCS</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1 mt-3 rounded-full overflow-hidden">
+                        <div class="bg-cyan-400 w-[20%] h-full rounded-full shadow-[0_0_5px_#22d3ee]"></div>
+                    </div>
+                </div>
+
+                <!-- Card 3: 1st Pass Yield -->
+                <div class="glass flex-1 p-4 flex flex-col justify-center relative overflow-hidden group">
+                    <div class="absolute -right-6 -top-6 w-16 h-16 bg-emerald-500/10 rounded-full blur-xl group-hover:bg-emerald-500/20 transition-all"></div>
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1 flex justify-between">
+                        <span>1st Pass Yield</span>
+                        <svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-bold text-emerald-400 font-mono">98.0%</span>
+                        <span class="text-xs text-emerald-500/70">Excellent</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1 mt-3 rounded-full overflow-hidden">
+                        <div class="bg-emerald-400 w-[98%] h-full rounded-full shadow-[0_0_5px_#10b981]"></div>
+                    </div>
+                </div>
+
+                <!-- Card 4: Output Balance -->
+                <div class="glass flex-1 p-4 flex flex-col justify-center relative overflow-hidden group">
+                    <div class="absolute -right-6 -top-6 w-16 h-16 bg-violet-500/10 rounded-full blur-xl group-hover:bg-violet-500/20 transition-all"></div>
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1 flex justify-between">
+                        <span>Output Balance</span>
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-bold text-white font-mono">67</span>
+                        <span class="text-xs text-slate-500">PCS remaining</span>
+                    </div>
+                    <div class="w-full bg-slate-800 h-1 mt-3 rounded-full overflow-hidden">
+                        <div class="bg-violet-500 w-[30%] h-full rounded-full shadow-[0_0_5px_#8b5cf6]"></div>
+                    </div>
+                </div>
+
+                <!-- Card 5: Team Attendance -->
+                <div class="glass w-[360px] p-4 flex flex-col justify-center relative overflow-hidden shrink-0 border-slate-600/50 bg-slate-800/30">
+                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-2 flex justify-between">
+                        <span>Team Attendance</span>
+                        <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                    </div>
+
+                    <div class="flex items-center gap-6 mt-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold text-emerald-400 font-mono">22</span>
+                            <span class="text-xs text-slate-400">Present</span>
+                        </div>
+                        <div class="w-px h-8 bg-slate-700"></div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl font-bold text-red-400/80 font-mono">2</span>
+                            <span class="text-xs text-slate-400">Absent</span>
+                        </div>
+                    </div>
+
+                    <!-- People dots -->
+                    <div class="flex flex-wrap gap-1 mt-3">
+                        <!-- 22 Present dots -->
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
+
+                        <!-- 2 Absent dots -->
+                        <div class="w-1.5 h-1.5 rounded-full bg-red-500/50"></div>
+                        <div class="w-1.5 h-1.5 rounded-full bg-red-500/50"></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="flex items-center justify-between px-2 h-[30px] shrink-0 text-[10px] text-slate-500 uppercase tracking-widest mt-1">
+        <div class="flex items-center gap-2">
+            <svg class="w-3 h-3 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.957 11.957 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            <span>QUALITY FIRST &middot; SAFETY ALWAYS &middot; ZERO DEFECTS</span>
+        </div>
+        <div class="flex items-center gap-6">
+            <span>Last Updated: 03:53:38 PM</span>
+            <div class="flex items-center gap-1.5 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50">
+                <span>Auto Refresh: ON</span>
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_3px_#10b981]"></div>
             </div>
         </div>
     </footer>
 
-    <!-- Custom JS -->
-    <script src="script.js"></script>
-    <script type="module" src="auth-nav.js"></script>
-</body>
+    <!-- Chart Setup -->
+    <script>
+        const ctx = document.getElementById('hourlyChart').getContext('2d');
 
+        // Custom gradient for bars
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, 'rgba(139, 92, 246, 0.9)');  // Violet
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.6)');  // Blue
+
+        const emptyGradient = ctx.createLinearGradient(0, 0, 0, 400);
+        emptyGradient.addColorStop(0, 'rgba(100, 116, 139, 0.1)');
+        emptyGradient.addColorStop(1, 'rgba(100, 116, 139, 0.05)');
+
+        const labels = ['1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM'];
+        const dataValues = [7, 29, 31, 30, 28, 29, 22, 15, 16, 0, 0, 0, 0];
+
+        // We will make future bars look like dashed placeholders
+        const backgroundColors = dataValues.map(v => v > 0 ? gradient : emptyGradient);
+        const borderColors = dataValues.map(v => v > 0 ? 'transparent' : 'rgba(148, 163, 184, 0.3)');
+        const borderDash = dataValues.map(v => v > 0 ? [] : [5, 5]);
+        const borderWidth = dataValues.map(v => v > 0 ? 0 : 1);
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Output',
+                    data: dataValues,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: borderWidth,
+                    borderDash: borderDash,
+                    borderRadius: 6,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleFont: { family: 'Inter', size: 13 },
+                        bodyFont: { family: 'Inter', size: 14, weight: 'bold' },
+                        padding: 10,
+                        borderColor: 'rgba(99, 102, 241, 0.3)',
+                        borderWidth: 1,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.raw > 0 ? context.raw + ' PCS' : 'No Data';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 40,
+                        ticks: {
+                            stepSize: 10,
+                            color: '#64748b',
+                            font: { family: 'Inter', size: 11 }
+                        },
+                        grid: {
+                            color: 'rgba(100, 116, 139, 0.1)',
+                            drawBorder: false,
+                            borderDash: [5, 5]
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: '#94a3b8',
+                            font: { family: 'Inter', size: 11, weight: '500' }
+                        },
+                        grid: {
+                            display: false,
+                            drawBorder: false
+                        }
+                    }
+                },
+                animation: {
+                    duration: 2000,
+                    easing: 'easeOutQuart'
+                }
+            },
+            plugins: [{
+                id: 'valueLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx, data } = chart;
+                    ctx.save();
+
+                    chart.getDatasetMeta(0).data.forEach((bar, index) => {
+                        const value = data.datasets[0].data[index];
+                        if (value > 0) {
+                            ctx.fillStyle = '#e2e8f0';
+                            ctx.font = 'bold 12px Inter';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(value, bar.x, bar.y - 8);
+                        } else {
+                            // Draw small clock icon placeholder
+                            ctx.beginPath();
+                            ctx.arc(bar.x, bar.y - 10, 6, 0, 2 * Math.PI);
+                            ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)';
+                            ctx.lineWidth = 1.5;
+                            ctx.stroke();
+
+                            ctx.beginPath();
+                            ctx.moveTo(bar.x, bar.y - 10);
+                            ctx.lineTo(bar.x, bar.y - 13);
+                            ctx.moveTo(bar.x, bar.y - 10);
+                            ctx.lineTo(bar.x + 2, bar.y - 8);
+                            ctx.stroke();
+                        }
+                    });
+                    ctx.restore();
+                }
+            }]
+        });
+
+        // Simple clock update
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // the hour '0' should be '12'
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            const timeString = `${hours.toString().padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
+            // Optional: document.getElementById('clock').innerText = timeString;
+            // Keeping static as per prompt requirements for the "sample values"
+        }
+        setInterval(updateClock, 1000);
+    </script>
+</body>
 </html>
