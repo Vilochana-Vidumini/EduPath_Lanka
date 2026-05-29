@@ -23,48 +23,48 @@
         font-family: "Inter", sans-serif;
         background: radial-gradient(
           circle at top left,
-          #1e293b 0%,
-          #0f172a 50%,
-          #0b1120 100%
+          #f8fafc 0%,
+          #f1f5f9 50%,
+          #e2e8f0 100%
         );
         margin: 0;
         padding: 0;
         height: 100vh;
         width: 100vw;
         overflow: hidden;
-        color: #e2e8f0;
+        color: #1e293b;
         display: flex;
         flex-direction: column;
       }
 
       /* Glassmorphism utility classes */
       .glass {
-        background: rgba(30, 41, 59, 0.4);
+        background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        border: 1px solid rgba(255, 255, 255, 0.8);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
         border-radius: 0.75rem;
       }
 
       .glass-dark {
-        background: rgba(15, 23, 42, 0.6);
+        background: rgba(241, 245, 249, 0.7);
         backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.5);
         border-radius: 0.75rem;
       }
 
       .glass-glow-cyan {
         box-shadow:
-          0 0 15px rgba(6, 182, 212, 0.05),
-          inset 0 0 15px rgba(6, 182, 212, 0.02);
+          0 0 15px rgba(6, 182, 212, 0.15),
+          inset 0 0 15px rgba(6, 182, 212, 0.1);
         border: 1px solid rgba(6, 182, 212, 0.2);
       }
 
       .glass-glow-blue {
         box-shadow:
-          0 0 15px rgba(59, 130, 246, 0.05),
-          inset 0 0 15px rgba(59, 130, 246, 0.02);
+          0 0 15px rgba(59, 130, 246, 0.15),
+          inset 0 0 15px rgba(59, 130, 246, 0.1);
         border: 1px solid rgba(59, 130, 246, 0.2);
       }
 
@@ -77,14 +77,14 @@
       }
       .circle-bg {
         fill: none;
-        stroke: rgba(255, 255, 255, 0.05);
+        stroke: rgba(0, 0, 0, 0.05);
         stroke-width: 3;
       }
       .circle {
         fill: none;
         stroke-width: 3;
         stroke-linecap: round;
-        stroke: #10b981;
+        stroke: #059669;
         animation: progress 1s ease-out forwards;
         box-shadow: 0 0 10px #10b981;
         filter: drop-shadow(0 0 4px rgba(16, 185, 129, 0.5));
@@ -127,10 +127,10 @@
       <div class="flex items-center gap-5">
         <!-- Professional SVG Logo -->
         <div
-          class="flex items-center justify-center bg-cyan-500/10 p-2 rounded-lg border border-cyan-500/30"
+          class="flex items-center justify-center bg-cyan-500/20 p-2 rounded-lg border border-cyan-500/30"
         >
           <svg
-            class="w-8 h-8 text-cyan-400"
+            class="w-8 h-8 text-cyan-700"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -148,7 +148,7 @@
         </div>
 
         <div class="flex flex-col">
-          <h1 class="text-xl font-bold tracking-widest text-white">
+          <h1 class="text-xl font-bold tracking-widest text-slate-900">
             PRODUCTION STATIC DASHBOARD - CELL 05
           </h1>
         </div>
@@ -158,7 +158,7 @@
       <div class="flex items-center gap-3">
         <div class="glass-dark px-4 py-2 rounded-lg flex items-center gap-2">
           <svg
-            class="w-4 h-4 text-slate-400"
+            class="w-4 h-4 text-slate-600"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -170,13 +170,13 @@
               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
             ></path>
           </svg>
-          <span class="text-sm font-medium text-slate-200"
+          <span class="text-sm font-medium text-slate-800"
             >May 06, 2026 | Tuesday</span
           >
         </div>
         <div class="glass-dark px-4 py-2 rounded-lg flex items-center gap-2">
           <svg
-            class="w-4 h-4 text-cyan-400"
+            class="w-4 h-4 text-cyan-700"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -189,18 +189,18 @@
             ></path>
           </svg>
           <span
-            class="text-sm font-bold text-cyan-400 font-mono text-lg leading-none"
+            class="text-sm font-bold text-cyan-700 font-mono text-lg leading-none"
             id="clock"
             >03:53:38 PM</span
           >
         </div>
         <div
-          class="glass px-5 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 flex items-center gap-2 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
+          class="glass px-5 py-2 rounded-lg border border-emerald-500/30 bg-emerald-500/20 flex items-center gap-2 shadow-[0_0_10px_rgba(16,185,129,0.2)]"
         >
           <div
             class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse-glow shadow-[0_0_8px_#10b981]"
           ></div>
-          <span class="text-sm font-bold tracking-wider text-emerald-400"
+          <span class="text-sm font-bold tracking-wider text-emerald-600"
             >RUNNING</span
           >
         </div>
@@ -218,7 +218,7 @@
           ></div>
 
           <h2
-            class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-5 flex items-center gap-2"
+            class="text-xs font-bold text-slate-600 uppercase tracking-widest mb-5 flex items-center gap-2"
           >
             <svg
               class="w-4 h-4"
@@ -239,7 +239,7 @@
           <div class="space-y-5">
             <div>
               <div
-                class="text-[10px] text-slate-400 uppercase tracking-wider mb-1"
+                class="text-[10px] text-slate-600 uppercase tracking-wider mb-1"
               >
                 Project Number
               </div>
@@ -247,7 +247,7 @@
                 class="glass-dark border-cyan-500/30 inline-block px-4 py-2 rounded-lg"
               >
                 <span
-                  class="text-2xl font-bold text-white tracking-wider font-mono"
+                  class="text-2xl font-bold text-slate-900 tracking-wider font-mono"
                   >9032072</span
                 >
               </div>
@@ -256,42 +256,42 @@
             <div class="space-y-3">
               <div>
                 <div
-                  class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5"
+                  class="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5"
                 >
                   Customer
                 </div>
-                <div class="text-base font-semibold text-slate-200">
+                <div class="text-base font-semibold text-slate-800">
                   ABC Wiring Systems
                 </div>
               </div>
               <div>
                 <div
-                  class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5"
+                  class="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5"
                 >
                   Customer Description
                 </div>
-                <div class="text-sm font-medium text-slate-300">
+                <div class="text-sm font-medium text-slate-700">
                   Model ZX-120
                 </div>
               </div>
               <div>
                 <div
-                  class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5"
+                  class="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5"
                 >
                   Project Order No.
                 </div>
-                <div class="text-sm font-medium text-slate-300 font-mono">
+                <div class="text-sm font-medium text-slate-700 font-mono">
                   1207842
                 </div>
               </div>
               <div>
                 <div
-                  class="text-[10px] text-slate-400 uppercase tracking-wider mb-0.5"
+                  class="text-[10px] text-slate-600 uppercase tracking-wider mb-0.5"
                 >
                   Build Type
                 </div>
                 <div
-                  class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700"
+                  class="inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-slate-200 text-slate-700 border border-slate-300"
                 >
                   Standard Build
                 </div>
@@ -299,10 +299,10 @@
             </div>
           </div>
 
-          <hr class="border-slate-700/50 my-6" />
+          <hr class="border-slate-300/80 my-6" />
 
           <h2
-            class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"
+            class="text-xs font-bold text-slate-600 uppercase tracking-widest mb-4 flex items-center gap-2"
           >
             <svg
               class="w-4 h-4"
@@ -322,24 +322,24 @@
 
           <div class="space-y-3">
             <div class="flex justify-between items-center">
-              <span class="text-xs text-slate-400">Daily Target</span>
-              <span class="text-sm font-bold text-white">240 PCS</span>
+              <span class="text-xs text-slate-600">Daily Target</span>
+              <span class="text-sm font-bold text-slate-900">240 PCS</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-xs text-slate-400">Start Date</span>
-              <span class="text-sm font-medium text-slate-300">03/06/2026</span>
+              <span class="text-xs text-slate-600">Start Date</span>
+              <span class="text-sm font-medium text-slate-700">03/06/2026</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-xs text-slate-400">End Date</span>
-              <span class="text-sm font-medium text-slate-300">03/09/2026</span>
+              <span class="text-xs text-slate-600">End Date</span>
+              <span class="text-sm font-medium text-slate-700">03/09/2026</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-xs text-slate-400">Start Time</span>
-              <span class="text-sm font-medium text-slate-300">11:15 AM</span>
+              <span class="text-xs text-slate-600">Start Time</span>
+              <span class="text-sm font-medium text-slate-700">11:15 AM</span>
             </div>
             <div class="flex justify-between items-center">
-              <span class="text-xs text-slate-400">End Time</span>
-              <span class="text-sm font-medium text-slate-300">05:30 PM</span>
+              <span class="text-xs text-slate-600">End Time</span>
+              <span class="text-sm font-medium text-slate-700">05:30 PM</span>
             </div>
           </div>
 
@@ -364,10 +364,10 @@
           <div class="flex justify-between items-start mb-4">
             <div>
               <h2
-                class="text-sm font-bold text-slate-200 uppercase tracking-widest flex items-center gap-2"
+                class="text-sm font-bold text-slate-800 uppercase tracking-widest flex items-center gap-2"
               >
                 <svg
-                  class="w-5 h-5 text-blue-400"
+                  class="w-5 h-5 text-blue-700"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -394,7 +394,7 @@
                 Today
               </div>
               <div
-                class="glass-dark px-3 py-1 rounded text-xs text-slate-400 border border-slate-700/50"
+                class="glass-dark px-3 py-1 rounded text-xs text-slate-600 border border-slate-300/80"
               >
                 Hourly
               </div>
@@ -407,7 +407,7 @@
         </div>
 
         <!-- BOTTOM AREA: KPIs & Quality Monitor -->
-        <div class="flex gap-4 shrink-0 h-[340px]">
+        <div class="flex gap-4 shrink-0 min-h-[260px] h-auto">
           <!-- KPI CARDS GRID -->
           <div class="flex-1 grid grid-cols-4 grid-rows-2 gap-4">
             <!-- 1. Current Output -->
@@ -415,13 +415,13 @@
               class="glass p-4 flex flex-col justify-center relative overflow-hidden group"
             >
               <div
-                class="absolute -right-6 -top-6 w-16 h-16 bg-cyan-500/10 rounded-full blur-xl"
+                class="absolute -right-6 -top-6 w-16 h-16 bg-cyan-500/20 rounded-full blur-xl"
               ></div>
               <div
-                class="text-[10px] text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"
+                class="text-[10px] text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5"
               >
                 <svg
-                  class="w-3.5 h-3.5 text-cyan-400"
+                  class="w-3.5 h-3.5 text-cyan-700"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -437,10 +437,10 @@
               </div>
               <div class="flex items-baseline gap-2">
                 <span
-                  class="text-4xl font-bold text-white font-mono drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]"
+                  class="text-4xl font-bold text-slate-900 font-mono drop-shadow-[0_0_8px_rgba(6,182,212,0.5)]"
                   >173</span
                 >
-                <span class="text-xs text-cyan-400">PCS</span>
+                <span class="text-xs text-cyan-700">PCS</span>
               </div>
             </div>
 
@@ -449,10 +449,10 @@
               class="glass p-4 flex flex-col justify-center relative overflow-hidden group"
             >
               <div
-                class="text-[10px] text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"
+                class="text-[10px] text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5"
               >
                 <svg
-                  class="w-3.5 h-3.5 text-blue-400"
+                  class="w-3.5 h-3.5 text-blue-700"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -467,8 +467,8 @@
                 Daily Target
               </div>
               <div class="flex items-baseline gap-2">
-                <span class="text-4xl font-bold text-white font-mono">240</span>
-                <span class="text-xs text-slate-400">PCS</span>
+                <span class="text-4xl font-bold text-slate-900 font-mono">240</span>
+                <span class="text-xs text-slate-600">PCS</span>
               </div>
             </div>
 
@@ -477,10 +477,10 @@
               class="glass p-4 flex flex-col justify-center relative overflow-hidden group"
             >
               <div
-                class="text-[10px] text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"
+                class="text-[10px] text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5"
               >
                 <svg
-                  class="w-3.5 h-3.5 text-slate-400"
+                  class="w-3.5 h-3.5 text-slate-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -495,10 +495,10 @@
                 Product Cycle Time
               </div>
               <div class="flex items-baseline gap-2">
-                <span class="text-3xl font-bold text-white font-mono"
+                <span class="text-3xl font-bold text-slate-900 font-mono"
                   >A <span class="text-slate-500 font-normal">|</span> 23</span
                 >
-                <span class="text-xs text-slate-400">Min</span>
+                <span class="text-xs text-slate-600">Min</span>
               </div>
             </div>
 
@@ -508,10 +508,10 @@
             >
               <div>
                 <div
-                  class="text-[10px] text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"
+                  class="text-[10px] text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5"
                 >
                   <svg
-                    class="w-3.5 h-3.5 text-emerald-400"
+                    class="w-3.5 h-3.5 text-emerald-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -526,7 +526,7 @@
                   Completed
                 </div>
                 <div class="flex items-baseline gap-1">
-                  <span class="text-3xl font-bold text-white font-mono"
+                  <span class="text-3xl font-bold text-slate-900 font-mono"
                     >49%</span
                   >
                 </div>
@@ -534,7 +534,7 @@
               <div class="w-16 h-16 relative">
                 <svg
                   viewBox="0 0 36 36"
-                  class="circular-chart text-emerald-400 w-full h-full"
+                  class="circular-chart text-emerald-600 w-full h-full"
                 >
                   <path
                     class="circle-bg"
@@ -554,10 +554,10 @@
               class="glass p-4 flex flex-col justify-center relative overflow-hidden group"
             >
               <div
-                class="text-[10px] text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"
+                class="text-[10px] text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5"
               >
                 <svg
-                  class="w-3.5 h-3.5 text-emerald-400"
+                  class="w-3.5 h-3.5 text-emerald-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -572,12 +572,12 @@
                 1st Pass Yield
               </div>
               <div class="flex items-baseline gap-2">
-                <span class="text-3xl font-bold text-emerald-400 font-mono"
+                <span class="text-3xl font-bold text-emerald-600 font-mono"
                   >98%</span
                 >
               </div>
               <div
-                class="w-full bg-slate-800 h-1 mt-2 rounded-full overflow-hidden"
+                class="w-full bg-slate-200 h-1 mt-2 rounded-full overflow-hidden"
               >
                 <div
                   class="bg-emerald-400 w-[98%] h-full rounded-full shadow-[0_0_5px_#10b981]"
@@ -590,10 +590,10 @@
               class="glass p-4 flex flex-col justify-center relative overflow-hidden group"
             >
               <div
-                class="text-[10px] text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"
+                class="text-[10px] text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5"
               >
                 <svg
-                  class="w-3.5 h-3.5 text-purple-400"
+                  class="w-3.5 h-3.5 text-purple-700"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -608,8 +608,8 @@
                 CONWIP
               </div>
               <div class="flex items-baseline gap-2">
-                <span class="text-3xl font-bold text-white font-mono">23</span>
-                <span class="text-xs text-slate-400">Cards</span>
+                <span class="text-3xl font-bold text-slate-900 font-mono">23</span>
+                <span class="text-xs text-slate-600">Cards</span>
               </div>
             </div>
 
@@ -618,7 +618,7 @@
               class="glass p-4 flex flex-col justify-center relative overflow-hidden group"
             >
               <div
-                class="text-[10px] text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5"
+                class="text-[10px] text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5"
               >
                 <svg
                   class="w-3.5 h-3.5 text-teal-400"
@@ -636,8 +636,8 @@
                 Running WIP
               </div>
               <div class="flex items-baseline gap-2">
-                <span class="text-3xl font-bold text-white font-mono">8</span>
-                <span class="text-xs text-slate-400">PCS</span>
+                <span class="text-3xl font-bold text-slate-900 font-mono">8</span>
+                <span class="text-xs text-slate-600">PCS</span>
               </div>
             </div>
 
@@ -646,11 +646,11 @@
               class="glass p-4 flex flex-col justify-center relative overflow-hidden group"
             >
               <div
-                class="text-[10px] text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between"
+                class="text-[10px] text-slate-600 uppercase tracking-wider mb-2 flex items-center justify-between"
               >
                 <div class="flex items-center gap-1.5">
                   <svg
-                    class="w-3.5 h-3.5 text-slate-400"
+                    class="w-3.5 h-3.5 text-slate-600"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -667,17 +667,17 @@
               </div>
               <div class="flex items-center gap-4 mt-1">
                 <div class="flex items-center gap-1.5">
-                  <span class="text-2xl font-bold text-emerald-400 font-mono"
+                  <span class="text-2xl font-bold text-emerald-600 font-mono"
                     >22</span
                   >
-                  <span class="text-[10px] text-slate-400">Present</span>
+                  <span class="text-[10px] text-slate-600">Present</span>
                 </div>
                 <div class="w-px h-6 bg-slate-700"></div>
                 <div class="flex items-center gap-1.5">
-                  <span class="text-2xl font-bold text-red-400/80 font-mono"
+                  <span class="text-2xl font-bold text-red-600/80 font-mono"
                     >2</span
                   >
-                  <span class="text-[10px] text-slate-400">Absent</span>
+                  <span class="text-[10px] text-slate-600">Absent</span>
                 </div>
               </div>
 
@@ -765,10 +765,10 @@
 
             <div class="mb-5">
               <h2
-                class="text-xs font-bold text-slate-300 uppercase tracking-widest flex items-center gap-2"
+                class="text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-2"
               >
                 <svg
-                  class="w-4 h-4 text-red-400"
+                  class="w-4 h-4 text-red-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -783,7 +783,7 @@
                 Quality Monitor
               </h2>
               <div
-                class="text-[10px] text-slate-400 uppercase tracking-wider mt-1"
+                class="text-[10px] text-slate-600 uppercase tracking-wider mt-1"
               >
                 Defect Breakdown
               </div>
@@ -798,11 +798,11 @@
                   <div
                     class="w-1 h-6 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.5)]"
                   ></div>
-                  <span class="text-sm text-slate-200">Test Fail</span>
+                  <span class="text-sm text-slate-800">Test Fail</span>
                 </div>
                 <div class="flex items-center gap-4">
-                  <span class="text-lg font-bold text-white font-mono">2</span>
-                  <span class="text-xs text-red-400 w-10 text-right">1.0%</span>
+                  <span class="text-lg font-bold text-slate-900 font-mono">2</span>
+                  <span class="text-xs text-red-600 w-10 text-right">1.0%</span>
                 </div>
               </div>
 
@@ -814,11 +814,11 @@
                   <div
                     class="w-1 h-6 bg-orange-500 rounded-full shadow-[0_0_8px_rgba(249,115,22,0.5)]"
                   ></div>
-                  <span class="text-sm text-slate-200">Visual Fail</span>
+                  <span class="text-sm text-slate-800">Visual Fail</span>
                 </div>
                 <div class="flex items-center gap-4">
-                  <span class="text-lg font-bold text-white font-mono">1</span>
-                  <span class="text-xs text-orange-400 w-10 text-right"
+                  <span class="text-lg font-bold text-slate-900 font-mono">1</span>
+                  <span class="text-xs text-orange-600 w-10 text-right"
                     >0.5%</span
                   >
                 </div>
@@ -832,11 +832,11 @@
                   <div
                     class="w-1 h-6 bg-yellow-500 rounded-full shadow-[0_0_8px_rgba(234,179,8,0.5)]"
                   ></div>
-                  <span class="text-sm text-slate-200">Length Fail</span>
+                  <span class="text-sm text-slate-800">Length Fail</span>
                 </div>
                 <div class="flex items-center gap-4">
-                  <span class="text-lg font-bold text-white font-mono">1</span>
-                  <span class="text-xs text-yellow-400 w-10 text-right"
+                  <span class="text-lg font-bold text-slate-900 font-mono">1</span>
+                  <span class="text-xs text-yellow-600 w-10 text-right"
                     >0.5%</span
                   >
                 </div>
@@ -844,20 +844,20 @@
 
               <!-- Total Row -->
               <div
-                class="glass px-4 py-4 rounded-lg border border-red-500/50 flex items-center justify-between mt-2 bg-red-500/10"
+                class="glass px-4 py-4 rounded-lg border border-red-500/50 flex items-center justify-between mt-2 bg-red-500/20"
               >
                 <div class="flex items-center gap-3">
                   <div class="w-1 h-6 bg-red-400 rounded-full"></div>
                   <span
-                    class="text-sm font-bold text-white uppercase tracking-wider"
+                    class="text-sm font-bold text-slate-900 uppercase tracking-wider"
                     >Total Fail</span
                   >
                 </div>
                 <div class="flex items-center gap-4">
-                  <span class="text-2xl font-bold text-red-400 font-mono"
+                  <span class="text-2xl font-bold text-red-600 font-mono"
                     >4</span
                   >
-                  <span class="text-sm font-bold text-red-400 w-10 text-right"
+                  <span class="text-sm font-bold text-red-600 w-10 text-right"
                     >2.0%</span
                   >
                 </div>
@@ -891,7 +891,7 @@
       <div class="flex items-center gap-6">
         <span>Last Updated: 03:53:38 PM</span>
         <div
-          class="flex items-center gap-1.5 bg-slate-800/50 px-2 py-0.5 rounded border border-slate-700/50"
+          class="flex items-center gap-1.5 bg-slate-200/50 px-2 py-0.5 rounded border border-slate-300/80"
         >
           <span>Auto Refresh: ON</span>
           <div
@@ -992,14 +992,14 @@
                 font: { family: "Inter", size: 11 },
               },
               grid: {
-                color: "rgba(255, 255, 255, 0.05)",
+                color: "rgba(100, 116, 139, 0.1)",
                 drawBorder: false,
                 borderDash: [5, 5],
               },
             },
             x: {
               ticks: {
-                color: "#cbd5e1",
+                color: "#64748b",
                 font: { family: "Inter", size: 11, weight: "500" },
               },
               grid: {
@@ -1023,7 +1023,7 @@
               chart.getDatasetMeta(0).data.forEach((bar, index) => {
                 const value = data.datasets[0].data[index];
                 if (value > 0) {
-                  ctx.fillStyle = "#f8fafc";
+                  ctx.fillStyle = "#1e293b";
                   ctx.font = "bold 13px Inter";
                   ctx.textAlign = "center";
                   ctx.fillText(value, bar.x, bar.y - 10);
