@@ -1,0 +1,1 @@
+- For frontend tasks, always run `verify_dashboard.py` via Playwright to ensure pixel-perfect rendering and capture visual output.
