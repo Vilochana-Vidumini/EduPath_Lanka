@@ -1,0 +1,339 @@
+/* EduPath Lanka — Light / Dark theme (shared) */
+
+html[data-theme="light"],
+:root {
+    --theme-bg: #f8fafc;
+    --theme-surface: #ffffff;
+    --theme-card: rgba(255, 255, 255, 0.86);
+    --theme-border: rgba(148, 163, 184, 0.35);
+    --theme-text: #0f172a;
+    --theme-muted: #64748b;
+    --theme-primary: #2563eb;
+    --theme-accent: #06b6d4;
+    --nav-bg-theme: rgba(255, 255, 255, 0.88);
+    --nav-border-theme: rgba(226, 232, 240, 0.75);
+    --hero-overlay: linear-gradient(90deg, rgba(255, 255, 255, 0.96) 0%, rgba(239, 246, 255, 0.9) 45%, rgba(224, 242, 254, 0.55) 75%, rgba(255, 255, 255, 0.15) 100%);
+    --body-gradient: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+}
+
+html[data-theme="dark"] {
+    --theme-bg: #020617;
+    --theme-surface: #0f172a;
+    --theme-card: rgba(15, 23, 42, 0.86);
+    --theme-border: rgba(148, 163, 184, 0.25);
+    --theme-text: #f8fafc;
+    --theme-muted: #cbd5e1;
+    --theme-primary: #38bdf8;
+    --theme-accent: #60a5fa;
+    --nav-bg-theme: rgba(15, 23, 42, 0.92);
+    --nav-border-theme: rgba(148, 163, 184, 0.2);
+    --hero-overlay: linear-gradient(90deg, rgba(2, 6, 23, 0.94) 0%, rgba(15, 23, 42, 0.88) 45%, rgba(15, 23, 42, 0.72) 75%, rgba(2, 6, 23, 0.35) 100%);
+    --body-gradient: linear-gradient(160deg, #020617 0%, #0f172a 50%, #020617 100%);
+}
+
+html[data-theme="dark"] body {
+    background: var(--body-gradient) !important;
+    color: var(--theme-muted);
+}
+
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] .logo,
+html[data-theme="dark"] .section-title h2 {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] p {
+    color: var(--theme-muted);
+}
+
+/* Theme toggle button */
+.theme-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35));
+    background: var(--theme-card, rgba(255, 255, 255, 0.86));
+    color: var(--theme-primary, #2563eb);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.25s ease, background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+    flex-shrink: 0;
+    padding: 0;
+    font-size: 1rem;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.06) rotate(8deg);
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.2);
+}
+
+html[data-theme="dark"] .theme-toggle:hover {
+    box-shadow: 0 6px 18px rgba(56, 189, 248, 0.25);
+}
+
+.nav-buttons {
+    gap: 0.65rem;
+}
+
+.mobile-theme-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--theme-border);
+}
+
+.mobile-theme-row span {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--theme-text, #0f172a);
+}
+
+/* Map shared variables used across page CSS files */
+html[data-theme="dark"] {
+    --bg-light: #020617;
+    --bg-light-alt: #0f172a;
+    --bg-dark: #020617;
+    --bg-darker: #0f172a;
+    --nav-bg: #0f172a;
+    --nav-text: #f8fafc;
+    --text-main: #cbd5e1;
+    --text-muted: #94a3b8;
+    --text-light: #f8fafc;
+    --text-heading: #f8fafc;
+    --deep-blue: #e2e8f0;
+    --primary-blue: #38bdf8;
+    --primary-cyan: #22d3ee;
+    --border-color: rgba(148, 163, 184, 0.25);
+    --glass-bg: rgba(15, 23, 42, 0.86);
+    --glass-border: rgba(148, 163, 184, 0.25);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    --hero-gradient: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+    --hero-bg-light: #020617;
+}
+
+html[data-theme="dark"] .header,
+html[data-theme="dark"] header.navbar {
+    background: var(--nav-bg-theme) !important;
+    border-bottom-color: var(--nav-border-theme) !important;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35) !important;
+}
+
+html[data-theme="dark"] .header.scrolled {
+    background: rgba(15, 23, 42, 0.96) !important;
+}
+
+html[data-theme="dark"] .nav-links a,
+html[data-theme="dark"] .logo {
+    color: var(--theme-muted);
+}
+
+html[data-theme="dark"] .nav-links a:hover,
+html[data-theme="dark"] .nav-links a.active {
+    color: var(--theme-primary);
+}
+
+html[data-theme="dark"] .hamburger,
+html[data-theme="dark"] .close-btn {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .mobile-menu {
+    background: var(--theme-surface);
+    box-shadow: -8px 0 30px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme="dark"] .glass,
+html[data-theme="dark"] .card {
+    background: var(--glass-bg) !important;
+    border-color: var(--glass-border) !important;
+    color: var(--theme-muted);
+}
+
+html[data-theme="dark"] .btn-login {
+    background: transparent;
+    color: var(--theme-text);
+    border-color: var(--theme-primary);
+}
+
+html[data-theme="dark"] .btn-outline-dark {
+    color: var(--theme-text);
+    border-color: var(--theme-muted);
+}
+
+html[data-theme="dark"] .btn-outline-dark:hover {
+    background: rgba(56, 189, 248, 0.12);
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+}
+
+html[data-theme="dark"] .hero {
+    background: var(--hero-overlay), url("images/home-bg.png") center right / cover no-repeat;
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .hero-content h1 {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .hero-content p {
+    color: var(--theme-muted);
+}
+
+html[data-theme="dark"] .floating-card {
+    background: var(--theme-card);
+    border-color: var(--theme-border);
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .problem-card {
+    background: rgba(30, 58, 138, 0.45);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .problem-card h3 {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .feature-card h3,
+html[data-theme="dark"] .service-card h3,
+html[data-theme="dark"] .step-card h4 {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .footer {
+    background: #020617;
+    border-top-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .footer-links a,
+html[data-theme="dark"] .footer-contact li {
+    color: var(--theme-muted);
+}
+
+html[data-theme="dark"] .social-icons a {
+    background: rgba(148, 163, 184, 0.12);
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .form-group label,
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+    background: rgba(15, 23, 42, 0.9);
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .ep-avatar-container,
+html[data-theme="dark"] .ep-dropdown-menu {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border-color: var(--theme-border) !important;
+}
+
+html[data-theme="dark"] .ep-avatar-name,
+html[data-theme="dark"] .ep-dropdown-username,
+html[data-theme="dark"] .ep-dropdown-item {
+    color: var(--theme-muted) !important;
+}
+
+html[data-theme="dark"] .ep-dropdown-item:hover {
+    background: rgba(56, 189, 248, 0.1) !important;
+    color: var(--theme-text) !important;
+}
+
+/* Dashboard dark mode */
+html[data-theme="dark"] .sidebar {
+    background: #0f172a;
+    border-right: 1px solid var(--theme-border);
+}
+
+html[data-theme="dark"] .sidebar-links a {
+    color: var(--theme-muted);
+}
+
+html[data-theme="dark"] .sidebar-links a:hover,
+html[data-theme="dark"] .sidebar-links a.active {
+    color: var(--theme-primary);
+    background: rgba(56, 189, 248, 0.1);
+}
+
+html[data-theme="dark"] .topbar {
+    background: rgba(15, 23, 42, 0.95);
+    border-bottom-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .topbar .page-title,
+html[data-theme="dark"] .dashboard-container h2,
+html[data-theme="dark"] .dashboard-container h3 {
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .welcome-card,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .dashboard-card {
+    background: var(--theme-card) !important;
+    border-color: var(--theme-border) !important;
+}
+
+html[data-theme="dark"] .table-responsive table th {
+    background: rgba(15, 23, 42, 0.9);
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .table-responsive table td {
+    color: var(--theme-muted);
+    border-color: var(--theme-border);
+}
+
+.topbar-theme-wrap {
+    display: inline-flex;
+    margin-right: 0.75rem;
+}
+
+html[data-theme="dark"] .auth-container,
+html[data-theme="dark"] .login-card,
+html[data-theme="dark"] .signup-card {
+    color: var(--theme-muted);
+}
+
+html[data-theme="dark"] .about-hero,
+html[data-theme="dark"] .courses-hero,
+html[data-theme="dark"] .mentors-hero,
+html[data-theme="dark"] .scholarships-hero {
+    background: var(--hero-gradient);
+}
+
+html[data-theme="dark"] .bg-darker,
+html[data-theme="dark"] .bg-light-alt {
+    background-color: var(--bg-darker) !important;
+}
+
+html[data-theme="dark"] .inspiration-short-inner,
+html[data-theme="dark"] .mini-stat {
+    border-color: var(--theme-border);
+}
+
+html[data-theme="dark"] .mini-stat {
+    background: rgba(56, 189, 248, 0.08);
+}
+
+html[data-theme="dark"] .cta-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 58, 138, 0.85)) !important;
+    border-color: var(--theme-border) !important;
+}
+
+html[data-theme="dark"] .cta-card h2 {
+    color: var(--theme-text);
+}

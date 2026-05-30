@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <title>My Profile | EduPath Lanka</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS files -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="profile.css">
+    <link rel="stylesheet" href="theme.css">
+</head>
+<body>
+
+    <!-- 1. Header / Navigation Bar -->
+    <header class="header">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+
+            <nav class="nav-links">
+                <!-- Stable navigation links injected via auth-nav.js -->
+            </nav>
+
+            <div class="nav-buttons">
+                <!-- Populated via auth-nav.js -->
+            </div>
+
+            <!-- Hamburger Menu for Mobile -->
+            <div class="hamburger">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+
+        <!-- Mobile Menu Overlay -->
+        <div class="mobile-menu">
+            <div class="close-btn"><i class="fas fa-times"></i></div>
+            <nav class="mobile-links">
+                <!-- Populated via auth-nav.js -->
+            </nav>
+        </div>
+    </header>
+
+    <!-- 2. Profile Main Content Section -->
+    <main class="profile-container">
+        <div class="profile-grid">
+            
+            <!-- Left Panel: Avatar & Core Info Card -->
+            <div class="left-panel">
+                <div class="glass-card avatar-card text-center">
+                    <!-- Clickable Avatar Container -->
+                    <div class="avatar-edit-wrapper" id="change-avatar-btn" title="Click to Change Photo">
+                        <div class="avatar-display" id="profile-avatar-display">
+                            <!-- Initials or Image rendered via JS -->
+                        </div>
+                        <div class="avatar-overlay">
+                            <i class="fas fa-camera"></i>
+                            <span>Change Photo</span>
+                        </div>
+                    </div>
+                    
+                    <h2 class="user-display-name" id="user-display-name">Loading...</h2>
+                    <span class="role-badge" id="user-role-badge">Role</span>
+                    
+                    <!-- Progress Bar Component -->
+                    <div class="strength-metric-container">
+                        <div class="metric-header">
+                            <span class="label">Profile Completion</span>
+                            <span class="value" id="profile-strength-value">0%</span>
+                        </div>
+                        <div class="progress-bar-track">
+                            <div class="progress-bar-fill" id="profile-strength-fill" style="width: 0%;"></div>
+                        </div>
+                        <p class="metric-advice" id="profile-strength-advice">
+                            Loading details...
+                        </p>
+                    </div>
+
+                    <!-- Missing Fields Checklist -->
+                    <div class="checklist-card text-left">
+                        <h3><i class="fas fa-tasks"></i> Remaining Tasks</h3>
+                        <ul class="task-list" id="profile-missing-list">
+                            <!-- Populated dynamically -->
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Security settings card -->
+                <div class="glass-card security-card">
+                    <h3><i class="fas fa-shield-alt"></i> Security Settings</h3>
+                    <p class="text-muted">Keep your account secure by changing your password periodically.</p>
+                    <button class="btn btn-primary w-full" id="open-pwd-modal-btn">
+                        <i class="fas fa-key"></i> Change Password
+                    </button>
+                </div>
+                
+                <!-- Back to dashboard link -->
+                <a href="#" class="back-link" id="dashboard-back-link">
+                    <i class="fas fa-arrow-left"></i> Back to My Dashboard
+                </a>
+            </div>
+
+            <!-- Right Panel: Profile Forms -->
+            <div class="right-panel">
+                <form id="profile-details-form">
+                    
+                    <!-- Section A: Personal Details (All Roles) -->
+                    <div class="glass-card details-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-address-card"></i> Personal Details</h3>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="field-fullName">Full Name</label>
+                                <input type="text" id="field-fullName" class="form-input" readonly required>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-email">Email Address (Read-only)</label>
+                                <input type="email" id="field-email" class="form-input" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-phone">Contact Number</label>
+                                <input type="tel" id="field-phone" class="form-input" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-userType">Account Type</label>
+                                <input type="text" id="field-userType" class="form-input" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-createdAt">Member Since</label>
+                                <input type="text" id="field-createdAt" class="form-input" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-updatedAt">Last Updated</label>
+                                <input type="text" id="field-updatedAt" class="form-input" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section B: Role-Specific Details (Dynamic Content) -->
+                    <div class="glass-card details-card hidden" id="student-specific-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-graduation-cap"></i> Academic & Career Interests</h3>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="field-district">Home District</label>
+                                <select id="field-district" class="form-input" disabled>
+                                    <option value="">Select District</option>
+                                    <option value="Colombo">Colombo</option>
+                                    <option value="Gampaha">Gampaha</option>
+                                    <option value="Kalutara">Kalutara</option>
+                                    <option value="Kandy">Kandy</option>
+                                    <option value="Matale">Matale</option>
+                                    <option value="Nuwara Eliya">Nuwara Eliya</option>
+                                    <option value="Galle">Galle</option>
+                                    <option value="Matara">Matara</option>
+                                    <option value="Hambantota">Hambantota</option>
+                                    <option value="Jaffna">Jaffna</option>
+                                    <option value="Kilinochchi">Kilinochchi</option>
+                                    <option value="Mannar">Mannar</option>
+                                    <option value="Vavuniya">Vavuniya</option>
+                                    <option value="Mullaitivu">Mullaitivu</option>
+                                    <option value="Batticaloa">Batticaloa</option>
+                                    <option value="Ampara">Ampara</option>
+                                    <option value="Trincomalee">Trincomalee</option>
+                                    <option value="Kurunegala">Kurunegala</option>
+                                    <option value="Puttalam">Puttalam</option>
+                                    <option value="Anuradhapura">Anuradhapura</option>
+                                    <option value="Polonnaruwa">Polonnaruwa</option>
+                                    <option value="Badulla">Badulla</option>
+                                    <option value="Moneragala">Moneragala</option>
+                                    <option value="Ratnapura">Ratnapura</option>
+                                    <option value="Kegalle">Kegalle</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-educationLevel">Current Level of Education</label>
+                                <select id="field-educationLevel" class="form-input" disabled>
+                                    <option value="">Select Level</option>
+                                    <option value="Post-O/L">Post-O/L</option>
+                                    <option value="Post-A/L">Post-A/L</option>
+                                    <option value="Undergraduate">Undergraduate</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-examStream">A/L or O/L Exam Stream</label>
+                                <select id="field-examStream" class="form-input" disabled>
+                                    <option value="">Select Stream</option>
+                                    <option value="Physical Science (Combined Maths)">Physical Science (Combined Maths)</option>
+                                    <option value="Biological Science">Biological Science</option>
+                                    <option value="Commerce">Commerce</option>
+                                    <option value="Arts">Arts</option>
+                                    <option value="Technology">Technology</option>
+                                    <option value="O/L Candidate">O/L Candidate</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-resultStatus">A/L or O/L Exam Result Status</label>
+                                <select id="field-resultStatus" class="form-input" disabled>
+                                    <option value="">Select Status</option>
+                                    <option value="Results Released">Results Released</option>
+                                    <option value="Awaiting Results">Awaiting Results</option>
+                                    <option value="Pending Exam">Pending Exam</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-interestArea">Primary Interest Area</label>
+                                <select id="field-interestArea" class="form-input" disabled>
+                                    <option value="">Select Area</option>
+                                    <option value="Software Engineering">Software Engineering</option>
+                                    <option value="Data Science & AI">Data Science & AI</option>
+                                    <option value="Medicine & Healthcare">Medicine & Healthcare</option>
+                                    <option value="Business Management">Business Management</option>
+                                    <option value="Creative Arts & Design">Creative Arts & Design</option>
+                                    <option value="Engineering & Technology">Engineering & Technology</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-futureGoal">Future Career Goal</label>
+                                <input type="text" id="field-futureGoal" class="form-input" placeholder="e.g. Full Stack Developer" readonly>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-financialSupport">Do you require Financial Support/Scholarships?</label>
+                                <select id="field-financialSupport" class="form-input" disabled>
+                                    <option value="">Select Option</option>
+                                    <option value="Yes">Yes, heavily required</option>
+                                    <option value="Maybe">Maybe, helpful</option>
+                                    <option value="No">No, not needed</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-learningMode">Preferred Mode of Learning</label>
+                                <select id="field-learningMode" class="form-input" disabled>
+                                    <option value="">Select Learning Mode</option>
+                                    <option value="Online">Online / Self-paced</option>
+                                    <option value="Physical">Physical / On-campus</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group w-full">
+                                <label for="field-skills">My Key Skills & Technical Languages (Comma separated)</label>
+                                <input type="text" id="field-skills" class="form-input" placeholder="e.g. JavaScript, Python, Communication, Graphic Design" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card details-card hidden" id="mentor-specific-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chalkboard-teacher"></i> Professional Experience & Verification</h3>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="field-mentorType">Mentor Category</label>
+                                <select id="field-mentorType" class="form-input" disabled>
+                                    <option value="">Select Category</option>
+                                    <option value="Academic">Academic</option>
+                                    <option value="Industry Expert">Industry Expert</option>
+                                    <option value="Student Mentor">Student Mentor</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-field">Field / Domain Expertise</label>
+                                <input type="text" id="field-field" class="form-input" placeholder="e.g. Computer Science / Management" readonly>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-universityOrCompany">Affiliation (University or Company)</label>
+                                <input type="text" id="field-universityOrCompany" class="form-input" placeholder="e.g. University of Moratuwa / WSO2" readonly>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-experience">Years of Experience</label>
+                                <input type="number" id="field-experience" class="form-input" placeholder="e.g. 5" readonly min="0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-availableTime">Best Available Time Slot</label>
+                                <input type="text" id="field-availableTime" class="form-input" placeholder="e.g. Saturdays 4:00 PM - 6:00 PM" readonly>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-availabilityStatus">Availability Status</label>
+                                <select id="field-availabilityStatus" class="form-input" disabled>
+                                    <option value="">Select Status</option>
+                                    <option value="active">Active (Taking Requests)</option>
+                                    <option value="busy">Busy (On Hold)</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group w-full">
+                                <label for="field-bio">Short Bio / Overview</label>
+                                <textarea id="field-bio" class="form-input" rows="3" placeholder="Briefly describe your experience and guidance philosophy..." readonly></textarea>
+                            </div>
+
+                            <!-- Read-only Mentor approval status -->
+                            <div class="form-group w-full">
+                                <label>Verification & Approval Status</label>
+                                <div class="verification-badge-container">
+                                    <span class="badge" id="verification-status-badge">PENDING</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Action Controls -->
+                    <div class="action-footer">
+                        <button type="button" class="btn btn-secondary edit-toggle-btn" id="edit-profile-toggle-btn">
+                            <i class="fas fa-edit"></i> Edit Profile
+                        </button>
+                        
+                        <div class="editing-controls hidden" id="editing-controls-block">
+                            <button type="button" class="btn btn-danger" id="cancel-edit-btn">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn btn-success" id="save-profile-btn">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- 3. Photo URL Upload Modal -->
+    <div class="modal-overlay" id="avatar-modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Update Profile Photo</h3>
+                <span class="modal-close" id="close-avatar-modal">&times;</span>
+            </div>
+            <form id="avatar-update-form">
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="input-photoURL">Paste Profile Photo Image URL</label>
+                    <input type="url" id="input-photoURL" class="form-input" placeholder="https://example.com/photo.jpg" required>
+                    <span class="helper-text">
+                        <!-- Firebase Storage can be added later for real image file upload -->
+                        💡 Provide an image URL. Support for direct image uploads (via Firebase Storage) will be added in a future update.
+                    </span>
+                </div>
+                <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-danger" id="cancel-avatar-btn">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="submit-avatar-btn">Update Photo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Security Change Password Modal -->
+    <div class="modal-overlay" id="password-modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Security Settings - Change Password</h3>
+                <span class="modal-close" id="close-password-modal">&times;</span>
+            </div>
+            <form id="profile-change-password-form">
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="settings-new-password">New Password</label>
+                    <input type="password" id="settings-new-password" class="form-input" placeholder="Minimum 8 characters" required minlength="8">
+                </div>
+                <div class="form-group" style="margin-top: 12px;">
+                    <label for="settings-confirm-password">Confirm New Password</label>
+                    <input type="password" id="settings-confirm-password" class="form-input" placeholder="Repeat new password" required>
+                    <span class="error-msg hidden" id="password-match-error">
+                        ❌ Passwords do not match. Please verify.
+                    </span>
+                </div>
+                <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-danger" id="cancel-password-btn">Cancel</button>
+                    <button type="submit" class="btn btn-success" id="save-password-btn">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Firebase Script Loader -->
+    <script type="module" src="theme.js"></script>
+    <script type="module" src="firebase-config.js"></script>
+    <script type="module" src="auth-nav.js"></script>
+    <script type="module" src="profile.js"></script>
+</body>
+</html>
