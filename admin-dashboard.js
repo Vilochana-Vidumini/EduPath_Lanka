@@ -182,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const titles = {
             overview: 'Admin Dashboard',
+            'manage-users': 'Manage All Users',
             'manage-students': 'Manage Students',
             'manage-mentors': 'Manage Mentors',
             'mentor-approvals': 'Mentor Approvals',
@@ -279,6 +280,70 @@ document.addEventListener('DOMContentLoaded', () => {
         updateStudentFilterOptions(rows);
     }
 
+    function renderUsersTable() {
+        const tbody = document.getElementById('admin-users-tbody');
+        if (!tbody) return;
+
+        if (!usersCache) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No users found.</td></tr>';
+            return;
+        }
+
+        let rows = Object.entries(usersCache).map(([uid, u]) => ({ uid, ...u }));
+
+        // Apply search filter
+        let userSearchTerm = document.getElementById('user-search')?.value.toLowerCase() || '';
+        if (userSearchTerm) {
+            rows = rows.filter((u) =>
+                (u.fullName || '').toLowerCase().includes(userSearchTerm) ||
+                (u.email || '').toLowerCase().includes(userSearchTerm) ||
+                (u.phone || '').toLowerCase().includes(userSearchTerm)
+            );
+        }
+
+        // Apply type filter
+        let userTypeFilter = document.getElementById('user-type-filter')?.value || '';
+        if (userTypeFilter) {
+            rows = rows.filter((u) => (u.userType || '').toLowerCase() === userTypeFilter.toLowerCase());
+        }
+
+        tbody.innerHTML = '';
+        if (rows.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No users match your filters.</td></tr>';
+            return;
+        }
+
+        rows.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+        rows.forEach((u) => {
+            const initials = (u.fullName || 'U').split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase();
+            const avatar = u.photoURL
+                ? `<img src="${escapeHtml(u.photoURL)}" alt="">`
+                : `<span class="avatar-mini">${initials}</span>`;
+            const userType = (u.userType || 'User').toUpperCase();
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><div class="student-avatar-cell">${avatar}<strong>${escapeHtml(u.fullName)}</strong></div></td>
+                <td>${escapeHtml(displayVal(u.email))}</td>
+                <td>${escapeHtml(displayVal(u.phone))}</td>
+                <td><span class="badge ${userType === 'STUDENT' ? 'badge-info' : userType === 'MENTOR' ? 'badge-success' : 'badge-warning'}">${userType}</span></td>
+                <td>${displayVal(u.profileCompletion)}${typeof u.profileCompletion === 'number' ? '%' : ''}</td>
+                <td>${formatDate(u.createdAt)}</td>
+                <td>${formatDate(u.updatedAt)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function setupUserFilters() {
+        document.getElementById('user-search')?.addEventListener('input', () => {
+            renderUsersTable();
+        });
+        document.getElementById('user-type-filter')?.addEventListener('change', () => {
+            renderUsersTable();
+        });
+    }
+
     function updateStudentFilterOptions(rows) {
         const districtSel = document.getElementById('student-filter-district');
         const interestSel = document.getElementById('student-filter-interest');
@@ -322,6 +387,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupCourseForm();
         setupScholForm();
         setupStudentFilters();
+        setupUserFilters();
         setupMentorSearch();
         setupRequestFilters();
         trackAdminProfileStrength(uid, userData);
@@ -335,6 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyHashSection() {
         const hash = (window.location.hash || '').replace('#', '');
         const map = {
+            users: 'manage-users',
             students: 'manage-students',
             mentors: 'manage-mentors',
             'mentor-approvals': 'mentor-approvals',
@@ -394,8 +461,10 @@ document.addEventListener('DOMContentLoaded', () => {
             usersCache = snapshot.exists() ? snapshot.val() : null;
             refreshStudentCount();
             renderStudentsTable();
+            renderUsersTable();
             renderMentorsTables();
             renderPathwayTable();
+            updateTile('stat-users', countObjectChildren(usersCache));
         });
 
         onValue(ref(database, 'mentors'), (snapshot) => {
@@ -725,13 +794,28 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.disabled = true;
 
             const courseData = {
-                name: document.getElementById('course-name').value,
-                institute: document.getElementById('course-institute').value,
+                courseName: document.getElementById('course-name').value,
+                instituteName: document.getElementById('course-institute').value,
+                instituteType: document.getElementById('course-institute-type')?.value || '',
                 category: document.getElementById('course-category').value,
+                description: document.getElementById('course-description')?.value || '',
                 duration: document.getElementById('course-duration').value,
                 mode: document.getElementById('course-mode').value,
                 feeType: document.getElementById('course-fee').value,
+                feeAmount: document.getElementById('course-fee-amount')?.value || '',
+                district: document.getElementById('course-district')?.value || '',
+                qualificationLevel: document.getElementById('course-qualification')?.value || '',
+                eligibility: document.getElementById('course-eligibility')?.value || '',
+                skillsCovered: document.getElementById('course-skills')?.value || '',
+                careerOpportunities: document.getElementById('course-careers')?.value || '',
+                applicationDeadline: document.getElementById('course-deadline')?.value || '',
+                applyLink: document.getElementById('course-apply-link')?.value || '',
+                contactEmail: document.getElementById('course-contact-email')?.value || '',
+                contactPhone: document.getElementById('course-contact-phone')?.value || '',
+                imageURL: document.getElementById('course-image-url')?.value || '',
+                status: document.getElementById('course-status')?.value || 'active',
                 createdAt: Date.now(),
+                updatedAt: Date.now(),
             };
 
             push(ref(database, 'courses'), courseData)
@@ -754,18 +838,59 @@ document.addEventListener('DOMContentLoaded', () => {
             tbody.innerHTML = '';
 
             if (!snapshot.exists()) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">No courses added yet.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-4 text-muted">No courses added yet.</td></tr>';
                 return;
             }
 
-            Object.entries(snapshot.val()).forEach(([key, c]) => {
+            const coursesData = snapshot.val();
+            Object.entries(coursesData).forEach(([key, c]) => {
+                const status = c.status || 'active';
+                const statusBadge = status === 'active' ? 'badge-success' : status === 'inactive' ? 'badge-danger' : 'badge-warning';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><strong>${escapeHtml(c.name)}</strong><br><span class="text-muted text-sm">${escapeHtml(displayVal(c.institute))}</span></td>
+                    <td><strong>${escapeHtml(c.courseName || c.name)}</strong></td>
+                    <td>${escapeHtml(displayVal(c.instituteName || c.institute))}</td>
                     <td>${escapeHtml(displayVal(c.category))}</td>
                     <td><span class="badge ${c.feeType === 'Free' ? 'badge-success' : 'badge-warning'}">${escapeHtml(displayVal(c.feeType))}</span></td>
+                    <td><span class="badge ${statusBadge}">${status.toUpperCase()}</span></td>
+                    <td class="action-btns">
+                        <button class="btn btn-sm btn-info view-course-btn" data-id="${key}" title="View Details"><i class="fas fa-eye"></i></button>
+                        <button class="btn btn-sm btn-danger delete-course-btn" data-id="${key}" title="Delete"><i class="fas fa-trash"></i></button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
+            });
+
+            attachCourseActionListeners();
+        });
+    }
+
+    function attachCourseActionListeners() {
+        document.querySelectorAll('.view-course-btn').forEach((btn) => {
+            const id = btn.getAttribute('data-id');
+            const clone = btn.cloneNode(true);
+            btn.replaceWith(clone);
+            clone.addEventListener('click', () => {
+                // Show course details in a modal (simplified alert for now)
+                get(ref(database, `courses/${id}`)).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const course = snapshot.val();
+                        showToast(`Course: ${course.courseName || course.name}`, 'info');
+                    }
+                });
+            });
+        });
+
+        document.querySelectorAll('.delete-course-btn').forEach((btn) => {
+            const id = btn.getAttribute('data-id');
+            const clone = btn.cloneNode(true);
+            btn.replaceWith(clone);
+            clone.addEventListener('click', () => {
+                if (confirm('Are you sure you want to delete this course?')) {
+                    update(ref(database, `courses/${id}`), { status: 'deleted', updatedAt: Date.now() })
+                        .then(() => showToast('Course deleted successfully!', 'success'))
+                        .catch(() => showToast('Failed to delete course.', 'error'));
+                }
             });
         });
     }
@@ -781,10 +906,24 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.disabled = true;
 
             const scholData = {
-                name: document.getElementById('schol-name').value,
+                scholarshipName: document.getElementById('schol-name').value,
                 provider: document.getElementById('schol-provider').value,
-                category: document.getElementById('schol-category').value,
+                providerType: document.getElementById('schol-provider-type')?.value || '',
+                category: document.getElementById('schol-category')?.value || '',
+                description: document.getElementById('schol-description')?.value || '',
+                eligibility: document.getElementById('schol-eligibility')?.value || '',
+                supportType: document.getElementById('schol-support-type')?.value || '',
+                amount: document.getElementById('schol-amount')?.value || '',
+                deadline: document.getElementById('schol-deadline')?.value || '',
+                district: document.getElementById('schol-district')?.value || '',
+                qualificationLevel: document.getElementById('schol-qualification')?.value || '',
+                applyLink: document.getElementById('schol-apply-link')?.value || '',
+                contactEmail: document.getElementById('schol-contact-email')?.value || '',
+                contactPhone: document.getElementById('schol-contact-phone')?.value || '',
+                imageURL: document.getElementById('schol-image-url')?.value || '',
+                status: document.getElementById('schol-status')?.value || 'active',
                 createdAt: Date.now(),
+                updatedAt: Date.now(),
             };
 
             push(ref(database, 'scholarships'), scholData)
@@ -807,18 +946,57 @@ document.addEventListener('DOMContentLoaded', () => {
             tbody.innerHTML = '';
 
             if (!snapshot.exists()) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted">No scholarships added yet.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No scholarships added yet.</td></tr>';
                 return;
             }
 
-            Object.entries(snapshot.val()).forEach(([key, s]) => {
+            const scholData = snapshot.val();
+            Object.entries(scholData).forEach(([key, s]) => {
+                const status = s.status || 'active';
+                const statusBadge = status === 'active' ? 'badge-success' : 'badge-danger';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><strong>${escapeHtml(s.name)}</strong></td>
+                    <td><strong>${escapeHtml(s.scholarshipName || s.name)}</strong></td>
                     <td>${escapeHtml(displayVal(s.provider))}</td>
-                    <td>${escapeHtml(displayVal(s.category))}</td>
+                    <td>${escapeHtml(displayVal(s.category || s.supportType))}</td>
+                    <td><span class="badge ${statusBadge}">${status.toUpperCase()}</span></td>
+                    <td class="action-btns">
+                        <button class="btn btn-sm btn-info view-schol-btn" data-id="${key}" title="View Details"><i class="fas fa-eye"></i></button>
+                        <button class="btn btn-sm btn-danger delete-schol-btn" data-id="${key}" title="Delete"><i class="fas fa-trash"></i></button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
+            });
+
+            attachScholarshipActionListeners();
+        });
+    }
+
+    function attachScholarshipActionListeners() {
+        document.querySelectorAll('.view-schol-btn').forEach((btn) => {
+            const id = btn.getAttribute('data-id');
+            const clone = btn.cloneNode(true);
+            btn.replaceWith(clone);
+            clone.addEventListener('click', () => {
+                get(ref(database, `scholarships/${id}`)).then((snapshot) => {
+                    if (snapshot.exists()) {
+                        const schol = snapshot.val();
+                        showToast(`Scholarship: ${schol.scholarshipName || schol.name}`, 'info');
+                    }
+                });
+            });
+        });
+
+        document.querySelectorAll('.delete-schol-btn').forEach((btn) => {
+            const id = btn.getAttribute('data-id');
+            const clone = btn.cloneNode(true);
+            btn.replaceWith(clone);
+            clone.addEventListener('click', () => {
+                if (confirm('Are you sure you want to delete this scholarship?')) {
+                    update(ref(database, `scholarships/${id}`), { status: 'deleted', updatedAt: Date.now() })
+                        .then(() => showToast('Scholarship deleted successfully!', 'success'))
+                        .catch(() => showToast('Failed to delete scholarship.', 'error'));
+                }
             });
         });
     }

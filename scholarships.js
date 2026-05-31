@@ -1,4 +1,8 @@
-// Scholarships Catalog JavaScript
+// Scholarships Catalog JavaScript - Loading from Firebase
+import { auth, database } from "./firebase-config.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- Mobile Menu Toggle ---
     const hamburger = document.querySelector('.hamburger');
@@ -14,79 +18,71 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Scholarships Data ---
-    const scholarships = [
-        {
-            id: 'presidential-fund',
-            title: 'Presidential Fund Scholarship for School Leavers',
-            sponsor: 'Government of Sri Lanka',
-            category: 'government',
-            amount: 'Full Tuition + Stipend',
-            desc: 'A national welfare initiative to support talented school leavers after O/L and A/L examinations from low-income families to continue vocational levels or diplomas.',
-            criteria: [
-                'Sri Lankan citizen under 24 years',
-                'Family monthly income < LKR 60,000',
-                'Completed O/L or A/L examinations'
-            ]
-        },
-        {
-            id: 'ict-growth-grant',
-            title: 'IT Sector Female & Alternative Tech Grant',
-            sponsor: 'SLASSCOM & Partners',
-            category: 'it-sector',
-            amount: 'LKR 80,000 Allowance',
-            desc: 'Special scholarship scheme to encourage female students and alternative path takers to enroll in professional software engineering and coding diplomas.',
-            criteria: [
-                'Enrolled in approved IT diploma',
-                'Active tech interest (No prior degree)',
-                'Shows commitment to a tech career'
-            ]
-        },
-        {
-            id: 'naita-stipend',
-            title: 'Vocational Training Monthly Allowance Fund',
-            sponsor: 'NAITA / TVEC Govt Board',
-            category: 'vocational',
-            amount: 'Monthly LKR 5,000',
-            desc: 'Financial support program providing a monthly stipend to technical trainees enrolled in NVQ Level 3 and 4 courses at NAITA and VTA training centers.',
-            criteria: [
-                'Enrolled in full-time NVQ course',
-                'Minimum 80% monthly attendance',
-                'Technical skill-focused pathways'
-            ]
-        },
-        {
-            id: 'private-partial-grant',
-            title: 'Private Institute Alternative Path Sponsorship',
-            sponsor: 'EduPath Corporate Network',
-            category: 'it-sector',
-            amount: '75% Tuition Covered',
-            desc: 'Partial scholarships funded by local tech companies for students who had unexpected exam results but show outstanding problem-solving skills.',
-            criteria: [
-                'Pass in EduPath Skill Assessment',
-                'A/L or O/L results (Any stream)',
-                'Highly motivated to switch paths'
-            ]
-        }
-    ];
-
     const grid = document.getElementById('scholarships-grid');
     const searchInput = document.getElementById('scholarship-search');
     const chips = document.querySelectorAll('.chip');
 
+    let allScholarships = []; // Will be populated from Firebase
     let activeCategory = 'all';
     let searchQuery = '';
+
+    // Helper functions
+    function displayVal(value) {
+        if (value === null || value === undefined || value === '') return 'N/A';
+        if (typeof value === 'object') return 'N/A';
+        return String(value);
+    }
+
+    function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    // --- Load Scholarships from Firebase ---
+    function loadScholarshipsFromFirebase() {
+        const scholRef = ref(database, 'scholarships');
+        onValue(scholRef, (snapshot) => {
+            allScholarships = [];
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                Object.entries(data).forEach(([id, scholarship]) => {
+                    // Only show active scholarships
+                    if ((scholarship.status || 'active') === 'active' && scholarship.status !== 'deleted') {
+                        allScholarships.push({
+                            id,
+                            ...scholarship
+                        });
+                    }
+                });
+            }
+            renderScholarships();
+        });
+    }
 
     // --- Render Scholarships ---
     function renderScholarships() {
         if (!grid) return;
 
-        const filtered = scholarships.filter(item => {
-            const matchesCategory = activeCategory === 'all' || item.category === activeCategory;
-            const matchesSearch = item.title.toLowerCase().includes(searchQuery) ||
-                                 item.sponsor.toLowerCase().includes(searchQuery) ||
-                                 item.desc.toLowerCase().includes(searchQuery) ||
-                                 item.criteria.some(c => c.toLowerCase().includes(searchQuery));
+        let filtered = allScholarships.filter(item => {
+            const matchesCategory = activeCategory === 'all' || 
+                (item.providerType === activeCategory) || 
+                (item.supportType === activeCategory) ||
+                (item.category === activeCategory);
+
+            const scholarshipName = (item.scholarshipName || item.name || '').toLowerCase();
+            const provider = (item.provider || '').toLowerCase();
+            const description = (item.description || '').toLowerCase();
+            const eligibility = (item.eligibility || '').toLowerCase();
+
+            const matchesSearch = scholarshipName.includes(searchQuery) ||
+                provider.includes(searchQuery) ||
+                description.includes(searchQuery) ||
+                eligibility.includes(searchQuery);
+
             return matchesCategory && matchesSearch;
         });
 
@@ -95,40 +91,123 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">
                     <i class="fas fa-hand-holding-usd" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
                     <h3>No Scholarships Found</h3>
-                    <p>Try searching another funding type or provider.</p>
+                    <p>Try searching another funding type or provider. Check back later for more opportunities.</p>
                 </div>
             `;
             return;
         }
 
+        // Update result count
+        const resultCount = document.querySelector('.result-count') || document.createElement('div');
+        resultCount.className = 'result-count';
+        resultCount.textContent = `Showing ${filtered.length} scholarship${filtered.length !== 1 ? 's' : ''}`;
+        if (!document.querySelector('.result-count')) {
+            grid.parentElement?.insertBefore(resultCount, grid);
+        }
+
         grid.innerHTML = filtered.map(item => `
             <div class="scholarship-card">
                 <div class="card-top">
+                    ${item.imageURL ? `<img src="${escapeHtml(item.imageURL)}" alt="${escapeHtml(item.scholarshipName)}" style="height:200px; object-fit:cover; width:100%; border-radius:8px; margin-bottom:1rem;">` : ''}
                     <div class="card-header-row">
-                        <span class="sponsor">${item.sponsor}</span>
-                        <span class="amount-tag">${item.amount}</span>
+                        <span class="sponsor">${escapeHtml(displayVal(item.provider))}</span>
+                        <span class="amount-tag" style="background-color: #e8f5e9; color: #2e7d32;">${escapeHtml(displayVal(item.supportType))}</span>
                     </div>
-                    <h3>${item.title}</h3>
-                    <p class="scholarship-desc">${item.desc}</p>
+                    <h3>${escapeHtml(item.scholarshipName || item.name)}</h3>
+                    <p class="text-sm text-muted" style="margin-bottom: 1rem;">
+                        <strong>${escapeHtml(displayVal(item.providerType))}</strong> • ${escapeHtml(displayVal(item.category))}
+                    </p>
+                    <p class="scholarship-desc">${escapeHtml((item.description || '').substring(0, 150))}...</p>
                     
-                    <div class="criteria-title">Eligibility Criteria</div>
-                    <div class="criteria-list">
-                        ${item.criteria.map(c => `
-                            <span class="criteria-item"><i class="fas fa-check-circle"></i> ${c}</span>
-                        `).join('')}
+                    <div style="background: #f5f5f5; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.9rem;">
+                            ${item.amount ? `<div><strong>Amount:</strong> ${escapeHtml(item.amount)}</div>` : ''}
+                            ${item.deadline ? `<div><strong>Deadline:</strong> ${escapeHtml(item.deadline)}</div>` : ''}
+                            ${item.qualificationLevel ? `<div><strong>Qualification:</strong> ${escapeHtml(item.qualificationLevel)}</div>` : ''}
+                            ${item.district ? `<div><strong>Region:</strong> ${escapeHtml(item.district)}</div>` : ''}
+                        </div>
                     </div>
+
+                    ${item.eligibility ? `
+                        <div style="margin-bottom: 1rem;">
+                            <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 0.5rem;">Eligibility</div>
+                            <p style="font-size: 0.9rem; margin: 0;">${escapeHtml((item.eligibility || '').substring(0, 150))}</p>
+                        </div>
+                    ` : ''}
                 </div>
                 
                 <div class="card-actions">
-                    <button class="btn btn-primary btn-card-primary restricted-action" data-action="apply-scholarship" data-title="${item.title}">
+                    <button class="btn btn-primary btn-card-primary apply-scholarship-btn" data-id="${item.id}" title="Apply Now">
                         Apply Now
                     </button>
-                    <button class="btn-card-outline restricted-action" data-action="save-scholarship" data-id="${item.id}">
+                    <button class="btn-card-outline save-scholarship-btn" data-id="${item.id}" title="Save Scholarship">
                         <i class="far fa-heart"></i>
                     </button>
                 </div>
             </div>
         `).join('');
+
+        attachScholarshipActionListeners();
+    }
+
+    function attachScholarshipActionListeners() {
+        // Apply buttons
+        document.querySelectorAll('.apply-scholarship-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const scholId = btn.getAttribute('data-id');
+                const scholarship = allScholarships.find(s => s.id === scholId);
+                if (scholarship && scholarship.applyLink) {
+                    window.open(scholarship.applyLink, '_blank');
+                } else {
+                    onAuthStateChanged(auth, (user) => {
+                        if (!user) {
+                            window.location.href = 'login.html?redirect=scholarships.html';
+                        } else {
+                            alert('Application process initiated. You will be guided to complete your scholarship application in your Student Dashboard.');
+                            window.location.href = 'student-dashboard.html';
+                        }
+                    });
+                }
+            });
+        });
+
+        // Save buttons
+        document.querySelectorAll('.save-scholarship-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                onAuthStateChanged(auth, (user) => {
+                    if (!user) {
+                        window.location.href = 'login.html?redirect=scholarships.html';
+                        return;
+                    }
+
+                    const scholId = btn.getAttribute('data-id');
+                    const scholarship = allScholarships.find(s => s.id === scholId);
+                    if (!scholarship) return;
+
+                    const icon = btn.querySelector('i');
+                    const savedRef = ref(database, `savedScholarships/${user.uid}/${scholId}`);
+
+                    if (btn.classList.contains('saved')) {
+                        // Remove from saved
+                        set(savedRef, null).then(() => {
+                            btn.classList.remove('saved');
+                            icon.className = 'far fa-heart';
+                            alert('Scholarship removed from saved list.');
+                        });
+                    } else {
+                        // Add to saved
+                        set(savedRef, {
+                            ...scholarship,
+                            savedAt: new Date().toISOString()
+                        }).then(() => {
+                            btn.classList.add('saved');
+                            icon.className = 'fas fa-heart';
+                            alert('Scholarship saved successfully!');
+                        });
+                    }
+                });
+            });
+        });
     }
 
     // --- Filter Handlers ---
@@ -148,10 +227,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Initial render
-    renderScholarships();
+    // Load scholarships from Firebase on page load
+    loadScholarshipsFromFirebase();
 
-    // --- Handle Restricted Scholarship Application Actions ---
+    // --- Handle Restricted Scholarship Application Actions (for compatibility) ---
     document.addEventListener('restricted-action-triggered', (e) => {
         const { action, element } = e.detail;
         if (action === 'apply-scholarship') {
@@ -163,10 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
             element.classList.toggle('saved');
             if (element.classList.contains('saved')) {
                 icon.className = 'fas fa-heart';
-                alert("Scholarship saved successfully to your profile!");
             } else {
                 icon.className = 'far fa-heart';
-                alert("Scholarship removed from your saved list.");
             }
         }
     });
