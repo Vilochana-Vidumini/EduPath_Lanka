@@ -3,6 +3,9 @@
     const stored = localStorage.getItem('theme');
     const theme = stored === 'dark' || stored === 'light' ? stored : 'light';
     document.documentElement.setAttribute('data-theme', theme);
+    if (localStorage.getItem('sidebarCollapsed') === 'true' && window.innerWidth > 768) {
+        document.documentElement.classList.add('sidebar-collapsed');
+    }
 })();
 
 export function getTheme() {
@@ -58,10 +61,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const topbarRight = document.querySelector('.topbar-right');
     if (topbarRight && !topbarRight.querySelector('.theme-toggle')) {
+        topbarRight.classList.add('dashboard-topbar-actions');
         const wrap = document.createElement('div');
         wrap.className = 'topbar-theme-wrap';
         wrap.innerHTML = themeToggleButtonHTML();
-        topbarRight.insertBefore(wrap.firstElementChild, topbarRight.firstChild);
+        const notifWrap = topbarRight.querySelector('.notification-wrap');
+        const profile = topbarRight.querySelector('.user-profile, .ep-avatar-container');
+        if (notifWrap) {
+            topbarRight.insertBefore(wrap.firstElementChild, notifWrap);
+        } else if (profile) {
+            topbarRight.insertBefore(wrap.firstElementChild, profile);
+        } else {
+            topbarRight.insertBefore(wrap.firstElementChild, topbarRight.firstChild);
+        }
         wireThemeToggle(topbarRight);
     }
 

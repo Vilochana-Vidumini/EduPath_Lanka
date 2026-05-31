@@ -3,10 +3,179 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { themeToggleButtonHTML, wireThemeToggle } from "./theme.js";
 
+function handleLogout(e) {
+    e.preventDefault();
+    closeAuthPanel();
+    signOut(auth).then(() => {
+        preserveThemeOnClear();
+        sessionStorage.clear();
+        window.location.href = 'login.html';
+    }).catch(err => {
+        console.error("Sign out error:", err);
+        window.location.href = 'login.html';
+    });
+}
+
 export function preserveThemeOnClear() {
     const savedTheme = localStorage.getItem('theme');
+    const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
     localStorage.clear();
     if (savedTheme) localStorage.setItem('theme', savedTheme);
+    if (sidebarCollapsed) localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+}
+
+const AUTH_PANEL_LINKS = {
+    student: [
+        { href: 'student-dashboard.html', icon: 'fa-tachometer-alt', label: 'Dashboard' },
+        { href: 'profile.html', icon: 'fa-user', label: 'My Profile' },
+        { href: 'pathway.html', icon: 'fa-route', label: 'Pathway Finder' },
+        { href: 'student-dashboard.html#latest-result', icon: 'fa-poll-h', label: 'My Results' },
+        { href: 'courses.html', icon: 'fa-book-open', label: 'Courses' },
+        { href: 'scholarships.html', icon: 'fa-hand-holding-usd', label: 'Scholarships' },
+        { href: 'mentors.html', icon: 'fa-chalkboard-teacher', label: 'Mentors' },
+        { href: 'index.html', icon: 'fa-home', label: 'Home' },
+    ],
+    mentor: [
+        { href: 'mentor-dashboard.html', icon: 'fa-tachometer-alt', label: 'Dashboard' },
+        { href: 'profile.html', icon: 'fa-user-tie', label: 'My Profile' },
+        { href: 'mentor-dashboard.html#requests', icon: 'fa-user-plus', label: 'Student Requests' },
+        { href: 'mentor-dashboard.html#availability', icon: 'fa-calendar-check', label: 'Availability' },
+        { href: 'mentor-dashboard.html#resources', icon: 'fa-book-reader', label: 'Guidance Resources' },
+        { href: 'index.html', icon: 'fa-home', label: 'Home' },
+    ],
+    admin: [
+        { href: 'admin-dashboard.html', icon: 'fa-tachometer-alt', label: 'Dashboard' },
+        { href: 'profile.html', icon: 'fa-user-shield', label: 'My Profile' },
+        { href: 'admin-dashboard.html#students', icon: 'fa-user-graduate', label: 'Manage Students' },
+        { href: 'admin-dashboard.html#mentors', icon: 'fa-chalkboard-teacher', label: 'Manage Mentors' },
+        { href: 'admin-dashboard.html#courses', icon: 'fa-book', label: 'Manage Courses' },
+        { href: 'admin-dashboard.html#scholarships', icon: 'fa-hand-holding-usd', label: 'Manage Scholarships' },
+        { href: 'admin-dashboard.html#reports', icon: 'fa-chart-bar', label: 'Reports' },
+        { href: 'index.html', icon: 'fa-home', label: 'Home' },
+    ],
+};
+
+function isDashboardPage() {
+    const page = window.location.pathname.split('/').pop() || '';
+    return page.includes('-dashboard.html');
+}
+
+function ensureAuthPanelShell() {
+    if (document.getElementById('ep-auth-panel')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'ep-auth-panel-overlay';
+    overlay.className = 'ep-auth-panel-overlay';
+    overlay.setAttribute('aria-hidden', 'true');
+
+    const panel = document.createElement('aside');
+    panel.id = 'ep-auth-panel';
+    panel.className = 'ep-auth-panel';
+    panel.setAttribute('aria-hidden', 'true');
+    panel.innerHTML = `
+        <div class="ep-auth-panel-header">
+            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+            <button type="button" class="ep-auth-panel-close" id="ep-auth-panel-close" aria-label="Close menu">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="ep-auth-panel-user" id="ep-auth-panel-user"></div>
+        <ul class="ep-auth-panel-links" id="ep-auth-panel-links"></ul>
+    `;
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(panel);
+
+    overlay.addEventListener('click', closeAuthPanel);
+    document.getElementById('ep-auth-panel-close')?.addEventListener('click', closeAuthPanel);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeAuthPanel();
+    });
+}
+
+export function openAuthPanel() {
+    ensureAuthPanelShell();
+    document.getElementById('ep-auth-panel')?.classList.add('open');
+    document.getElementById('ep-auth-panel-overlay')?.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+export function closeAuthPanel() {
+    document.getElementById('ep-auth-panel')?.classList.remove('open');
+    document.getElementById('ep-auth-panel-overlay')?.classList.remove('show');
+    document.body.style.overflow = '';
+}
+
+function renderAuthPanel(role, fullName, photoURL) {
+    ensureAuthPanelShell();
+
+    const links = AUTH_PANEL_LINKS[role] || AUTH_PANEL_LINKS.student;
+    const linksEl = document.getElementById('ep-auth-panel-links');
+    const userEl = document.getElementById('ep-auth-panel-user');
+
+    if (linksEl) {
+        linksEl.innerHTML = links.map((l) =>
+            `<li><a href="${l.href}"><i class="fas ${l.icon}"></i>${l.label}</a></li>`
+        ).join('') + `<li><a href="#" class="text-danger" id="ep-auth-panel-logout"><i class="fas fa-sign-out-alt"></i>Logout</a></li>`;
+
+        linksEl.querySelectorAll('a:not(#ep-auth-panel-logout)').forEach((link) => {
+            link.addEventListener('click', () => closeAuthPanel());
+        });
+    }
+
+    if (userEl) {
+        const initials = fullName.split(' ').map((n) => n[0]).join('').substring(0, 2).toUpperCase();
+        userEl.innerHTML = `
+            ${photoURL
+                ? `<img src="${photoURL}" alt="${fullName}" style="width:42px;height:42px;border-radius:50%;object-fit:cover;">`
+                : `<div class="sidebar-user-avatar"><span class="sidebar-initials">${initials}</span><span class="online-dot"></span></div>`
+            }
+            <div class="sidebar-user-info">
+                <span class="sidebar-user-name">${fullName}</span>
+                <span class="sidebar-user-role role-${role}">${role}</span>
+            </div>
+        `;
+    }
+
+    document.getElementById('ep-auth-panel-logout')?.addEventListener('click', handleLogout);
+}
+
+function injectAuthPanelTrigger() {
+    if (isDashboardPage()) return;
+
+    const navContainer = document.querySelector('.nav-container, header.navbar .nav-container');
+    if (!navContainer || navContainer.querySelector('#ep-auth-panel-trigger')) return;
+
+    const logo = navContainer.querySelector('.logo');
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.id = 'ep-auth-panel-trigger';
+    trigger.className = 'ep-auth-panel-trigger';
+    trigger.setAttribute('aria-label', 'Open account menu');
+    trigger.title = 'Account menu';
+    trigger.innerHTML = '<i class="fas fa-bars"></i>';
+
+    if (logo?.parentElement?.classList.contains('nav-left-group')) {
+        logo.parentElement.insertBefore(trigger, logo);
+    } else if (logo) {
+        const group = document.createElement('div');
+        group.className = 'nav-left-group';
+        logo.parentNode.insertBefore(group, logo);
+        group.appendChild(trigger);
+        group.appendChild(logo);
+    } else {
+        navContainer.insertBefore(trigger, navContainer.firstChild);
+    }
+
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openAuthPanel();
+    });
+}
+
+function showAuthPanelTrigger(show) {
+    const trigger = document.getElementById('ep-auth-panel-trigger');
+    if (trigger) trigger.classList.toggle('visible', show);
 }
 
 // Global CSS Injection for the premium avatar dropdown and toast notifications
@@ -18,10 +187,10 @@ const injectGlobalStyles = () => {
         /* Enforced Premium Responsive Navbar Styling */
         header.navbar, .navbar {
             height: 70px !important;
-            background: rgba(255, 255, 255, 0.84) !important;
+            background: var(--nav-bg-theme, rgba(255, 255, 255, 0.84)) !important;
             backdrop-filter: blur(18px) !important;
             -webkit-backdrop-filter: blur(18px) !important;
-            border-bottom: 1px solid rgba(226, 232, 240, 0.75) !important;
+            border-bottom: 1px solid var(--nav-border-theme, rgba(226, 232, 240, 0.75)) !important;
             display: flex !important;
             align-items: center !important;
             justify-content: space-between !important;
@@ -48,7 +217,7 @@ const injectGlobalStyles = () => {
         .logo {
             font-size: 1.5rem !important;
             font-weight: 800 !important;
-            color: #1e293b !important;
+            color: var(--theme-text, #1e293b) !important;
             text-decoration: none !important;
             display: flex !important;
             align-items: center !important;
@@ -57,7 +226,7 @@ const injectGlobalStyles = () => {
         }
 
         .logo span {
-            color: #4f46e5 !important;
+            color: var(--theme-primary, #4f46e5) !important;
         }
 
         .nav-links {
@@ -72,7 +241,7 @@ const injectGlobalStyles = () => {
         .nav-links a {
             font-weight: 600 !important;
             font-size: 14px !important;
-            color: #475569 !important;
+            color: var(--theme-muted, #475569) !important;
             text-decoration: none !important;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
             padding: 8px 14px !important;
@@ -80,7 +249,7 @@ const injectGlobalStyles = () => {
         }
 
         .nav-links a:hover, .nav-links a.active {
-            color: #4f46e5 !important;
+            color: var(--theme-primary, #4f46e5) !important;
             background: rgba(79, 70, 229, 0.06) !important;
         }
 
@@ -93,8 +262,8 @@ const injectGlobalStyles = () => {
             cursor: pointer;
             padding: 6px 14px;
             border-radius: 50px;
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(226, 232, 240, 0.85);
+            background: var(--theme-card, rgba(255, 255, 255, 0.9));
+            border: 1px solid var(--theme-border, rgba(226, 232, 240, 0.85));
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
             transition: all 0.25s ease;
             user-select: none;
@@ -127,7 +296,7 @@ const injectGlobalStyles = () => {
         .ep-avatar-name {
             font-weight: 600;
             font-size: 13.5px;
-            color: #1e293b;
+            color: var(--theme-text, #1e293b);
             max-width: 90px;
             white-space: nowrap;
             overflow: hidden;
@@ -150,8 +319,8 @@ const injectGlobalStyles = () => {
             top: calc(100% + 8px);
             right: 0;
             width: 220px;
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(226, 232, 240, 0.8);
+            background: var(--theme-card, rgba(255, 255, 255, 0.95));
+            border: 1px solid var(--theme-border, rgba(226, 232, 240, 0.8));
             border-radius: 14px;
             box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.06), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
             backdrop-filter: blur(20px);
@@ -182,7 +351,7 @@ const injectGlobalStyles = () => {
         .ep-dropdown-username {
             font-weight: 700;
             font-size: 13.5px;
-            color: #0f172a;
+            color: var(--theme-text, #0f172a);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -220,7 +389,7 @@ const injectGlobalStyles = () => {
             gap: 10px;
             padding: 8px 12px;
             font-size: 13.5px;
-            color: #475569;
+            color: var(--theme-muted, #475569);
             text-decoration: none !important;
             border-radius: 8px;
             transition: all 0.15s ease;
@@ -262,18 +431,19 @@ const injectGlobalStyles = () => {
             position: fixed;
             bottom: 24px;
             right: 24px;
-            background: #ffffff;
+            background: var(--theme-surface, #ffffff);
+            color: var(--theme-text, #0f172a);
             border-radius: 12px;
             padding: 14px 18px;
             display: flex;
             align-items: center;
             gap: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
             transform: translateY(15px);
             opacity: 0;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
             z-index: 100000;
-            border-left: 5px solid #4f46e5;
+            border-left: 5px solid var(--theme-primary, #4f46e5);
         }
 
         .ep-toast.show {
@@ -307,8 +477,8 @@ const injectGlobalStyles = () => {
 
         /* Mobile Menu Logged-In Card styles */
         .mobile-user-card {
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(226, 232, 240, 0.8);
+            background: var(--theme-card, rgba(255, 255, 255, 0.8));
+            border: 1px solid var(--theme-border, rgba(226, 232, 240, 0.8));
             border-radius: 16px;
             padding: 1rem;
             margin: 1rem;
@@ -328,7 +498,7 @@ const injectGlobalStyles = () => {
         .mobile-user-details h4 {
             font-size: 13.5px;
             font-weight: 700;
-            color: #0f172a;
+            color: var(--theme-text, #0f172a);
             margin: 0;
         }
 
@@ -358,7 +528,7 @@ export const showToast = (message, type = 'success') => {
     toast.className = `ep-toast ep-toast-${type}`;
     toast.innerHTML = `
         <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : 'fa-exclamation-triangle'}"></i>
-        <span style="font-weight: 600; font-size: 13.5px; color: #334155;">${message}</span>
+        <span style="font-weight: 600; font-size: 13.5px; color: var(--theme-text, #334155);">${message}</span>
     `;
     document.body.appendChild(toast);
     
@@ -533,6 +703,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Perform route protection
                 validateRoute(role);
 
+                injectAuthPanelTrigger();
+                renderAuthPanel(role, fullName, photoURL);
+                showAuthPanelTrigger(true);
+
                 // Keep center nav links stable for all logged-in states!
                 renderNavLinks(publicLinks);
 
@@ -624,6 +798,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             loggedInUser = null;
             currentUserType = '';
+            showAuthPanelTrigger(false);
+            closeAuthPanel();
             
             // Check route protection
             validateRoute(null);
@@ -653,18 +829,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-
-    function handleLogout(e) {
-        e.preventDefault();
-        signOut(auth).then(() => {
-            preserveThemeOnClear();
-            sessionStorage.clear();
-            window.location.href = 'login.html';
-        }).catch(err => {
-            console.error("Sign out error:", err);
-            window.location.href = 'login.html';
-        });
-    }
 
     function validateRoute(role) {
         const protectedRoutes = {

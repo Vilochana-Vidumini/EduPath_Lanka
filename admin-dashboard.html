@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);if(localStorage.getItem('sidebarCollapsed')==='true'&&window.innerWidth>768){document.documentElement.classList.add('sidebar-collapsed');}})();</script>
     <title>Admin Dashboard | EduPath Lanka</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,26 +17,35 @@
 </head>
 <body>
 
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <a href="index.html" class="logo">EduPath<span>Admin</span></a>
+            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
             <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
         </div>
+        <div class="sidebar-user" id="sidebar-user">
+            <div class="sidebar-user-avatar" id="sidebar-user-avatar"><span class="sidebar-initials">AD</span><span class="online-dot" aria-hidden="true"></span></div>
+            <div class="sidebar-user-info">
+                <span class="sidebar-user-name" id="sidebar-user-name">Loading...</span>
+                <span class="sidebar-user-role role-admin" id="sidebar-user-role">Admin</span>
+            </div>
+        </div>
         <ul class="sidebar-links">
-            <li><a href="admin-dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard Overview</a></li>
-            <li><a href="#students"><i class="fas fa-user-graduate"></i> Manage Students</a></li>
-            <li><a href="#mentors"><i class="fas fa-chalkboard-teacher"></i> Manage Mentors</a></li>
-            <li><a href="#courses"><i class="fas fa-book"></i> Manage Courses</a></li>
-            <li><a href="#institutes"><i class="fas fa-university"></i> Manage Institutes</a></li>
-            <li><a href="#scholarships"><i class="fas fa-hand-holding-usd"></i> Scholarships</a></li>
-            <li><a href="#pathway"><i class="fas fa-project-diagram"></i> Pathway Content</a></li>
-            <li><a href="#requests"><i class="fas fa-user-friends"></i> Mentor Requests</a></li>
-            <li><a href="#reports"><i class="fas fa-chart-bar"></i> Platform Reports</a></li>
-            <li><a href="#messages"><i class="fas fa-envelope"></i> Contact Messages</a></li>
-            <li><a href="profile.html"><i class="fas fa-user-shield"></i> My Profile</a></li>
-            <li><a href="profile.html#security"><i class="fas fa-cog"></i> Settings</a></li>
-            <li><a href="#" id="logout-btn-sidebar" class="text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            <li><a href="#" data-section="overview" class="active" title="Dashboard Overview"><i class="fas fa-tachometer-alt"></i><span class="sidebar-label">Dashboard Overview</span></a></li>
+            <li><a href="profile.html" title="My Profile"><i class="fas fa-user-shield"></i><span class="sidebar-label">My Profile</span></a></li>
+            <li><a href="#" data-section="manage-students" title="Manage Students"><i class="fas fa-user-graduate"></i><span class="sidebar-label">Manage Students</span></a></li>
+            <li><a href="#" data-section="manage-mentors" title="Manage Mentors"><i class="fas fa-chalkboard-teacher"></i><span class="sidebar-label">Manage Mentors</span></a></li>
+            <li><a href="#" data-section="mentor-approvals" title="Mentor Approvals"><i class="fas fa-user-check"></i><span class="sidebar-label">Mentor Approvals</span></a></li>
+            <li><a href="#" data-section="manage-courses" title="Manage Courses"><i class="fas fa-book"></i><span class="sidebar-label">Manage Courses</span></a></li>
+            <li><a href="#" data-section="manage-scholarships" title="Manage Scholarships"><i class="fas fa-hand-holding-usd"></i><span class="sidebar-label">Manage Scholarships</span></a></li>
+            <li><a href="#" data-section="mentor-requests" title="Mentor Requests"><i class="fas fa-user-friends"></i><span class="sidebar-label">Mentor Requests</span></a></li>
+            <li><a href="#" data-section="pathway-results" title="Pathway Results"><i class="fas fa-poll"></i><span class="sidebar-label">Pathway Results</span></a></li>
+            <li><a href="#" data-section="reports" title="Reports"><i class="fas fa-chart-bar"></i><span class="sidebar-label">Reports</span></a></li>
+            <li><a href="#" data-section="contact-messages" title="Contact Messages"><i class="fas fa-envelope"></i><span class="sidebar-label">Contact Messages</span></a></li>
+            <li><a href="index.html" title="Home"><i class="fas fa-home"></i><span class="sidebar-label">Home</span></a></li>
+            <li><a href="#" id="logout-btn-sidebar" class="text-danger" title="Logout"><i class="fas fa-sign-out-alt"></i><span class="sidebar-label">Logout</span></a></li>
         </ul>
     </aside>
 
@@ -48,7 +57,7 @@
                 <i class="fas fa-bars sidebar-toggle" id="sidebar-toggle"></i>
                 <h2 class="page-title">Admin Dashboard</h2>
             </div>
-            <div class="topbar-right">
+            <div class="topbar-right dashboard-topbar-actions">
                 <div class="user-profile">
                     <div class="avatar bg-primary text-white"><i class="fas fa-user-shield"></i></div>
                     <span class="user-name" id="top-user-name">Loading...</span>
@@ -59,6 +68,9 @@
 
         <!-- Dashboard Content -->
         <div class="dashboard-container">
+
+            <!-- Overview -->
+            <div id="overview" class="dashboard-section active">
             
             <!-- 1. Welcome Card -->
             <section class="welcome-card glass">
@@ -162,10 +174,43 @@
                 </div>
             </div>
 
-            <!-- 3. Manage Mentors -->
-            <section id="mentors" class="content-section">
+            </div><!-- /overview -->
+
+            <!-- Manage Mentors -->
+            <section id="manage-mentors" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Manage Mentors</h2>
+                    <p class="section-desc">View and manage all registered mentors on the platform.</p>
+                </div>
+                <div class="section-toolbar">
+                    <input type="search" id="mentor-search" class="form-control" placeholder="Search mentors...">
+                </div>
+                <div class="table-card glass">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Mentor</th>
+                                    <th>Email</th>
+                                    <th>Field</th>
+                                    <th>Organization</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-mentors-tbody">
+                                <tr><td colspan="6" class="text-center py-4 data-loading">Loading mentors...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Mentor Approvals -->
+            <section id="mentor-approvals" class="dashboard-section content-section">
+                <div class="section-header">
+                    <h2>Mentor Approvals</h2>
+                    <p class="section-desc">Review and approve pending mentor applications.</p>
                 </div>
                 <div class="table-card glass">
                     <div class="table-responsive">
@@ -173,22 +218,22 @@
                             <thead>
                                 <tr>
                                     <th>Name</th>
+                                    <th>Email</th>
                                     <th>Field</th>
-                                    <th>University/Company</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="admin-mentors-tbody">
-                                <tr><td colspan="5" class="text-center py-4">Loading mentors...</td></tr>
+                            <tbody id="admin-approvals-tbody">
+                                <tr><td colspan="5" class="text-center py-4 data-loading">Loading pending mentors...</td></tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- 4. Manage Courses -->
-            <section id="courses" class="content-section">
+            <!-- Manage Courses -->
+            <section id="manage-courses" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Manage Courses</h2>
                 </div>
@@ -267,8 +312,8 @@
                 </div>
             </section>
 
-            <!-- 5. Manage Scholarships -->
-            <section id="scholarships" class="content-section">
+            <!-- Manage Scholarships -->
+            <section id="manage-scholarships" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Manage Scholarships</h2>
                 </div>
@@ -323,41 +368,83 @@
                 </div>
             </section>
 
-            <!-- 6. Placeholder Sections for Future Development -->
-            <section id="students" class="content-section">
+            <!-- Manage Students -->
+            <section id="manage-students" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Manage Students</h2>
+                    <p class="section-desc">All registered students synced from Firebase Realtime Database.</p>
                 </div>
-                <div class="table-card glass p-4 text-center text-muted">
-                    <i class="fas fa-tools fa-2x mb-2"></i>
-                    <p>Student table view will be populated here.</p>
+                <div class="section-toolbar">
+                    <input type="search" id="student-search" class="form-control" placeholder="Search name or email...">
+                    <select id="student-filter-district" class="form-control">
+                        <option value="">All Districts</option>
+                    </select>
+                    <select id="student-filter-interest" class="form-control">
+                        <option value="">All Interest Areas</option>
+                    </select>
+                </div>
+                <div class="table-card glass">
+                    <div class="table-responsive" style="max-height: 600px; overflow: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>District</th>
+                                    <th>Education</th>
+                                    <th>Interest</th>
+                                    <th>Profile %</th>
+                                    <th>Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-students-tbody">
+                                <tr><td colspan="8" class="text-center py-4 data-loading">Loading students...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
 
-            <section id="institutes" class="content-section">
+            <!-- Pathway Results -->
+            <section id="pathway-results" class="dashboard-section content-section">
                 <div class="section-header">
-                    <h2>Manage Institutes</h2>
+                    <h2>Pathway Results</h2>
+                    <p class="section-desc">All pathway finder results submitted by students.</p>
                 </div>
-                <div class="table-card glass p-4 text-center text-muted">
-                    <i class="fas fa-tools fa-2x mb-2"></i>
-                    <p>Institute UI to be developed.</p>
-                </div>
-            </section>
-
-            <section id="pathway" class="content-section">
-                <div class="section-header">
-                    <h2>Manage Pathway Rules</h2>
-                </div>
-                <div class="table-card glass p-4 text-center text-muted">
-                    <i class="fas fa-tools fa-2x mb-2"></i>
-                    <p>Dynamic rule configuration UI to be developed.</p>
+                <div class="table-card glass">
+                    <div class="table-responsive" style="max-height: 600px; overflow: auto;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Email</th>
+                                    <th>Education</th>
+                                    <th>Interest</th>
+                                    <th>Future Goal</th>
+                                    <th>Score</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-pathway-tbody">
+                                <tr><td colspan="7" class="text-center py-4 data-loading">Loading pathway results...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
             
-            <!-- 6.5. Student Mentor Requests -->
-            <section id="requests" class="content-section">
+            <!-- Mentor Requests -->
+            <section id="mentor-requests" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Student Mentor Requests</h2>
+                    <p class="section-desc">Connection requests between students and mentors.</p>
+                </div>
+                <div class="filter-tabs" id="request-filter-tabs">
+                    <button type="button" class="btn-filter active" data-filter="all">All</button>
+                    <button type="button" class="btn-filter" data-filter="pending">Pending</button>
+                    <button type="button" class="btn-filter" data-filter="accepted">Accepted</button>
+                    <button type="button" class="btn-filter" data-filter="rejected">Rejected</button>
                 </div>
                 <div class="table-card glass">
                     <div class="table-responsive">
@@ -379,8 +466,8 @@
                 </div>
             </section>
 
-            <!-- 6.6. Contact Messages -->
-            <section id="messages" class="content-section">
+            <!-- Contact Messages -->
+            <section id="contact-messages" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Contact Messages</h2>
                 </div>
@@ -404,8 +491,8 @@
                 </div>
             </section>
             
-            <!-- 7. Reports Section -->
-            <section id="reports" class="content-section">
+            <!-- Reports -->
+            <section id="reports" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Platform Reports</h2>
                 </div>
@@ -431,6 +518,8 @@
 
 
     <script type="module" src="theme.js"></script>
+    <script type="module" src="auth-nav.js"></script>
+    <script type="module" src="dashboard-topbar.js"></script>
     <script type="module" src="admin-dashboard.js"></script>
 </body>
 </html>

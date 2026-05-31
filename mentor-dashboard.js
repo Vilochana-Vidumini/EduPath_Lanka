@@ -2,23 +2,11 @@ import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast, preserveThemeOnClear } from "./auth-nav.js";
+import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
+import { ensureDashboardTopbarLayout, initDashboardNotifications } from "./dashboard-topbar.js";
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Sidebar Toggle ---
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    const closeSidebar = document.getElementById('close-sidebar');
-    const sidebar = document.getElementById('sidebar');
-
-    if (sidebarToggle && sidebar && closeSidebar) {
-        sidebarToggle.addEventListener('click', () => {
-            sidebar.classList.add('active');
-        });
-        closeSidebar.addEventListener('click', () => {
-            sidebar.classList.remove('active');
-        });
-    }
-
-
+    initDashboardSidebar();
 
     let currentUid = null;
 
@@ -44,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Initialize Dashboard
                 initMentorDashboard(user.uid, userData);
+                ensureDashboardTopbarLayout();
+                initDashboardNotifications(user.uid);
             } else {
                 window.location.href = 'login.html';
             }
@@ -67,6 +57,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initMentorDashboard(uid, userData) {
+        updateSidebarUser({
+            fullName: userData.fullName || 'Mentor',
+            role: 'mentor',
+            photoURL: userData.photoURL || '',
+        });
+
         const firstName = (userData.fullName || 'Mentor').split(' ')[0];
         const welcomeNameEl = document.getElementById('welcome-name');
         if (welcomeNameEl) {

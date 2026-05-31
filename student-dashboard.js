@@ -2,23 +2,11 @@ import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, set, update, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast, preserveThemeOnClear } from "./auth-nav.js";
+import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
+import { ensureDashboardTopbarLayout, initDashboardNotifications } from "./dashboard-topbar.js";
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- Sidebar Toggle ---
-    const sidebarToggle = document.getElementById('sidebar-toggle');
-    const closeSidebar = document.getElementById('close-sidebar');
-    const sidebar = document.getElementById('sidebar');
-
-    if (sidebarToggle && sidebar && closeSidebar) {
-        sidebarToggle.addEventListener('click', () => {
-            sidebar.classList.add('active');
-        });
-        closeSidebar.addEventListener('click', () => {
-            sidebar.classList.remove('active');
-        });
-    }
-
-    // --- Redirect Controls ---
+    initDashboardSidebar();
     document.getElementById('complete-profile-card-btn')?.addEventListener('click', () => {
         window.location.href = 'profile.html';
     });
@@ -49,6 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     hasGeneratedPathway = pathwaySnapshot.exists();
                     // Initialize Dashboard
                     initDashboard(user.uid, userData);
+                    ensureDashboardTopbarLayout();
+                    initDashboardNotifications(user.uid);
                 });
             } else {
                 window.location.href = 'login.html';
@@ -73,6 +63,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function initDashboard(uid, userData) {
+        updateSidebarUser({
+            fullName: userData.fullName || 'Student',
+            role: 'student',
+            photoURL: userData.photoURL || '',
+        });
+
         // Set names
         const firstName = (userData.fullName || 'Student').split(' ')[0];
         const welcomeNameEl = document.getElementById('welcome-name');

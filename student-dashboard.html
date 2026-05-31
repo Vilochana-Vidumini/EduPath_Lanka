@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);if(localStorage.getItem('sidebarCollapsed')==='true'&&window.innerWidth>768){document.documentElement.classList.add('sidebar-collapsed');}})();</script>
     <title>Student Dashboard | EduPath Lanka</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -17,26 +17,31 @@
 </head>
 <body>
 
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
             <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
         </div>
+        <div class="sidebar-user" id="sidebar-user">
+            <div class="sidebar-user-avatar" id="sidebar-user-avatar"><span class="sidebar-initials">ST</span><span class="online-dot" aria-hidden="true"></span></div>
+            <div class="sidebar-user-info">
+                <span class="sidebar-user-name" id="sidebar-user-name">Loading...</span>
+                <span class="sidebar-user-role role-student" id="sidebar-user-role">Student</span>
+            </div>
+        </div>
         <ul class="sidebar-links">
-            <li><a href="student-dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
-            <li><a href="profile.html"><i class="fas fa-user"></i> My Profile</a></li>
-            <li><a href="pathway.html"><i class="fas fa-route"></i> Pathway Finder</a></li>
-            <li><a href="#latest-result"><i class="fas fa-poll-h"></i> My Pathway Results</a></li>
-            <li><a href="#courses"><i class="fas fa-book-open"></i> Courses</a></li>
-            <li><a href="#scholarships"><i class="fas fa-hand-holding-usd"></i> Scholarships</a></li>
-            <li><a href="#mentors"><i class="fas fa-chalkboard-teacher"></i> Mentors</a></li>
-            <li><a href="#"><i class="fas fa-bookmark"></i> Saved Courses</a></li>
-            <li><a href="#skills"><i class="fas fa-tools"></i> Skill Resources</a></li>
-            <li><a href="#career-guide"><i class="fas fa-compass"></i> Career Guide</a></li>
-            <li><a href="#"><i class="fas fa-envelope"></i> Messages</a></li>
-            <li><a href="profile.html#security"><i class="fas fa-cog"></i> Settings</a></li>
-            <li><a href="#" id="logout-btn-sidebar" class="text-danger"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            <li><a href="student-dashboard.html" class="active" title="Dashboard"><i class="fas fa-tachometer-alt"></i><span class="sidebar-label">Dashboard</span></a></li>
+            <li><a href="profile.html" title="My Profile"><i class="fas fa-user"></i><span class="sidebar-label">My Profile</span></a></li>
+            <li><a href="pathway.html" title="Pathway Finder"><i class="fas fa-route"></i><span class="sidebar-label">Pathway Finder</span></a></li>
+            <li><a href="#latest-result" title="My Pathway Results"><i class="fas fa-poll-h"></i><span class="sidebar-label">My Pathway Results</span></a></li>
+            <li><a href="#courses" title="Courses"><i class="fas fa-book-open"></i><span class="sidebar-label">Courses</span></a></li>
+            <li><a href="#scholarships" title="Scholarships"><i class="fas fa-hand-holding-usd"></i><span class="sidebar-label">Scholarships</span></a></li>
+            <li><a href="#mentors" title="Mentors"><i class="fas fa-chalkboard-teacher"></i><span class="sidebar-label">Mentors</span></a></li>
+            <li><a href="index.html" title="Home"><i class="fas fa-home"></i><span class="sidebar-label">Home</span></a></li>
+            <li><a href="#" id="logout-btn-sidebar" class="text-danger" title="Logout"><i class="fas fa-sign-out-alt"></i><span class="sidebar-label">Logout</span></a></li>
         </ul>
     </aside>
 
@@ -48,11 +53,7 @@
                 <i class="fas fa-bars sidebar-toggle" id="sidebar-toggle"></i>
                 <h2 class="page-title">Student Dashboard</h2>
             </div>
-            <div class="topbar-right">
-                <div class="notifications">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge">3</span>
-                </div>
+            <div class="topbar-right dashboard-topbar-actions">
                 <div class="user-profile">
                     <div class="avatar"><i class="fas fa-user"></i></div>
                     <span class="user-name" id="top-user-name">Loading...</span>
@@ -368,6 +369,8 @@
 
 
     <script type="module" src="theme.js"></script>
+    <script type="module" src="auth-nav.js"></script>
+    <script type="module" src="dashboard-topbar.js"></script>
     <script type="module" src="student-dashboard.js"></script>
 </body>
 </html>

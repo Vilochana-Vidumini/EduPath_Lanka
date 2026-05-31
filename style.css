@@ -330,17 +330,17 @@ p {
     width: 100%;
     height: var(--nav-height);
     z-index: 1000;
-    background: rgba(255, 255, 255, 0.85);
+    background: var(--nav-bg-theme, rgba(255, 255, 255, 0.85));
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    border-bottom: 1px solid rgba(226, 232, 240, 0.4);
+    border-bottom: 1px solid var(--nav-border-theme, rgba(226, 232, 240, 0.4));
     transition: var(--transition);
     box-shadow: none;
 }
 
 .header.scrolled {
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-    background: rgba(255, 255, 255, 0.9);
+    background: var(--nav-bg-theme, rgba(255, 255, 255, 0.9));
 }
 
 .nav-container {
@@ -353,14 +353,14 @@ p {
 .logo {
     font-size: 1.25rem;
     font-weight: 800;
-    color: var(--deep-blue);
+    color: var(--theme-text, var(--deep-blue));
     letter-spacing: 0.5px;
     display: flex;
     align-items: center;
 }
 
 .logo span {
-    color: var(--primary-blue);
+    color: var(--theme-primary, var(--primary-blue));
 }
 
 .nav-links {
@@ -371,7 +371,7 @@ p {
 .nav-links a {
     font-size: 14px;
     font-weight: 600;
-    color: var(--deep-blue);
+    color: var(--theme-muted, var(--deep-blue));
     position: relative;
     padding: 0.5rem 0;
 }
