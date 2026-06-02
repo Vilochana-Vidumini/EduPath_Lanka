@@ -1,359 +1,682 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduPath Lanka | Guiding Every Student Towards a Brighter Future</title>
-    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="theme.css">
+    <title>Wire Harness Production Dashboard</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        darkBase: '#0a0f1c', // Dark navy
+                        darkPanel: 'rgba(17, 24, 39, 0.6)', // Midnight blue glass
+                        darkPanelBorder: 'rgba(55, 65, 81, 0.5)',
+                        purpleGradientStart: '#1e1b4b', // Deep purple
+                        blueAccent: '#3b82f6',
+                        cyanAccent: '#06b6d4',
+                        violetAccent: '#8b5cf6',
+                        greenAccent: '#10b981',
+                        warningRed: '#ef4444',
+                        warningOrange: '#f97316',
+                        warningYellow: '#eab308'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Base styles */
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0f1c 0%, #0f172a 50%, #1e1b4b 100%);
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+        }
+
+        .glass-glow {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.15), inset 0 0 20px rgba(6, 182, 212, 0.05);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+        }
+
+        /* Main layout grid */
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 24px;
+            gap: 24px;
+            box-sizing: border-box;
+        }
+
+        /* Header area */
+        .header-area {
+            height: 96px;
+            flex-shrink: 0;
+        }
+
+        /* Main content area */
+        .main-content {
+            display: flex;
+            flex: 1;
+            gap: 24px;
+            min-height: 0; /* Important for flexbox overflow */
+        }
+
+        /* Left sidebar */
+        .sidebar {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* Center and Right area combined */
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            min-width: 0; /* Important for flexbox overflow */
+        }
+
+        .top-row {
+            display: flex;
+            height: 280px;
+            gap: 24px;
+        }
+
+        .hero-section {
+            flex: 1;
+        }
+
+        .middle-row {
+            display: flex;
+            flex: 1;
+            gap: 24px;
+            min-height: 0;
+        }
+
+        .chart-section {
+            flex: 1;
+            min-height: 0; /* important for chart */
+        }
+
+        .quality-section {
+            width: 380px;
+        }
+
+        .bottom-row {
+            display: flex;
+            height: 140px;
+            gap: 24px;
+        }
+
+        /* Footer */
+        .footer-area {
+            height: 48px;
+            flex-shrink: 0;
+        }
+
+    </style>
 </head>
-
 <body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <header class="header-area glass-panel flex items-center px-6 justify-between">
+            <div class="flex items-center gap-6">
+                <!-- Custom SVG Logo -->
+                <div class="h-14 w-14 rounded-lg bg-slate-900/50 flex items-center justify-center border border-slate-700/50 shadow-inner">
+                    <svg viewBox="0 0 64 64" fill="none" class="w-10 h-10">
+                        <!-- Connectors -->
+                        <rect x="4" y="16" width="12" height="32" rx="2" fill="#334155" />
+                        <rect x="48" y="16" width="12" height="32" rx="2" fill="#334155" />
+                        <!-- Wires -->
+                        <path d="M16 22 C30 22, 34 22, 48 22" stroke="#06b6d4" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M16 27 C30 27, 34 32, 48 32" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M16 32 C30 32, 34 27, 48 27" stroke="#10b981" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M16 37 C30 37, 34 42, 48 42" stroke="#eab308" stroke-width="3" stroke-linecap="round"/>
+                        <path d="M16 42 C30 42, 34 37, 48 37" stroke="#ef4444" stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                </div>
 
-    <header class="header">
-        <div class="container nav-container">
-            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
-
-            <nav class="nav-links">
-                <a href="index.html" class="active">Home</a>
-                <a href="about.html">About Us</a>
-                <a href="pathway.html">Pathway Finder</a>
-                <a href="courses.html">Courses</a>
-                <a href="mentors.html">Mentors</a>
-                <a href="scholarships.html">Scholarships</a>
-            </nav>
-
-            <div class="nav-buttons">
-                <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle theme">
-                    <i class="fas fa-moon" aria-hidden="true"></i>
-                </button>
-                <a href="login.html" class="btn btn-login">Login</a>
-                <a href="signup.html" class="btn btn-signup">Sign Up</a>
-            </div>
-
-            <div class="hamburger">
-                <i class="fas fa-bars"></i>
-            </div>
-        </div>
-
-        <div class="mobile-menu">
-            <div class="close-btn"><i class="fas fa-times"></i></div>
-            <nav class="mobile-links">
-                <a href="index.html">Home</a>
-                <a href="about.html">About Us</a>
-                <a href="pathway.html">Pathway Finder</a>
-                <a href="courses.html">Courses</a>
-                <a href="mentors.html">Mentors</a>
-                <a href="scholarships.html">Scholarships</a>
-                <a href="login.html" class="btn btn-login">Login</a>
-                <a href="signup.html" class="btn btn-signup">Sign Up</a>
-            </nav>
-        </div>
-    </header>
-
-    <!-- Hero -->
-    <section id="home" class="hero">
-        <div class="container hero-container">
-            <div class="hero-content fade-in-left">
-                <span class="hero-badge">Sri Lanka's Student Pathway Platform</span>
-                <h1>Find Your Right Education & Career Path After O/L or A/L</h1>
-                <p>Discover personalized pathways, mentors, scholarships, and skills — even when exam results are not perfect.</p>
-                <div class="hero-buttons">
-                    <a href="pathway.html" class="btn btn-primary btn-large restricted-link">Start Path Finder</a>
-                    <a href="courses.html" class="btn btn-outline-dark btn-large">Explore Courses</a>
-                    <a href="scholarships.html" class="btn btn-outline-dark btn-large">View Scholarships</a>
+                <div class="flex flex-col">
+                    <h1 class="text-2xl font-bold tracking-wider text-white m-0 leading-tight">WIRE HARNESS PRODUCTION</h1>
+                    <h2 class="text-sm font-medium text-cyanAccent tracking-[0.2em] m-0">LIVE KPI CONTROL DASHBOARD</h2>
                 </div>
             </div>
 
-            <div class="hero-image-wrapper fade-in-right">
-                <div class="floating-card glass card-1">
-                    <i class="fas fa-robot"></i>
-                    <span>AI Path Finder</span>
-                </div>
-                <div class="floating-card glass card-2">
-                    <i class="fas fa-user-tie"></i>
-                    <span>Mentor Connected</span>
-                </div>
-                <div class="floating-card glass card-3">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>Scholarships</span>
-                </div>
-                <div class="floating-card glass card-4">
-                    <i class="fas fa-bullseye"></i>
-                    <span>Career Match</span>
+            <div class="flex items-center justify-center flex-1">
+                <div class="flex items-center gap-4 bg-slate-900/40 px-6 py-2 rounded-full border border-slate-700/50">
+                    <span class="text-slate-300 font-medium tracking-wide">Production KPI Command Center</span>
+                    <div class="h-4 w-px bg-slate-600"></div>
+                    <span class="text-white font-bold bg-blue-600/20 text-blue-400 px-3 py-1 rounded-md text-sm border border-blue-500/30">Line 5</span>
                 </div>
             </div>
-        </div>
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-    </section>
 
-    <!-- Problem / need -->
-    <section id="problems" class="problems section">
-        <div class="container">
-            <div class="section-title text-center scroll-reveal">
-                <h2>Why Do We Need EduPath Lanka?</h2>
-                <p>Common struggles students face after O/L and A/L — and how we help you move forward.</p>
-            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex flex-col items-end bg-slate-900/40 px-4 py-2 rounded-lg border border-slate-700/50">
+                    <span class="text-xs text-slate-400 font-medium uppercase">Date</span>
+                    <span class="text-sm font-semibold text-white">May 06, 2026 | Tuesday</span>
+                </div>
 
-            <div class="problems-grid">
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-map-signs"></i></div>
-                    <h3>Lack of Guidance</h3>
-                    <p>Feeling lost about what to do after exams.</p>
+                <div class="flex flex-col items-end bg-slate-900/40 px-4 py-2 rounded-lg border border-slate-700/50">
+                    <span class="text-xs text-slate-400 font-medium uppercase">Current Time</span>
+                    <span class="text-xl font-bold text-cyanAccent font-mono tracking-tight" id="clock">03:53:38 PM</span>
                 </div>
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-wallet"></i></div>
-                    <h3>Financial Struggles</h3>
-                    <p>Difficulty funding higher education without scholarships.</p>
-                </div>
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-university"></i></div>
-                    <h3>University Confusion</h3>
-                    <p>Unclear options for admissions and alternatives.</p>
-                </div>
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-tools"></i></div>
-                    <h3>Lack of Skills</h3>
-                    <p>Missing modern skills employers expect today.</p>
-                </div>
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-brain"></i></div>
-                    <h3>Mental Pressure</h3>
-                    <p>Stress from expectations after exam results.</p>
-                </div>
-                <div class="problem-card scroll-reveal">
-                    <div class="icon-box"><i class="fas fa-globe-asia"></i></div>
-                    <h3>Opportunity Gap</h3>
-                    <p>Rural students missing urban opportunities.</p>
+
+                <div class="flex items-center gap-3 bg-green-500/10 px-5 py-3 rounded-lg border border-green-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                    <div class="w-3 h-3 rounded-full bg-greenAccent shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
+                    <span class="text-greenAccent font-bold tracking-widest text-lg">RUNNING</span>
                 </div>
             </div>
-        </div>
-    </section>
+        </header>
 
-    <!-- How EduPath helps -->
-    <section id="how-we-help" class="features section bg-darker">
-        <div class="container">
-            <div class="section-title text-center scroll-reveal">
-                <h2>How EduPath Lanka Helps You</h2>
-                <p>One platform for guidance, learning, mentorship, and financial support.</p>
-            </div>
-
-            <div class="helps-grid">
-                <div class="help-card glass scroll-reveal">
-                    <i class="fas fa-compass help-icon"></i>
-                    <h3>Personalized Pathways</h3>
-                    <p>Match courses and careers to your results, interests, and goals.</p>
-                </div>
-                <div class="help-card glass scroll-reveal">
-                    <i class="fas fa-hands-helping help-icon"></i>
-                    <h3>Real Mentorship</h3>
-                    <p>Connect with students and professionals who understand your journey.</p>
-                </div>
-                <div class="help-card glass scroll-reveal">
-                    <i class="fas fa-book-open help-icon"></i>
-                    <h3>Course Discovery</h3>
-                    <p>Explore diplomas, degrees, NVQ, and skill programs in one place.</p>
-                </div>
-                <div class="help-card glass scroll-reveal">
-                    <i class="fas fa-hand-holding-usd help-icon"></i>
-                    <h3>Scholarships & Aid</h3>
-                    <p>Find funding, grants, and affordable learning options.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How Path Finder works -->
-    <section id="path-finder" class="path-finder section">
-        <div class="container">
-            <div class="path-finder-modern">
-                <div class="path-finder-intro scroll-reveal">
-                    <span class="section-badge">Smart Guidance</span>
-                    <h2>How the Path Finder Works</h2>
-                    <p>Use the full Path Finder after signing in to get tailored recommendations for courses, mentors, scholarships, and your next steps.</p>
-                    <a href="pathway.html" class="btn btn-primary btn-large restricted-link mt-4">
-                        Start Path Finder <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
-
-                <div class="path-steps-flow scroll-reveal">
-                    <div class="step-card glass">
-                        <div class="step-card-head">
-                            <span class="step-badge">1</span>
-                            <i class="fas fa-clipboard-list step-icon"></i>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Sidebar -->
+            <aside class="sidebar glass-panel p-6 flex flex-col justify-between">
+                <div class="flex flex-col gap-6">
+                    <!-- Section 1: Running Project -->
+                    <div class="flex flex-col">
+                        <div class="flex items-center gap-3 border-b border-slate-700/50 pb-3 mb-4">
+                            <i data-lucide="factory" class="text-blueAccent w-5 h-5"></i>
+                            <h3 class="text-lg font-semibold text-white tracking-wide m-0">Running Project</h3>
                         </div>
-                        <h4>Enter your education situation</h4>
-                        <p>Share your O/L, A/L, or current level — including alternative paths.</p>
-                    </div>
-                    <div class="flow-connector" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
-                    <div class="step-card glass">
-                        <div class="step-card-head">
-                            <span class="step-badge">2</span>
-                            <i class="fas fa-lightbulb step-icon"></i>
+
+                        <div class="flex flex-col gap-4">
+                            <div class="flex flex-col bg-slate-800/40 p-3 rounded-lg border border-blue-500/20 shadow-inner">
+                                <span class="text-xs text-slate-400 font-medium uppercase mb-1">Project Number</span>
+                                <span class="text-2xl font-bold text-blueAccent tracking-wide">9032072</span>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-3 px-1">
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-slate-400 font-medium">Customer</span>
+                                    <span class="text-sm font-semibold text-slate-100">ABC Wiring Systems</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-slate-400 font-medium">Customer Description</span>
+                                    <span class="text-sm font-semibold text-slate-100">Model ZX-120</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-slate-400 font-medium">Project Order No.</span>
+                                    <span class="text-sm font-semibold text-slate-100">1207842</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-xs text-slate-400 font-medium">Build Type</span>
+                                    <span class="text-sm font-semibold text-slate-100">Standard Build</span>
+                                </div>
+                            </div>
                         </div>
-                        <h4>Select interests & skills</h4>
-                        <p>Tell us what you enjoy and where your strengths lie.</p>
                     </div>
-                    <div class="flow-connector" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
-                    <div class="step-card glass">
-                        <div class="step-card-head">
-                            <span class="step-badge">3</span>
-                            <i class="fas fa-flag-checkered step-icon"></i>
+
+                    <!-- Section 2: Project Schedule -->
+                    <div class="flex flex-col mt-4">
+                        <div class="flex items-center gap-3 border-b border-slate-700/50 pb-3 mb-4">
+                            <i data-lucide="calendar-clock" class="text-violetAccent w-5 h-5"></i>
+                            <h3 class="text-lg font-semibold text-white tracking-wide m-0">Project Schedule</h3>
                         </div>
-                        <h4>Choose your future goal</h4>
-                        <p>Job, degree, business, or skill-building — we adapt to you.</p>
-                    </div>
-                    <div class="flow-connector" aria-hidden="true"><i class="fas fa-chevron-right"></i></div>
-                    <div class="step-card glass">
-                        <div class="step-card-head">
-                            <span class="step-badge">4</span>
-                            <i class="fas fa-chart-line step-icon"></i>
+
+                        <div class="flex flex-col gap-3 px-1">
+                            <div class="flex justify-between items-center bg-slate-800/30 p-2 rounded border border-slate-700/30">
+                                <span class="text-xs text-slate-400 font-medium flex items-center gap-2"><i data-lucide="target" class="w-3.5 h-3.5"></i> Daily Target</span>
+                                <span class="text-sm font-bold text-white">240 PCS</span>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 mt-2">
+                                <div class="flex flex-col">
+                                    <span class="text-[11px] text-slate-400 font-medium">Start Date</span>
+                                    <span class="text-sm font-medium text-slate-200">03/06/2026</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-[11px] text-slate-400 font-medium">End Date</span>
+                                    <span class="text-sm font-medium text-slate-200">03/09/2026</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-[11px] text-slate-400 font-medium">Start Time</span>
+                                    <span class="text-sm font-medium text-slate-200">11:15 AM</span>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-[11px] text-slate-400 font-medium">End Time</span>
+                                    <span class="text-sm font-medium text-slate-200">05:30 PM</span>
+                                </div>
+                            </div>
                         </div>
-                        <h4>Get your personalized plan</h4>
-                        <p>Courses, mentors, scholarships, and clear next steps in one dashboard.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Services preview -->
-    <section id="services" class="services-preview section bg-darker">
-        <div class="container">
-            <div class="section-title text-center scroll-reveal">
-                <h2>Explore Our Services</h2>
-                <p>Everything you need to plan your education and career in Sri Lanka.</p>
-            </div>
-
-            <div class="services-grid">
-                <a href="pathway.html" class="service-card glass scroll-reveal restricted-link">
-                    <div class="service-icon-wrap gradient-blue"><i class="fas fa-route"></i></div>
-                    <h3>Path Finder</h3>
-                    <p>Personalized pathway recommendations based on your profile.</p>
-                    <span class="service-link">Get started <i class="fas fa-arrow-right"></i></span>
-                </a>
-                <a href="courses.html" class="service-card glass scroll-reveal">
-                    <div class="service-icon-wrap gradient-cyan"><i class="fas fa-book-open"></i></div>
-                    <h3>Courses</h3>
-                    <p>Browse diplomas, degrees, NVQ, and professional programs.</p>
-                    <span class="service-link">Explore <i class="fas fa-arrow-right"></i></span>
-                </a>
-                <a href="mentors.html" class="service-card glass scroll-reveal">
-                    <div class="service-icon-wrap gradient-purple"><i class="fas fa-chalkboard-teacher"></i></div>
-                    <h3>Mentors</h3>
-                    <p>Learn from university students, graduates, and professionals.</p>
-                    <span class="service-link">Meet mentors <i class="fas fa-arrow-right"></i></span>
-                </a>
-                <a href="scholarships.html" class="service-card glass scroll-reveal">
-                    <div class="service-icon-wrap gradient-green"><i class="fas fa-award"></i></div>
-                    <h3>Scholarships</h3>
-                    <p>Government, NGO, and institutional funding opportunities.</p>
-                    <span class="service-link">View scholarships <i class="fas fa-arrow-right"></i></span>
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- No Student Left Behind (short) -->
-    <section class="inspiration-short section">
-        <div class="container">
-            <div class="inspiration-short-inner glass scroll-reveal">
-                <div class="inspiration-short-text">
-                    <span class="section-badge badge-purple">Our Promise</span>
-                    <h2>No Student Left Behind</h2>
-                    <p>Your exam results do not define your future. EduPath Lanka helps you discover diplomas, NVQ pathways, scholarships, and modern careers — with supportive, non-judgmental guidance.</p>
-                    <a href="about.html" class="btn btn-outline-dark">Learn about our mission</a>
-                </div>
-                <div class="inspiration-short-stats">
-                    <div class="mini-stat">
-                        <i class="fas fa-heart"></i>
-                        <strong>Supportive</strong>
-                        <span>Empathetic guidance</span>
-                    </div>
-                    <div class="mini-stat">
-                        <i class="fas fa-route"></i>
-                        <strong>Alternative paths</strong>
-                        <span>Beyond traditional uni</span>
-                    </div>
-                    <div class="mini-stat">
-                        <i class="fas fa-users"></i>
-                        <strong>For every student</strong>
-                        <span>Urban & rural alike</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Final CTA -->
-    <section id="cta" class="cta section">
-        <div class="container">
-            <div class="cta-card glass text-center scroll-reveal">
-                <h2>Your future still has a path. Let's find it together.</h2>
-                <p>Join EduPath Lanka and discover courses, mentors, and scholarships made for you.</p>
-                <div class="cta-buttons">
-                    <a href="pathway.html" class="btn btn-primary btn-large restricted-link">Start Path Finder</a>
-                    <a href="signup.html" class="btn btn-outline-dark btn-large">Create Free Account</a>
-                </div>
-            </div>
-        </div>
-        <div class="blob blob-3"></div>
-        <div class="blob blob-4"></div>
-    </section>
-
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-top">
-                <div class="footer-brand">
-                    <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
-                    <p>Guiding Every Student Towards a Brighter Future</p>
-                    <div class="social-icons">
-                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
                     </div>
                 </div>
 
-                <div class="footer-links">
-                    <h4>Quick Links</h4>
-                    <ul>
-                        <li><a href="index.html">Home</a></li>
-                        <li><a href="about.html">About Us</a></li>
-                        <li><a href="pathway.html" class="restricted-link">Path Finder</a></li>
-                        <li><a href="courses.html">Courses</a></li>
-                        <li><a href="mentors.html">Mentors</a></li>
-                        <li><a href="scholarships.html">Scholarships</a></li>
-                    </ul>
+                <!-- Product/Customer Badge -->
+                <div class="flex justify-center mt-6">
+                    <div class="bg-slate-900/60 px-8 py-4 rounded-xl border border-slate-700/50 shadow-inner">
+                        <span class="text-3xl font-black text-slate-300 tracking-widest opacity-80">BRP</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center and Right Content -->
+            <div class="content-area">
+                <!-- Top Row: Hero / Main KPI -->
+                <div class="top-row">
+                    <div class="hero-section glass-panel glass-glow flex p-8 items-center justify-between relative overflow-hidden">
+                        <!-- Background Glow Effect -->
+                        <div class="absolute -top-24 -left-24 w-64 h-64 bg-cyanAccent/20 rounded-full blur-[80px]"></div>
+
+                        <div class="flex flex-col relative z-10">
+                            <span class="text-sm font-semibold text-cyanAccent tracking-widest uppercase mb-2">Current Output</span>
+                            <div class="flex items-baseline gap-4">
+                                <span class="text-8xl font-black text-white tracking-tighter drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]">173</span>
+                                <span class="text-xl text-slate-300 font-medium tracking-wide">PCS completed today</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-12 relative z-10">
+                            <!-- Circular Progress -->
+                            <div class="relative w-40 h-40 flex items-center justify-center">
+                                <svg class="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(16,185,129,0.15)" stroke-width="8"></circle>
+                                    <circle cx="50" cy="50" r="45" fill="none" stroke="#10b981" stroke-width="8" stroke-dasharray="283" stroke-dashoffset="144" stroke-linecap="round" class="drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]"></circle>
+                                </svg>
+                                <div class="absolute flex flex-col items-center justify-center">
+                                    <span class="text-3xl font-bold text-white">49%</span>
+                                    <span class="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Completed</span>
+                                </div>
+                            </div>
+
+                            <!-- Mini Stats -->
+                            <div class="flex flex-col gap-4 border-l border-slate-700/50 pl-8">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-slate-800/80 flex items-center justify-center border border-slate-700/50">
+                                        <i data-lucide="target" class="text-blueAccent w-5 h-5"></i>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-400 font-medium">Daily Target</span>
+                                        <span class="text-xl font-bold text-white">240 <span class="text-sm font-normal text-slate-400">PCS</span></span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-slate-800/80 flex items-center justify-center border border-slate-700/50">
+                                        <i data-lucide="timer" class="text-violetAccent w-5 h-5"></i>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-400 font-medium">Product Cycle Time</span>
+                                        <span class="text-xl font-bold text-white">A | 23 <span class="text-sm font-normal text-slate-400">Min</span></span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 rounded-full bg-slate-800/80 flex items-center justify-center border border-slate-700/50">
+                                        <i data-lucide="check-circle-2" class="text-greenAccent w-5 h-5"></i>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-xs text-slate-400 font-medium">1st Pass Yield</span>
+                                        <span class="text-xl font-bold text-greenAccent">98%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="footer-contact" id="contact">
-                    <h4>Contact Us</h4>
-                    <ul>
-                        <li><i class="fas fa-map-marker-alt"></i> Colombo, Sri Lanka</li>
-                        <li><i class="fas fa-envelope"></i> hello@edupathlanka.lk</li>
-                        <li><i class="fas fa-phone-alt"></i> +94 11 234 5678</li>
-                    </ul>
+                <!-- Middle Row: Chart & Quality -->
+                <div class="middle-row">
+                    <!-- Center Chart -->
+                    <div class="chart-section glass-panel p-6 flex flex-col min-h-0">
+                        <div class="flex items-center justify-between border-b border-slate-700/50 pb-3 mb-4">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="bar-chart-3" class="text-blueAccent w-5 h-5"></i>
+                                <div class="flex flex-col">
+                                    <h3 class="text-lg font-semibold text-white tracking-wide m-0 leading-tight">HOURLY OUTPUT</h3>
+                                    <span class="text-[11px] text-slate-400 uppercase tracking-widest">Final 02 PASS output by production hour</span>
+                                </div>
+                            </div>
+
+                            <!-- Chart Controls -->
+                            <div class="flex items-center gap-2 bg-slate-800/50 p-1 rounded-md border border-slate-700/50">
+                                <button class="px-3 py-1 text-xs font-medium text-white bg-blue-600/30 rounded border border-blue-500/30">Today</button>
+                                <button class="px-3 py-1 text-xs font-medium text-slate-400 hover:text-white transition-colors">Hourly</button>
+                            </div>
+                        </div>
+
+                        <div class="flex-1 relative w-full h-full min-h-0">
+                            <canvas id="hourlyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Right Quality Panel -->
+                    <div class="quality-section glass-panel p-6 flex flex-col">
+                        <div class="flex items-center gap-3 border-b border-slate-700/50 pb-3 mb-6">
+                            <i data-lucide="shield-alert" class="text-warningOrange w-5 h-5"></i>
+                            <div class="flex flex-col">
+                                <h3 class="text-lg font-semibold text-white tracking-wide m-0 leading-tight">QUALITY MONITOR</h3>
+                                <span class="text-[11px] text-slate-400 uppercase tracking-widest">Defect breakdown</span>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-4 flex-1 justify-center">
+                            <!-- Defect Rows -->
+                            <div class="flex items-center justify-between bg-slate-800/30 p-3 rounded-lg border-l-4 border-warningRed border-y border-r border-slate-700/30">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="x-octagon" class="text-warningRed w-4 h-4"></i>
+                                    <span class="text-sm font-medium text-slate-200">Test Fail</span>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <span class="text-xs text-slate-400">1.0%</span>
+                                    <span class="text-lg font-bold text-warningRed w-6 text-right">2</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between bg-slate-800/30 p-3 rounded-lg border-l-4 border-warningOrange border-y border-r border-slate-700/30">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="eye-off" class="text-warningOrange w-4 h-4"></i>
+                                    <span class="text-sm font-medium text-slate-200">Visual Fail</span>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <span class="text-xs text-slate-400">0.5%</span>
+                                    <span class="text-lg font-bold text-warningOrange w-6 text-right">1</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between bg-slate-800/30 p-3 rounded-lg border-l-4 border-warningYellow border-y border-r border-slate-700/30">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="ruler" class="text-warningYellow w-4 h-4"></i>
+                                    <span class="text-sm font-medium text-slate-200">Length Fail</span>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <span class="text-xs text-slate-400">0.5%</span>
+                                    <span class="text-lg font-bold text-warningYellow w-6 text-right">1</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-2 flex items-center justify-between bg-slate-900/60 p-4 rounded-lg border border-slate-600 shadow-[inset_0_0_10px_rgba(239,68,68,0.1)]">
+                                <div class="flex items-center gap-3">
+                                    <i data-lucide="alert-triangle" class="text-warningRed w-5 h-5"></i>
+                                    <span class="text-base font-bold text-white uppercase tracking-wider">Total Fail</span>
+                                </div>
+                                <div class="flex items-center gap-4">
+                                    <span class="text-sm font-medium text-slate-400">2.0%</span>
+                                    <span class="text-2xl font-black text-warningRed">4</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: KPI Cards -->
+                <div class="bottom-row">
+                    <!-- CONWIP -->
+                    <div class="flex-1 glass-panel flex items-center p-5 gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/30">
+                            <i data-lucide="layers" class="text-blueAccent w-6 h-6"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">CONWIP</span>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-3xl font-bold text-white">23</span>
+                                <span class="text-sm font-medium text-slate-500">Cards</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Running WIP -->
+                    <div class="flex-1 glass-panel flex items-center p-5 gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-cyan-500/20 flex items-center justify-center border border-cyan-500/30">
+                            <i data-lucide="activity" class="text-cyanAccent w-6 h-6"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Running WIP</span>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-3xl font-bold text-white">8</span>
+                                <span class="text-sm font-medium text-slate-500">PCS</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 1st Pass Yield -->
+                    <div class="flex-1 glass-panel flex items-center p-5 gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center border border-green-500/30">
+                            <i data-lucide="check-circle" class="text-greenAccent w-6 h-6"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">1st Pass Yield</span>
+                            <div class="flex items-baseline gap-3">
+                                <span class="text-3xl font-bold text-greenAccent">98.0%</span>
+                                <span class="text-xs font-bold text-greenAccent bg-green-500/20 px-2 py-0.5 rounded border border-green-500/30 uppercase">Excellent</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Output Balance -->
+                    <div class="flex-1 glass-panel flex items-center p-5 gap-4">
+                        <div class="w-12 h-12 rounded-lg bg-violet-500/20 flex items-center justify-center border border-violet-500/30">
+                            <i data-lucide="scale" class="text-violetAccent w-6 h-6"></i>
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Output Balance</span>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-3xl font-bold text-white">67</span>
+                                <span class="text-sm font-medium text-slate-500">PCS remaining</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Team Attendance -->
+                    <div class="flex-[1.2] glass-panel flex items-center p-5 justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 rounded-lg bg-slate-800/80 flex items-center justify-center border border-slate-700/50">
+                                <i data-lucide="users" class="text-slate-300 w-6 h-6"></i>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Team Attendance</span>
+                                <div class="flex items-center gap-4 mt-1">
+                                    <div class="flex items-center gap-1.5">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-greenAccent shadow-[0_0_5px_rgba(16,185,129,0.5)]"></div>
+                                        <span class="text-xl font-bold text-white">22 <span class="text-[10px] font-normal text-slate-400 uppercase">Present</span></span>
+                                    </div>
+                                    <div class="w-px h-6 bg-slate-700/50"></div>
+                                    <div class="flex items-center gap-1.5">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-warningRed/60"></div>
+                                        <span class="text-xl font-bold text-slate-300">2 <span class="text-[10px] font-normal text-slate-400 uppercase">Absent</span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mini Dot Visualization for attendance -->
+                        <div class="flex flex-wrap gap-1 w-24 justify-end">
+                            <!-- 22 Present -->
+                            <div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div>
+                            <div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div>
+                            <div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div>
+                            <div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div>
+                            <div class="w-2 h-2 rounded-full bg-greenAccent"></div><div class="w-2 h-2 rounded-full bg-greenAccent"></div>
+                            <!-- 2 Absent -->
+                            <div class="w-2 h-2 rounded-full bg-slate-700"></div><div class="w-2 h-2 rounded-full bg-slate-700"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </main>
 
-            <div class="footer-bottom">
-                <p>&copy; 2024 EduPath Lanka. All rights reserved.</p>
+        <!-- Footer -->
+        <footer class="footer-area bg-slate-900/40 backdrop-blur-md border border-slate-700/30 rounded-lg flex items-center justify-between px-6 shadow-lg">
+            <div class="flex items-center gap-2">
+                <i data-lucide="shield-check" class="text-blueAccent w-4 h-4"></i>
+                <span class="text-xs font-semibold text-slate-300 tracking-[0.2em]">QUALITY FIRST · SAFETY ALWAYS · ZERO DEFECTS</span>
             </div>
-        </div>
-    </footer>
 
-    <script type="module" src="theme.js"></script>
-    <script src="script.js"></script>
-    <script type="module" src="auth-nav.js"></script>
+            <div class="flex items-center gap-6">
+                <div class="flex items-center gap-2 bg-slate-800/50 px-3 py-1 rounded-full border border-slate-700/50">
+                    <div class="w-2 h-2 rounded-full bg-greenAccent animate-pulse"></div>
+                    <span class="text-[10px] font-medium text-slate-300 tracking-wider">AUTO REFRESH: ON</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] text-slate-500 uppercase font-medium">Last Updated:</span>
+                    <span class="text-xs font-bold text-slate-300 font-mono">03:53:38 PM</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Initialize Chart.js
+        document.addEventListener("DOMContentLoaded", function() {
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+
+            // Create gradient for bars
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, '#3b82f6'); // Blue accent
+            gradient.addColorStop(1, '#1e1b4b'); // Purple dark
+
+            const data = [7, 29, 31, 30, 28, 29, 22, 15, 16, 0, 0, 0, 0];
+            const labels = ['1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM'];
+
+            // Generate background colors based on value (0 gets transparent/dashed effect via chartjs plugin or styling, but we'll use a semi-transparent fill for now)
+            const bgColors = data.map(val => val > 0 ? gradient : 'rgba(51, 65, 85, 0.2)');
+            const borderColors = data.map(val => val > 0 ? 'transparent' : 'rgba(100, 116, 139, 0.5)');
+            const borderDash = data.map(val => val > 0 ? [] : [5, 5]);
+            const borderWidth = data.map(val => val > 0 ? 0 : 2);
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Output',
+                        data: data,
+                        backgroundColor: bgColors,
+                        borderColor: borderColors,
+                        borderWidth: borderWidth,
+                        borderDash: borderDash,
+                        borderRadius: 6,
+                        barPercentage: 0.6,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 20
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            enabled: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 40,
+                            ticks: {
+                                stepSize: 10,
+                                color: '#94a3b8',
+                                font: {
+                                    family: 'Inter',
+                                    size: 11
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(71, 85, 105, 0.2)',
+                                borderDash: [4, 4],
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#94a3b8',
+                                font: {
+                                    family: 'Inter',
+                                    size: 11
+                                }
+                            },
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            }
+                        }
+                    },
+                    animation: {
+                        onComplete: function() {
+                            const chartInstance = this;
+                            const ctx = chartInstance.ctx;
+
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.font = 'bold 12px Inter';
+
+                            chartInstance.data.datasets.forEach(function(dataset, i) {
+                                const meta = chartInstance.getDatasetMeta(i);
+                                meta.data.forEach(function(bar, index) {
+                                    const data = dataset.data[index];
+                                    if (data > 0) {
+                                        ctx.fillStyle = '#f8fafc';
+                                        ctx.fillText(data, bar.x, bar.y - 5);
+                                    } else {
+                                        // Draw a small clock-like circle for future empty slots
+                                        ctx.beginPath();
+                                        ctx.arc(bar.x, bar.y - 10, 4, 0, 2 * Math.PI);
+                                        ctx.strokeStyle = '#64748b';
+                                        ctx.lineWidth = 1.5;
+                                        ctx.stroke();
+
+                                        // Draw clock hands
+                                        ctx.beginPath();
+                                        ctx.moveTo(bar.x, bar.y - 10);
+                                        ctx.lineTo(bar.x, bar.y - 12);
+                                        ctx.moveTo(bar.x, bar.y - 10);
+                                        ctx.lineTo(bar.x + 2, bar.y - 10);
+                                        ctx.stroke();
+                                    }
+                                });
+                            });
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
-
 </html>
