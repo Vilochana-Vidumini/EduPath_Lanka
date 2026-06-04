@@ -1,6 +1,6 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { ref, get } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { ref, get, push, set } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { themeToggleButtonHTML, wireThemeToggle } from "./theme.js";
 
 function handleLogout(e) {
@@ -23,6 +23,8 @@ export function preserveThemeOnClear() {
     if (savedTheme) localStorage.setItem('theme', savedTheme);
     if (sidebarCollapsed) localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
 }
+
+
 
 const AUTH_PANEL_LINKS = {
     student: [

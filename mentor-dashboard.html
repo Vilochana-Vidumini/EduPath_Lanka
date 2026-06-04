@@ -147,24 +147,10 @@
             <section id="requests" class="content-section">
                 <div class="section-header">
                     <h2>Student Requests</h2>
+                    <p class="section-desc">Review student mentorship requests, view matching student profiles, and accept or reject requests from one place.</p>
                 </div>
-                <div class="table-card glass">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Student Name</th>
-                                <th>Message</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="requests-tbody">
-                            <tr>
-                                <td colspan="5" class="text-center py-4">Loading requests...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div id="requests-grid" class="cards-grid">
+                    <div class="text-muted p-4">Loading requests...</div>
                 </div>
             </section>
 
@@ -178,6 +164,29 @@
                     <div class="text-muted p-4">No students accepted yet.</div>
                 </div>
             </section>
+
+            <div id="student-request-modal" class="modal-overlay hidden" aria-hidden="true">
+                <div class="modal-card request-modal-card">
+                    <div class="modal-header">
+                        <h3 id="modal-request-title">Request Details</h3>
+                        <button type="button" class="modal-close" id="modal-close-btn" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="modal-body" id="modal-request-body">
+                        <div class="modal-row"><strong>Status:</strong> <span id="modal-status"></span></div>
+                        <div class="modal-row"><strong>Student:</strong> <span id="modal-student-name"></span></div>
+                        <div class="modal-row"><strong>Email:</strong> <span id="modal-student-email"></span></div>
+                        <div class="modal-row"><strong>Phone:</strong> <span id="modal-student-phone"></span></div>
+                        <div class="modal-row"><strong>Education Level:</strong> <span id="modal-education"></span></div>
+                        <div class="modal-row"><strong>Interest Area:</strong> <span id="modal-interest"></span></div>
+                        <div class="modal-row"><strong>Future Goal:</strong> <span id="modal-goal"></span></div>
+                        <div class="modal-row"><strong>Learning Mode:</strong> <span id="modal-learning-mode"></span></div>
+                        <div class="modal-row"><strong>Skills:</strong> <span id="modal-skills"></span></div>
+                        <div class="modal-row"><strong>Request Message:</strong> <span id="modal-message"></span></div>
+                        <div class="modal-row"><strong>Latest Pathway Match:</strong> <span id="modal-pathway-result"></span></div>
+                        <div class="modal-row"><strong>Requested On:</strong> <span id="modal-requested-at"></span></div>
+                    </div>
+                </div>
+            </div>
 
             <!-- 6. Availability Management -->
             <section id="availability" class="content-section">

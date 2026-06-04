@@ -1,6 +1,6 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { ref, get, set, update, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { ref, get, set, update, push, serverTimestamp, onValue } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast, preserveThemeOnClear } from "./auth-nav.js";
 import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
 import { ensureDashboardTopbarLayout, initDashboardNotifications } from "./dashboard-topbar.js";
@@ -35,10 +35,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Check if they generated at least one pathway result
                 get(ref(database, 'pathwayResults/' + user.uid)).then((pathwaySnapshot) => {
                     hasGeneratedPathway = pathwaySnapshot.exists();
-                    // Initialize Dashboard
-                    initDashboard(user.uid, userData);
+                    
+                    // --- Run Static / One-time Initializations ---
                     ensureDashboardTopbarLayout();
                     initDashboardNotifications(user.uid);
+                    setupMentorRequests(user.uid, userData.fullName || 'Student');
+                    loadPathwayResults(user.uid);
+
+                    // --- Setup Real-Time Listeners for Live Updates ---
+                    setupLiveListeners(user.uid);
                 });
             } else {
                 window.location.href = 'login.html';
@@ -62,33 +67,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function initDashboard(uid, userData) {
-        updateSidebarUser({
-            fullName: userData.fullName || 'Student',
-            role: 'student',
-            photoURL: userData.photoURL || '',
+    function setupLiveListeners(uid) {
+        // 1. Listen to users node live (for profile name, photoURL)
+        onValue(ref(database, 'users/' + uid), (userSnap) => {
+            if (userSnap.exists()) {
+                const userData = userSnap.val();
+
+                // Live update sidebar name and photo
+                updateSidebarUser({
+                    fullName: userData.fullName || 'Student',
+                    role: 'student',
+                    photoURL: userData.photoURL || '',
+                });
+
+                // Live update welcome header text
+                const firstName = (userData.fullName || 'Student').split(' ')[0];
+                const welcomeNameEl = document.getElementById('welcome-name');
+                if (welcomeNameEl) {
+                    welcomeNameEl.textContent = `Welcome back, ${firstName}`;
+                }
+
+                // Recalculate completion percentage with latest user data
+                get(ref(database, 'students/' + uid)).then((studentSnap) => {
+                    const studentData = studentSnap.exists() ? studentSnap.val() : {};
+                    calculateProfileCompletion(uid, userData, studentData);
+                });
+            }
         });
 
-        // Set names
-        const firstName = (userData.fullName || 'Student').split(' ')[0];
-        const welcomeNameEl = document.getElementById('welcome-name');
-        if (welcomeNameEl) {
-            welcomeNameEl.textContent = `Welcome back, ${firstName}`;
-        }
+        // 2. Listen to students node live (for district, stream, skills, goal, etc.)
+        onValue(ref(database, 'students/' + uid), (studentSnap) => {
+            if (studentSnap.exists()) {
+                const studentData = studentSnap.val();
 
-        // Get fresh details from students node for full completion computation
-        get(ref(database, 'students/' + uid)).then((snapshot) => {
-            let studentData = snapshot.exists() ? snapshot.val() : {};
-            
-            // Calculate completion percentage
-            calculateProfileCompletion(uid, userData, studentData);
+                // Recalculate completion percentage with latest student data
+                get(ref(database, 'users/' + uid)).then((userSnap) => {
+                    if (userSnap.exists()) {
+                        calculateProfileCompletion(uid, userSnap.val(), studentData);
+                    }
+                });
+            }
         });
-
-        // Load Pathway Results
-        loadPathwayResults(uid);
-        
-        // Setup Mentor Request Buttons
-        setupMentorRequests(uid, userData.fullName);
     }
 
     function calculateProfileCompletion(uid, userData, studentData) {
@@ -180,7 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const percentage = Math.round((completed / total) * 100);
 
         // Save to Database so other widgets can read it
-        update(ref(database, 'students/' + uid), { profileCompletion: percentage });
+        if (studentData.profileCompletion !== percentage) {
+            update(ref(database, 'students/' + uid), { profileCompletion: percentage });
+        }
 
         // Update UI Progress Display
         const progressBar = document.getElementById('dynamic-profile-progress-bar');
@@ -353,8 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showToast("Profile updated successfully!", "success");
                 closeAllModals();
 
-                // Re-init dashboard to calculate new strength and update welcome text
-                initDashboard(user.uid, updatedData);
+                // (Dynamic updates are handled in real-time by the database listeners)
                 
                 // Refresh the dynamic elements like avatars in top header
                 setTimeout(() => {
@@ -417,4 +437,85 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveBtn.disabled = false;
             });
     });
+
+    // --- Hash-based Navigation Router ---
+    const allSections = [
+        '.welcome-card',
+        '.stats-grid',
+        '#latest-result',
+        '#courses',
+        '.split-section',
+        '#scholarships',
+        '#mentors',
+        '#skills',
+        '#career-guide'
+    ];
+
+    const viewMapping = {
+        'dashboard': ['.welcome-card', '.stats-grid', '#skills', '#career-guide'],
+        'latest-result': ['#latest-result'],
+        'courses': ['#courses'],
+        'scholarships': ['.split-section', '#scholarships'],
+        'mentors': ['.split-section', '#mentors']
+    };
+
+    function updateActiveView() {
+        let hash = window.location.hash.substring(1); // remove '#'
+        if (!hash || !viewMapping[hash]) {
+            hash = 'dashboard';
+        }
+
+        // Show/hide content sections
+        const activeSelectors = viewMapping[hash];
+        allSections.forEach(selector => {
+            const element = document.querySelector(selector);
+            if (element) {
+                if (activeSelectors.includes(selector)) {
+                    element.classList.remove('hidden');
+                } else {
+                    element.classList.add('hidden');
+                }
+            }
+        });
+
+        // Update active class on sidebar links
+        const sidebarLinks = document.querySelectorAll('.sidebar-links a');
+        sidebarLinks.forEach(link => {
+            const linkHref = link.getAttribute('href');
+            if (linkHref) {
+                const isDashboardDefault = (linkHref === 'student-dashboard.html' || linkHref === '#dashboard') && hash === 'dashboard';
+                const isMatchingHash = linkHref === `#${hash}`;
+                
+                if (isDashboardDefault || isMatchingHash) {
+                    link.classList.add('active');
+                } else {
+                    link.classList.remove('active');
+                }
+            }
+        });
+
+        // Update page title in the topbar
+        const pageTitle = document.querySelector('.page-title');
+        if (pageTitle) {
+            if (hash === 'dashboard') {
+                pageTitle.textContent = 'Student Dashboard';
+            } else {
+                const formattedTitle = hash.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                pageTitle.textContent = formattedTitle;
+            }
+        }
+
+        // Auto-close sidebar on mobile after navigation
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        if (sidebar && window.innerWidth <= 768) {
+            sidebar.classList.remove('active');
+            document.body.classList.remove('sidebar-mobile-open');
+            overlay?.classList.remove('show');
+        }
+    }
+
+    // Listen to hash changes and run on load
+    window.addEventListener('hashchange', updateActiveView);
+    updateActiveView();
 });

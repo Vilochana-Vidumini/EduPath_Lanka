@@ -35,7 +35,6 @@
         <ul class="sidebar-links">
             <li><a href="#" data-section="overview" class="active" title="Dashboard Overview"><i class="fas fa-tachometer-alt"></i><span class="sidebar-label">Dashboard Overview</span></a></li>
             <li><a href="profile.html" title="My Profile"><i class="fas fa-user-shield"></i><span class="sidebar-label">My Profile</span></a></li>
-            <li><a href="#" data-section="manage-users" title="Manage All Users"><i class="fas fa-users"></i><span class="sidebar-label">Manage All Users</span></a></li>
             <li><a href="#" data-section="manage-students" title="Manage Students"><i class="fas fa-user-graduate"></i><span class="sidebar-label">Manage Students</span></a></li>
             <li><a href="#" data-section="manage-mentors" title="Manage Mentors"><i class="fas fa-chalkboard-teacher"></i><span class="sidebar-label">Manage Mentors</span></a></li>
             <li><a href="#" data-section="mentor-approvals" title="Mentor Approvals"><i class="fas fa-user-check"></i><span class="sidebar-label">Mentor Approvals</span></a></li>
@@ -208,43 +207,6 @@
                             </thead>
                             <tbody id="admin-mentors-tbody">
                                 <tr><td colspan="6" class="text-center py-4 data-loading">Loading mentors...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Manage Users -->
-            <section id="manage-users" class="dashboard-section content-section">
-                <div class="section-header">
-                    <h2>Manage All Users</h2>
-                    <p class="section-desc">View all registered users and members on the platform.</p>
-                </div>
-                <div class="section-toolbar">
-                    <input type="search" id="user-search" class="form-control" placeholder="Search by name, email, or phone...">
-                    <select id="user-type-filter" class="form-control">
-                        <option value="">All User Types</option>
-                        <option value="Student">Students</option>
-                        <option value="Mentor">Mentors</option>
-                        <option value="Admin">Admins</option>
-                    </select>
-                </div>
-                <div class="table-card glass">
-                    <div class="table-responsive" style="max-height: 600px; overflow: auto;">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Email</th>
-                                    <th>Phone</th>
-                                    <th>User Type</th>
-                                    <th>Profile %</th>
-                                    <th>Joined</th>
-                                    <th>Updated</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-users-tbody">
-                                <tr><td colspan="7" class="text-center py-4 data-loading">Loading users...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -681,6 +643,11 @@
             <section id="contact-messages" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Contact Messages</h2>
+                    <p class="section-desc">View guest contact submissions and messages sent by logged-in users.</p>
+                </div>
+                <div class="filter-tabs" id="contact-messages-tabs">
+                    <button type="button" class="btn-filter active" data-tab="guest">Guest Messages</button>
+                    <button type="button" class="btn-filter" data-tab="user">User Messages</button>
                 </div>
                 <div class="table-card glass">
                     <div class="table-responsive">

@@ -292,6 +292,19 @@ ul {
 .cards-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; }
 .student-card { border-radius: var(--radius-lg); padding: 1.5rem; display: flex; flex-direction: column; gap: 0.8rem; }
 .student-card h4 { color: var(--primary-dark); font-size: 1.1rem; }
+.request-card { min-height: 220px; border: 1px solid rgba(148, 163, 184, 0.18); }
+.request-card-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 1rem; }
+.request-card-meta { display: flex; flex-wrap: wrap; gap: 0.75rem; margin: 1rem 0; color: var(--text-muted); }
+.request-card-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: auto; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; z-index: 2000; }
+.modal-overlay:not(.hidden) { opacity: 1; pointer-events: auto; }
+.modal-card { width: min(680px, calc(100% - 2rem)); max-height: 90vh; overflow-y: auto; background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow-xl); padding: 1.5rem; position: relative; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+.modal-header h3 { margin: 0; font-size: 1.2rem; }
+.modal-close { border: none; background: transparent; font-size: 1.7rem; line-height: 1; cursor: pointer; color: var(--text-dark); }
+.modal-body { display: grid; grid-template-columns: 1fr; gap: 0.85rem; }
+.modal-row { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; border-bottom: 1px solid rgba(148, 163, 184, 0.12); padding: 0.8rem 0; }
+.modal-row strong { color: var(--text-dark); }
 
 /* Guide Cards */
 .guide-card {

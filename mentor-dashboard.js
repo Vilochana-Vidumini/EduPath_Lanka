@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initDashboardSidebar();
 
     let currentUid = null;
+    let requestDetailCache = {};
 
     // --- Authentication & Role Check ---
     onAuthStateChanged(auth, (user) => {
@@ -230,60 +231,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function listenForRequests(uid, mentorName) {
         const reqRef = ref(database, 'mentorRequests');
-        onValue(reqRef, (snapshot) => {
-            const tbody = document.getElementById('requests-tbody');
+        onValue(reqRef, async (snapshot) => {
+            const requestsGrid = document.getElementById('requests-grid');
             const acceptedGrid = document.getElementById('accepted-grid');
-            if (tbody) tbody.innerHTML = '';
+            if (requestsGrid) requestsGrid.innerHTML = '';
             if (acceptedGrid) acceptedGrid.innerHTML = '';
 
             let pendingCount = 0;
             let acceptedCount = 0;
+            requestDetailCache = {};
 
             if (snapshot.exists()) {
                 const data = snapshot.val();
-                
-                Object.keys(data).forEach(reqId => {
-                    const req = data[reqId];
-                    if (req.mentorName === mentorName || req.mentorUid === uid) {
-                        
-                        if (req.status === 'pending') {
-                            pendingCount++;
-                            if (tbody) {
-                                const tr = document.createElement('tr');
-                                tr.innerHTML = `
-                                    <td>${req.studentName}</td>
-                                    <td>${req.message || 'No message'}</td>
-                                    <td>${new Date(req.createdAt).toLocaleDateString()}</td>
-                                    <td><span class="badge badge-warning">Pending</span></td>
-                                    <td class="action-btns">
-                                        <button class="btn btn-success btn-sm acc-btn" data-id="${reqId}">Accept</button>
-                                        <button class="btn btn-danger btn-sm rej-btn" data-id="${reqId}">Reject</button>
-                                    </td>
-                                `;
-                                tbody.appendChild(tr);
-                            }
-                        } else if (req.status === 'accepted') {
-                            acceptedCount++;
-                            if (acceptedGrid) {
-                                const div = document.createElement('div');
-                                div.className = 'student-card glass';
-                                div.style.padding = '16px';
-                                div.style.borderRadius = '12px';
-                                div.style.border = '1px solid var(--border-color)';
-                                div.innerHTML = `
-                                    <h4><i class="fas fa-user-graduate text-primary"></i> ${req.studentName}</h4>
-                                    <p class="text-muted" style="font-size:12px; margin-top:4px;"><i class="fas fa-calendar-alt"></i> Accepted on ${new Date(req.updatedAt || req.createdAt).toLocaleDateString()}</p>
-                                    <button class="btn btn-outline btn-sm mt-2" style="padding:6px 12px; font-size:12px;"><i class="fas fa-envelope"></i> Message Student</button>
-                                `;
-                                acceptedGrid.appendChild(div);
-                            }
-                        }
+                const filtered = Object.entries(data || {}).filter(([, req]) => req && (req.mentorUid === uid || req.mentorName === mentorName));
+
+                const rows = await Promise.all(filtered.map(async ([reqId, req]) => {
+                    const studentUid = req.studentUid || '';
+                    const [studentSnap, userSnap, pathwaySnap] = await Promise.all([
+                        studentUid ? get(ref(database, `students/${studentUid}`)) : Promise.resolve({ exists: () => false }),
+                        studentUid ? get(ref(database, `users/${studentUid}`)) : Promise.resolve({ exists: () => false }),
+                        studentUid ? get(ref(database, `pathwayResults/${studentUid}`)) : Promise.resolve({ exists: () => false }),
+                    ]);
+
+                    const studentData = studentSnap.exists() ? studentSnap.val() : {};
+                    const userData = userSnap.exists() ? userSnap.val() : {};
+                    const pathwayData = pathwaySnap.exists() ? pathwaySnap.val() : null;
+                    const latestResult = getLatestPathwayResult(pathwayData);
+
+                    return { reqId, req, studentData, userData, latestResult };
+                }));
+
+                rows.forEach((row) => {
+                    const req = row.req;
+                    const cardData = {
+                        reqId: row.reqId,
+                        request: req,
+                        studentData: row.studentData,
+                        userData: row.userData,
+                        latestResult: row.latestResult,
+                    };
+                    requestDetailCache[row.reqId] = cardData;
+
+                    if (req.status === 'pending') {
+                        pendingCount++;
+                        if (requestsGrid) requestsGrid.appendChild(buildRequestCard(cardData));
+                    } else if (req.status === 'accepted') {
+                        acceptedCount++;
+                        if (acceptedGrid) acceptedGrid.appendChild(buildAcceptedCard(cardData));
                     }
                 });
             }
 
-            if (pendingCount === 0 && tbody) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No pending requests found.</td></tr>';
+            if (pendingCount === 0 && requestsGrid) {
+                requestsGrid.innerHTML = '<div class="text-muted p-4 full-width text-center">No pending requests found.</div>';
             }
             if (acceptedCount === 0 && acceptedGrid) {
                 acceptedGrid.innerHTML = '<div class="text-muted p-4 full-width text-center">No students accepted yet.</div>';
@@ -317,7 +317,104 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+
+        document.querySelectorAll('.view-request-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const reqId = e.target.getAttribute('data-id');
+                if (reqId && requestDetailCache[reqId]) {
+                    openRequestModal(requestDetailCache[reqId]);
+                }
+            });
+        });
     }
+
+    function getLatestPathwayResult(data) {
+        if (!data || typeof data !== 'object') return null;
+        const results = Object.values(data).filter((item) => item && typeof item === 'object');
+        if (results.length === 0) return null;
+        return results.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0] || null;
+    }
+
+    function buildRequestCard(data) {
+        const req = data.request;
+        const studentName = req.studentName || data.userData.fullName || 'Student';
+        const studentEmail = req.studentEmail || data.userData.email || 'N/A';
+        const studentPhone = data.studentData.phone || data.userData.phone || 'N/A';
+        const createdAt = req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'N/A';
+        const status = (req.status || 'pending').toLowerCase();
+        const badge = status === 'pending' ? 'badge-warning' : status === 'accepted' ? 'badge-approved' : 'badge-rejected';
+
+        const card = document.createElement('div');
+        card.className = 'student-card request-card glass';
+        card.innerHTML = `
+            <div class="request-card-header">
+                <div>
+                    <h4>${escapeHtml(studentName)}</h4>
+                    <div class="text-sm text-muted">${escapeHtml(studentEmail)}</div>
+                </div>
+                <span class="badge ${badge}">${escapeHtml(status.toUpperCase())}</span>
+            </div>
+            <p class="text-sm"><strong>Requested:</strong> ${escapeHtml(createdAt)}</p>
+            <p class="text-sm"><strong>Message:</strong> ${escapeHtml(req.message || 'No message')}</p>
+            <div class="request-card-meta">
+                <span>${escapeHtml(data.studentData.educationLevel || data.studentData.education || data.userData.educationLevel || 'Education unavailable')}</span>
+                <span>${escapeHtml(data.studentData.interestArea || data.studentData.interest || data.userData.interestArea || 'Interest unavailable')}</span>
+            </div>
+            <div class="request-card-actions">
+                <button class="btn btn-secondary btn-sm view-request-btn" data-id="${escapeHtml(data.reqId)}">View Details</button>
+                <button class="btn btn-success btn-sm acc-btn" data-id="${escapeHtml(data.reqId)}">Accept</button>
+                <button class="btn btn-danger btn-sm rej-btn" data-id="${escapeHtml(data.reqId)}">Reject</button>
+            </div>
+        `;
+        return card;
+    }
+
+    function buildAcceptedCard(data) {
+        const req = data.request;
+        const studentName = req.studentName || data.userData.fullName || 'Student';
+        const acceptedAt = req.updatedAt ? new Date(req.updatedAt).toLocaleDateString() : req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'N/A';
+        const latestPathway = data.latestResult ? `${escapeHtml(data.latestResult.pathway || data.latestResult.recommendedPathway || 'Recommended pathway unavailable')} (${escapeHtml(displayVal(data.latestResult.pathwayScore || data.latestResult.score || 'N/A'))})` : 'No pathway match yet';
+
+        const card = document.createElement('div');
+        card.className = 'student-card glass';
+        card.innerHTML = `
+            <h4><i class="fas fa-user-graduate text-primary"></i> ${escapeHtml(studentName)}</h4>
+            <p class="text-muted" style="margin:0 0 0.75rem; font-size:0.95rem;">Accepted on ${escapeHtml(acceptedAt)}</p>
+            <p class="text-sm"><strong>Latest Pathway:</strong> ${latestPathway}</p>
+            <div class="request-card-actions">
+                <button class="btn btn-secondary btn-sm view-request-btn" data-id="${escapeHtml(data.reqId)}">View Details</button>
+            </div>
+        `;
+        return card;
+    }
+
+    function openRequestModal(data) {
+        const req = data.request;
+        const studentData = data.studentData || {};
+        const userData = data.userData || {};
+        const latestResult = data.latestResult;
+
+        document.getElementById('modal-request-title').textContent = `${escapeHtml(req.studentName || userData.fullName || 'Student')} Request Details`;
+        document.getElementById('modal-status').textContent = (req.status || 'pending').toUpperCase();
+        document.getElementById('modal-student-name').textContent = req.studentName || userData.fullName || 'N/A';
+        document.getElementById('modal-student-email').textContent = req.studentEmail || userData.email || 'N/A';
+        document.getElementById('modal-student-phone').textContent = studentData.phone || userData.phone || 'N/A';
+        document.getElementById('modal-education').textContent = studentData.educationLevel || studentData.education || userData.educationLevel || 'N/A';
+        document.getElementById('modal-interest').textContent = studentData.interestArea || studentData.interest || userData.interestArea || 'N/A';
+        document.getElementById('modal-goal').textContent = studentData.futureGoal || studentData.goal || userData.futureGoal || 'N/A';
+        document.getElementById('modal-learning-mode').textContent = studentData.learningMode || userData.learningMode || 'N/A';
+        document.getElementById('modal-skills').textContent = studentData.skills || userData.skills || 'N/A';
+        document.getElementById('modal-message').textContent = req.message || 'N/A';
+        document.getElementById('modal-pathway-result').textContent = latestResult ? `${latestResult.pathway || latestResult.recommendedPathway || 'Recommended pathway unavailable'} (${displayVal(latestResult.pathwayScore || latestResult.score || 'N/A')})` : 'No pathway result available yet.';
+        document.getElementById('modal-requested-at').textContent = req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'N/A';
+
+        const overlay = document.getElementById('student-request-modal');
+        if (overlay) overlay.classList.remove('hidden');
+    }
+
+    document.getElementById('modal-close-btn')?.addEventListener('click', () => {
+        document.getElementById('student-request-modal')?.classList.add('hidden');
+    });
 
     function updateReqStatus(reqId, newStatus) {
         const updates = {

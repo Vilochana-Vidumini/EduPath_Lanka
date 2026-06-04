@@ -99,6 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let usersCache = null;
     let mentorsCache = null;
     let requestsCache = null;
+    let guestMessagesCache = null;
+    let userMessagesCache = null;
+    let messageTab = 'guest';
     let requestFilter = 'all';
     let studentSearchTerm = '';
     let studentDistrictFilter = '';
@@ -505,11 +508,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const pending = countByStatus(requestsCache, 'pending');
             renderMentorRequestsTable();
         });
-
-        onValue(ref(database, 'contactMessages'), (snapshot) => {
-            updateTile('stat-messages', snapshot.exists() ? countObjectChildren(snapshot.val()) : 0);
-            renderContactMessages(snapshot.val());
-        });
     }
 
     function listenForStudents() {
@@ -731,35 +729,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function renderContactMessages(messages) {
+    function renderContactMessages() {
         const tbody = document.getElementById('admin-messages-tbody');
         if (!tbody) return;
         tbody.innerHTML = '';
 
-        if (!messages) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4 text-muted">No contact messages received yet.</td></tr>';
+        const activeCache = messageTab === 'guest' ? guestMessagesCache : userMessagesCache;
+        const emptyText = messageTab === 'guest'
+            ? 'No guest messages received yet.'
+            : 'No user messages received yet.';
+
+        if (!activeCache || Object.keys(activeCache).length === 0) {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">${emptyText}</td></tr>`;
             return;
         }
 
-        Object.entries(messages).forEach(([key, m]) => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${escapeHtml(displayVal(m.name || m.fullName))}</strong></td>
-                <td>${escapeHtml(displayVal(m.email))}</td>
-                <td><strong>${escapeHtml(displayVal(m.subject || m.title))}</strong></td>
-                <td><p class="text-sm" style="max-width:300px;margin:0;white-space:normal;">${escapeHtml(displayVal(m.message))}</p></td>
-                <td>
-                    <button class="btn btn-primary btn-sm mark-read-btn" data-id="${key}">Mark Read</button>
-                    <button class="btn btn-danger btn-sm delete-message-btn" data-id="${key}"><i class="fas fa-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
+        Object.entries(activeCache)
+            .sort((a, b) => ((b[1].createdAt || 0) - (a[1].createdAt || 0)))
+            .forEach(([key, m]) => {
+                const senderName = displayVal(m.name || m.fullName || m.senderName || 'Unknown');
+                const senderRole = displayVal(m.userType || m.fromRole || m.senderRole || 'User');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${escapeHtml(senderName)}</strong><div class="text-sm text-muted">${escapeHtml(senderRole)}</div></td>
+                    <td>${escapeHtml(displayVal(m.email))}</td>
+                    <td><strong>${escapeHtml(displayVal(m.subject || m.title || (messageTab === 'user' ? 'User Message' : 'Guest Contact')))}</strong></td>
+                    <td><p class="text-sm" style="max-width:300px;margin:0;white-space:normal;">${escapeHtml(displayVal(m.message))}</p></td>
+                    <td>
+                        <button class="btn btn-primary btn-sm mark-read-btn" data-id="${key}">Mark Read</button>
+                        <button class="btn btn-danger btn-sm delete-message-btn" data-id="${key}"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
         });
 
         tbody.querySelectorAll('.mark-read-btn').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const id = btn.getAttribute('data-id');
-                update(ref(database, `contactMessages/${id}`), { status: 'read', readAt: Date.now() })
+                const node = messageTab === 'guest' ? `contactMessages/${id}` : `adminMessages/${id}`;
+                update(ref(database, node), { status: 'read', readAt: Date.now() })
                     .then(() => showToast('Marked as read.', 'success'))
                     .catch(() => showToast('Update failed.', 'error'));
             });
@@ -768,8 +776,9 @@ document.addEventListener('DOMContentLoaded', () => {
         tbody.querySelectorAll('.delete-message-btn').forEach((btn) => {
             btn.addEventListener('click', () => {
                 const id = btn.getAttribute('data-id');
+                const node = messageTab === 'guest' ? `contactMessages/${id}` : `adminMessages/${id}`;
                 if (confirm('Delete this message?')) {
-                    remove(ref(database, `contactMessages/${id}`))
+                    remove(ref(database, node))
                         .then(() => showToast('Message deleted.', 'success'))
                         .catch(() => showToast('Failed to delete.', 'error'));
                 }
@@ -778,8 +787,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function listenForContactMessages() {
+        setupMessageTabs();
+
         onValue(ref(database, 'contactMessages'), (snapshot) => {
-            renderContactMessages(snapshot.exists() ? snapshot.val() : null);
+            guestMessagesCache = snapshot.exists() ? snapshot.val() : null;
+            updateTile('stat-messages', countObjectChildren(guestMessagesCache) + countObjectChildren(userMessagesCache));
+            renderContactMessages();
+        });
+
+        onValue(ref(database, 'adminMessages'), (snapshot) => {
+            userMessagesCache = snapshot.exists() ? snapshot.val() : null;
+            updateTile('stat-messages', countObjectChildren(guestMessagesCache) + countObjectChildren(userMessagesCache));
+            renderContactMessages();
+        });
+    }
+
+    function setupMessageTabs() {
+        const tabs = document.querySelectorAll('#contact-messages-tabs .btn-filter');
+        tabs.forEach((tab) => {
+            tab.addEventListener('click', () => {
+                tabs.forEach((btn) => btn.classList.remove('active'));
+                tab.classList.add('active');
+                messageTab = tab.getAttribute('data-tab') || 'guest';
+                renderContactMessages();
+            });
         });
     }
 
