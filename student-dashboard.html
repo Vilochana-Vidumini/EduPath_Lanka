@@ -5,21 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);if(localStorage.getItem('sidebarCollapsed')==='true'&&window.innerWidth>768){document.documentElement.classList.add('sidebar-collapsed');}})();</script>
     <title>Student Dashboard | EduPath Lanka</title>
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="student-dashboard.css">
     <link rel="stylesheet" href="theme.css">
 </head>
 <body>
-
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-    <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
@@ -33,20 +28,25 @@
             </div>
         </div>
         <ul class="sidebar-links">
-            <li><a href="#dashboard" class="active" title="Dashboard"><i class="fas fa-tachometer-alt"></i><span class="sidebar-label">Dashboard</span></a></li>
+            <li><a href="#overview" data-section="overview-section" class="active" title="Dashboard Overview"><i class="fas fa-tachometer-alt"></i><span class="sidebar-label">Dashboard Overview</span></a></li>
             <li><a href="profile.html" title="My Profile"><i class="fas fa-user"></i><span class="sidebar-label">My Profile</span></a></li>
-            <li><a href="#latest-result" title="My Pathway Results"><i class="fas fa-poll-h"></i><span class="sidebar-label">My Pathway Results</span></a></li>
-            <li><a href="#courses" title="Courses"><i class="fas fa-book-open"></i><span class="sidebar-label">Courses</span></a></li>
-            <li><a href="#scholarships" title="Scholarships"><i class="fas fa-hand-holding-usd"></i><span class="sidebar-label">Scholarships</span></a></li>
-            <li><a href="#mentors" title="Mentors"><i class="fas fa-chalkboard-teacher"></i><span class="sidebar-label">Mentors</span></a></li>
+            <li><a href="#pathway" data-section="pathway-section" title="My Pathway"><i class="fas fa-route"></i><span class="sidebar-label">My Pathway</span></a></li>
+            <li><a href="#pathway-history" data-section="pathway-history-section" title="Pathway History"><i class="fas fa-history"></i><span class="sidebar-label">Pathway History</span></a></li>
+            <li><a href="#recommended-courses" data-section="recommended-courses-section" title="Recommended Courses"><i class="fas fa-book-open"></i><span class="sidebar-label">Recommended Courses</span></a></li>
+            <li><a href="#saved-courses" data-section="saved-courses-section" title="Saved Courses"><i class="fas fa-bookmark"></i><span class="sidebar-label">Saved Courses</span></a></li>
+            <li><a href="#scholarships" data-section="scholarships-section" title="Scholarships"><i class="fas fa-hand-holding-usd"></i><span class="sidebar-label">Scholarships</span></a></li>
+            <li><a href="#mentors" data-section="mentors-section" title="Mentors"><i class="fas fa-chalkboard-teacher"></i><span class="sidebar-label">Mentors</span></a></li>
+            <li><a href="#mentor-requests" data-section="mentor-requests-section" title="My Mentor Requests"><i class="fas fa-user-check"></i><span class="sidebar-label">My Mentor Requests</span></a></li>
+            <li><a href="#skills" data-section="skills-section" title="Skill Development"><i class="fas fa-chart-line"></i><span class="sidebar-label">Skill Development</span></a></li>
+            <li><a href="#career-guide" data-section="career-guide-section" title="Career Guidance"><i class="fas fa-compass"></i><span class="sidebar-label">Career Guidance</span></a></li>
+            <li><a href="#support" data-section="support-section" title="EduPath Support"><i class="fas fa-headset"></i><span class="sidebar-label">EduPath Support</span></a></li>
+            <li><a href="#notifications" data-section="notifications-section" title="Notifications"><i class="fas fa-bell"></i><span class="sidebar-label">Notifications</span></a></li>
             <li><a href="index.html" title="Home"><i class="fas fa-home"></i><span class="sidebar-label">Home</span></a></li>
             <li><a href="#" id="logout-btn-sidebar" class="text-danger" title="Logout"><i class="fas fa-sign-out-alt"></i><span class="sidebar-label">Logout</span></a></li>
         </ul>
     </aside>
 
-    <!-- Main Content -->
     <main class="main-content">
-        <!-- Topbar -->
         <header class="topbar">
             <div class="topbar-left">
                 <i class="fas fa-bars sidebar-toggle" id="sidebar-toggle"></i>
@@ -61,315 +61,197 @@
             </div>
         </header>
 
-        <!-- Dashboard Content -->
         <div class="dashboard-container">
-            
-            <!-- 1. Welcome Hero Card -->
-            <section class="welcome-card glass">
-                <div class="welcome-content">
-                    <h1 id="welcome-name">Welcome back, Student</h1>
-                    <p class="motivational-text">"Your future has many paths. Let’s find the best one for you. No student is left behind."</p>
-                    <div class="welcome-buttons">
-                        <a href="pathway.html" class="btn btn-primary">Continue Pathway Finder <i class="fas fa-arrow-right"></i></a>
-                        <a href="#latest-result" class="btn btn-outline">View My Results</a>
+            <section id="overview-section" class="dashboard-section active">
+                <div class="welcome-card glass">
+                    <div class="welcome-content">
+                        <span id="outdated-badge" class="badge badge-warning hidden">Profile Updated - Recommendations May Be Outdated</span>
+                        <h1 id="welcome-name">Welcome back, Student</h1>
+                        <p class="motivational-text" id="welcome-flow-message">Loading your student journey...</p>
+                        <div class="welcome-meta">
+                            <div><span>First Name</span><strong id="welcome-first-name">Student</strong></div>
+                            <div><span>Education</span><strong id="welcome-education">Loading...</strong></div>
+                            <div><span>Interest</span><strong id="welcome-interest">Loading...</strong></div>
+                            <div><span>Pathway</span><strong id="welcome-pathway-status">Loading...</strong></div>
+                            <div><span>Last Update</span><strong id="welcome-last-updated">Loading...</strong></div>
+                        </div>
+                        <div class="welcome-buttons" id="welcome-actions"></div>
+                    </div>
+                    <div class="welcome-student">
+                        <div class="welcome-avatar" id="welcome-avatar"><span>ST</span></div>
                     </div>
                 </div>
-                <div class="welcome-image">
-                    <i class="fas fa-graduation-cap welcome-icon"></i>
+
+                <div class="stats-grid">
+                    <article class="stat-card glass">
+                        <div class="stat-icon bg-blue"><i class="fas fa-user-check"></i></div>
+                        <div class="stat-info"><h4>Profile Completion</h4><h2 id="profile-completion-stat">0%</h2></div>
+                    </article>
+                    <article class="stat-card glass">
+                        <div class="stat-icon bg-purple"><i class="fas fa-route"></i></div>
+                        <div class="stat-info"><h4>Pathway Results</h4><h2 id="pathway-results-stat">0</h2></div>
+                    </article>
+                    <article class="stat-card glass">
+                        <div class="stat-icon bg-cyan"><i class="fas fa-bookmark"></i></div>
+                        <div class="stat-info"><h4>Saved Courses</h4><h2 id="saved-courses-stat">0</h2></div>
+                    </article>
+                    <article class="stat-card glass">
+                        <div class="stat-icon bg-orange"><i class="fas fa-user-check"></i></div>
+                        <div class="stat-info"><h4>Mentor Requests</h4><h2 id="mentor-requests-stat">0</h2></div>
+                    </article>
+                    <article class="stat-card glass">
+                        <div class="stat-icon bg-green"><i class="fas fa-hand-holding-usd"></i></div>
+                        <div class="stat-info"><h4>Saved Scholarships</h4><h2 id="saved-scholarships-stat">0</h2></div>
+                    </article>
+                    <article class="stat-card glass">
+                        <div class="stat-icon bg-pink"><i class="fas fa-check-double"></i></div>
+                        <div class="stat-info"><h4>Completed Skills</h4><h2 id="completed-skills-stat">0</h2></div>
+                    </article>
+                    <article class="stat-card glass">
+                        <div class="stat-icon bg-blue"><i class="fas fa-envelope"></i></div>
+                        <div class="stat-info"><h4>Unread Messages</h4><h2 id="unread-messages-stat">0</h2></div>
+                    </article>
+                </div>
+
+                <div class="overview-grid">
+                    <article class="profile-card glass">
+                        <div class="profile-card-header">
+                            <h3><i class="fas fa-chart-line text-primary"></i> Profile Completion</h3>
+                            <span id="profile-strength-badge" class="badge">0% Complete</span>
+                        </div>
+                        <div class="profile-progress-panel">
+                            <div class="progress-bar-container">
+                                <div id="dynamic-profile-progress-bar" class="progress-bar"></div>
+                            </div>
+                            <p id="profile-strength-message">Loading profile status...</p>
+                            <p><strong>Pathway Setup:</strong> <span id="pathway-setup-status">Loading...</span></p>
+                            <div class="profile-actions">
+                                <a href="profile.html" class="btn btn-primary"><i class="fas fa-edit"></i> Complete Profile</a>
+                                <a href="profile.html" class="btn btn-outline">Update My Details</a>
+                            </div>
+                        </div>
+                        <div class="checklist-grid">
+                            <div>
+                                <h4>Completed</h4>
+                                <ul id="profile-completed-list" class="checklist"><li>Loading...</li></ul>
+                            </div>
+                            <div>
+                                <h4>To Do</h4>
+                                <ul id="profile-todo-list" class="checklist"><li>Loading...</li></ul>
+                                <ul id="pathway-setup-list" class="checklist pathway-setup-list"></ul>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="content-section">
+                        <div class="section-header"><h2>Next Step Plan</h2></div>
+                        <div id="next-step-list" class="next-step-list">
+                            <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading next steps...</p></div>
+                        </div>
+                    </article>
                 </div>
             </section>
 
-            <!-- 2. Profile & Stats Grid -->
-            <div class="stats-grid">
-                <!-- Dynamic Profile Completion & Task Checklist Card -->
-                <div class="stat-card profile-card glass" style="grid-column: span 2; display: flex; flex-direction: column; align-items: stretch; gap: 1.5rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px;">
-                        <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-dark);"><i class="fas fa-chart-line text-primary" style="margin-right: 8px;"></i>Profile Strength</h3>
-                        <span id="profile-strength-badge" class="badge" style="font-size: 0.85rem; font-weight: 800;">0% Complete</span>
-                    </div>
-                    
-                    <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
-                        <!-- Progress Circle / Bar -->
-                        <div style="flex: 1; min-width: 250px; display: flex; flex-direction: column; gap: 12px; justify-content: center;">
-                            <div class="progress-bar-container" style="height: 14px; border-radius: 10px;">
-                                <div id="dynamic-profile-progress-bar" class="progress-bar" style="width: 0%;"></div>
-                            </div>
-                            <p id="profile-strength-message" style="font-size: 0.9rem; font-weight: 600; line-height: 1.4; color: var(--text-dark); margin: 0;"></p>
-                            <button id="complete-profile-card-btn" class="btn btn-primary" style="width: fit-content; padding: 8px 16px; font-size: 0.85rem; margin-top: 8px;"><i class="fas fa-edit"></i> Complete Profile</button>
-                        </div>
-                        
-                        <!-- Missing Fields / Guided Checklist -->
-                        <div style="flex: 1.2; min-width: 280px; background: rgba(255,255,255,0.4); border-radius: var(--radius-md); padding: 16px; border: 1px solid rgba(255,255,255,0.5);">
-                            <h4 style="margin: 0 0 12px 0; font-size: 0.95rem; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px;"><i class="fas fa-clipboard-list text-primary" style="margin-right: 8px;"></i> guided tasks</h4>
-                            <ul id="guided-task-list" class="checklist" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0; padding: 0;">
-                                <li id="task-phone"><i class="far fa-circle text-muted"></i> Phone Number</li>
-                                <li id="task-district"><i class="far fa-circle text-muted"></i> District</li>
-                                <li id="task-education"><i class="far fa-circle text-muted"></i> Education Level</li>
-                                <li id="task-stream"><i class="far fa-circle text-muted"></i> Exam Stream</li>
-                                <li id="task-interest"><i class="far fa-circle text-muted"></i> Interest Area</li>
-                                <li id="task-goal"><i class="far fa-circle text-muted"></i> Future Goal</li>
-                                <li id="task-skills"><i class="far fa-circle text-muted"></i> Skills</li>
-                                <li id="task-photo"><i class="far fa-circle text-muted"></i> Profile Photo</li>
-                                <li id="task-pathway" style="grid-column: span 2;"><i class="far fa-circle text-muted"></i> First Pathway Result</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Quick Stats -->
-                <div class="stat-card glass">
-                    <div class="stat-icon bg-blue"><i class="fas fa-poll"></i></div>
-                    <div class="stat-info">
-                        <h4>Saved Results</h4>
-                        <h2 id="stat-results">0</h2>
-                    </div>
-                </div>
-                <div class="stat-card glass">
-                    <div class="stat-icon bg-cyan"><i class="fas fa-book"></i></div>
-                    <div class="stat-info">
-                        <h4>Recommended Courses</h4>
-                        <h2 id="stat-courses">5+</h2>
-                    </div>
-                </div>
-                <div class="stat-card glass">
-                    <div class="stat-icon bg-orange"><i class="fas fa-users"></i></div>
-                    <div class="stat-info">
-                        <h4>Available Mentors</h4>
-                        <h2 id="stat-mentors">12</h2>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. My Latest Pathway Result -->
-            <section id="latest-result" class="content-section">
+            <section id="pathway-section" class="dashboard-section">
                 <div class="section-header">
                     <h2>My Latest Pathway Result</h2>
                     <span class="badge badge-primary">Future Path Score: <span id="res-score">--</span>%</span>
                 </div>
-                <div class="result-card glass" id="result-container">
-                    <div class="text-center p-4" id="no-result-msg">
-                        <i class="fas fa-search-location fa-3x text-muted mb-3"></i>
-                        <p>You have not generated a pathway result yet.</p>
-                        <a href="pathway.html" class="btn btn-primary mt-2">Start Pathway Finder</a>
-                    </div>
-                    <div id="has-result-data" class="hidden">
-                        <div class="result-grid">
-                            <div class="result-item">
-                                <span class="label">Interest Area:</span>
-                                <strong id="res-interest">--</strong>
-                            </div>
-                            <div class="result-item">
-                                <span class="label">Future Goal:</span>
-                                <strong id="res-goal">--</strong>
-                            </div>
-                            <div class="result-item">
-                                <span class="label">Financial Guidance:</span>
-                                <strong id="res-finance" class="text-warning">--</strong>
-                            </div>
-                            <div class="result-item full-width">
-                                <span class="label">Recommended Courses:</span>
-                                <div class="tag-list" id="res-courses-tags"></div>
-                            </div>
-                            <div class="result-item full-width">
-                                <span class="label">Recommended Skills:</span>
-                                <div class="tag-list" id="res-skills-tags"></div>
-                            </div>
-                            <div class="result-item full-width">
-                                <span class="label">Career Paths:</span>
-                                <div class="tag-list" id="res-careers-tags"></div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="result-card glass" id="pathway-content">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading pathway result...</p></div>
                 </div>
             </section>
 
-            <!-- 4. Recommended Courses Section -->
-            <section id="courses" class="content-section">
+            <section id="pathway-history-section" class="dashboard-section">
+                <div class="section-header"><h2>My Pathway History</h2></div>
+                <div id="pathway-history-list" class="timeline-list">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading pathway history...</p></div>
+                </div>
+            </section>
+
+            <section id="recommended-courses-section" class="dashboard-section">
+                <div class="section-header"><h2>Recommended Courses</h2></div>
+                <div id="courses-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading courses...</p></div>
+                </div>
+            </section>
+
+            <section id="saved-courses-section" class="dashboard-section">
+                <div class="section-header"><h2>Saved Courses</h2></div>
+                <div id="saved-courses-list" class="list-card glass">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading saved courses...</p></div>
+                </div>
+            </section>
+
+            <section id="scholarships-section" class="dashboard-section">
                 <div class="section-header">
-                    <h2>Recommended Courses</h2>
-                    <a href="#" class="view-all">View All</a>
+                    <h2>Scholarships & Aid</h2>
+                    <span id="scholarship-support-badge" class="badge badge-warning hidden">Scholarship Support Recommended</span>
                 </div>
-                <div class="cards-grid">
-                    <div class="item-card glass">
-                        <span class="badge badge-success">Scholarship Available</span>
-                        <h4>ICT Diploma</h4>
-                        <p class="institute"><i class="fas fa-university"></i> National Institute of IT</p>
-                        <div class="card-meta">
-                            <span><i class="far fa-clock"></i> 1 Year</span>
-                            <span><i class="fas fa-laptop"></i> Hybrid</span>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn btn-outline btn-sm">Save</button>
-                            <button class="btn btn-primary btn-sm">Details</button>
-                        </div>
-                    </div>
-                    <div class="item-card glass">
-                        <h4>Business Management</h4>
-                        <p class="institute"><i class="fas fa-university"></i> Colombo Business School</p>
-                        <div class="card-meta">
-                            <span><i class="far fa-clock"></i> 6 Months</span>
-                            <span><i class="fas fa-chalkboard-teacher"></i> Physical</span>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn btn-outline btn-sm">Save</button>
-                            <button class="btn btn-primary btn-sm">Details</button>
-                        </div>
-                    </div>
-                    <div class="item-card glass">
-                        <span class="badge badge-primary">Low Cost</span>
-                        <h4>Graphic Design NVQ Level 4</h4>
-                        <p class="institute"><i class="fas fa-university"></i> Vocational Training Authority</p>
-                        <div class="card-meta">
-                            <span><i class="far fa-clock"></i> 6 Months</span>
-                            <span><i class="fas fa-laptop"></i> Physical</span>
-                        </div>
-                        <div class="card-actions">
-                            <button class="btn btn-outline btn-sm">Save</button>
-                            <button class="btn btn-primary btn-sm">Details</button>
+                <div id="scholarships-list" class="list-card glass">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading scholarships...</p></div>
+                </div>
+            </section>
+
+            <section id="mentors-section" class="dashboard-section">
+                <div class="section-header"><h2>Mentor Match</h2></div>
+                <div id="mentors-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading mentors...</p></div>
+                </div>
+            </section>
+
+            <section id="mentor-requests-section" class="dashboard-section">
+                <div class="section-header"><h2>My Mentor Requests</h2></div>
+                <div id="mentor-requests-list" class="list-card glass">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading mentor requests...</p></div>
+                </div>
+            </section>
+
+            <section id="skills-section" class="dashboard-section">
+                <div class="section-header"><h2>Skill Gap Tracker</h2></div>
+                <div id="skills-list" class="skills-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading skill tracker...</p></div>
+                </div>
+            </section>
+
+            <section id="career-guide-section" class="dashboard-section">
+                <div class="section-header"><h2>Career Guidance</h2></div>
+                <div id="career-guides-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading career guides...</p></div>
+                </div>
+            </section>
+
+            <section id="support-section" class="dashboard-section">
+                <div class="section-header"><h2>EduPath Support</h2></div>
+                <div class="support-grid">
+                    <form id="support-form" class="support-card glass">
+                        <label for="support-subject">Subject</label>
+                        <input type="text" id="support-subject" placeholder="What do you need help with?" required>
+                        <label for="support-message">Message Admin</label>
+                        <textarea id="support-message" rows="6" placeholder="Write your message..." required></textarea>
+                        <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i> Send Message</button>
+                    </form>
+                    <div class="support-card glass">
+                        <h3>Support Conversation</h3>
+                        <div id="support-replies-list" class="support-replies">
+                            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading messages...</p></div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- 5. Scholarship & Mentor Split -->
-            <div class="split-section">
-                <!-- Scholarships -->
-                <section id="scholarships" class="content-section half-width">
-                    <div class="section-header">
-                        <h2>Scholarships & Aid <i class="fas fa-exclamation-circle text-warning" title="Scholarship Need Alert"></i></h2>
-                    </div>
-                    <div class="list-card glass">
-                        <div class="list-item">
-                            <div class="list-icon bg-green"><i class="fas fa-landmark"></i></div>
-                            <div class="list-content">
-                                <h4>Mahapola Scholarship</h4>
-                                <p>Government support for university students.</p>
-                            </div>
-                            <button class="btn btn-outline btn-sm">View</button>
-                        </div>
-                        <div class="list-item">
-                            <div class="list-icon bg-cyan"><i class="fas fa-globe"></i></div>
-                            <div class="list-content">
-                                <h4>NGO Education Fund</h4>
-                                <p>Support for rural district students.</p>
-                            </div>
-                            <button class="btn btn-outline btn-sm">View</button>
-                        </div>
-                        <div class="list-item">
-                            <div class="list-icon bg-orange"><i class="fas fa-laptop-code"></i></div>
-                            <div class="list-content">
-                                <h4>Free Online Coursera</h4>
-                                <p>Access to global certifications.</p>
-                            </div>
-                            <button class="btn btn-outline btn-sm">View</button>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Mentors -->
-                <section id="mentors" class="content-section half-width">
-                    <div class="section-header">
-                        <h2>Mentor Match</h2>
-                    </div>
-                    <div class="list-card glass">
-                        <div class="list-item">
-                            <img src="https://ui-avatars.com/api/?name=Kasun+Perera&background=e0e7ff&color=3730a3" alt="Mentor" class="avatar-sm">
-                            <div class="list-content">
-                                <h4>Kasun Perera</h4>
-                                <span class="badge badge-purple">University Mentor</span>
-                            </div>
-                            <button class="btn btn-primary btn-sm req-mentor-btn" data-mentor="Kasun Perera">Request</button>
-                        </div>
-                        <div class="list-item">
-                            <img src="https://ui-avatars.com/api/?name=Sarah+Fernando&background=dcfce7&color=166534" alt="Mentor" class="avatar-sm">
-                            <div class="list-content">
-                                <h4>Sarah Fernando</h4>
-                                <span class="badge badge-cyan">Career Mentor</span>
-                            </div>
-                            <button class="btn btn-primary btn-sm req-mentor-btn" data-mentor="Sarah Fernando">Request</button>
-                        </div>
-                        <div class="list-item">
-                            <div class="list-icon bg-blue"><i class="fas fa-search"></i></div>
-                            <div class="list-content">
-                                <h4>Find More Mentors</h4>
-                                <p>Browse by field of interest.</p>
-                            </div>
-                            <a href="mentors.html" class="btn btn-outline btn-sm">Browse</a>
-                        </div>
-                    </div>
-                </section>
-            </div>
-
-            <!-- 6. Skill Development Progress -->
-            <section id="skills" class="content-section">
-                <div class="section-header">
-                    <h2>Skill Gap Tracker</h2>
-                </div>
-                <div class="skills-grid glass">
-                    <div class="skill-item">
-                        <div class="skill-info">
-                            <span>English Communication</span>
-                            <span class="skill-status text-warning">In Progress</span>
-                        </div>
-                        <div class="progress-bar-container"><div class="progress-bar bg-warning" style="width: 40%;"></div></div>
-                        <button class="btn btn-outline btn-sm mt-2">Update</button>
-                    </div>
-                    <div class="skill-item">
-                        <div class="skill-info">
-                            <span>Computer Literacy</span>
-                            <span class="skill-status text-success">Completed</span>
-                        </div>
-                        <div class="progress-bar-container"><div class="progress-bar bg-success" style="width: 100%;"></div></div>
-                        <button class="btn btn-outline btn-sm mt-2" disabled>Update</button>
-                    </div>
-                    <div class="skill-item">
-                        <div class="skill-info">
-                            <span>Leadership</span>
-                            <span class="skill-status text-muted">Not Started</span>
-                        </div>
-                        <div class="progress-bar-container"><div class="progress-bar bg-gray" style="width: 0%;"></div></div>
-                        <button class="btn btn-outline btn-sm mt-2">Start</button>
-                    </div>
+            <section id="notifications-section" class="dashboard-section">
+                <div class="section-header"><h2>Notifications</h2></div>
+                <div id="notifications-list" class="list-card glass">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading notifications...</p></div>
                 </div>
             </section>
-
-            <!-- 7. Career Guidance Hub Preview -->
-            <section id="career-guide" class="content-section">
-                <div class="section-header">
-                    <h2>Next Step Plan (Guidance Hub)</h2>
-                </div>
-                <div class="cards-grid">
-                    <div class="guide-card glass">
-                        <i class="fas fa-file-alt"></i>
-                        <h4>How to build a CV</h4>
-                        <a href="#">Read Article <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                    <div class="guide-card glass">
-                        <i class="fas fa-university"></i>
-                        <h4>University Admission Guide</h4>
-                        <a href="#">Read Article <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                    <div class="guide-card glass">
-                        <i class="fas fa-tools"></i>
-                        <h4>Vocational Training in SL</h4>
-                        <a href="#">Read Article <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                    <div class="guide-card glass">
-                        <i class="fas fa-laptop-code"></i>
-                        <h4>How to start freelancing</h4>
-                        <a href="#">Read Article <i class="fas fa-arrow-right"></i></a>
-                    </div>
-                </div>
-            </section>
-
         </div>
     </main>
 
-
-
     <script type="module" src="theme.js"></script>
-    <script type="module" src="auth-nav.js"></script>
+    <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="student-dashboard.js"></script>
+    <script type="module" src="student-dashboard.js?v=20260609-3"></script>
 </body>
 </html>

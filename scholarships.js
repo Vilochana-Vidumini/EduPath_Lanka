@@ -2,6 +2,7 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { showToast } from "./auth-nav.js?v=20260614-brand";
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Mobile Menu Toggle ---
@@ -51,7 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = snapshot.val();
                 Object.entries(data).forEach(([id, scholarship]) => {
                     // Only show active scholarships
-                    if ((scholarship.status || 'active') === 'active' && scholarship.status !== 'deleted') {
+                    const status = String(scholarship.status || 'active').trim().toLowerCase();
+                    if (status === 'active') {
                         allScholarships.push({
                             id,
                             ...scholarship
@@ -163,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!user) {
                             window.location.href = 'login.html?redirect=scholarships.html';
                         } else {
-                            alert('Application process initiated. You will be guided to complete your scholarship application in your Student Dashboard.');
+                            showToast('Application process initiated. You will be guided to complete your scholarship application in your Student Dashboard.', 'info');
                             window.location.href = 'student-dashboard.html';
                         }
                     });
@@ -192,8 +194,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         set(savedRef, null).then(() => {
                             btn.classList.remove('saved');
                             icon.className = 'far fa-heart';
-                            alert('Scholarship removed from saved list.');
-                        });
+                            showToast('Scholarship removed from saved list.', 'success');
+                        }).catch(() => showToast('Scholarship update failed. Please try again.', 'error'));
                     } else {
                         // Add to saved
                         set(savedRef, {
@@ -202,8 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         }).then(() => {
                             btn.classList.add('saved');
                             icon.className = 'fas fa-heart';
-                            alert('Scholarship saved successfully!');
-                        });
+                            showToast('Scholarship saved successfully!', 'success');
+                        }).catch(() => showToast('Scholarship save failed. Please try again.', 'error'));
                     }
                 });
             });
@@ -235,7 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { action, element } = e.detail;
         if (action === 'apply-scholarship') {
             const title = element.getAttribute('data-title');
-            alert(`Application started for ${title}! The application form has been loaded in your Student Dashboard under Financial Support.`);
+            showToast(`Application started for ${title}! The application form has been loaded in your Student Dashboard under Financial Support.`, 'info');
             window.location.href = 'student-dashboard.html';
         } else if (action === 'save-scholarship') {
             const icon = element.querySelector('i');

@@ -1,6 +1,7 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { ref, get, push, set, serverTimestamp, onValue } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { ref, get, push, set, serverTimestamp, onValue, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { showToast } from "./auth-nav.js?v=20260614-brand";
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Mobile Menu Toggle ---
@@ -61,16 +62,16 @@ document.addEventListener('DOMContentLoaded', () => {
             <p>Loading mentors...</p>
         </div>`;
 
-        const mentorsRef = ref(database, 'mentors');
+        const mentorsRef = query(ref(database, 'mentors'), orderByChild('status'), equalTo('approved'));
         onValue(mentorsRef, (snapshot) => {
             allMentors = [];
             if (snapshot.exists()) {
                 snapshot.forEach((childSnapshot) => {
                     const mentor = childSnapshot.val();
                     // Only add approved mentors
-                    if (mentor.status === 'approved') {
+                    if (String(mentor.status || '').trim().toLowerCase() === 'approved') {
                         allMentors.push({
-                            id: mentor.uid,
+                            id: mentor.uid || childSnapshot.key,
                             name: mentor.fullName || 'Unnamed Mentor',
                             category: (mentor.mentorType || mentor.field || 'General').toLowerCase(),
                             designation: mentor.field || 'Mentor',
@@ -172,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!currentUserType || currentUserType.toLowerCase() !== 'student') {
-            alert('Only students can request mentors.');
+            showToast('Only students can request mentors.', 'warning');
             return;
         }
 
@@ -205,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updatedAt: serverTimestamp()
             });
 
-            alert(`Mentorship request sent successfully to ${mentorName}!`);
+            showToast(`Mentorship request sent successfully to ${mentorName}!`, 'success');
             btn.textContent = "Request Sent";
             btn.style.background = "#059669";
             btn.style.borderColor = "#059669";
@@ -213,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error("Error sending request:", error);
-            alert("Failed to send request. Please try again.");
+            showToast("Failed to send request. Please try again.", "error");
             btn.textContent = "Request Mentor";
             btn.disabled = false;
         }

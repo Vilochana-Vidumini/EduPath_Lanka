@@ -1,7 +1,7 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
-import { showToast } from "./auth-nav.js";
+import { ref, get, update, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { showToast } from "./auth-nav.js?v=20260614-brand";
 
 document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
@@ -225,21 +225,23 @@ document.addEventListener('DOMContentLoaded', () => {
         let completed = 0;
         let total = 0;
         let missing = [];
+        let completedItems = [];
 
-        const addFieldCheck = (key, label, value) => {
+        const addFieldCheck = (key, label, value, completeLabel = label) => {
             total++;
             if (value && value.toString().trim() !== '') {
                 completed++;
+                completedItems.push({ key, label: completeLabel });
             } else {
                 missing.push({ key, label });
             }
         };
 
         // Standard inputs checked for all roles
-        addFieldCheck('fullName', 'Add Full Name', cachedUserData.fullName);
-        addFieldCheck('email', 'Verify Email', cachedUserData.email || currentUser.email);
-        addFieldCheck('phone', 'Add Contact Number', cachedUserData.phone);
-        addFieldCheck('photoURL', 'Add Profile Photo', cachedUserData.photoURL);
+        addFieldCheck('fullName', 'Add Full Name', cachedUserData.fullName, 'Full Name');
+        addFieldCheck('email', 'Verify Email', cachedUserData.email || currentUser.email, 'Email');
+        addFieldCheck('phone', 'Add Contact Number', cachedUserData.phone, 'Phone');
+        addFieldCheck('photoURL', 'Add Profile Photo', cachedUserData.photoURL, 'Profile Photo');
 
         if (userRole === 'student') {
             addFieldCheck('district', 'Select Home District', cachedRoleData.district);
@@ -281,12 +283,25 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Render checklist tasks
+        const taskListTitle = document.getElementById('profile-task-list-title');
         const missingList = document.getElementById('profile-missing-list');
         missingList.innerHTML = '';
-        
-        if (missing.length === 0) {
+
+        if (userRole === 'admin') {
+            if (taskListTitle) taskListTitle.innerHTML = `<i class="fas fa-tasks"></i> Profile Details`;
+            const completedMarkup = completedItems.map(item => `<li><i class="fas fa-check-circle text-success"></i> ${item.label}</li>`).join('');
+            const missingMarkup = missing.map(item => `<li><i class="far fa-circle text-muted"></i> ${item.label.replace(/^Add |^Verify /, '')}</li>`).join('');
+            missingList.innerHTML = `
+                <li class="task-list-heading">Completed</li>
+                ${completedMarkup || '<li><i class="far fa-circle text-muted"></i> None</li>'}
+                <li class="task-list-heading">Missing</li>
+                ${missingMarkup || '<li><i class="fas fa-check-circle text-success"></i> None</li>'}
+            `;
+        } else if (missing.length === 0) {
+            if (taskListTitle) taskListTitle.innerHTML = `<i class="fas fa-tasks"></i> Remaining Tasks`;
             missingList.innerHTML = `<li><i class="fas fa-check-circle text-success"></i> All profile details filled!</li>`;
         } else {
+            if (taskListTitle) taskListTitle.innerHTML = `<i class="fas fa-tasks"></i> Remaining Tasks`;
             missing.forEach(item => {
                 const li = document.createElement('li');
                 li.innerHTML = `<i class="far fa-circle text-muted"></i> ${item.label}`;
@@ -326,6 +341,17 @@ document.addEventListener('DOMContentLoaded', () => {
         batchUpdates[`users/${currentUser.uid}/updatedAt`] = coreUpdates.updatedAt;
 
         if (userRole === 'student') {
+            const recommendationFields = [
+                'educationLevel',
+                'examStream',
+                'resultStatus',
+                'interestArea',
+                'futureGoal',
+                'financialSupport',
+                'learningMode',
+                'skills',
+                'district'
+            ];
             const studentUpdates = {
                 fullName: coreUpdates.fullName,
                 phone: coreUpdates.phone,
@@ -340,10 +366,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 skills: document.getElementById('field-skills').value,
                 updatedAt: now
             };
+            const recommendationDataChanged = recommendationFields.some((field) => {
+                return String(cachedRoleData?.[field] || '') !== String(studentUpdates[field] || '');
+            });
 
             Object.keys(studentUpdates).forEach(key => {
                 batchUpdates[`students/${currentUser.uid}/${key}`] = studentUpdates[key];
             });
+            if (recommendationDataChanged) {
+                batchUpdates[`students/${currentUser.uid}/recommendationsOutdated`] = true;
+                batchUpdates[`students/${currentUser.uid}/profileUpdatedAt`] = serverTimestamp();
+            }
 
         } else if (userRole === 'mentor') {
             const mentorUpdates = {

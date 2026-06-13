@@ -5,142 +5,63 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
     <title>Login | EduPath Lanka</title>
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="login.css">
     <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="login.css">
 </head>
-<body>
-    <!-- Navbar -->
-    <header class="header">
-        <div class="container nav-container">
-            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
-            
-            <nav class="nav-links">
-                <a href="index.html">Home</a>
-                <a href="about.html">About Us</a>
-                <a href="pathway.html">Pathway Finder</a>
-                <a href="courses.html">Courses</a>
-                <a href="mentors.html">Mentors</a>
-                <a href="scholarships.html">Scholarships</a>
-            </nav>
+<body class="auth-page login-page">
+    <a href="index.html" class="back-home"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Home</a>
 
-            <div class="nav-buttons">
-                <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode"><i class="fas fa-moon"></i></button>
-                <a href="signup.html" class="btn btn-signup">Sign Up</a>
+    <main class="auth-shell" aria-label="Login">
+        <section class="auth-card login-card">
+            <div class="brand-mark" aria-label="EduPath Lanka">
+                <span class="brand-icon"><i class="fas fa-graduation-cap" aria-hidden="true"></i></span>
+                <span>EduPath <strong>Lanka</strong></span>
             </div>
 
-            <div class="hamburger">
-                <i class="fas fa-bars"></i>
+            <div class="form-header">
+                <h1>Welcome Back</h1>
+                <p>Continue your learning and career journey with EduPath Lanka.</p>
             </div>
-        </div>
-        
-        <!-- Mobile Menu -->
-        <div class="mobile-menu">
-            <div class="close-btn"><i class="fas fa-times"></i></div>
-            <nav class="mobile-links">
-                <a href="index.html">Home</a>
-                <a href="about.html">About Us</a>
-                <a href="pathway.html">Pathway Finder</a>
-                <a href="courses.html">Courses</a>
-                <a href="mentors.html">Mentors</a>
-                <a href="scholarships.html">Scholarships</a>
-                <a href="signup.html" class="btn btn-signup">Sign Up</a>
-            </nav>
-        </div>
-    </header>
 
-    <!-- Main Content -->
-    <main class="auth-container">
-        <!-- Abstract gradient shapes -->
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        
-        <div class="auth-card glass">
-            <div class="auth-visual">
-                <div class="visual-overlay"></div>
-                <div class="visual-content">
-                    <h2>Welcome Back to Your Future</h2>
-                    <p>Continue discovering pathways, mentors, and courses tailored just for you.</p>
+            <form id="login-form" class="auth-form" novalidate>
+                <div id="alert-message" class="alert hidden" role="alert"></div>
+
+                <div class="input-group">
+                    <label for="email">Email Address</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope input-icon" aria-hidden="true"></i>
+                        <input class="auth-input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+                    </div>
+                    <span class="error-msg" id="email-error"></span>
                 </div>
-            </div>
-            
-            <div class="auth-form-container">
-                <div class="form-header">
-                    <h2>Welcome Back</h2>
-                    <p>Login to continue your EduPath Lanka journey</p>
+
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock input-icon" aria-hidden="true"></i>
+                        <input class="auth-input" type="password" id="password" placeholder="Enter your password" autocomplete="current-password" required>
+                        <button type="button" class="toggle-password" id="toggle-pwd" aria-label="Show password">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
+                    <span class="error-msg" id="password-error"></span>
                 </div>
-                
-                <form id="login-form" class="auth-form" novalidate>
-                    <div id="alert-message" class="alert hidden"></div>
-                    
-                    <div class="input-group">
-                        <label for="email">Email Address</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-envelope icon"></i>
-                            <input type="email" id="email" placeholder="you@example.com" autocomplete="email">
-                        </div>
-                        <span class="error-msg" id="email-error"></span>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="password">Password</label>
-                        <div class="input-wrapper">
-                            <i class="fas fa-lock icon"></i>
-                            <input type="password" id="password" placeholder="Enter your password">
-                            <i class="fas fa-eye toggle-password" id="toggle-pwd"></i>
-                        </div>
-                        <span class="error-msg" id="password-error"></span>
-                    </div>
-                    
-                    <div class="form-options">
-                        <label class="remember-me">
-                            <input type="checkbox" id="remember">
-                            <span>Remember me</span>
-                        </label>
-                        <a href="#" class="forgot-pwd">Forgot password?</a>
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary btn-block">Login <i class="fas fa-sign-in-alt"></i></button>
-                    
-                    <div class="divider">
-                        <span>or</span>
-                    </div>
-                    
-                    <button type="button" class="btn btn-google btn-block">
-                        <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg" alt="Google">
-                        Sign in with Google
-                    </button>
-                    
-                    <p class="auth-link">
-                        Don't have an account? <a href="signup.html">Sign Up</a>
-                    </p>
-                </form>
-            </div>
-        </div>
+
+                <button type="submit" class="auth-submit-btn">
+                    <span>Login</span>
+                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                </button>
+
+                <p class="auth-link">Don't have an account? <a href="signup.html">Sign Up</a></p>
+            </form>
+        </section>
     </main>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container footer-content">
-            <div class="footer-brand">
-                <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
-            </div>
-            <div class="footer-links-simple">
-                <a href="#">Privacy Policy</a>
-                <a href="#">Terms & Conditions</a>
-            </div>
-            <p>&copy; 2026 EduPath Lanka. All rights reserved.</p>
-        </div>
-    </footer>
 
     <script type="module" src="theme.js"></script>
     <script type="module" src="login.js"></script>
-    <script type="module" src="auth-nav.js"></script>
 </body>
 </html>

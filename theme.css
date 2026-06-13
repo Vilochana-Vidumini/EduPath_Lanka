@@ -397,6 +397,36 @@ html[data-theme="dark"] .table-responsive table td {
     font-size: 1rem;
 }
 
+.dashboard-clock-card {
+    min-width: 176px;
+    min-height: 44px;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid var(--theme-border, rgba(148, 163, 184, 0.35));
+    border-radius: 14px;
+    background: var(--theme-card, rgba(255, 255, 255, 0.86));
+    display: grid;
+    align-content: center;
+    gap: 0.1rem;
+    line-height: 1.1;
+}
+
+.dashboard-greeting {
+    color: var(--theme-muted, #64748b);
+    font-size: 0.72rem;
+    font-weight: 800;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dashboard-live-clock {
+    color: var(--theme-text, #0f172a);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.96rem;
+    font-weight: 850;
+    letter-spacing: 0;
+}
+
 .notification-wrap {
     position: relative;
     display: inline-flex;
@@ -480,6 +510,11 @@ html[data-theme="dark"] .table-responsive table td {
     border-radius: 8px;
     margin-bottom: 4px;
     background: var(--theme-card-soft, rgba(248, 250, 252, 0.8));
+    cursor: pointer;
+}
+
+.notification-item.unread {
+    background: rgba(37, 99, 235, 0.08);
 }
 
 .notification-item strong {
@@ -509,6 +544,11 @@ html[data-theme="dark"] .table-responsive table td {
 }
 
 html[data-theme="dark"] .notification-btn {
+    background: var(--theme-card);
+    color: var(--theme-text);
+}
+
+html[data-theme="dark"] .dashboard-clock-card {
     background: var(--theme-card);
     color: var(--theme-text);
 }
@@ -863,6 +903,7 @@ html.sidebar-collapsed .sidebar-links li a i {
 
 html.sidebar-collapsed .main-content {
     margin-left: var(--sidebar-collapsed-width) !important;
+    width: calc(100% - var(--sidebar-collapsed-width)) !important;
 }
 
 /* =========================================
@@ -1207,7 +1248,22 @@ html[data-theme="dark"] .mini-stat {
 }
 
 @media (max-width: 768px) {
+    .dashboard-clock-card {
+        min-width: 138px;
+        padding-inline: 0.6rem;
+    }
+
+    .dashboard-greeting {
+        max-width: 126px;
+        font-size: 0.68rem;
+    }
+
+    .dashboard-live-clock {
+        font-size: 0.86rem;
+    }
+
     html.sidebar-collapsed .main-content {
         margin-left: 0 !important;
+        width: 100% !important;
     }
 }

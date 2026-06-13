@@ -1,9 +1,9 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { ref, get, set, update, onValue } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
-import { showToast, preserveThemeOnClear } from "./auth-nav.js";
+import { ref, get, set, update, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { showToast, preserveThemeOnClear } from "./auth-nav.js?v=20260614-brand";
 import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
-import { ensureDashboardTopbarLayout, initDashboardNotifications } from "./dashboard-topbar.js";
+import { ensureDashboardTopbarLayout, initDashboardNotifications, updateDashboardGreetingName } from "./dashboard-topbar.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     initDashboardSidebar();
@@ -47,8 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Logout ---
     const logoutBtn = document.getElementById('logout-btn-sidebar');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', (e) => {
+        logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault();
+            await recordMentorLogout();
             signOut(auth).then(() => {
                 preserveThemeOnClear();
                 sessionStorage.clear();
@@ -57,12 +58,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    async function recordMentorLogout() {
+        const user = auth.currentUser;
+        if (!user) return;
+        const recordId = sessionStorage.getItem('edupathLoginRecordId');
+        const updates = {};
+        updates[`users/${user.uid}/isOnline`] = false;
+        updates[`users/${user.uid}/lastLogoutAt`] = serverTimestamp();
+        updates[`presence/${user.uid}`] = { state: 'offline', lastChanged: serverTimestamp() };
+        if (recordId) {
+            updates[`loginHistory/${user.uid}/${recordId}/sessionStatus`] = 'completed';
+            updates[`loginHistory/${user.uid}/${recordId}/logoutAt`] = serverTimestamp();
+        }
+        const logRef = push(ref(database, 'activityLogs'));
+        updates[`activityLogs/${logRef.key}`] = {
+            logId: logRef.key,
+            uid: user.uid,
+            userName: localStorage.getItem('fullName') || user.displayName || 'Mentor',
+            userRole: 'mentor',
+            actionType: 'logout',
+            description: 'Mentor logged out',
+            relatedEntityType: 'user',
+            relatedEntityId: user.uid,
+            createdAt: serverTimestamp()
+        };
+        return update(ref(database), updates).catch(console.error);
+    }
+
     function initMentorDashboard(uid, userData) {
         updateSidebarUser({
             fullName: userData.fullName || 'Mentor',
             role: 'mentor',
             photoURL: userData.photoURL || '',
         });
+        updateDashboardGreetingName(userData.fullName || 'Mentor');
 
         const firstName = (userData.fullName || 'Mentor').split(' ')[0];
         const welcomeNameEl = document.getElementById('welcome-name');

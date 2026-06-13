@@ -1,11 +1,12 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { ref, get, push, set } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { ref, get, push, set, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { themeToggleButtonHTML, wireThemeToggle } from "./theme.js";
 
-function handleLogout(e) {
+async function handleLogout(e) {
     e.preventDefault();
     closeAuthPanel();
+    await recordLogout();
     signOut(auth).then(() => {
         preserveThemeOnClear();
         sessionStorage.clear();
@@ -14,6 +15,35 @@ function handleLogout(e) {
         console.error("Sign out error:", err);
         window.location.href = 'login.html';
     });
+}
+
+async function recordLogout() {
+    const user = auth.currentUser;
+    if (!user) return;
+    const recordId = sessionStorage.getItem('edupathLoginRecordId');
+    const fullName = localStorage.getItem('fullName') || user.displayName || user.email || 'User';
+    const role = localStorage.getItem('userType') || 'user';
+    const updates = {};
+    updates[`users/${user.uid}/isOnline`] = false;
+    updates[`users/${user.uid}/lastLogoutAt`] = serverTimestamp();
+    updates[`presence/${user.uid}`] = { state: 'offline', lastChanged: serverTimestamp() };
+    if (recordId) {
+        updates[`loginHistory/${user.uid}/${recordId}/sessionStatus`] = 'completed';
+        updates[`loginHistory/${user.uid}/${recordId}/logoutAt`] = serverTimestamp();
+    }
+    const logRef = push(ref(database, 'activityLogs'));
+    updates[`activityLogs/${logRef.key}`] = {
+        logId: logRef.key,
+        uid: user.uid,
+        userName: fullName,
+        userRole: role,
+        actionType: 'logout',
+        description: `${fullName} logged out`,
+        relatedEntityType: 'user',
+        relatedEntityId: user.uid,
+        createdAt: serverTimestamp()
+    };
+    return update(ref(database), updates).catch((err) => console.error('Logout tracking failed:', err));
 }
 
 export function preserveThemeOnClear() {
@@ -31,7 +61,7 @@ const AUTH_PANEL_LINKS = {
         { href: 'student-dashboard.html', icon: 'fa-tachometer-alt', label: 'Dashboard' },
         { href: 'profile.html', icon: 'fa-user', label: 'My Profile' },
         { href: 'pathway.html', icon: 'fa-route', label: 'Pathway Finder' },
-        { href: 'student-dashboard.html#latest-result', icon: 'fa-poll-h', label: 'My Results' },
+        { href: 'student-dashboard.html#pathway-history', icon: 'fa-poll-h', label: 'My Results' },
         { href: 'courses.html', icon: 'fa-book-open', label: 'Courses' },
         { href: 'scholarships.html', icon: 'fa-hand-holding-usd', label: 'Scholarships' },
         { href: 'mentors.html', icon: 'fa-chalkboard-teacher', label: 'Mentors' },
@@ -43,6 +73,14 @@ const AUTH_PANEL_LINKS = {
         { href: 'mentor-dashboard.html#requests', icon: 'fa-user-plus', label: 'Student Requests' },
         { href: 'mentor-dashboard.html#availability', icon: 'fa-calendar-check', label: 'Availability' },
         { href: 'mentor-dashboard.html#resources', icon: 'fa-book-reader', label: 'Guidance Resources' },
+        { href: 'index.html', icon: 'fa-home', label: 'Home' },
+    ],
+    institute: [
+        { href: 'institute-dashboard.html', icon: 'fa-tachometer-alt', label: 'Dashboard' },
+        { href: 'institute-dashboard.html#profile', icon: 'fa-building', label: 'Institute Profile' },
+        { href: 'institute-dashboard.html#courses', icon: 'fa-file-lines', label: 'Course Approvals' },
+        { href: 'institute-dashboard.html#submit-course', icon: 'fa-plus-circle', label: 'Submit Course' },
+        { href: 'institute-dashboard.html#support', icon: 'fa-headset', label: 'Admin Messages' },
         { href: 'index.html', icon: 'fa-home', label: 'Home' },
     ],
     admin: [
@@ -380,6 +418,11 @@ const injectGlobalStyles = () => {
             color: #8b5cf6;
         }
 
+        .role-institute {
+            background: rgba(4, 120, 87, 0.08);
+            color: #047857;
+        }
+
         .role-admin {
             background: rgba(239, 68, 68, 0.08);
             color: #ef4444;
@@ -429,28 +472,59 @@ const injectGlobalStyles = () => {
         }
 
         /* Toast Notifications */
-        .ep-toast {
+        .ep-toast-stack {
             position: fixed;
-            bottom: 24px;
             right: 24px;
+            top: 24px;
+            z-index: 100000;
+            display: grid;
+            gap: 12px;
+            width: min(420px, calc(100vw - 32px));
+            pointer-events: none;
+        }
+
+        .ep-toast {
+            width: 100%;
             background: var(--theme-surface, #ffffff);
             color: var(--theme-text, #0f172a);
-            border-radius: 12px;
-            padding: 14px 18px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-            transform: translateY(15px);
+            border-radius: 14px;
+            padding: 14px 14px 14px 16px;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: start;
+            gap: 12px;
+            box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
+            transform: translateX(18px);
             opacity: 0;
             transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-            z-index: 100000;
             border-left: 5px solid var(--theme-primary, #4f46e5);
+            pointer-events: auto;
         }
 
         .ep-toast.show {
-            transform: translateY(0);
+            transform: translateX(0);
             opacity: 1;
+        }
+
+        .ep-toast span {
+            font-weight: 700;
+            font-size: 13.5px;
+            line-height: 1.45;
+            color: var(--theme-text, #334155);
+        }
+
+        .ep-toast-close {
+            width: 28px;
+            height: 28px;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--theme-muted, #64748b);
+            cursor: pointer;
+        }
+
+        .ep-toast-close:hover {
+            background: rgba(148, 163, 184, 0.14);
         }
 
         .ep-toast-success {
@@ -475,6 +549,22 @@ const injectGlobalStyles = () => {
 
         .ep-toast-warning i {
             color: #f59e0b;
+        }
+
+        .ep-toast-info {
+            border-left-color: #2563eb;
+        }
+
+        .ep-toast-info i {
+            color: #2563eb;
+        }
+
+        @media (max-width: 640px) {
+            .ep-toast-stack {
+                top: 14px;
+                right: 14px;
+                width: calc(100vw - 28px);
+            }
         }
 
         /* Mobile Menu Logged-In Card styles */
@@ -524,23 +614,60 @@ const injectGlobalStyles = () => {
 };
 
 // Custom premium Toast helper
-export const showToast = (message, type = 'success') => {
+export const showToast = (message, type = 'success', options = {}) => {
     injectGlobalStyles();
+    const toastType = ['success', 'error', 'warning', 'info'].includes(type) ? type : 'info';
+    const duration = Number(options.duration || 5000);
+    let stack = document.getElementById('ep-toast-stack');
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.id = 'ep-toast-stack';
+        stack.className = 'ep-toast-stack';
+        stack.setAttribute('aria-live', 'polite');
+        stack.setAttribute('aria-atomic', 'false');
+        document.body.appendChild(stack);
+    }
+
+    const iconClass = toastType === 'success'
+        ? 'fa-check-circle'
+        : toastType === 'error'
+            ? 'fa-times-circle'
+            : toastType === 'warning'
+                ? 'fa-exclamation-triangle'
+                : 'fa-info-circle';
     const toast = document.createElement('div');
-    toast.className = `ep-toast ep-toast-${type}`;
+    toast.className = `ep-toast ep-toast-${toastType}`;
+    toast.setAttribute('role', toastType === 'error' ? 'alert' : 'status');
     toast.innerHTML = `
-        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-times-circle' : 'fa-exclamation-triangle'}"></i>
-        <span style="font-weight: 600; font-size: 13.5px; color: var(--theme-text, #334155);">${message}</span>
+        <i class="fas ${iconClass}" aria-hidden="true"></i>
+        <span>${escapeToastHtml(message)}</span>
+        <button type="button" class="ep-toast-close" aria-label="Close notification"><i class="fas fa-times" aria-hidden="true"></i></button>
     `;
-    document.body.appendChild(toast);
-    
-    setTimeout(() => toast.classList.add('show'), 20);
-    
-    setTimeout(() => {
+    stack.appendChild(toast);
+
+    let closeTimer = null;
+    const closeToast = () => {
+        if (closeTimer) clearTimeout(closeTimer);
         toast.classList.remove('show');
         setTimeout(() => toast.remove(), 300);
-    }, 3500);
+    };
+    toast.querySelector('.ep-toast-close')?.addEventListener('click', closeToast);
+    
+    setTimeout(() => toast.classList.add('show'), 20);
+    closeTimer = setTimeout(closeToast, duration);
+    return closeToast;
 };
+
+window.EduPathToast = { show: showToast, success: (message, options) => showToast(message, 'success', options), error: (message, options) => showToast(message, 'error', options), warning: (message, options) => showToast(message, 'warning', options), info: (message, options) => showToast(message, 'info', options) };
+
+function escapeToastHtml(value) {
+    return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 // Activity and Session Timeout Manager
 const setupSessionTimeout = (user) => {
@@ -620,7 +747,8 @@ document.addEventListener('DOMContentLoaded', () => {
         { href: 'courses.html', text: 'Courses' },
         { href: 'mentors.html', text: 'Mentors' },
         { href: 'scholarships.html', text: 'Scholarships' },
-        { href: 'pathway.html', text: 'Pathway Finder' }
+        { href: 'pathway.html', text: 'Pathway Finder' },
+        { href: 'institutes.html', text: 'Institutes' }
     ];
 
     function createNavItem(href, text, isActive) {
@@ -697,6 +825,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         dashboardUrl = 'student-dashboard.html';
                     } else if (role === 'mentor') {
                         dashboardUrl = 'mentor-dashboard.html';
+                    } else if (role === 'institute') {
+                        dashboardUrl = 'institute-dashboard.html';
                     } else if (role === 'admin') {
                         dashboardUrl = 'admin-dashboard.html';
                     }
@@ -837,11 +967,11 @@ document.addEventListener('DOMContentLoaded', () => {
             'student-dashboard.html': 'student',
             'pathway.html': 'student',
             'mentor-dashboard.html': 'mentor',
+            'institute-dashboard.html': 'institute',
             'admin-dashboard.html': 'admin'
         };
 
         const currentPage = window.location.pathname.split('/').pop();
-        
         if (currentPage === 'profile.html' && !role) {
             window.location.href = `login.html?redirect=profile.html`;
             return;
@@ -858,6 +988,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (role !== requiredRole) {
                 if (role === 'student') window.location.href = 'student-dashboard.html';
                 else if (role === 'mentor') window.location.href = 'mentor-dashboard.html';
+                else if (role === 'institute') window.location.href = 'institute-dashboard.html';
                 else if (role === 'admin') window.location.href = 'admin-dashboard.html';
                 else window.location.href = 'index.html';
             }

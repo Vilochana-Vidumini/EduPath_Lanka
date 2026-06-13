@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <title>For Institutes | EduPath Lanka</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="institutes.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+            <nav class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="courses.html">Courses</a>
+                <a href="scholarships.html">Scholarships</a>
+                <a href="institutes.html" class="active">For Institutes</a>
+            </nav>
+            <div class="nav-buttons">
+                <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode"><i class="fas fa-moon"></i></button>
+                <a href="login.html" class="btn btn-login">Login</a>
+                <a href="signup.html" class="btn btn-signup">Register Institute</a>
+            </div>
+            <div class="hamburger"><i class="fas fa-bars"></i></div>
+        </div>
+    </header>
+
+    <main class="role-public-page institute-public">
+        <section class="role-hero institute-hero">
+            <div class="container role-hero-inner">
+                <div>
+                    <span class="section-badge badge-success">For Institutes / Course Providers</span>
+                    <h1>Partner with EduPath Lanka to publish verified education options.</h1>
+                    <p>Reach suitable students, submit course and scholarship information, and communicate with EduPath Admin through a verified provider workflow.</p>
+                    <div class="hero-buttons">
+                        <a href="signup.html" class="btn btn-primary btn-large">Register Your Institute</a>
+                        <a href="login.html" class="btn btn-outline-dark btn-large">Institute Login</a>
+                    </div>
+                </div>
+                <div class="role-notice glass">
+                    <i class="fas fa-circle-check"></i>
+                    <p>All institute profiles and course submissions must be reviewed by EduPath Admin before publication.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <div class="section-title text-center">
+                    <h2>Verification Before Visibility</h2>
+                    <p>EduPath keeps public course data reliable through admin-reviewed institute profiles and submissions.</p>
+                </div>
+                <div class="services-grid">
+                    <div class="service-card glass"><div class="service-icon-wrap gradient-green"><i class="fas fa-building-columns"></i></div><h3>Publish Verified Courses</h3><p>Submit course details for review before they appear publicly.</p></div>
+                    <div class="service-card glass"><div class="service-icon-wrap gradient-blue"><i class="fas fa-users-viewfinder"></i></div><h3>Reach Suitable Students</h3><p>Published courses can appear in public course listings and student browsing pages.</p></div>
+                    <div class="service-card glass"><div class="service-icon-wrap gradient-cyan"><i class="fas fa-award"></i></div><h3>Submit Scholarships</h3><p>Share verified funding opportunities through a controlled approval process.</p></div>
+                    <div class="service-card glass"><div class="service-icon-wrap gradient-purple"><i class="fas fa-message"></i></div><h3>Communicate with Admin</h3><p>Use EduPath Support for verification feedback and questions.</p></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="theme.js"></script>
+    <script src="script.js"></script>
+    <script type="module" src="auth-nav.js?v=20260614-brand"></script>
+</body>
+</html>

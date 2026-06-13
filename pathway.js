@@ -1,9 +1,11 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { ref, push, update, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { ref, push, set, update, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { showToast } from "./auth-nav.js?v=20260614-brand";
 
 document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
+    const pathwayMode = new URLSearchParams(window.location.search).get('mode') || 'first-time';
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
@@ -13,9 +15,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (snapshot.exists()) {
                     const type = snapshot.val().userType.toLowerCase();
                     if (type !== 'student' && type !== 'admin') {
-                        alert("Access denied. The Pathway Finder is only available for students.");
-                        window.location.href = 'student-dashboard.html'; // fallback
+                        showToast("Access denied. The Pathway Finder is only available for students.", "error");
+                        window.location.href = 'student-dashboard.html';
+                        return;
                     }
+                    prefillPathwayForm(user.uid, snapshot.val());
                 }
             });
         } else {
@@ -35,6 +39,51 @@ document.addEventListener('DOMContentLoaded', () => {
         closeBtn.addEventListener('click', () => {
             mobileMenu.classList.remove('active');
         });
+    }
+
+    async function prefillPathwayForm(uid, userData = {}) {
+        const studentSnap = await get(ref(database, `students/${uid}`));
+        const studentData = studentSnap.exists() ? studentSnap.val() : {};
+        const latestResult = await getCurrentPathwayResult(uid, studentData.currentPathwayResultId);
+        const source = pathwayMode === 'update' ? { ...studentData, ...latestResult } : studentData;
+
+        setFieldValue('fullname', userData.fullName || studentData.fullName || latestResult.studentName || '');
+        setFieldValue('email', userData.email || studentData.email || latestResult.email || currentUser?.email || '');
+        setFieldValue('district', source.district || '');
+        setFieldValue('education-level', source.educationLevel || '');
+        setFieldValue('exam-stream', source.examStream || '');
+        setFieldValue('result-status', source.resultStatus || '');
+        setFieldValue('interest-area', source.interestArea || '');
+        setFieldValue('future-goal', source.futureGoal || '');
+        setFieldValue('financial', source.financialSupport || '');
+        setFieldValue('learning-mode', source.learningMode || '');
+
+        const skills = Array.isArray(source.skills) ? source.skills : String(source.skills || '').split(',').map(skill => skill.trim());
+        document.querySelectorAll('.skill-cb').forEach((checkbox) => {
+            checkbox.checked = skills.includes(checkbox.value);
+        });
+    }
+
+    async function getCurrentPathwayResult(uid, currentResultId) {
+        const resultsSnap = await get(ref(database, `pathwayResults/${uid}`));
+        if (!resultsSnap.exists()) return {};
+        const results = resultsSnap.val();
+        if (currentResultId && results[currentResultId]) return results[currentResultId];
+        return Object.entries(results)
+            .sort(([keyA, a], [keyB, b]) => getResultTime(b.createdAt, keyB) - getResultTime(a.createdAt, keyA))
+            .map(([, result]) => result)[0] || {};
+    }
+
+    function setFieldValue(id, value) {
+        const field = document.getElementById(id);
+        if (field && value !== undefined && value !== null) field.value = value;
+    }
+
+    function getResultTime(value, fallbackKey = '') {
+        if (typeof value === 'number') return value;
+        const parsed = Date.parse(value || '');
+        if (!Number.isNaN(parsed)) return parsed;
+        return fallbackKey ? fallbackKey.split('').reduce((total, char) => total + char.charCodeAt(0), 0) : 0;
     }
 
     // --- Scroll Reveal Animation ---
@@ -330,22 +379,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 createdAt: serverTimestamp()
             };
 
-            // Push to pathwayResults/{uid}
-            const pathwayRef = ref(database, `pathwayResults/${uid}`);
-            push(pathwayRef, pathwayData)
+            // Push to pathwayResults/{uid} and keep every result for history.
+            const newResultRef = push(ref(database, `pathwayResults/${uid}`));
+            set(newResultRef, {
+                ...pathwayData,
+                resultId: newResultRef.key,
+                mode: pathwayMode,
+                updatedAt: serverTimestamp()
+            })
                 .then(() => {
                     addAlert(alertsContainer, 'alert-success', 'fa-save', 'Your pathway result has been securely saved to your account!');
+                    return update(ref(database, `students/${uid}`), {
+                        fullName: name,
+                        email: document.getElementById('email').value,
+                        district: document.getElementById('district').value,
+                        educationLevel: eduLevel,
+                        examStream: document.getElementById('exam-stream').value || "Not Selected",
+                        resultStatus: resultStatus || "Not Selected",
+                        interestArea: interest,
+                        skills: selectedSkills,
+                        futureGoal: goal,
+                        financialSupport: financial,
+                        learningMode: document.getElementById('learning-mode').value,
+                        currentPathwayResultId: newResultRef.key,
+                        pathwayCompleted: true,
+                        onboardingCompleted: true,
+                        recommendationsOutdated: false,
+                        pathwayLastUpdatedAt: serverTimestamp(),
+                        updatedAt: serverTimestamp()
+                    });
+                })
+                .then(() => {
+                    setTimeout(() => {
+                        window.location.href = 'student-dashboard.html#pathway';
+                    }, 1200);
                 })
                 .catch((error) => console.error("Error saving pathway result:", error));
-
-            // Update student profile
-            const studentUpdates = {
-                educationLevel: eduLevel,
-                interestArea: interest,
-                futureGoal: goal,
-                updatedAt: serverTimestamp()
-            };
-            update(ref(database, `students/${uid}`), studentUpdates).catch(e => console.error(e));
 
         } else {
             addAlert(alertsContainer, 'alert-warning', 'fa-user-lock', 'Create an account or login to save your pathway result and access it later.');

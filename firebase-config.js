@@ -4,7 +4,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/fireba
 import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
-const firebaseConfig = {
+export const firebaseConfig = {
     apiKey: "AIzaSyD33FV6wnVeEiM3-DhSgqigSZcp88a2ztc",
     authDomain: "edupath-lanka-af6ae.firebaseapp.com",
     projectId: "edupath-lanka-af6ae",

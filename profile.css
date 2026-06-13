@@ -250,6 +250,13 @@ body {
     font-size: 13px;
 }
 
+.task-list .task-list-heading {
+    margin-top: 4px;
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 800;
+}
+
 /* Security settings buttons */
 .security-card h3 {
     font-size: 15px;
