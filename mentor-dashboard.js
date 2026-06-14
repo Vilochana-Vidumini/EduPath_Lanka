@@ -812,9 +812,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                             <div><strong>${escapeHtml(item.studentName || 'Student')}</strong><span>${escapeHtml(item.studentEmail || 'No email')}</span></div>
                                         </div>
                                     </td>
-                                    <td>${escapeHtml(item.educationLevel || 'N/A')}</td>
-                                    <td>${escapeHtml(item.interestArea || 'N/A')}</td>
-                                    <td class="table-message">${escapeHtml(item.futureGoal || 'N/A')}</td>
+                                    <td>${escapeHtml(firstMeaningful(item.educationLevel, 'N/A'))}</td>
+                                    <td>${escapeHtml(firstMeaningful(item.interestArea, 'N/A'))}</td>
+                                    <td class="table-message">${escapeHtml(firstMeaningful(item.futureGoal, item.pathwaySummary, 'N/A'))}</td>
                                     <td>${escapeHtml(formatSupportDate(item.connectedAt))}</td>
                                     <td>${unread ? `<span class="badge badge-warning">${unread} unread</span>` : '<span class="badge badge-approved">Read</span>'}</td>
                                     <td>
