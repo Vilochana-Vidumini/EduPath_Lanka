@@ -755,9 +755,38 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<a href="${href}" class="${isActive ? 'active' : ''}">${text}</a>`;
     }
 
+    function renderPublicDesktopNav() {
+        const exploreActive = ['courses.html', 'scholarships.html', 'institutes.html'].includes(page);
+        const guidanceActive = ['pathway.html', 'mentors.html'].includes(page);
+
+        return `
+            ${createNavItem('index.html', 'Home', page === 'index.html' || page === '')}
+            <div class="nav-dropdown">
+                <button type="button" class="nav-dropdown-toggle ${exploreActive ? 'active' : ''}">
+                    Explore <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <a href="courses.html" class="${page === 'courses.html' ? 'active' : ''}"><i class="fas fa-book-open" aria-hidden="true"></i> Courses</a>
+                    <a href="scholarships.html" class="${page === 'scholarships.html' ? 'active' : ''}"><i class="fas fa-graduation-cap" aria-hidden="true"></i> Scholarships</a>
+                    <a href="institutes.html" class="${page === 'institutes.html' ? 'active' : ''}"><i class="fas fa-building-columns" aria-hidden="true"></i> Institutes</a>
+                </div>
+            </div>
+            <div class="nav-dropdown">
+                <button type="button" class="nav-dropdown-toggle ${guidanceActive ? 'active' : ''}">
+                    Guidance <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                </button>
+                <div class="nav-dropdown-menu">
+                    <a href="pathway.html" class="${page === 'pathway.html' ? 'active' : ''}"><i class="fas fa-compass" aria-hidden="true"></i> Pathway Finder</a>
+                    <a href="mentors.html" class="${page === 'mentors.html' ? 'active' : ''}"><i class="fas fa-user-tie" aria-hidden="true"></i> Mentors</a>
+                </div>
+            </div>
+            ${createNavItem('about.html', 'About Us', page === 'about.html')}
+        `;
+    }
+
     function renderNavLinks(linksObj) {
         if (navLinksContainer) {
-            navLinksContainer.innerHTML = linksObj.map(l => createNavItem(l.href, l.text, l.href === page)).join('');
+            navLinksContainer.innerHTML = renderPublicDesktopNav();
         }
         
         if (mobileLinksContainer) {

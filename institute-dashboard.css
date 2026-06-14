@@ -136,3 +136,1063 @@ th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-
     .welcome-panel, .panel-head { align-items: flex-start; flex-direction: column; }
     .form-grid { grid-template-columns: 1fr; }
 }
+
+/* Modern EduPath dashboard refresh */
+:root {
+    --dash-primary: #2563eb;
+    --dash-indigo: #7c3aed;
+    --dash-cyan: #06b6d4;
+    --dash-success: #16a34a;
+    --dash-danger: #dc2626;
+    --dash-warning: #d97706;
+    --dash-bg: #f6f9ff;
+    --dash-surface: rgba(255, 255, 255, 0.82);
+    --dash-surface-strong: rgba(255, 255, 255, 0.94);
+    --dash-border: rgba(203, 213, 225, 0.74);
+    --dash-text: #0f172a;
+    --dash-muted: #64748b;
+    --dash-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+}
+
+body {
+    background:
+        radial-gradient(circle at 10% 0%, rgba(59, 130, 246, 0.11), transparent 28%),
+        radial-gradient(circle at 92% 8%, rgba(6, 182, 212, 0.10), transparent 24%),
+        linear-gradient(135deg, #f8fbff 0%, var(--dash-bg) 48%, #eef7ff 100%) !important;
+    color: var(--dash-text);
+}
+
+.institute-sidebar {
+    width: 292px;
+    padding: 22px 16px;
+    background: rgba(255, 255, 255, 0.84) !important;
+    border-right: 1px solid var(--dash-border) !important;
+    box-shadow: 12px 0 36px rgba(15, 23, 42, 0.06) !important;
+    backdrop-filter: blur(22px);
+}
+
+.institute-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+    min-height: 58px;
+    margin: 0 10px 18px;
+}
+
+.dash-logo {
+    min-height: 54px;
+    margin: 0;
+    align-items: center;
+    gap: 0.65rem;
+    color: var(--dash-text) !important;
+    font-size: 1.28rem;
+    line-height: 1;
+    letter-spacing: 0;
+}
+
+.dash-logo::before {
+    content: none;
+    display: none;
+}
+
+.dash-logo img {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 auto;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 18px rgba(37, 99, 235, 0.13));
+}
+
+.dash-logo span {
+    color: var(--dash-text) !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dash-logo strong { color: var(--dash-primary); }
+
+.institute-mini-profile {
+    margin: 0 8px 18px;
+    padding: 12px;
+    border: 1px solid var(--dash-border);
+    border-radius: 18px;
+    background: rgba(248, 250, 252, 0.78) !important;
+}
+
+.mini-logo {
+    border-radius: 15px;
+    background: linear-gradient(135deg, var(--dash-primary), var(--dash-cyan)) !important;
+}
+
+.dash-menu {
+    gap: 6px;
+}
+
+.dash-menu button,
+.dash-menu a {
+    min-height: 46px;
+    padding: 0 12px;
+    border-radius: 14px;
+    color: #475569 !important;
+    font-weight: 750;
+}
+
+.dash-menu button i,
+.dash-menu a i {
+    width: 22px;
+    color: #64748b;
+    text-align: center;
+}
+
+.dash-menu button:hover,
+.dash-menu a:hover,
+.dash-menu .active {
+    background: rgba(37, 99, 235, 0.10) !important;
+    color: var(--dash-primary) !important;
+}
+
+.dash-menu button:hover i,
+.dash-menu a:hover i,
+.dash-menu .active i {
+    color: var(--dash-primary);
+}
+
+.dash-menu .danger-link {
+    color: var(--dash-danger) !important;
+}
+
+.dash-menu .danger-link i {
+    color: var(--dash-danger);
+}
+
+.institute-main {
+    margin-left: 292px;
+    min-height: 100vh;
+}
+
+.dash-topbar {
+    min-height: 86px;
+    padding: 16px clamp(18px, 3vw, 34px);
+    background: rgba(255, 255, 255, 0.74) !important;
+    border-bottom: 1px solid var(--dash-border) !important;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.04);
+    backdrop-filter: blur(20px);
+}
+
+.dash-topbar h1 {
+    color: var(--dash-text);
+    font-size: clamp(1.35rem, 2.2vw, 1.85rem);
+    font-weight: 850;
+}
+
+.dash-topbar p {
+    color: var(--dash-muted);
+    font-weight: 600;
+}
+
+.menu-toggle,
+.institute-clock-card {
+    border: 1px solid var(--dash-border) !important;
+    background: var(--dash-surface-strong) !important;
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06) !important;
+}
+
+.menu-toggle-brand {
+    display: inline-grid !important;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex: 0 0 auto;
+}
+
+.topbar-menu-toggle {
+    display: none !important;
+}
+
+.institute-clock-card {
+    min-width: 210px;
+    min-height: 64px;
+    padding: 10px 15px;
+    border-radius: 18px;
+}
+
+.institute-clock-card span {
+    color: var(--dash-muted) !important;
+}
+
+#institute-live-date {
+    color: var(--dash-primary) !important;
+    font-size: 0.73rem;
+}
+
+.institute-clock-card time {
+    color: var(--dash-text) !important;
+}
+
+.dash-section {
+    padding: clamp(18px, 3vw, 34px);
+}
+
+.dash-section.active {
+    gap: 20px;
+}
+
+.welcome-panel,
+.panel,
+.stat-card,
+.list-item {
+    border: 1px solid var(--dash-border) !important;
+    background: var(--dash-surface) !important;
+    box-shadow: var(--dash-shadow) !important;
+    backdrop-filter: blur(18px);
+}
+
+.welcome-panel {
+    overflow: hidden;
+    position: relative;
+    border-radius: 24px;
+    background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(239, 246, 255, 0.84)),
+        radial-gradient(circle at 88% 18%, rgba(6, 182, 212, 0.16), transparent 28%) !important;
+}
+
+.welcome-panel h2 {
+    color: var(--dash-text);
+    font-weight: 850;
+    letter-spacing: 0;
+}
+
+.welcome-panel p,
+.muted,
+.list-item span {
+    color: var(--dash-muted) !important;
+}
+
+.eyebrow {
+    color: var(--dash-primary);
+    letter-spacing: 0.04em;
+}
+
+.stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(205px, 1fr));
+}
+
+.stat-card {
+    min-height: 126px;
+    border-radius: 20px;
+}
+
+.stat-card i {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    color: var(--dash-primary) !important;
+    background: rgba(37, 99, 235, 0.12) !important;
+}
+
+.stat-card span {
+    color: var(--dash-muted);
+}
+
+.stat-card strong {
+    color: var(--dash-text);
+}
+
+.panel {
+    border-radius: 22px;
+}
+
+.panel h3 {
+    color: var(--dash-text);
+    font-size: 1.22rem;
+    font-weight: 850;
+}
+
+.toolbar input,
+.toolbar select,
+.panel-head select,
+.dash-form input,
+.dash-form select,
+.dash-form textarea,
+td select {
+    border: 1px solid var(--dash-border) !important;
+    border-radius: 14px !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: var(--dash-text) !important;
+}
+
+.toolbar input:focus,
+.toolbar select:focus,
+.panel-head select:focus,
+.dash-form input:focus,
+.dash-form select:focus,
+.dash-form textarea:focus,
+td select:focus {
+    border-color: #60a5fa !important;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12) !important;
+}
+
+.dash-form label {
+    color: var(--dash-text);
+}
+
+.btn {
+    min-height: 42px;
+    border-radius: 14px;
+    font-weight: 800;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--dash-primary), var(--dash-indigo)) !important;
+    box-shadow: 0 12px 26px rgba(37, 99, 235, 0.24);
+}
+
+.btn-light {
+    background: rgba(255, 255, 255, 0.82) !important;
+    border: 1px solid var(--dash-border);
+    color: var(--dash-primary) !important;
+}
+
+.btn-green {
+    background: rgba(22, 163, 74, 0.12) !important;
+    color: #15803d !important;
+}
+
+.btn-danger {
+    background: rgba(220, 38, 38, 0.12) !important;
+    color: var(--dash-danger) !important;
+}
+
+.responsive-table {
+    border-radius: 18px;
+}
+
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+th {
+    background: rgba(248, 250, 252, 0.96);
+    color: var(--dash-muted);
+    font-weight: 850;
+    letter-spacing: 0.04em;
+}
+
+td {
+    color: #253149;
+    border-bottom-color: rgba(226, 232, 240, 0.78);
+}
+
+tbody tr:hover {
+    background: rgba(37, 99, 235, 0.04);
+}
+
+.badge {
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    line-height: 1;
+}
+
+.toast {
+    border-radius: 16px;
+    background: #0f172a;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.18);
+}
+
+html[data-theme="dark"] body {
+    --dash-surface: rgba(15, 23, 42, 0.82);
+    --dash-surface-strong: rgba(15, 23, 42, 0.93);
+    --dash-border: rgba(148, 163, 184, 0.24);
+    --dash-text: #f8fafc;
+    --dash-muted: #cbd5e1;
+    --dash-shadow: 0 18px 45px rgba(0, 0, 0, 0.26);
+    background:
+        radial-gradient(circle at top left, rgba(96, 165, 250, 0.12), transparent 34%),
+        radial-gradient(circle at top right, rgba(34, 211, 238, 0.10), transparent 30%),
+        #020617 !important;
+}
+
+html[data-theme="dark"] .institute-sidebar,
+html[data-theme="dark"] .dash-topbar {
+    background: rgba(15, 23, 42, 0.86) !important;
+}
+
+html[data-theme="dark"] .institute-mini-profile,
+html[data-theme="dark"] .menu-toggle,
+html[data-theme="dark"] .institute-clock-card,
+html[data-theme="dark"] .welcome-panel,
+html[data-theme="dark"] .panel,
+html[data-theme="dark"] .stat-card,
+html[data-theme="dark"] .list-item {
+    background: var(--dash-surface) !important;
+    border-color: var(--dash-border) !important;
+}
+
+html[data-theme="dark"] .dash-menu button,
+html[data-theme="dark"] .dash-menu a {
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .dash-menu button i,
+html[data-theme="dark"] .dash-menu a i {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .dash-menu button:hover,
+html[data-theme="dark"] .dash-menu a:hover,
+html[data-theme="dark"] .dash-menu .active {
+    background: rgba(56, 189, 248, 0.12) !important;
+    color: #38bdf8 !important;
+}
+
+html[data-theme="dark"] .dash-menu button:hover i,
+html[data-theme="dark"] .dash-menu a:hover i,
+html[data-theme="dark"] .dash-menu .active i {
+    color: #38bdf8 !important;
+}
+
+html[data-theme="dark"] .toolbar input,
+html[data-theme="dark"] .toolbar select,
+html[data-theme="dark"] .panel-head select,
+html[data-theme="dark"] .dash-form input,
+html[data-theme="dark"] .dash-form select,
+html[data-theme="dark"] .dash-form textarea,
+html[data-theme="dark"] td select {
+    background: rgba(15, 23, 42, 0.76) !important;
+    color: #f8fafc !important;
+    border-color: var(--dash-border) !important;
+}
+
+html[data-theme="dark"] th {
+    background: rgba(15, 23, 42, 0.96);
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] td {
+    color: #e2e8f0;
+    border-bottom-color: var(--dash-border);
+}
+
+html[data-theme="dark"] .btn-light {
+    background: rgba(15, 23, 42, 0.76) !important;
+    border-color: var(--dash-border);
+    color: #93c5fd !important;
+}
+
+@media (max-width: 860px) {
+    .institute-sidebar {
+        width: min(292px, 84vw);
+    }
+
+    .topbar-menu-toggle {
+        display: inline-grid !important;
+        place-items: center;
+    }
+
+    .institute-main {
+        margin-left: 0;
+    }
+
+    .dash-topbar {
+        align-items: center;
+    }
+
+    .institute-clock-card {
+        margin-left: 0;
+        min-width: 175px;
+    }
+}
+
+/* Reference-style greeting and colorful metrics */
+.dash-topbar {
+    min-height: 94px;
+}
+
+.institute-clock-card {
+    min-width: 360px;
+    min-height: 78px;
+    padding: 0.75rem 1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+        "date time"
+        "label-date label-time";
+    align-items: center;
+    column-gap: 1rem;
+    position: relative;
+}
+
+.institute-clock-card::after {
+    content: "";
+    position: absolute;
+    top: 16px;
+    bottom: 16px;
+    left: 50%;
+    width: 1px;
+    background: rgba(203, 213, 225, 0.9);
+}
+
+#institute-time-greeting {
+    display: none;
+}
+
+#institute-live-date,
+#institute-live-clock {
+    min-height: 42px;
+    padding-left: 52px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    color: var(--dash-primary) !important;
+    font-size: 0.92rem !important;
+    font-weight: 850 !important;
+}
+
+#institute-live-date {
+    grid-area: date;
+}
+
+#institute-live-clock {
+    grid-area: time;
+}
+
+#institute-live-date::before,
+#institute-live-clock::before {
+    position: absolute;
+    left: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: inline-grid;
+    place-items: center;
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    color: var(--dash-primary);
+    background: #eef5ff;
+}
+
+#institute-live-date::before {
+    content: "\f073";
+}
+
+#institute-live-clock::before {
+    content: "\f017";
+}
+
+#institute-live-date::after,
+#institute-live-clock::after {
+    position: absolute;
+    left: 52px;
+    top: 33px;
+    color: var(--dash-muted);
+    font-size: 0.64rem;
+    font-weight: 850;
+    letter-spacing: 0.04em;
+}
+
+#institute-live-date::after {
+    content: "DATE";
+}
+
+#institute-live-clock::after {
+    content: "TIME";
+}
+
+.welcome-panel {
+    min-height: 128px;
+    justify-content: flex-start;
+    padding: clamp(1.15rem, 2.2vw, 1.55rem);
+    gap: 1.1rem;
+    background: rgba(255, 255, 255, 0.94) !important;
+    border-radius: 18px;
+}
+
+.welcome-panel::before {
+    content: "\f19c";
+    flex: 0 0 88px;
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    color: #2563eb;
+    background:
+        radial-gradient(circle at 50% 40%, #fde68a 0 15%, transparent 16%),
+        linear-gradient(160deg, #dbeafe 0 46%, #60a5fa 47% 62%, #bfdbfe 63% 100%);
+    box-shadow: 0 16px 34px rgba(37, 99, 235, 0.16);
+    font-size: 2rem;
+}
+
+.welcome-panel h2 {
+    margin: 0 0 0.28rem;
+    font-size: clamp(1.45rem, 2.2vw, 2rem);
+    line-height: 1.15;
+}
+
+.welcome-panel h2::after {
+    content: " \1F44B";
+    font-size: 0.9em;
+}
+
+.stat-card i {
+    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.10);
+}
+
+.stats-grid .stat-card:nth-child(1) i {
+    color: #2563eb !important;
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe) !important;
+}
+
+.stats-grid .stat-card:nth-child(2) i {
+    color: #16a34a !important;
+    background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important;
+}
+
+.stats-grid .stat-card:nth-child(3) i {
+    color: #ea580c !important;
+    background: linear-gradient(135deg, #ffedd5, #fed7aa) !important;
+}
+
+.stats-grid .stat-card:nth-child(4) i {
+    color: #0891b2 !important;
+    background: linear-gradient(135deg, #cffafe, #a5f3fc) !important;
+}
+
+.stats-grid .stat-card:nth-child(5) i {
+    color: #7c3aed !important;
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe) !important;
+}
+
+html[data-theme="dark"] .institute-clock-card::after {
+    background: rgba(148, 163, 184, 0.28);
+}
+
+html[data-theme="dark"] #institute-live-date::before,
+html[data-theme="dark"] #institute-live-clock::before {
+    background: rgba(37, 99, 235, 0.16);
+    color: #60a5fa;
+}
+
+html[data-theme="dark"] .welcome-panel {
+    background: rgba(15, 23, 42, 0.88) !important;
+}
+
+@media (max-width: 860px) {
+    .dash-topbar {
+        min-height: 94px;
+    }
+
+    .institute-clock-card {
+        min-width: min(100%, 360px);
+    }
+}
+
+@media (max-width: 640px) {
+    .welcome-panel::before {
+        width: 70px;
+        height: 70px;
+        flex-basis: 70px;
+    }
+
+    .institute-clock-card {
+        grid-template-columns: 1fr;
+        grid-template-areas: "date" "time";
+    }
+
+    .institute-clock-card::after {
+        display: none;
+    }
+}
+
+/* Sidebar collapse/layout parity with shared dashboards */
+:root {
+    --institute-sidebar-width: 280px;
+    --institute-sidebar-collapsed-width: 92px;
+}
+
+.institute-sidebar {
+    width: var(--institute-sidebar-width) !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    border-radius: 0 16px 16px 0 !important;
+    transition: width 0.3s ease, transform 0.3s ease, padding 0.3s ease;
+}
+
+.institute-main {
+    margin-left: var(--institute-sidebar-width) !important;
+    width: calc(100% - var(--institute-sidebar-width));
+    transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+.topbar-menu-toggle {
+    display: inline-grid !important;
+    place-items: center;
+}
+
+.dash-menu {
+    padding-bottom: 24px;
+}
+
+html.sidebar-collapsed .institute-sidebar {
+    width: var(--institute-sidebar-collapsed-width) !important;
+    padding-inline: 12px !important;
+}
+
+html.sidebar-collapsed .institute-main {
+    margin-left: var(--institute-sidebar-collapsed-width) !important;
+    width: calc(100% - var(--institute-sidebar-collapsed-width));
+}
+
+html.sidebar-collapsed .institute-brand-row {
+    min-height: 76px;
+    margin-inline: 0;
+}
+
+html.sidebar-collapsed .dash-logo span,
+html.sidebar-collapsed .institute-mini-profile strong,
+html.sidebar-collapsed .institute-mini-profile span {
+    display: none !important;
+}
+
+html.sidebar-collapsed .dash-logo img {
+    width: 34px;
+    height: 34px;
+}
+
+html.sidebar-collapsed .menu-toggle-brand {
+    display: none !important;
+}
+
+html.sidebar-collapsed .institute-mini-profile {
+    justify-content: center;
+    margin-inline: 0;
+    padding: 10px 0;
+}
+
+html.sidebar-collapsed .dash-menu button,
+html.sidebar-collapsed .dash-menu a {
+    width: 52px;
+    min-height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    margin-inline: auto;
+    border-radius: 16px !important;
+    font-size: 0;
+}
+
+.menu-toggle-brand {
+    display: none !important;
+}
+
+html.sidebar-collapsed .dash-menu button i,
+html.sidebar-collapsed .dash-menu a i {
+    width: auto;
+    font-size: 1rem;
+}
+
+html.sidebar-collapsed .dash-menu .active {
+    background: rgba(37, 99, 235, 0.12) !important;
+    color: #2563eb !important;
+}
+
+@media (max-width: 860px) {
+    .institute-sidebar,
+    html.sidebar-collapsed .institute-sidebar {
+        width: min(280px, 86vw) !important;
+        transform: translateX(-100%);
+    }
+
+    .institute-sidebar.open,
+    .institute-sidebar.mobile-open {
+        transform: translateX(0);
+    }
+
+    .institute-main,
+    html.sidebar-collapsed .institute-main {
+        margin-left: 0 !important;
+        width: 100%;
+    }
+}
+
+/* Final placement: institute greeting/date/time below the topbar */
+.dash-topbar {
+    min-height: 86px;
+    background: #ffffff !important;
+    border-bottom: 1px solid #dbe5f2 !important;
+    box-shadow: none !important;
+}
+
+.dash-section {
+    padding-top: 30px;
+}
+
+.welcome-panel {
+    min-height: 120px;
+    padding: 0 !important;
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr) minmax(360px, 520px) auto;
+    align-items: center;
+    gap: 26px;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.welcome-panel::before {
+    grid-column: 1;
+    grid-row: 1;
+    width: 96px;
+    height: 96px;
+    flex-basis: 96px;
+}
+
+.welcome-panel > div:first-child {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+    width: 100%;
+}
+
+.welcome-panel h2 {
+    color: #07183d;
+    font-size: clamp(2rem, 3vw, 2.45rem);
+}
+
+.welcome-panel p {
+    color: #71809d !important;
+    font-size: 1.04rem;
+}
+
+.welcome-panel > .institute-clock-card {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+    width: min(100%, 520px);
+    min-width: 360px;
+    min-height: 106px;
+    padding: 0 28px;
+    border-radius: 14px;
+    background: #ffffff !important;
+    border: 1px solid #cfddef !important;
+    box-shadow: 0 16px 38px rgba(36, 70, 115, 0.12) !important;
+}
+
+#institute-live-date,
+#institute-live-clock {
+    min-height: 58px;
+    padding-left: 72px;
+}
+
+#institute-live-clock {
+    font-size: 1.4rem !important;
+}
+
+#institute-live-date::before,
+#institute-live-clock::before {
+    width: 56px;
+    height: 56px;
+    color: #075be8;
+    background: linear-gradient(135deg, #eef5ff, #dcecff);
+    font-size: 1.35rem;
+}
+
+#institute-live-date::after,
+#institute-live-clock::after {
+    left: 72px;
+    top: 42px;
+}
+
+html[data-theme="dark"] .dash-topbar {
+    background: #07111f !important;
+    border-color: rgba(148, 163, 184, 0.24) !important;
+}
+
+html[data-theme="dark"] .welcome-panel {
+    background: transparent !important;
+}
+
+html[data-theme="dark"] .welcome-panel h2 {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .welcome-panel p {
+    color: #cbd5e1 !important;
+}
+
+html[data-theme="dark"] .welcome-panel > .institute-clock-card {
+    background: rgba(15, 23, 42, 0.82) !important;
+    border-color: rgba(148, 163, 184, 0.24) !important;
+}
+
+@media (max-width: 1100px) {
+    .welcome-panel {
+        grid-template-columns: 76px minmax(0, 1fr);
+    }
+
+    .welcome-panel::before {
+        grid-column: 1;
+    }
+
+    .welcome-panel > div:first-child {
+        grid-column: 2;
+    }
+
+    .welcome-panel > .institute-clock-card {
+        grid-column: 1 / -1;
+        justify-self: stretch;
+        width: 100%;
+    }
+
+    .welcome-panel .btn {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+}
+
+/* Unified friendly institute dashboard alignment */
+.dash-section.active > .welcome-panel:first-child {
+    width: 100%;
+    min-height: auto !important;
+    margin: 0 0 1.35rem !important;
+    padding: 1.35rem !important;
+    display: grid !important;
+    grid-template-columns: 104px minmax(0, 1fr) minmax(340px, 520px) auto !important;
+    gap: 1.35rem !important;
+    align-items: center !important;
+    background: linear-gradient(135deg, rgba(247, 251, 255, 0.96), rgba(238, 249, 255, 0.86)) !important;
+    border: 1px solid rgba(207, 221, 239, 0.9) !important;
+    border-radius: 22px !important;
+    box-shadow: 0 18px 48px rgba(36, 70, 115, 0.08) !important;
+}
+
+.dash-section.active > .welcome-panel:first-child::before {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    width: 104px !important;
+    height: 104px !important;
+    align-self: start !important;
+}
+
+.dash-section.active > .welcome-panel:first-child > div:first-child {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    width: 100%;
+    min-width: 0;
+    align-self: center;
+}
+
+.dash-section.active > .welcome-panel:first-child h2 {
+    margin: 0 0 0.45rem !important;
+    color: #07183d !important;
+    font-size: clamp(1.9rem, 3vw, 2.55rem) !important;
+    line-height: 1.12 !important;
+}
+
+.dash-section.active > .welcome-panel:first-child p {
+    margin: 0 !important;
+    max-width: 780px;
+    color: #667793 !important;
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+}
+
+.dash-section.active > .welcome-panel:first-child .institute-clock-card {
+    grid-column: 3 !important;
+    grid-row: 1 !important;
+    justify-self: end !important;
+    align-self: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 520px !important;
+    min-height: 104px !important;
+    margin: 0 !important;
+    padding: 0 1.4rem !important;
+}
+
+.dash-section.active > .welcome-panel:first-child .btn {
+    grid-column: 4 !important;
+    grid-row: 1 !important;
+    justify-self: end;
+}
+
+html[data-theme="dark"] .dash-section.active > .welcome-panel:first-child {
+    background: rgba(15, 23, 42, 0.82) !important;
+    border-color: rgba(148, 163, 184, 0.24) !important;
+}
+
+html[data-theme="dark"] .dash-section.active > .welcome-panel:first-child h2 {
+    color: #f8fafc !important;
+}
+
+html[data-theme="dark"] .dash-section.active > .welcome-panel:first-child p {
+    color: #cbd5e1 !important;
+}
+
+@media (max-width: 1180px) {
+    .dash-section.active > .welcome-panel:first-child {
+        grid-template-columns: 88px minmax(0, 1fr) !important;
+    }
+
+    .dash-section.active > .welcome-panel:first-child .institute-clock-card,
+    .dash-section.active > .welcome-panel:first-child .btn {
+        grid-column: 1 / -1 !important;
+        grid-row: auto !important;
+        max-width: none !important;
+        justify-self: stretch;
+    }
+}
+
+@media (max-width: 720px) {
+    .dash-section.active > .welcome-panel:first-child {
+        grid-template-columns: 1fr !important;
+    }
+
+    .dash-section.active > .welcome-panel:first-child::before,
+    .dash-section.active > .welcome-panel:first-child > div:first-child,
+    .dash-section.active > .welcome-panel:first-child .institute-clock-card,
+    .dash-section.active > .welcome-panel:first-child .btn {
+        grid-column: 1 !important;
+    }
+}
+
+/* Date/time card divider breathing room */
+.institute-clock-card {
+    grid-template-columns: minmax(230px, 1.18fr) minmax(190px, 0.82fr) !important;
+    column-gap: 2rem !important;
+}
+
+.institute-clock-card::after {
+    left: calc(50% + 1rem) !important;
+}
+
+#institute-live-date {
+    padding-right: 1.25rem !important;
+}
+
+#institute-live-clock {
+    margin-left: 0.65rem !important;
+}
+
+@media (max-width: 640px) {
+    .institute-clock-card {
+        grid-template-columns: 1fr !important;
+        column-gap: 0 !important;
+    }
+
+    .institute-clock-card::after {
+        left: 50% !important;
+    }
+
+    #institute-live-clock {
+        margin-left: 0 !important;
+    }
+}

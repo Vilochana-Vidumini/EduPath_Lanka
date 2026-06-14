@@ -13,16 +13,20 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS (Reusing some structure from student, but separate file) -->
     <link rel="stylesheet" href="mentor-dashboard.css">
-    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="theme.css?v=20260614-mentor-student-tables">
 </head>
-<body>
+<body class="mentor-dashboard-page">
 
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+            <a href="index.html" class="dashboard-brand-logo">
+                <img src="images/edupath-logo-transparent.png" alt="EduPath Lanka logo">
+                <span>EduPath <strong>Lanka</strong></span>
+            </a>
+            <button type="button" class="sidebar-toggle sidebar-toggle-brand" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
             <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
         </div>
         <div class="sidebar-user" id="sidebar-user">
@@ -33,11 +37,15 @@
             </div>
         </div>
         <ul class="sidebar-links">
-            <li><a href="mentor-dashboard.html" class="active" title="Dashboard"><i class="fas fa-tachometer-alt"></i><span class="sidebar-label">Dashboard</span></a></li>
+            <li><a href="#overview-section" data-section="overview-section" class="active" title="Dashboard"><i class="fas fa-tachometer-alt"></i><span class="sidebar-label">Dashboard</span></a></li>
             <li><a href="profile.html" title="My Profile"><i class="fas fa-user-tie"></i><span class="sidebar-label">My Profile</span></a></li>
-            <li><a href="#requests" title="Student Requests"><i class="fas fa-user-plus"></i><span class="sidebar-label">Student Requests</span> <span class="badge badge-warning" id="req-count">0</span></a></li>
-            <li><a href="#availability" title="Availability"><i class="fas fa-calendar-check"></i><span class="sidebar-label">Availability</span></a></li>
-            <li><a href="#resources" title="Guidance Resources"><i class="fas fa-book-reader"></i><span class="sidebar-label">Guidance Resources</span></a></li>
+            <li><a href="#requests" data-section="requests" title="Student Requests"><i class="fas fa-user-plus"></i><span class="sidebar-label">Student Requests</span> <span class="badge badge-warning" id="req-count">0</span></a></li>
+            <li><a href="#accepted" data-section="accepted" title="My Mentees"><i class="fas fa-user-check"></i><span class="sidebar-label">My Mentees</span></a></li>
+            <li><a href="#messages" data-section="messages" title="Messages"><i class="fas fa-comments"></i><span class="sidebar-label">Messages</span></a></li>
+            <li><a href="#rejected" data-section="rejected" title="Closed Requests"><i class="fas fa-user-times"></i><span class="sidebar-label">Closed Requests</span></a></li>
+            <li><a href="#availability" data-section="availability" title="Availability"><i class="fas fa-calendar-check"></i><span class="sidebar-label">Availability</span></a></li>
+            <li><a href="#resources" data-section="resources" title="Guidance Resources"><i class="fas fa-book-reader"></i><span class="sidebar-label">Guidance Resources</span></a></li>
+            <li><a href="#support" data-section="support" title="Chat with Admin"><i class="fas fa-headset"></i><span class="sidebar-label">Chat with Admin</span></a></li>
             <li><a href="index.html" title="Home"><i class="fas fa-home"></i><span class="sidebar-label">Home</span></a></li>
             <li><a href="#" id="logout-btn-sidebar" class="text-danger" title="Logout"><i class="fas fa-sign-out-alt"></i><span class="sidebar-label">Logout</span></a></li>
         </ul>
@@ -48,7 +56,7 @@
         <!-- Topbar -->
         <header class="topbar">
             <div class="topbar-left">
-                <i class="fas fa-bars sidebar-toggle" id="sidebar-toggle"></i>
+                <button type="button" class="sidebar-toggle topbar-sidebar-toggle" id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
                 <h2 class="page-title">Mentor Dashboard</h2>
             </div>
             <div class="topbar-right dashboard-topbar-actions">
@@ -62,53 +70,139 @@
 
         <!-- Dashboard Content -->
         <div class="dashboard-container">
+            <section id="overview-section" class="dashboard-section active">
             
             <!-- 1. Welcome Card -->
-            <section class="welcome-card glass">
-                <div class="welcome-content">
-                    <h1 id="welcome-name">Welcome, Mentor</h1>
-                    <p class="motivational-text">"Thank you for helping students find their future path. Your guidance makes a difference."</p>
-                    <div id="status-alert" class="alert hidden"></div>
+            <section class="welcome-card mentor-hero-card glass">
+                <div class="mentor-hero-visual" aria-hidden="true">
+                    <img src="images/mentor-dashboard-illustration.png" alt="">
                 </div>
-                <div class="welcome-image">
-                    <i class="fas fa-hands-helping welcome-icon"></i>
+                <div class="welcome-content">
+                    <span class="mentor-kicker">Welcome back,</span>
+                    <h1 id="welcome-name">Mentor</h1>
+                    <p class="motivational-text">Your guidance empowers students to find their path and achieve their dreams.</p>
+                    <div class="mentor-hero-note"><i class="fas fa-star"></i> One conversation can change a future.</div>
+                    <div id="status-alert" class="alert hidden"></div>
                 </div>
             </section>
 
             <!-- 2. Status & Stats Grid -->
             <div class="stats-grid">
-                <div class="stat-card glass">
-                    <div class="stat-icon bg-cyan"><i class="fas fa-id-badge"></i></div>
+                <div class="stat-card glass mentor-stat-card">
+                    <div class="stat-icon bg-green"><i class="fas fa-user-check"></i></div>
                     <div class="stat-info">
                         <h4>Profile Status</h4>
                         <h2 id="stat-status" class="text-warning">Pending</h2>
+                        <p><i class="fas fa-check-circle"></i> Active profile</p>
                     </div>
                 </div>
-                <div class="stat-card glass">
+                <div class="stat-card glass mentor-stat-card">
                     <div class="stat-icon bg-orange"><i class="fas fa-user-clock"></i></div>
                     <div class="stat-info">
                         <h4>Pending Requests</h4>
                         <h2 id="stat-requests">0</h2>
+                        <p>New this week</p>
                     </div>
                 </div>
-                <div class="stat-card glass">
+                <div class="stat-card glass mentor-stat-card">
                     <div class="stat-icon bg-green"><i class="fas fa-user-check"></i></div>
                     <div class="stat-info">
                         <h4>Accepted Students</h4>
                         <h2 id="stat-accepted">0</h2>
+                        <p>Total mentees</p>
                     </div>
                 </div>
-                <div class="stat-card glass">
+                <div class="stat-card glass mentor-stat-card">
                     <div class="stat-icon bg-blue"><i class="fas fa-comments"></i></div>
                     <div class="stat-info">
                         <h4>Completed Sessions</h4>
                         <h2>0</h2>
+                        <p>All time</p>
+                    </div>
+                </div>
+                <div class="stat-card glass mentor-stat-card">
+                    <div class="stat-icon bg-purple"><i class="fas fa-envelope"></i></div>
+                    <div class="stat-info">
+                        <h4>Unread Messages</h4>
+                        <h2 id="stat-unread">0</h2>
+                        <p>From students</p>
+                    </div>
+                </div>
+                <div class="stat-card glass mentor-stat-card profile-meter-card">
+                    <div class="profile-ring"><span id="stat-profile-completion">0%</span></div>
+                    <div class="stat-info">
+                        <h4>Profile Completion</h4>
+                        <h2>Almost there!</h2>
+                        <p>Keep it up</p>
                     </div>
                 </div>
             </div>
+
+            <div class="mentor-overview-grid">
+                <article class="overview-panel glass">
+                    <div class="overview-panel-header">
+                        <h3>Pending Student Requests <span class="badge badge-warning" id="overview-requests-count">0</span></h3>
+                        <button class="panel-link" type="button" data-section-jump="requests">View all</button>
+                    </div>
+                    <div id="overview-requests-list" class="overview-list">
+                        <div class="empty-state compact"><i class="fas fa-user-clock"></i><p>No pending requests yet.</p></div>
+                    </div>
+                </article>
+
+                <article class="overview-panel glass overview-panel-tall">
+                    <div class="overview-panel-header">
+                        <h3>My Mentees</h3>
+                        <button class="panel-link" type="button" data-section-jump="accepted">View all</button>
+                    </div>
+                    <div id="overview-mentees-list" class="overview-list">
+                        <div class="empty-state compact"><i class="fas fa-user-graduate"></i><p>No mentees connected yet.</p></div>
+                    </div>
+                </article>
+
+                <article class="overview-panel glass">
+                    <div class="overview-panel-header">
+                        <h3>Guidance Resources</h3>
+                        <button class="panel-link" type="button" data-section-jump="resources">View all</button>
+                    </div>
+                    <div class="overview-list">
+                        <div class="overview-row resource-blue"><i class="fas fa-book"></i><div><strong>University & Course Guide 2026</strong><span>Updated 2 days ago</span></div><i class="fas fa-chevron-right"></i></div>
+                        <div class="overview-row resource-purple"><i class="fas fa-file-alt"></i><div><strong>Scholarships in Sri Lanka</strong><span>Updated 1 week ago</span></div><i class="fas fa-chevron-right"></i></div>
+                        <div class="overview-row resource-green"><i class="fas fa-calendar-check"></i><div><strong>Study Skills & Time Management</strong><span>Updated 2 weeks ago</span></div><i class="fas fa-chevron-right"></i></div>
+                    </div>
+                </article>
+
+                <article class="overview-panel glass">
+                    <div class="overview-panel-header">
+                        <h3>Upcoming Availability</h3>
+                        <button class="panel-link" type="button" data-section-jump="availability">View calendar</button>
+                    </div>
+                    <div id="overview-availability-list" class="overview-list">
+                        <div class="overview-row"><span class="date-tile">SET</span><div><strong>Set your availability</strong><span>Choose days and mentoring hours</span></div><span class="status-pill">Available</span></div>
+                    </div>
+                </article>
+
+                <article class="overview-panel glass">
+                    <div class="overview-panel-header">
+                        <h3>Recent Messages</h3>
+                        <button class="panel-link" type="button" data-section-jump="messages">View all</button>
+                    </div>
+                    <div id="overview-messages-list" class="overview-list">
+                        <div class="empty-state compact"><i class="fas fa-comments"></i><p>No recent messages.</p></div>
+                    </div>
+                </article>
+            </div>
+
+            <div class="mentor-impact-strip">
+                <div class="impact-icon"><i class="fas fa-star"></i></div>
+                <div>
+                    <h3>Keep making an impact!</h3>
+                    <p>You've helped <span id="mentor-impact-count">0</span> students take confident steps toward their future.</p>
+                </div>
+                <button class="btn btn-secondary" type="button" data-section-jump="accepted">View My Impact <i class="fas fa-arrow-right"></i></button>
+            </div>
             
             <!-- Profile Strength & Checklist Section -->
-            <section class="content-section" style="width: 100%;">
+            <section class="content-section mentor-profile-strength" style="width: 100%;">
                 <div class="stat-card profile-card glass" style="grid-column: span 2; display: flex; flex-direction: column; align-items: stretch; gap: 1.5rem; width: 100%;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px;">
                         <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-dark);"><i class="fas fa-chart-line text-primary" style="margin-right: 8px;"></i>Profile Strength & Verification Checklist</h3>
@@ -142,9 +236,10 @@
             </section>
 
 
+            </section>
 
             <!-- 4. Student Requests -->
-            <section id="requests" class="content-section">
+            <section id="requests" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Student Requests</h2>
                     <p class="section-desc">Review student mentorship requests, view matching student profiles, and accept or reject requests from one place.</p>
@@ -155,13 +250,33 @@
             </section>
 
             <!-- 5. Accepted Students -->
-            <section id="accepted" class="content-section">
+            <section id="accepted" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Accepted Students</h2>
                 </div>
                 <div class="cards-grid" id="accepted-grid">
                     <!-- Loaded dynamically -->
                     <div class="text-muted p-4">No students accepted yet.</div>
+                </div>
+            </section>
+
+            <section id="messages" class="dashboard-section content-section">
+                <div class="section-header">
+                    <h2>Messages</h2>
+                    <p class="section-desc">Continue private conversations with students after accepting their requests.</p>
+                </div>
+                <div class="cards-grid" id="mentor-conversation-list">
+                    <div class="text-muted p-4">No active conversations yet.</div>
+                </div>
+            </section>
+
+            <section id="rejected" class="dashboard-section content-section">
+                <div class="section-header">
+                    <h2>Closed Requests</h2>
+                    <p class="section-desc">Rejected or closed mentorship requests appear here for your records.</p>
+                </div>
+                <div id="rejected-grid" class="cards-grid">
+                    <div class="text-muted p-4">No closed requests yet.</div>
                 </div>
             </section>
 
@@ -189,44 +304,48 @@
             </div>
 
             <!-- 6. Availability Management -->
-            <section id="availability" class="content-section">
+            <section id="availability" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Availability Management</h2>
                 </div>
                 <div class="form-card glass">
                     <div class="grid-form">
                         <div class="form-group">
-                            <label>Available Days</label>
-                            <input type="text" class="form-control" placeholder="e.g. Weekends only">
+                            <label for="availableDays">Available Days</label>
+                            <input type="text" id="availableDays" class="form-control" placeholder="e.g. Weekends only">
                         </div>
                         <div class="form-group">
-                            <label>Available Times</label>
-                            <input type="text" class="form-control" placeholder="e.g. 6 PM - 8 PM">
+                            <label for="availableTime">Available Times</label>
+                            <input type="text" id="availableTime" class="form-control" placeholder="e.g. 6 PM - 8 PM">
                         </div>
                         <div class="form-group">
-                            <label>Mentoring Mode</label>
-                            <select class="form-control">
-                                <option>Online (Zoom/Meet)</option>
-                                <option>Physical Meeting</option>
-                                <option>Hybrid</option>
+                            <label for="mentoringMode">Mentoring Mode</label>
+                            <select id="mentoringMode" class="form-control">
+                                <option value="Online (Zoom/Meet)">Online (Zoom/Meet)</option>
+                                <option value="Physical Meeting">Physical Meeting</option>
+                                <option value="Hybrid">Hybrid</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Current Status</label>
-                            <select class="form-control">
+                            <label for="availabilityStatus">Current Status</label>
+                            <select id="availabilityStatus" class="form-control">
                                 <option value="available">Available to take new students</option>
                                 <option value="unavailable">Currently Unavailable</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label for="maxStudents">Maximum Active Students</label>
+                            <input type="number" id="maxStudents" class="form-control" min="1" max="50" placeholder="e.g. 5">
+                        </div>
                         <div class="form-group full-width">
-                            <button class="btn btn-primary">Update Availability</button>
+                            <button id="save-availability-btn" class="btn btn-primary" type="button">Update Availability</button>
                         </div>
                     </div>
                 </div>
             </section>
 
             <!-- 7. Guidance Resources (Placeholders) -->
-            <section id="resources" class="content-section">
+            <section id="resources" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Guidance Resources for Mentors</h2>
                 </div>
@@ -245,6 +364,28 @@
                         <i class="fas fa-briefcase text-orange"></i>
                         <h4>Career counseling basics</h4>
                         <a href="#">Read Guide <i class="fas fa-arrow-right"></i></a>
+                    </div>
+                </div>
+            </section>
+
+            <section id="support" class="dashboard-section content-section">
+                <div class="section-header">
+                    <h2>Chat with Admin</h2>
+                    <p class="section-desc">Ask EduPath admin about approvals, student requests, or account support.</p>
+                </div>
+                <div class="support-grid">
+                    <form id="mentor-support-form" class="support-card glass">
+                        <label for="mentor-support-subject">Subject</label>
+                        <input type="text" id="mentor-support-subject" class="form-control" placeholder="What do you need help with?" required>
+                        <label for="mentor-support-message">Message</label>
+                        <textarea id="mentor-support-message" class="form-control" rows="6" placeholder="Write your message to admin..." required></textarea>
+                        <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i> Send Message</button>
+                    </form>
+                    <div class="support-card glass">
+                        <h3>Conversation</h3>
+                        <div id="mentor-support-replies" class="support-replies">
+                            <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading messages...</p></div>
+                        </div>
                     </div>
                 </div>
             </section>

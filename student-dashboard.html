@@ -10,14 +10,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="student-dashboard.css">
-    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="theme.css?v=20260614-softglass">
 </head>
 <body>
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+            <a href="index.html" class="dashboard-brand-logo">
+                <img src="images/edupath-logo-transparent.png" alt="EduPath Lanka logo">
+                <span>EduPath <strong>Lanka</strong></span>
+            </a>
+            <button type="button" class="sidebar-toggle sidebar-toggle-brand" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
             <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
         </div>
         <div class="sidebar-user" id="sidebar-user">
@@ -37,6 +41,7 @@
             <li><a href="#scholarships" data-section="scholarships-section" title="Scholarships"><i class="fas fa-hand-holding-usd"></i><span class="sidebar-label">Scholarships</span></a></li>
             <li><a href="#mentors" data-section="mentors-section" title="Mentors"><i class="fas fa-chalkboard-teacher"></i><span class="sidebar-label">Mentors</span></a></li>
             <li><a href="#mentor-requests" data-section="mentor-requests-section" title="My Mentor Requests"><i class="fas fa-user-check"></i><span class="sidebar-label">My Mentor Requests</span></a></li>
+            <li><a href="#connected-mentors" data-section="connected-mentors-section" title="Connected Mentors"><i class="fas fa-comments"></i><span class="sidebar-label">Connected Mentors</span></a></li>
             <li><a href="#skills" data-section="skills-section" title="Skill Development"><i class="fas fa-chart-line"></i><span class="sidebar-label">Skill Development</span></a></li>
             <li><a href="#career-guide" data-section="career-guide-section" title="Career Guidance"><i class="fas fa-compass"></i><span class="sidebar-label">Career Guidance</span></a></li>
             <li><a href="#support" data-section="support-section" title="EduPath Support"><i class="fas fa-headset"></i><span class="sidebar-label">EduPath Support</span></a></li>
@@ -49,7 +54,7 @@
     <main class="main-content">
         <header class="topbar">
             <div class="topbar-left">
-                <i class="fas fa-bars sidebar-toggle" id="sidebar-toggle"></i>
+                <button type="button" class="sidebar-toggle topbar-sidebar-toggle" id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
                 <h2 class="page-title">Student Dashboard</h2>
             </div>
             <div class="topbar-right dashboard-topbar-actions">
@@ -204,6 +209,13 @@
                 <div class="section-header"><h2>My Mentor Requests</h2></div>
                 <div id="mentor-requests-list" class="list-card glass">
                     <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading mentor requests...</p></div>
+                </div>
+            </section>
+
+            <section id="connected-mentors-section" class="dashboard-section">
+                <div class="section-header"><h2>Connected Mentors</h2></div>
+                <div id="connected-mentors-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading connected mentors...</p></div>
                 </div>
             </section>
 

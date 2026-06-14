@@ -13,16 +13,28 @@ export function ensureDashboardTopbarLayout() {
 
     topbarRight.classList.add('dashboard-topbar-actions');
 
-    if (!topbarRight.querySelector('.dashboard-clock-card')) {
+    if (!document.querySelector('.dashboard-clock-card')) {
+        const welcomeSlot = document.querySelector('.dashboard-section.active .welcome-card, .welcome-card');
         const profileSlot = topbarRight.querySelector('.user-profile, .ep-avatar-container');
         const clock = document.createElement('div');
         clock.className = 'dashboard-clock-card';
         clock.innerHTML = `
             <span class="dashboard-greeting" id="dashboard-greeting">Good Day, User</span>
+            <span class="dashboard-date" id="dashboard-date">Today</span>
             <time class="dashboard-live-clock" id="dashboard-live-clock" datetime="">--:--:--</time>
         `;
-        if (profileSlot) {
-            topbarRight.insertBefore(clock, profileSlot);
+        if (welcomeSlot) {
+            welcomeSlot.appendChild(clock);
+        } else if (profileSlot) {
+            const topbar = document.querySelector('.topbar');
+            if (topbar?.parentElement) {
+                const strip = document.createElement('section');
+                strip.className = 'dashboard-welcome-strip';
+                strip.appendChild(clock);
+                topbar.insertAdjacentElement('afterend', strip);
+            } else {
+                topbarRight.insertBefore(clock, profileSlot);
+            }
         } else {
             topbarRight.appendChild(clock);
         }
@@ -190,17 +202,25 @@ function startDashboardClock() {
 
 function updateDashboardClock() {
     const greetingEl = document.getElementById('dashboard-greeting');
+    const dateEl = document.getElementById('dashboard-date');
     const clockEl = document.getElementById('dashboard-live-clock');
-    if (!greetingEl && !clockEl) return;
+    if (!greetingEl && !dateEl && !clockEl) return;
 
     const now = new Date();
     const greeting = getTimeGreeting(now.getHours());
     if (greetingEl) greetingEl.textContent = `${greeting}, ${dashboardGreetingName}`;
+    if (dateEl) {
+        dateEl.textContent = now.toLocaleDateString(undefined, {
+            weekday: 'long',
+            day: '2-digit',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
     if (clockEl) {
         clockEl.textContent = now.toLocaleTimeString(undefined, {
             hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
+            minute: '2-digit'
         });
         clockEl.setAttribute('datetime', now.toISOString());
     }

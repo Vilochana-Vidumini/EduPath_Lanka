@@ -3,14 +3,18 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import { ref, get, set, push, onValue, update, remove, serverTimestamp, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
 const normalize = (value) => String(value || "").trim().toLowerCase();
-const state = { uid: "", user: {}, institute: {}, courses: {}, inquiries: {}, courseSearch: "", courseStatus: "all", inquiryStatus: "all" };
+const state = { uid: "", user: {}, institute: {}, courses: {}, inquiries: {}, supportConversation: {}, courseSearch: "", courseStatus: "all", inquiryStatus: "all" };
 let clockTimer = null;
 let greetingName = "Institute";
+const MOBILE_BP = 860;
+const SIDEBAR_STORAGE_KEY = "sidebarCollapsed";
 
 document.addEventListener("DOMContentLoaded", () => {
+    syncSidebarState();
     wireUi();
     startClock();
     onAuthStateChanged(auth, initDashboard);
+    window.addEventListener("resize", syncSidebarState);
 });
 
 async function initDashboard(user) {
@@ -31,14 +35,44 @@ async function initDashboard(user) {
 function wireUi() {
     document.querySelectorAll("[data-section]").forEach((button) => button.addEventListener("click", () => showSection(button.dataset.section)));
     document.querySelectorAll("[data-section-jump]").forEach((button) => button.addEventListener("click", () => showSection(button.dataset.sectionJump)));
-    document.getElementById("menu-toggle")?.addEventListener("click", () => document.getElementById("sidebar")?.classList.toggle("open"));
+    document.querySelectorAll("[data-menu-toggle], #menu-toggle").forEach((button) => {
+        button.addEventListener("click", () => toggleSidebar());
+    });
     document.getElementById("logout-btn")?.addEventListener("click", logout);
     document.getElementById("course-form")?.addEventListener("submit", saveCourse);
     document.getElementById("profile-form")?.addEventListener("submit", saveProfile);
+    document.getElementById("institute-support-form")?.addEventListener("submit", sendInstituteSupportMessage);
     document.getElementById("cancel-edit-btn")?.addEventListener("click", resetCourseForm);
     document.getElementById("course-search")?.addEventListener("input", (e) => { state.courseSearch = e.target.value.toLowerCase(); renderCourses(); });
     document.getElementById("course-status-filter")?.addEventListener("change", (e) => { state.courseStatus = e.target.value; renderCourses(); });
     document.getElementById("inquiry-status-filter")?.addEventListener("change", (e) => { state.inquiryStatus = e.target.value; renderInquiries(); });
+}
+
+function isMobileLayout() {
+    return window.innerWidth <= MOBILE_BP;
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById("sidebar");
+    if (!sidebar) return;
+    if (isMobileLayout()) {
+        sidebar.classList.toggle("open");
+        sidebar.classList.toggle("mobile-open", sidebar.classList.contains("open"));
+        return;
+    }
+    const collapsed = !document.documentElement.classList.contains("sidebar-collapsed");
+    document.documentElement.classList.toggle("sidebar-collapsed", collapsed);
+    localStorage.setItem(SIDEBAR_STORAGE_KEY, collapsed ? "true" : "false");
+}
+
+function syncSidebarState() {
+    const sidebar = document.getElementById("sidebar");
+    if (isMobileLayout()) {
+        document.documentElement.classList.remove("sidebar-collapsed");
+        sidebar?.classList.remove("open", "mobile-open");
+        return;
+    }
+    document.documentElement.classList.toggle("sidebar-collapsed", localStorage.getItem(SIDEBAR_STORAGE_KEY) === "true");
 }
 
 function bindRealtimeData() {
@@ -47,6 +81,7 @@ function bindRealtimeData() {
         renderProfile();
         renderIdentity();
         renderStats();
+        enforceInstituteApproval();
     });
     onValue(query(ref(database, "courses"), orderByChild("instituteUid"), equalTo(state.uid)), (snapshot) => {
         state.courses = snapshot.val() || {};
@@ -59,9 +94,17 @@ function bindRealtimeData() {
         renderRecentInquiries();
         renderStats();
     });
+    onValue(ref(database, `conversations/${supportConversationId(state.uid)}`), (snapshot) => {
+        state.supportConversation = snapshot.val() || {};
+        renderInstituteSupportMessages();
+    });
 }
 
 function showSection(sectionId) {
+    if (!isInstituteApproved() && !["dashboard-section", "support-section", "settings-section"].includes(sectionId)) {
+        toast("Your institute must be approved by admin before using this section.");
+        sectionId = "dashboard-section";
+    }
     document.querySelectorAll(".dash-section").forEach((section) => section.classList.toggle("active", section.id === sectionId));
     document.querySelectorAll(".dash-menu [data-section]").forEach((button) => button.classList.toggle("active", button.dataset.section === sectionId));
     const titles = {
@@ -70,12 +113,13 @@ function showSection(sectionId) {
         "add-course-section": ["Add Course", "Create a course that appears on public course pages when published."],
         "inquiries-section": ["Student Inquiries", "Track and update student inquiry status."],
         "profile-section": ["Institute Profile", "Keep your public institute information up to date."],
+        "support-section": ["Chat with Admin", "Ask about approval, account setup, or course publishing."],
         "settings-section": ["Settings", "Manage account preferences."]
     };
     const [title, subtitle] = titles[sectionId] || titles["dashboard-section"];
     text("page-title", title);
     text("page-subtitle", subtitle);
-    document.getElementById("sidebar")?.classList.remove("open");
+    document.getElementById("sidebar")?.classList.remove("open", "mobile-open");
 }
 
 function renderIdentity() {
@@ -87,6 +131,27 @@ function renderIdentity() {
     text("sidebar-email", state.institute.email || state.user.email || "");
     text("mini-logo", initials || "IN");
     updateClock();
+}
+
+function enforceInstituteApproval() {
+    const approved = isInstituteApproved();
+    document.getElementById("approval-notice")?.classList.toggle("hidden", approved);
+    document.querySelectorAll('[data-section="courses-section"], [data-section="add-course-section"], [data-section="inquiries-section"], [data-section="profile-section"]').forEach((button) => {
+        button.disabled = !approved;
+        button.classList.toggle("disabled", !approved);
+        button.title = approved ? "" : "Waiting for admin approval";
+    });
+    document.querySelectorAll('[data-section-jump="add-course-section"]').forEach((button) => {
+        button.disabled = !approved;
+        button.classList.toggle("disabled", !approved);
+    });
+    const status = normalize(state.institute.approvalStatus || state.institute.verificationStatus || state.institute.status || state.user.accountStatus || "pending");
+    text("page-subtitle", approved ? "Manage your courses and student inquiries." : `Institute approval status: ${status}`);
+}
+
+function isInstituteApproved() {
+    const status = normalize(state.institute.approvalStatus || state.institute.verificationStatus || state.institute.status || state.user.instituteStatus || state.user.accountStatus);
+    return status === "approved" || status === "active";
 }
 
 function renderStats() {
@@ -133,7 +198,7 @@ function renderCourses() {
                     <td><span class="badge badge-${normalize(course.status || "pending")}">${esc(course.status || "pending")}</span></td>
                     <td><div class="table-actions">
                         <button class="btn btn-light" data-edit="${escAttr(course.courseId)}">Edit</button>
-                        <button class="btn btn-green" data-toggle="${escAttr(course.courseId)}">${normalize(course.status) === "active" ? "Unpublish" : "Publish"}</button>
+                        <button class="btn ${normalize(course.status) === "active" ? "btn-green" : "btn-light"}" data-toggle="${escAttr(course.courseId)}">${normalize(course.status) === "active" ? "Unpublish" : "Awaiting Admin"}</button>
                         <button class="btn btn-danger" data-delete="${escAttr(course.courseId)}">Delete</button>
                     </div></td>
                 </tr>
@@ -147,6 +212,7 @@ function renderCourses() {
 
 async function saveCourse(event) {
     event.preventDefault();
+    if (!isInstituteApproved()) return toast("Admin approval is required before adding courses.");
     const editingId = value("editing-course-id");
     const courseId = editingId || push(ref(database, "courses")).key;
     const course = {
@@ -211,12 +277,17 @@ function editCourse(courseId) {
 }
 
 async function toggleCourse(courseId) {
+    if (!isInstituteApproved()) return toast("Admin approval is required before managing courses.");
     const course = state.courses[courseId];
     if (!course) return;
-    const nextStatus = normalize(course.status) === "active" ? "inactive" : "active";
+    if (normalize(course.status) !== "active") {
+        toast("Admin approval is required before this course becomes public.");
+        return;
+    }
+    const nextStatus = "inactive";
     await update(ref(database, `courses/${courseId}`), { status: nextStatus, updatedAt: serverTimestamp() });
-    await logActivity(nextStatus === "active" ? "course_published" : "course_unpublished", `${nextStatus} ${course.courseTitle || course.courseName}`, courseId);
-    toast(`Course ${nextStatus === "active" ? "published" : "unpublished"}.`);
+    await logActivity("course_unpublished", `${nextStatus} ${course.courseTitle || course.courseName}`, courseId);
+    toast("Course unpublished. Admin activation is required before it becomes public again.");
 }
 
 async function deleteCourse(courseId) {
@@ -272,6 +343,7 @@ async function updateInquiryStatus(inquiryId, status) {
 
 async function saveProfile(event) {
     event.preventDefault();
+    if (!isInstituteApproved()) return toast("Admin approval is required before editing your institute profile.");
     const data = {
         instituteName: value("profileInstituteName"),
         phone: value("profilePhone"),
@@ -289,6 +361,83 @@ async function saveProfile(event) {
         update(ref(database, `users/${state.uid}`), { fullName: data.instituteName, phone: data.phone, photoURL: data.logoURL, updatedAt: serverTimestamp() })
     ]);
     toast("Institute profile updated.");
+}
+
+async function sendInstituteSupportMessage(event) {
+    event.preventDefault();
+    const subject = value("institute-support-subject") || "Institute Support";
+    const message = value("institute-support-message");
+    if (!message) return;
+    const button = event.currentTarget.querySelector("button[type='submit']");
+    const original = button?.innerHTML;
+    if (button) {
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    }
+    try {
+        const conversationId = supportConversationId(state.uid);
+        const messageRef = push(ref(database, `conversations/${conversationId}/messages`));
+        const currentUnread = Number(state.supportConversation.unreadByAdmin || 0);
+        const senderName = state.institute.instituteName || state.user.fullName || "Institute";
+        const updates = {};
+        updates[`conversations/${conversationId}/conversationId`] = conversationId;
+        updates[`conversations/${conversationId}/type`] = "admin-support";
+        updates[`conversations/${conversationId}/studentUid`] = state.uid;
+        updates[`conversations/${conversationId}/userUid`] = state.uid;
+        updates[`conversations/${conversationId}/participantIds/${state.uid}`] = true;
+        updates[`conversations/${conversationId}/participantRoles/${state.uid}`] = "institute";
+        updates[`conversations/${conversationId}/participantNames/${state.uid}`] = senderName;
+        updates[`conversations/${conversationId}/lastMessage`] = message;
+        updates[`conversations/${conversationId}/lastMessageAt`] = serverTimestamp();
+        updates[`conversations/${conversationId}/lastSenderUid`] = state.uid;
+        updates[`conversations/${conversationId}/unreadByAdmin`] = currentUnread + 1;
+        updates[`conversations/${conversationId}/unreadByUser`] = 0;
+        updates[`conversations/${conversationId}/status`] = "open";
+        updates[`conversations/${conversationId}/updatedAt`] = serverTimestamp();
+        if (!state.supportConversation.createdAt) updates[`conversations/${conversationId}/createdAt`] = serverTimestamp();
+        updates[`conversations/${conversationId}/messages/${messageRef.key}`] = {
+            messageId: messageRef.key,
+            conversationId,
+            senderUid: state.uid,
+            senderName,
+            senderEmail: state.user.email || state.institute.email || "",
+            senderRole: "institute",
+            receiverRole: "admin",
+            subject,
+            message,
+            status: "sent",
+            createdAt: serverTimestamp(),
+            readAt: null
+        };
+        await update(ref(database), updates);
+        event.currentTarget.reset();
+        toast("Your message was sent to EduPath Admin.");
+    } catch (error) {
+        console.error(error);
+        toast(error?.message || "Message could not be sent.");
+    } finally {
+        if (button) {
+            button.disabled = false;
+            button.innerHTML = original || '<i class="fas fa-paper-plane"></i> Send Message';
+        }
+    }
+}
+
+function renderInstituteSupportMessages() {
+    const container = document.getElementById("institute-support-replies");
+    if (!container) return;
+    const messages = Object.values(state.supportConversation.messages || {}).sort((a, b) => getTimeValue(a.createdAt) - getTimeValue(b.createdAt));
+    if (!messages.length) {
+        container.innerHTML = '<div class="list-item">No messages yet. Ask admin a question.</div>';
+        return;
+    }
+    container.innerHTML = messages.map((message) => `
+        <div class="list-item">
+            <strong>${esc(message.subject || "EduPath Support")} <span class="badge ${message.senderUid === state.uid ? "badge-pending" : "badge-active"}">${esc(message.senderRole || "support")}</span></strong>
+            <span class="muted">${esc(message.message || "")}</span>
+            <span class="muted">${formatDateTime(message.createdAt)} - ${esc(message.status || "sent")}</span>
+        </div>
+    `).join("");
 }
 
 function calculateProfileCompletion() {
@@ -322,10 +471,12 @@ function startClock() {
 function updateClock() {
     const now = new Date();
     const greetingEl = document.getElementById("institute-time-greeting");
+    const dateEl = document.getElementById("institute-live-date");
     const clockEl = document.getElementById("institute-live-clock");
     if (greetingEl) greetingEl.textContent = `${timeGreeting(now.getHours())}, ${greetingName}`;
+    if (dateEl) dateEl.textContent = now.toLocaleDateString(undefined, { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
     if (clockEl) {
-        clockEl.textContent = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        clockEl.textContent = now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
         clockEl.setAttribute("datetime", now.toISOString());
     }
 }
@@ -340,6 +491,17 @@ function formatDate(value) {
     if (typeof value === "object" && value.seconds) return new Date(value.seconds * 1000).toLocaleDateString();
     return "-";
 }
+function formatDateTime(value) {
+    const time = getTimeValue(value);
+    return time ? new Date(time).toLocaleString() : "Just now";
+}
+function getTimeValue(value) {
+    if (!value) return 0;
+    if (typeof value === "number") return value;
+    if (typeof value === "object" && value.seconds) return value.seconds * 1000;
+    return new Date(value).getTime() || 0;
+}
+function supportConversationId(uid) { return `admin_${uid}`; }
 function toast(message) {
     const el = document.getElementById("toast");
     el.textContent = message;

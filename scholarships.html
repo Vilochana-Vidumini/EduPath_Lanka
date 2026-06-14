@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="scholarships.css">
-    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="theme.css?v=20260614-softglass">
     <link rel="stylesheet" href="guest-help.css?v=20260614-2">
 </head>
 <body>
@@ -23,11 +23,26 @@
             <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
             <nav class="nav-links">
                 <a href="index.html">Home</a>
+                <div class="nav-dropdown">
+                    <button type="button" class="nav-dropdown-toggle active">
+                        Explore <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="courses.html"><i class="fas fa-book-open" aria-hidden="true"></i> Courses</a>
+                        <a href="scholarships.html" class="active"><i class="fas fa-graduation-cap" aria-hidden="true"></i> Scholarships</a>
+                        <a href="institutes.html"><i class="fas fa-building-columns" aria-hidden="true"></i> Institutes</a>
+                    </div>
+                </div>
+                <div class="nav-dropdown">
+                    <button type="button" class="nav-dropdown-toggle">
+                        Guidance <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="nav-dropdown-menu">
+                        <a href="pathway.html"><i class="fas fa-compass" aria-hidden="true"></i> Pathway Finder</a>
+                        <a href="mentors.html"><i class="fas fa-user-tie" aria-hidden="true"></i> Mentors</a>
+                    </div>
+                </div>
                 <a href="about.html">About Us</a>
-                <a href="pathway.html">Pathway Finder</a>
-                <a href="courses.html">Courses</a>
-                <a href="mentors.html">Mentors</a>
-                <a href="scholarships.html" class="active">Scholarships</a>
             </nav>
             <div class="nav-buttons">
                 <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode"><i class="fas fa-moon"></i></button>

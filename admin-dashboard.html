@@ -10,14 +10,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="admin-dashboard.css?v=20260610-3">
-    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="theme.css?v=20260614-softglass">
 </head>
 <body>
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+            <a href="index.html" class="dashboard-brand-logo">
+                <img src="images/edupath-logo-transparent.png" alt="EduPath Lanka logo">
+                <span>EduPath <strong>Lanka</strong></span>
+            </a>
+            <button type="button" class="sidebar-toggle sidebar-toggle-brand" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
             <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
         </div>
         <div class="sidebar-user" id="sidebar-user">
@@ -50,7 +54,7 @@
     <main class="main-content">
         <header class="topbar">
             <div class="topbar-left">
-                <i class="fas fa-bars sidebar-toggle" id="sidebar-toggle"></i>
+                <button type="button" class="sidebar-toggle topbar-sidebar-toggle" id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
                 <h2 class="page-title">Admin Dashboard</h2>
             </div>
             <div class="topbar-right dashboard-topbar-actions">
@@ -148,17 +152,6 @@
                             <button class="kpi-mini-item tone-orange" type="button" data-kpi-section="support-inbox" data-kpi-support-folder="conversations"><span class="kpi-mini-icon"><i class="fas fa-envelope"></i></span><span><strong id="kpi-unread-support" class="kpi-mini-value">0</strong><small class="kpi-mini-label">Unread Messages</small></span></button>
                             <button class="kpi-mini-item tone-blue" type="button" data-kpi-section="support-inbox" data-kpi-support-folder="guest"><span class="kpi-mini-icon"><i class="fas fa-question-circle"></i></span><span><strong id="kpi-guest-inquiries" class="kpi-mini-value">0</strong><small class="kpi-mini-label">Guest Inquiries</small></span></button>
                         </div>
-                    </article>
-                </section>
-
-                <section class="profile-ops-grid">
-                    <article class="profile-card glass">
-                        <div class="profile-card-header">
-                            <h3><i class="fas fa-chart-line text-primary"></i> Admin Profile Completion</h3>
-                            <span id="profile-strength-badge" class="badge">0%</span>
-                        </div>
-                        <div class="progress-bar-container"><div id="dynamic-profile-progress-bar" class="progress-bar bg-primary"></div></div>
-                        <a href="profile.html" id="complete-profile-card-btn" class="btn btn-primary"><i class="fas fa-edit"></i> Edit Profile</a>
                     </article>
                 </section>
 
@@ -353,6 +346,10 @@
                 <div class="panel-card glass">
                     <h3>Security Notes</h3>
                     <p>Admin access is controlled only by <strong>users/{uid}/userType = admin</strong>. Browser code cannot delete Firebase Authentication users; use a secure backend with Firebase Admin SDK for account deletion.</p>
+                </div>
+                <div class="panel-card glass">
+                    <h3>Recommendation Data Quality</h3>
+                    <p>For better student recommendations, fill category, district, mode, fee type, eligibility, skills covered, career opportunities, and status correctly for courses, scholarships, and mentors. Missing fields reduce match quality.</p>
                 </div>
             </section>
         </div>

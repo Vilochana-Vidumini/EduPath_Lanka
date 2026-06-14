@@ -28,6 +28,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
     let currentUserType = null;
     let currentStudentData = null;
+    let currentUserData = null;
+    let currentPathwayResult = null;
+    let currentPathwayResultId = '';
+    let currentMentorRequests = {};
 
     // Check Auth State
     onAuthStateChanged(auth, async (user) => {
@@ -38,16 +42,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 const userRef = ref(database, 'users/' + user.uid);
                 const snapshot = await get(userRef);
                 if (snapshot.exists()) {
-                    currentUserType = snapshot.val().userType;
+                    currentUserData = snapshot.val();
+                    currentUserType = currentUserData.userType || currentUserData.role || '';
                     if(currentUserType.toLowerCase() === 'student') {
                         const studentSnap = await get(ref(database, 'students/' + user.uid));
                         if(studentSnap.exists()) {
                             currentStudentData = studentSnap.val();
                         }
+                        await loadStudentMentorContext(user.uid);
                     }
                 }
             } catch (error) {
                 console.error("Error fetching user data:", error);
+            } finally {
+                renderMentors();
             }
         }
     });
@@ -68,19 +76,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (snapshot.exists()) {
                 snapshot.forEach((childSnapshot) => {
                     const mentor = childSnapshot.val();
-                    // Only add approved mentors
-                    if (String(mentor.status || '').trim().toLowerCase() === 'approved') {
+                    if (isApprovedActiveMentor(mentor)) {
                         allMentors.push({
                             id: mentor.uid || childSnapshot.key,
                             name: mentor.fullName || 'Unnamed Mentor',
                             category: (mentor.mentorType || mentor.field || 'General').toLowerCase(),
-                            designation: mentor.field || 'Mentor',
-                            company: mentor.universityOrCompany || 'Independent',
+                            designation: mentor.field || mentor.mentoringField || 'Mentor',
+                            company: mentor.universityOrCompany || mentor.organization || mentor.currentOrganization || 'Independent',
                             avatar: mentor.photoURL || null,
                             bio: mentor.bio || 'No bio available yet.',
                             experience: mentor.experience || 'Not specified',
-                            availableTime: mentor.availableTime || 'Flexible',
-                            email: mentor.email
+                            availableTime: mentor.availableTime || mentor.availableDays || 'Flexible',
+                            mode: mentor.mentoringMode || mentor.mode || 'Online or hybrid',
+                            languages: mentor.languages || mentor.language || '',
+                            email: mentor.email || '',
+                            status: mentor.status || 'approved',
+                            accountStatus: mentor.accountStatus || 'active',
+                            userType: mentor.userType || mentor.role || 'mentor'
                         });
                     }
                 });
@@ -128,6 +140,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 ? `<img src="${mentor.avatar}" alt="${mentor.name}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`
                 : `<i class="fas fa-user-tie"></i>`;
 
+            const requestState = getExistingRequestState(mentor.id);
+            const action = getMentorActionMarkup(mentor, requestState);
+
             return `
             <div class="mentor-card glass">
                 <div>
@@ -145,14 +160,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     <div class="mentor-details" style="margin-top:1rem; font-size:0.9rem; color:var(--text-muted);">
                         <div><i class="fas fa-clock"></i> ${mentor.availableTime}</div>
+                        <div><i class="fas fa-video"></i> ${mentor.mode}</div>
                     </div>
                 </div>
                 
                 <div class="mentor-footer">
                     <span class="exp-badge"><i class="fas fa-award"></i> ${mentor.experience}</span>
-                    <button class="btn btn-primary btn-request" data-id="${mentor.id}" data-name="${mentor.name}" data-field="${mentor.designation}">
-                        Request Mentor
-                    </button>
+                    <div class="mentor-actions">
+                        <button class="btn btn-outline btn-view-mentor" data-id="${mentor.id}">View Profile</button>
+                        ${action}
+                    </div>
                 </div>
             </div>
         `}).join('');
@@ -160,6 +177,9 @@ document.addEventListener('DOMContentLoaded', () => {
         // Attach event listeners to new buttons
         document.querySelectorAll('.btn-request').forEach(btn => {
             btn.addEventListener('click', handleRequestMentor);
+        });
+        document.querySelectorAll('.btn-view-mentor').forEach(btn => {
+            btn.addEventListener('click', () => openMentorProfile(btn.dataset.id));
         });
     }
 
@@ -177,10 +197,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const btn = e.target;
+        const btn = e.currentTarget;
         const mentorId = btn.getAttribute('data-id');
         const mentorName = btn.getAttribute('data-name');
         const mentorField = btn.getAttribute('data-field');
+        const mentor = allMentors.find((item) => item.id === mentorId);
+        if (!mentor) {
+            showToast('Mentor profile could not be found. Please refresh and try again.', 'error');
+            return;
+        }
+
+        const existing = getExistingRequestState(mentorId);
+        if (['pending', 'accepted', 'connected'].includes(existing)) {
+            showToast(existing === 'pending' ? 'You already sent a pending request to this mentor.' : 'You are already connected with this mentor.', 'warning');
+            return;
+        }
 
         const confirmReq = confirm(`Do you want to send a mentorship request to ${mentorName}?`);
         if(!confirmReq) return;
@@ -195,29 +226,145 @@ document.addEventListener('DOMContentLoaded', () => {
             await set(requestRef, {
                 requestId: requestId,
                 studentUid: currentUser.uid,
-                studentName: currentStudentData ? currentStudentData.fullName : currentUser.displayName || 'Student',
-                studentEmail: currentUser.email,
+                studentName: currentStudentData?.fullName || currentUserData?.fullName || currentUser.displayName || 'Student',
+                studentEmail: currentUserData?.email || currentUser.email || '',
+                studentPhone: currentStudentData?.phone || currentUserData?.phone || '',
+                educationLevel: currentStudentData?.educationLevel || currentStudentData?.education || currentPathwayResult?.educationLevel || currentPathwayResult?.basicProfile?.currentEducationLevel || '',
+                interestArea: currentStudentData?.interestArea || currentStudentData?.interest || currentPathwayResult?.interestArea || currentPathwayResult?.interests?.interestAreas?.[0] || '',
+                futureGoal: currentStudentData?.futureGoal || currentStudentData?.goal || currentPathwayResult?.futureGoal || currentPathwayResult?.goals?.dreamCareer || '',
+                skills: currentStudentData?.skills || currentPathwayResult?.skills || currentPathwayResult?.skillsAndStrengths?.skills || [],
                 mentorUid: mentorId,
                 mentorName: mentorName,
                 mentorField: mentorField,
+                mentorEmail: mentor.email || '',
+                mentorOrganization: mentor.company || '',
+                pathwayResultId: currentPathwayResultId || '',
+                pathwaySnapshot: buildPathwaySnapshot(currentPathwayResult),
                 message: "I would like to request you as my mentor. Please review my profile.",
                 status: "pending",
                 createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp()
+                updatedAt: serverTimestamp(),
+                acceptedAt: null,
+                rejectedAt: null,
+                rejectionReason: ''
             });
 
+            const notificationRef = push(ref(database, `notifications/${mentorId}`));
+            await set(notificationRef, {
+                notificationId: notificationRef.key,
+                type: 'mentor_request_received',
+                title: 'New student mentor request',
+                message: `${currentStudentData?.fullName || currentUserData?.fullName || 'A student'} requested your mentorship.`,
+                messagePreview: `New request from ${currentStudentData?.fullName || currentUserData?.fullName || 'a student'}`,
+                relatedRequestId: requestId,
+                studentUid: currentUser.uid,
+                read: false,
+                status: 'unread',
+                createdAt: serverTimestamp()
+            });
+
+            currentMentorRequests[requestId] = { mentorUid: mentorId, status: 'pending' };
             showToast(`Mentorship request sent successfully to ${mentorName}!`, 'success');
-            btn.textContent = "Request Sent";
-            btn.style.background = "#059669";
-            btn.style.borderColor = "#059669";
-            btn.disabled = true;
+            renderMentors();
 
         } catch (error) {
             console.error("Error sending request:", error);
             showToast("Failed to send request. Please try again.", "error");
-            btn.textContent = "Request Mentor";
+            btn.innerHTML = "Request Mentor";
             btn.disabled = false;
         }
+    }
+
+    async function loadStudentMentorContext(uid) {
+        const [requestsSnap, pathwaySnap] = await Promise.all([
+            get(query(ref(database, 'mentorRequests'), orderByChild('studentUid'), equalTo(uid))).catch(() => null),
+            get(ref(database, `pathwayResults/${uid}`)).catch(() => null)
+        ]);
+        currentMentorRequests = requestsSnap?.exists() ? requestsSnap.val() : {};
+        const latest = getLatestPathwayResult(pathwaySnap?.exists() ? pathwaySnap.val() : null);
+        currentPathwayResult = latest.result;
+        currentPathwayResultId = latest.id;
+        renderMentors();
+    }
+
+    function isApprovedActiveMentor(mentor = {}) {
+        const status = String(mentor.status || '').trim().toLowerCase();
+        const accountStatus = String(mentor.accountStatus || 'active').trim().toLowerCase();
+        const role = String(mentor.userType || mentor.role || 'mentor').trim().toLowerCase();
+        return status === 'approved' && role === 'mentor' && !['suspended', 'disabled', 'rejected'].includes(accountStatus);
+    }
+
+    function getExistingRequestState(mentorId) {
+        const request = Object.values(currentMentorRequests || {}).find((item) => item?.mentorUid === mentorId && ['pending', 'accepted', 'connected'].includes(String(item.status || '').toLowerCase()));
+        return String(request?.status || '').toLowerCase();
+    }
+
+    function getMentorActionMarkup(mentor, requestState) {
+        if (!currentUser) return `<button class="btn btn-primary btn-request" data-id="${mentor.id}" data-name="${mentor.name}" data-field="${mentor.designation}">Login to Request</button>`;
+        if (String(currentUserType || '').toLowerCase() !== 'student') return `<button class="btn btn-primary btn-request" disabled>Students Only</button>`;
+        if (requestState === 'pending') return `<button class="btn btn-primary btn-request" disabled>Request Sent</button>`;
+        if (requestState === 'accepted' || requestState === 'connected') return `<button class="btn btn-primary btn-request" disabled>Connected</button>`;
+        return `<button class="btn btn-primary btn-request" data-id="${mentor.id}" data-name="${mentor.name}" data-field="${mentor.designation}">Request Mentor</button>`;
+    }
+
+    function getLatestPathwayResult(data) {
+        if (!data || typeof data !== 'object') return { id: '', result: null };
+        const entries = Object.entries(data).filter(([, item]) => item && typeof item === 'object');
+        if (!entries.length) return { id: '', result: null };
+        entries.sort(([, a], [, b]) => (getTimeValue(b.createdAt || b.updatedAt) - getTimeValue(a.createdAt || a.updatedAt)));
+        return { id: entries[0][0], result: entries[0][1] };
+    }
+
+    function getTimeValue(value) {
+        if (!value) return 0;
+        if (typeof value === 'number') return value;
+        if (typeof value === 'object' && value.seconds) return value.seconds * 1000;
+        return new Date(value).getTime() || 0;
+    }
+
+    function buildPathwaySnapshot(result = {}) {
+        if (!result) return null;
+        return {
+            resultId: currentPathwayResultId || '',
+            educationLevel: result.educationLevel || result.basicProfile?.currentEducationLevel || '',
+            interestArea: result.interestArea || result.interests?.interestAreas?.[0] || '',
+            futureGoal: result.futureGoal || result.goals?.dreamCareer || '',
+            learningMode: result.learningMode || result.learningPreferences?.learningMode || '',
+            skills: result.skills || result.skillsAndStrengths?.skills || [],
+            pathway: result.pathway || result.recommendedPathway || '',
+            recommendationSummary: result.recommendationSummary || result.summary || '',
+            pathwayScore: result.pathwayScore || result.score || ''
+        };
+    }
+
+    function openMentorProfile(mentorId) {
+        const mentor = allMentors.find((item) => item.id === mentorId);
+        if (!mentor) return;
+        let modal = document.getElementById('mentor-profile-modal');
+        if (!modal) {
+            document.body.insertAdjacentHTML('beforeend', `
+                <div id="mentor-profile-modal" class="mentor-modal hidden" aria-hidden="true">
+                    <div class="mentor-modal-card">
+                        <button type="button" class="mentor-modal-close" aria-label="Close">&times;</button>
+                        <div id="mentor-profile-body"></div>
+                    </div>
+                </div>
+            `);
+            modal = document.getElementById('mentor-profile-modal');
+            modal.querySelector('.mentor-modal-close')?.addEventListener('click', () => modal.classList.add('hidden'));
+        }
+        document.getElementById('mentor-profile-body').innerHTML = `
+            <h2>${mentor.name}</h2>
+            <p class="text-muted">${mentor.designation} at ${mentor.company}</p>
+            <p>${mentor.bio}</p>
+            <div class="mentor-details mentor-profile-details">
+                <div><i class="fas fa-clock"></i> ${mentor.availableTime}</div>
+                <div><i class="fas fa-video"></i> ${mentor.mode}</div>
+                <div><i class="fas fa-award"></i> ${mentor.experience}</div>
+                <div><i class="fas fa-language"></i> ${mentor.languages || 'Languages not specified'}</div>
+            </div>
+        `;
+        modal.classList.remove('hidden');
     }
 
     // --- Filter Handlers ---

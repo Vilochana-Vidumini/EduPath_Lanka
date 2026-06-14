@@ -9,42 +9,55 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="theme.css?v=20260614-softglass">
     <link rel="stylesheet" href="institute-dashboard.css">
 </head>
 <body>
     <aside class="institute-sidebar" id="sidebar">
-        <a href="index.html" class="dash-logo">EduPath<span>Lanka</span></a>
+        <div class="institute-brand-row">
+            <a href="index.html" class="dash-logo">
+                <img src="images/edupath-logo-transparent.png" alt="EduPath Lanka logo">
+                <span>EduPath <strong>Lanka</strong></span>
+            </a>
+            <button class="menu-toggle menu-toggle-brand" data-menu-toggle aria-label="Toggle menu"><i class="fas fa-bars"></i></button>
+        </div>
         <div class="institute-mini-profile">
             <div class="mini-logo" id="mini-logo">IN</div>
             <div><strong id="sidebar-name">Institute</strong><span id="sidebar-email">Loading...</span></div>
         </div>
         <nav class="dash-menu">
-            <button class="active" data-section="dashboard-section"><i class="fas fa-grid-2"></i>Dashboard</button>
-            <button data-section="courses-section"><i class="fas fa-book-open"></i>My Courses</button>
-            <button data-section="add-course-section"><i class="fas fa-plus"></i>Add Course</button>
-            <button data-section="inquiries-section"><i class="fas fa-envelope-open-text"></i>Student Inquiries</button>
-            <button data-section="profile-section"><i class="fas fa-building"></i>Institute Profile</button>
-            <button data-section="settings-section"><i class="fas fa-gear"></i>Settings</button>
-            <a href="index.html"><i class="fas fa-home"></i>Home</a>
-            <button class="danger-link" id="logout-btn"><i class="fas fa-sign-out-alt"></i>Logout</button>
+            <button class="active" data-section="dashboard-section" title="Dashboard"><i class="fas fa-grid-2"></i>Dashboard</button>
+            <button data-section="courses-section" title="My Courses"><i class="fas fa-book-open"></i>My Courses</button>
+            <button data-section="add-course-section" title="Add Course"><i class="fas fa-plus"></i>Add Course</button>
+            <button data-section="inquiries-section" title="Student Inquiries"><i class="fas fa-envelope-open-text"></i>Student Inquiries</button>
+            <button data-section="profile-section" title="Institute Profile"><i class="fas fa-building"></i>Institute Profile</button>
+            <button data-section="support-section" title="Chat with Admin"><i class="fas fa-headset"></i>Chat with Admin</button>
+            <button data-section="settings-section" title="Settings"><i class="fas fa-gear"></i>Settings</button>
+            <a href="index.html" title="Home"><i class="fas fa-home"></i>Home</a>
+            <button class="danger-link" id="logout-btn" title="Logout"><i class="fas fa-sign-out-alt"></i>Logout</button>
         </nav>
     </aside>
 
     <main class="institute-main">
         <header class="dash-topbar">
-            <button class="menu-toggle" id="menu-toggle" aria-label="Open menu"><i class="fas fa-bars"></i></button>
+            <button class="menu-toggle topbar-menu-toggle" id="sidebar-toggle" data-menu-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
             <div><h1 id="page-title">Dashboard</h1><p id="page-subtitle">Manage your courses and student inquiries.</p></div>
-            <div class="institute-clock-card">
-                <span id="institute-time-greeting">Good Day, Institute</span>
-                <time id="institute-live-clock" datetime="">--:--:--</time>
-            </div>
         </header>
 
         <section id="dashboard-section" class="dash-section active">
             <div class="welcome-panel">
                 <div><span class="eyebrow">Institute Dashboard</span><h2 id="welcome-name">Welcome</h2><p>Publish courses, manage inquiries, and keep your institute profile complete.</p></div>
+                <div class="institute-clock-card">
+                    <span id="institute-time-greeting">Good Day, Institute</span>
+                    <span id="institute-live-date">Today</span>
+                    <time id="institute-live-clock" datetime="">--:--</time>
+                </div>
                 <button class="btn btn-primary" data-section-jump="add-course-section"><i class="fas fa-plus"></i>Add Course</button>
+            </div>
+            <div id="approval-notice" class="panel hidden">
+                <h3>Waiting for Admin Approval</h3>
+                <p class="muted">Your institute registration is under review. You can chat with admin while waiting. Course publishing and profile editing will unlock after approval.</p>
+                <button class="btn btn-primary" data-section-jump="support-section"><i class="fas fa-headset"></i> Chat with Admin</button>
             </div>
             <div class="stats-grid">
                 <article class="stat-card"><i class="fas fa-book"></i><span>Total Courses</span><strong id="stat-total-courses">0</strong></article>
@@ -102,6 +115,25 @@
                     <label>Institute Description<textarea id="profileDescription" rows="4" required></textarea></label>
                     <button class="btn btn-primary" type="submit"><i class="fas fa-save"></i>Update Profile</button>
                 </form>
+            </div>
+        </section>
+
+        <section id="support-section" class="dash-section">
+            <div class="panel">
+                <div class="panel-head"><h3>Chat with Admin</h3></div>
+                <div class="support-grid">
+                    <form id="institute-support-form" class="dash-form support-card">
+                        <label>Subject<input id="institute-support-subject" placeholder="What do you need help with?" required></label>
+                        <label>Message<textarea id="institute-support-message" rows="6" placeholder="Write your message to admin..." required></textarea></label>
+                        <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i> Send Message</button>
+                    </form>
+                    <div class="support-card">
+                        <h3>Conversation</h3>
+                        <div id="institute-support-replies" class="support-replies">
+                            <div class="list-item">Loading messages...</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 

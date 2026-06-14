@@ -14,6 +14,7 @@ const adminState = {
     scholarships: {},
     pathwayResults: {},
     mentorRequests: {},
+    mentorStudents: {},
     guestMessages: {},
     contactMessages: {},
     conversations: {},
@@ -90,7 +91,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         const userData = snap.val();
-        const role = normalize(userData.userType);
+        const role = normalize(userData.userType || userData.role);
         const status = normalize(userData.accountStatus || "active");
 
         if (status === "suspended" || status === "disabled") {
@@ -248,6 +249,7 @@ function initRealtimeListeners() {
         ["scholarships", "scholarships", () => { renderOverview(); renderScholarships(); renderReports(); }],
         ["pathwayResults", "pathwayResults", () => { renderOverview(); renderStudents(); renderPathwayResults(); renderReports(); }],
         ["mentorRequests", "mentorRequests", () => { renderOverview(); renderStudents(); renderMentorRequests(); renderReports(); updateSidebarBadges(); }],
+        ["mentorStudents", "mentorStudents", () => { renderOverview(); renderMentorRequests(); renderReports(); }],
         ["guestMessages", "guestMessages", () => { renderOverview(); renderSupportInbox(); updateSupportCounts(); updateSidebarBadges(); }],
         ["contactMessages", "contactMessages", () => { renderOverview(); renderSupportInbox(); updateSidebarBadges(); }],
         ["conversations", "conversations", () => { renderOverview(); renderSupportInbox(); renderUserDirectory(); updateSidebarBadges(); }],
@@ -308,21 +310,22 @@ function renderOverview() {
 }
 
 function calculateStats() {
-    const users = Object.entries(adminState.users).filter(([uid, user]) => !isAntigravityStudent(uid, user)).map(([, user]) => user);
+    const users = Object.entries(adminState.users).filter(([uid, user]) => !isHiddenAdminUser(uid, user)).map(([, user]) => user);
     const courses = Object.values(adminState.courses).filter((c) => normalize(c.status) !== "deleted" && normalize(c.status) !== "archived");
     const scholarships = Object.values(adminState.scholarships).filter((s) => normalize(s.status) !== "deleted" && normalize(s.status) !== "archived");
-    const students = users.filter((u) => normalize(u.userType) === "student").length;
-    const mentors = users.filter((u) => normalize(u.userType) === "mentor").length;
-    const institutes = users.filter((u) => normalize(u.userType) === "institute").length;
-    const admins = users.filter((u) => normalize(u.userType) === "admin").length;
+    const students = users.filter((u) => userRole(u) === "student").length;
+    const mentors = users.filter((u) => userRole(u) === "mentor").length;
+    const institutes = users.filter((u) => userRole(u) === "institute").length;
+    const admins = users.filter((u) => userRole(u) === "admin").length;
     const pendingMentors = countWhere(adminState.mentors, (m) => normalize(m.status || "pending") === "pending");
     const approvedMentors = countWhere(adminState.mentors, (m) => normalize(m.status) === "approved");
-    const onlineUsers = countWhere(adminState.presence, (p) => normalize(p.state) === "online");
+    const onlineUsers = Object.entries(adminState.presence || {}).filter(([uid, p]) => normalize(p.state) === "online" && !isHiddenAdminUser(uid)).length;
     const activeCourses = courses.filter((c) => normalize(c.status) === "active").length;
     const activeScholarships = scholarships.filter((s) => normalize(s.status) === "active").length;
     const pathwayResults = flattenPathwayResults().length;
     const mentorRequests = Object.keys(adminState.mentorRequests).length;
     const pendingMentorRequests = countWhere(adminState.mentorRequests, (r) => normalize(r.status || "pending") === "pending");
+    const acceptedMentorConnections = flattenMentorConnections().length;
     const unreadSupport = getUnreadSupportCount();
     const guestInquiries = Object.keys({ ...adminState.contactMessages, ...adminState.guestMessages }).length;
     return {
@@ -342,6 +345,7 @@ function calculateStats() {
         "kpi-pathway-results": pathwayResults,
         "kpi-mentor-requests": mentorRequests,
         "kpi-pending-mentor-requests": pendingMentorRequests,
+        "kpi-accepted-mentor-connections": acceptedMentorConnections,
         "kpi-pending-mentors": pendingMentors,
         "kpi-approved-mentors": approvedMentors,
         "kpi-unread-support": unreadSupport,
@@ -382,8 +386,8 @@ function renderStudents() {
 
 function getStudentRows() {
     return Object.entries(adminState.users)
-        .filter(([, user]) => normalize(user.userType) === "student")
-        .filter(([uid, user]) => !isAntigravityStudent(uid, user))
+        .filter(([, user]) => userRole(user) === "student")
+        .filter(([uid, user]) => !isHiddenAdminUser(uid, user))
         .map(([uid, user]) => {
             const student = adminState.students[uid] || {};
             const results = Object.keys(adminState.pathwayResults[uid] || {});
@@ -405,9 +409,25 @@ function getStudentRows() {
         .sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt));
 }
 
-function isAntigravityStudent(uid, user = {}) {
+function isHiddenAdminUser(uid, user = adminState.users[uid] || {}) {
     const student = adminState.students[uid] || {};
-    return normalize(`${user.fullName || ""} ${student.fullName || ""} ${user.email || ""}`).includes("antigravity student");
+    const role = normalize(user.userType || user.role || student.userType || student.role || "");
+    const searchable = normalize([
+        uid,
+        user.fullName,
+        student.fullName,
+        user.email,
+        student.email,
+        user.phone,
+        student.phone
+    ].filter(Boolean).join(" "));
+    const knownRole = ["student", "mentor", "institute", "admin"].includes(role);
+    const testAccount = searchable.includes("test student") || searchable.includes("antigravity");
+    return !knownRole || testAccount;
+}
+
+function isAntigravityStudent(uid, user = {}) {
+    return isHiddenAdminUser(uid, user);
 }
 
 function matchesStudentFilters(s) {
@@ -461,7 +481,8 @@ function renderMentors() {
 
 function getMentorRows() {
     return Object.entries(adminState.users)
-        .filter(([, user]) => normalize(user.userType) === "mentor")
+        .filter(([, user]) => userRole(user) === "mentor")
+        .filter(([uid, user]) => !isHiddenAdminUser(uid, user))
         .map(([uid, user]) => ({ uid, ...user, ...(adminState.mentors[uid] || {}), email: user.email, fullName: user.fullName, photoURL: user.photoURL || adminState.mentors[uid]?.photoURL }))
         .sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt));
 }
@@ -487,6 +508,8 @@ function renderInstitutes() {
             <td>${formatDate(i.createdAt)}</td>
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-institute="${i.uid}">View</button>
+                <button class="btn btn-sm btn-success" data-approve-institute="${i.uid}">Approve</button>
+                <button class="btn btn-sm btn-warning" data-reject-institute="${i.uid}">Reject</button>
                 <button class="btn btn-sm btn-primary" data-message-user="${i.uid}">Message</button>
                 <button class="btn btn-sm ${normalize(i.accountStatus) === "suspended" ? "btn-success" : "btn-danger"}" data-toggle-account="${i.uid}">${normalize(i.accountStatus) === "suspended" ? "Reactivate" : "Suspend"}</button>
             </td>
@@ -497,7 +520,8 @@ function renderInstitutes() {
 
 function getInstituteRows() {
     return Object.entries(adminState.users)
-        .filter(([, user]) => normalize(user.userType) === "institute")
+        .filter(([, user]) => userRole(user) === "institute")
+        .filter(([uid, user]) => !isHiddenAdminUser(uid, user))
         .map(([uid, user]) => {
             const institute = adminState.institutes[uid] || {};
             return {
@@ -823,10 +847,10 @@ function renderPathwayResults() {
         return `
             <tr>
                 <td>${escapeHtml(display(user.fullName || r.studentName))}</td>
-                <td>${escapeHtml(display(user.email || r.email))}</td>
-                <td>${escapeHtml(display(r.educationLevel || student.educationLevel))}</td>
-                <td>${escapeHtml(display(r.interestArea))}</td>
-                <td>${escapeHtml(display(r.futureGoal))}</td>
+                <td>${escapeHtml(display(user.email || r.studentEmail || r.email))}</td>
+                <td>${escapeHtml(display(r.educationLevel || r.basicProfile?.currentEducationLevel || student.educationLevel))}</td>
+                <td>${escapeHtml(display(r.interestArea || r.interests?.interestAreas?.[0]))}</td>
+                <td>${escapeHtml(display(r.futureGoal || r.goals?.dreamCareer || r.goals?.futurePreference?.[0]))}<br><span class="text-muted">${escapeHtml(display(r.recommendedPathway))}</span></td>
                 <td>${escapeHtml(display(r.pathwayScore))}%</td>
                 <td>${formatDate(r.createdAt)}</td>
                 <td><span class="badge ${student.currentPathwayResultId === r.resultId ? "badge-success" : "badge-info"}">${student.currentPathwayResultId === r.resultId ? "Current" : "Previous"}</span></td>
@@ -855,7 +879,7 @@ function renderMentorRequests() {
             <td class="wrap-cell">${escapeHtml(display(r.message))}</td>
             <td><span class="badge ${statusBadgeClass(r.status)}">${escapeHtml(normalize(r.status || "pending"))}</span></td>
             <td>${formatDate(r.createdAt)}</td>
-            <td>${formatDate(r.updatedAt)}</td>
+            <td>${formatDate(r.acceptedAt || r.rejectedAt || r.updatedAt)}</td>
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-student="${r.studentUid}">Student</button>
                 <button class="btn btn-sm btn-info" data-view-mentor="${r.mentorUid}">Mentor</button>
@@ -885,6 +909,7 @@ function renderUserDirectory() {
     const current = select.value;
     const options = Object.entries(adminState.users)
         .filter(([uid, user]) => uid !== adminState.adminUid && normalize(user.accountStatus || "active") !== "disabled")
+        .filter(([uid, user]) => !isHiddenAdminUser(uid, user))
         .sort(([, a], [, b]) => display(a.fullName).localeCompare(display(b.fullName)))
         .map(([uid, user]) => `<option value="${escapeAttr(uid)}">${escapeHtml(display(user.fullName))} - ${escapeHtml(display(user.email))} (${escapeHtml(display(user.userType))})</option>`)
         .join("");
@@ -895,7 +920,7 @@ function renderUserDirectory() {
 async function sendAdminMessage(event) {
     event.preventDefault();
     const selectedConversation = adminState.conversations[adminState.selectedConversationId] || {};
-    const receiverUid = value("message-recipient") || selectedConversation.studentUid;
+    const receiverUid = value("message-recipient") || selectedConversation.studentUid || selectedConversation.userUid;
     const subject = value("message-subject") || "EduPath Support";
     const message = value("message-body");
     const priority = value("message-priority") || "normal";
@@ -924,6 +949,7 @@ async function sendAdminMessage(event) {
     updates[`conversations/${conversationId}/conversationId`] = conversationId;
     updates[`conversations/${conversationId}/type`] = "admin-support";
     updates[`conversations/${conversationId}/studentUid`] = receiverUid;
+    updates[`conversations/${conversationId}/userUid`] = receiverUid;
     updates[`conversations/${conversationId}/adminUid`] = adminState.adminUid;
     updates[`conversations/${conversationId}/participantIds/${adminState.adminUid}`] = true;
     updates[`conversations/${conversationId}/participantIds/${receiverUid}`] = true;
@@ -1007,6 +1033,7 @@ function supportConversationRow(id, item = {}) {
     if (!isSupportConversation(item)) return null;
     const uid = item.studentUid || item.userUid || Object.keys(item.participantIds || {}).find((key) => key !== adminState.adminUid);
     const user = adminState.users[uid] || {};
+    if (isHiddenAdminUser(uid, user)) return null;
     const unread = Number(item.unreadByAdmin || 0);
     return {
         id: `conversation:${id}`,
@@ -1259,7 +1286,10 @@ function renderActivity() {
 function renderRecentActivity() {
     const container = document.getElementById("recent-activity-list");
     if (!container) return;
-    let rows = Object.entries(adminState.activityLogs).map(([id, log]) => ({ id, ...log })).sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt));
+    let rows = Object.entries(adminState.activityLogs)
+        .map(([id, log]) => ({ id, ...log }))
+        .filter((log) => !isHiddenActivityLog(log))
+        .sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt));
     const q = normalize(adminState.filters.activitySearch);
     if (q) rows = rows.filter((log) => normalize(`${log.userName} ${log.actionType} ${log.description}`).includes(q));
     if (adminState.filters.activityRole) rows = rows.filter((log) => normalize(log.userRole) === adminState.filters.activityRole);
@@ -1269,10 +1299,22 @@ function renderRecentActivity() {
     updateActivityTypeOptions(rows);
 }
 
+function isHiddenActivityLog(log = {}) {
+    const uid = log.userUid || log.uid || log.actorUid;
+    if (uid && isHiddenAdminUser(uid)) return true;
+    const role = normalize(log.userRole);
+    const searchable = normalize(`${log.userName || ""} ${log.description || ""}`);
+    const knownRole = ["student", "mentor", "institute", "admin", "guest"].includes(role);
+    return !knownRole || searchable.includes("test student") || searchable.includes("antigravity") || searchable.includes("unknown user");
+}
+
 function renderLoginHistory() {
     const tbody = document.getElementById("login-history-tbody");
     if (!tbody) return;
-    const rows = Object.entries(adminState.loginHistory).flatMap(([uid, records]) => Object.entries(records || {}).map(([id, item]) => ({ uid, id, ...item }))).sort((a, b) => getTime(b.loginAt) - getTime(a.loginAt));
+    const rows = Object.entries(adminState.loginHistory)
+        .filter(([uid]) => !isHiddenAdminUser(uid))
+        .flatMap(([uid, records]) => Object.entries(records || {}).map(([id, item]) => ({ uid, id, ...item })))
+        .sort((a, b) => getTime(b.loginAt) - getTime(a.loginAt));
     if (!rows.length) return showTableEmpty(tbody, 6, "No login history yet.");
     tbody.innerHTML = rows.slice(0, 100).map((r) => {
         const user = adminState.users[r.uid] || {};
@@ -1283,7 +1325,7 @@ function renderLoginHistory() {
 function renderOnlineUsers() {
     const tbody = document.getElementById("online-users-tbody");
     if (!tbody) return;
-    const rows = Object.entries(adminState.presence).filter(([, p]) => normalize(p.state) === "online");
+    const rows = Object.entries(adminState.presence).filter(([uid, p]) => normalize(p.state) === "online" && !isHiddenAdminUser(uid));
     if (!rows.length) return showTableEmpty(tbody, 4, "No users online right now.");
     tbody.innerHTML = rows.map(([uid, p]) => {
         const user = adminState.users[uid] || {};
@@ -1304,14 +1346,23 @@ function renderReports() {
     if (!container) return;
     const students = getStudentRows();
     const mentors = getMentorRows();
+    const visibleUsers = Object.entries(adminState.users).filter(([uid, user]) => !isHiddenAdminUser(uid, user)).map(([, user]) => user);
     const reports = [
-        ["Users by Role", countBy(Object.values(adminState.users), (u) => normalize(u.userType) || "unknown")],
+        ["Users by Role", countBy(visibleUsers, (u) => normalize(u.userType))],
         ["Students by District", countBy(students, (s) => s.district || "N/A")],
         ["Students by Interest Area", countBy(students, (s) => s.interestArea || "N/A")],
         ["Popular Future Goals", countBy(students, (s) => s.futureGoal || "N/A")],
         ["Popular Course Categories", countBy(Object.values(adminState.courses), (c) => c.category || "N/A")],
         ["Mentor Approval Status", countBy(mentors, (m) => normalize(m.status || "pending"))],
         ["Mentor Request Status", countBy(Object.values(adminState.mentorRequests), (r) => normalize(r.status || "pending"))],
+        ["Mentor Request Summary", {
+            Total: Object.keys(adminState.mentorRequests || {}).length,
+            Pending: countWhere(adminState.mentorRequests, (r) => normalize(r.status || "pending") === "pending"),
+            Accepted: countWhere(adminState.mentorRequests, (r) => normalize(r.status) === "accepted"),
+            Rejected: countWhere(adminState.mentorRequests, (r) => normalize(r.status) === "rejected"),
+            Connections: flattenMentorConnections().length
+        }],
+        ["Mentor Connections", countBy(flattenMentorConnections(), (connection) => connection.mentorName || adminState.users[connection.mentorUid]?.fullName || "Mentor")],
         ["Active vs Inactive Courses", countBy(Object.values(adminState.courses), (c) => normalize(c.status || "draft"))],
         ["Scholarship Deadline Summary", summarizeDeadlines(Object.values(adminState.scholarships))],
         ["Support Message Volume", { Conversations: Object.keys(adminState.conversations).length, Guests: Object.keys({ ...adminState.contactMessages, ...adminState.guestMessages }).length }]
@@ -1320,7 +1371,7 @@ function renderReports() {
     reports.push(["Profile Completion Average", { Average: avgProfile }]);
     reports.push(["Students Needing Scholarships", { Students: students.filter((s) => /scholarship|free|low.?cost|financial/i.test(s.financialSupport || "")).length }]);
     reports.push(["Pathway Score Distribution", scoreDistribution(flattenPathwayResults())]);
-    reports.push(["Login Activity Trend", { Sessions: Object.values(adminState.loginHistory).reduce((sum, records) => sum + Object.keys(records || {}).length, 0) }]);
+    reports.push(["Login Activity Trend", { Sessions: Object.entries(adminState.loginHistory).filter(([uid]) => !isHiddenAdminUser(uid)).reduce((sum, [, records]) => sum + Object.keys(records || {}).length, 0) }]);
     container.innerHTML = reports.map(([title, data]) => reportCard(title, data)).join("");
 }
 
@@ -1328,6 +1379,8 @@ function bindRowActions(root) {
     root.querySelectorAll("[data-view-student]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Student Details", studentDetails(btn.dataset.viewStudent))));
     root.querySelectorAll("[data-view-mentor]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Mentor Details", mentorDetails(btn.dataset.viewMentor))));
     root.querySelectorAll("[data-view-institute]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Institute Details", instituteDetails(btn.dataset.viewInstitute))));
+    root.querySelectorAll("[data-approve-institute]").forEach((btn) => btn.addEventListener("click", () => updateInstituteApproval(btn.dataset.approveInstitute, "approved")));
+    root.querySelectorAll("[data-reject-institute]").forEach((btn) => btn.addEventListener("click", () => updateInstituteApproval(btn.dataset.rejectInstitute, "rejected")));
     root.querySelectorAll("[data-view-result]").forEach((btn) => btn.addEventListener("click", () => {
         const [uid, resultId] = btn.dataset.viewResult.split(":");
         openDetailDrawer("Pathway Result", pathwayDetails(uid, resultId));
@@ -1359,9 +1412,12 @@ async function approveMentor(uid) {
     const mentor = adminState.mentors[uid] || {};
     await update(ref(database), {
         [`mentors/${uid}/status`]: "approved",
+        [`mentors/${uid}/userType`]: "mentor",
+        [`mentors/${uid}/accountStatus`]: "active",
         [`mentors/${uid}/approvedAt`]: serverTimestamp(),
         [`mentors/${uid}/approvedBy`]: adminState.adminUid,
         [`users/${uid}/mentorStatus`]: "approved",
+        [`users/${uid}/accountStatus`]: "active",
         [`notifications/${uid}/${Date.now()}`]: notification("Mentor approved", "Your mentor application has been approved.")
     });
     await logActivity("mentor_approved", `Approved mentor ${mentor.fullName || uid}`, "mentor", uid);
@@ -1374,6 +1430,7 @@ async function rejectMentor(uid) {
     const mentor = adminState.mentors[uid] || {};
     await update(ref(database), {
         [`mentors/${uid}/status`]: "rejected",
+        [`mentors/${uid}/accountStatus`]: "rejected",
         [`mentors/${uid}/rejectionReason`]: reason,
         [`mentors/${uid}/rejectedAt`]: serverTimestamp(),
         [`mentors/${uid}/rejectedBy`]: adminState.adminUid,
@@ -1382,6 +1439,31 @@ async function rejectMentor(uid) {
     });
     await logActivity("mentor_rejected", `Rejected mentor ${mentor.fullName || uid}`, "mentor", uid);
     showToast("Mentor rejected.", "success");
+}
+
+async function updateInstituteApproval(uid, status) {
+    const approved = status === "approved";
+    const institute = adminState.institutes[uid] || {};
+    const name = institute.instituteName || adminState.users[uid]?.fullName || uid;
+    if (!confirm(`${approved ? "Approve" : "Reject"} this institute registration?`)) return;
+    const updates = {
+        [`institutes/${uid}/status`]: status,
+        [`institutes/${uid}/verificationStatus`]: status,
+        [`institutes/${uid}/approvalStatus`]: status,
+        [`institutes/${uid}/updatedAt`]: serverTimestamp(),
+        [`users/${uid}/accountStatus`]: approved ? "active" : "rejected",
+        [`users/${uid}/instituteStatus`]: status,
+        [`users/${uid}/updatedAt`]: serverTimestamp(),
+        [`notifications/${uid}/${Date.now()}`]: notification(
+            approved ? "Institute approved" : "Institute registration update",
+            approved ? "Your institute account has been approved. You can now complete your profile and publish courses." : "Your institute registration was rejected. Please contact EduPath Support for details."
+        )
+    };
+    updates[`institutes/${uid}/${approved ? "approvedAt" : "rejectedAt"}`] = serverTimestamp();
+    updates[`institutes/${uid}/${approved ? "approvedBy" : "rejectedBy"}`] = adminState.adminUid;
+    await update(ref(database), updates);
+    await logActivity(approved ? "institute_approved" : "institute_rejected", `${approved ? "Approved" : "Rejected"} institute ${name}`, "institute", uid);
+    showToast(`Institute ${status}.`, "success");
 }
 
 async function updateCourseStatus(id, status) {
@@ -1448,7 +1530,7 @@ async function openConversation(id, rerender = true) {
     });
     await update(ref(database), updates);
     const select = document.getElementById("message-recipient");
-    if (select && convo.studentUid) select.value = convo.studentUid;
+    if (select && (convo.studentUid || convo.userUid)) select.value = convo.studentUid || convo.userUid;
     if (rerender) renderSupportInbox();
 }
 
@@ -1457,7 +1539,7 @@ async function sendConversationReply(event) {
     const form = event.currentTarget;
     const conversationId = form.dataset.replyConversation;
     const convo = adminState.conversations[conversationId] || {};
-    const receiverUid = convo.studentUid || Object.keys(convo.participantIds || {}).find((uid) => uid !== adminState.adminUid);
+    const receiverUid = convo.studentUid || convo.userUid || Object.keys(convo.participantIds || {}).find((uid) => uid !== adminState.adminUid);
     const subject = form.elements.subject?.value.trim() || "EduPath Support";
     const message = form.elements.message?.value.trim();
     if (!receiverUid || !message) return showToast("Write a reply first.", "error");
@@ -1476,6 +1558,7 @@ async function sendSupportMessageToUser(receiverUid, subject, message, priority 
     updates[`conversations/${conversationId}/conversationId`] = conversationId;
     updates[`conversations/${conversationId}/type`] = "admin-support";
     updates[`conversations/${conversationId}/studentUid`] = receiverUid;
+    updates[`conversations/${conversationId}/userUid`] = receiverUid;
     updates[`conversations/${conversationId}/adminUid`] = adminState.adminUid;
     updates[`conversations/${conversationId}/participantIds/${adminState.adminUid}`] = true;
     updates[`conversations/${conversationId}/participantIds/${receiverUid}`] = true;
@@ -1798,9 +1881,15 @@ function getNewGuestInquiryCount() {
 }
 
 function flattenPathwayResults() {
-    return Object.entries(adminState.pathwayResults).flatMap(([uid, results]) =>
+    return Object.entries(adminState.pathwayResults).filter(([uid]) => !isHiddenAdminUser(uid)).flatMap(([uid, results]) =>
         Object.entries(results || {}).map(([resultId, result]) => ({ uid, resultId, ...result }))
     ).sort((a, b) => getTime(b.createdAt, b.resultId) - getTime(a.createdAt, a.resultId));
+}
+
+function flattenMentorConnections() {
+    return Object.entries(adminState.mentorStudents || {}).flatMap(([mentorUid, students]) =>
+        Object.entries(students || {}).map(([studentUid, connection]) => ({ mentorUid, studentUid, ...connection }))
+    ).filter((connection) => normalize(connection.status || "connected") === "connected");
 }
 
 function notification(title, message) {
@@ -1927,6 +2016,10 @@ function isOnline(uid) {
     return normalize(adminState.presence[uid]?.state) === "online" || adminState.users[uid]?.isOnline === true;
 }
 
+function userRole(user = {}) {
+    return normalize(user.userType || user.role || "");
+}
+
 function avatarCell(row, fallback) {
     const name = row.fullName || row.name || fallback;
     const avatar = row.photoURL ? `<img src="${escapeAttr(row.photoURL)}" alt="">` : `<span class="avatar-mini">${escapeHtml(initials(name))}</span>`;
@@ -1986,12 +2079,12 @@ function getConversationName(convo = {}) {
 }
 
 function getConversationEmail(convo = {}) {
-    const uid = convo.studentUid || Object.keys(convo.participantIds || {}).find((id) => id !== adminState.adminUid);
+    const uid = convo.studentUid || convo.userUid || Object.keys(convo.participantIds || {}).find((id) => id !== adminState.adminUid);
     return adminState.users[uid]?.email || "";
 }
 
 function getConversationRole(convo = {}) {
-    const uid = convo.studentUid || Object.keys(convo.participantIds || {}).find((id) => id !== adminState.adminUid);
+    const uid = convo.studentUid || convo.userUid || Object.keys(convo.participantIds || {}).find((id) => id !== adminState.adminUid);
     return convo.participantRoles?.[uid] || adminState.users[uid]?.userType || "student";
 }
 

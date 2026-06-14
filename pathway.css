@@ -199,7 +199,7 @@ h2 { font-size: clamp(2rem, 4vw, 2.5rem); margin-bottom: 1rem; }
 .input-group.full-width { grid-column: 1 / -1; }
 .input-group label { font-size: 0.95rem; font-weight: 500; color: var(--text-heading); }
 
-input[type="text"], input[type="email"], select {
+input[type="text"], input[type="email"], input[type="tel"], select, textarea {
     width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border-color); border-radius: 8px;
     font-family: var(--font-main); font-size: 0.95rem; color: var(--text-heading); background: #f8fafc; transition: var(--transition);
 }
@@ -214,6 +214,176 @@ input:focus, select:focus { outline: none; border-color: var(--primary-blue); ba
 .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; }
 .custom-checkbox { display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.9rem; color: var(--text-muted); }
 .custom-checkbox input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+
+.pathway-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    margin-bottom: 0.85rem;
+    color: var(--primary-blue);
+    background: rgba(37, 99, 235, 0.09);
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.pathway-progress {
+    max-width: 980px;
+}
+
+.pathway-progress .step-dot {
+    border: 0;
+}
+
+.pathway-progress .step-dot span {
+    width: 92px;
+    white-space: normal;
+    line-height: 1.2;
+}
+
+.pathway-step-heading {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.pathway-step-heading span {
+    color: var(--primary-blue);
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+
+.pathway-step-heading h3 {
+    margin: 0.1rem 0 0.35rem;
+    color: var(--deep-blue);
+    font-size: 1.55rem;
+}
+
+.pathway-step-heading p {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.pathway-step-icon {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border-radius: 16px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--primary-blue), #7c3aed);
+    box-shadow: 0 14px 30px rgba(37, 99, 235, 0.2);
+}
+
+.option-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.8rem;
+    margin-top: 0.35rem;
+}
+
+.option-card-grid.compact-options {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.option-card {
+    position: relative;
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--text-heading);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.option-card input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.option-card:has(input:checked) {
+    border-color: var(--primary-blue);
+    background: rgba(37, 99, 235, 0.1);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+}
+
+.option-card:has(input:checked)::after {
+    content: "\f00c";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+    margin-left: auto;
+    color: var(--primary-blue);
+}
+
+.skill-level-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.8rem;
+    margin: 1rem 0;
+}
+
+.skill-level-item {
+    display: grid;
+    grid-template-columns: 1fr 140px;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.75rem;
+    border-radius: 14px;
+    background: rgba(37, 99, 235, 0.06);
+    border: 1px solid rgba(37, 99, 235, 0.12);
+}
+
+.skill-level-item span {
+    font-weight: 700;
+    color: var(--deep-blue);
+}
+
+.review-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.review-card {
+    padding: 1rem;
+    border-radius: 16px;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.78);
+}
+
+.review-card h4 {
+    color: var(--deep-blue);
+    margin-bottom: 0.65rem;
+}
+
+.validation-summary {
+    margin-top: 1rem;
+    padding: 0.9rem 1rem;
+    border-radius: 14px;
+    color: #92400e;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    font-weight: 600;
+}
+
+.pathway-step-actions {
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.pathway-step-actions .hidden,
+.validation-summary.hidden {
+    display: none !important;
+}
 
 .form-actions { margin-top: 2rem; display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
 

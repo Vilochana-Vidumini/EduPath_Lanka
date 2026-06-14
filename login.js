@@ -85,10 +85,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function finishLogin(uid, userData) {
+        const role = String(userData.userType || userData.role || '').trim().toLowerCase();
         localStorage.setItem('uid', uid);
         localStorage.setItem('email', userData.email || '');
         localStorage.setItem('fullName', userData.fullName || '');
-        localStorage.setItem('userType', userData.userType || '');
+        localStorage.setItem('userType', role);
         await recordLogin(uid, userData);
 
         showAlert('Login successful! Redirecting...', 'success');
@@ -102,11 +103,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            const type = userData.userType ? userData.userType.toLowerCase() : '';
-            if (type === 'student') window.location.href = 'student-dashboard.html';
-            else if (type === 'mentor') window.location.href = 'mentor-dashboard.html';
-            else if (type === 'institute') window.location.href = 'institute-dashboard.html';
-            else if (type === 'admin') window.location.href = 'admin-dashboard.html';
+            if (role === 'student') window.location.href = 'student-dashboard.html';
+            else if (role === 'mentor') window.location.href = 'mentor-dashboard.html';
+            else if (role === 'institute') window.location.href = 'institute-dashboard.html';
+            else if (role === 'admin') window.location.href = 'admin-dashboard.html';
             else showAlert('Unknown account role. Please contact EduPath support.', 'error');
         }, 1500);
     }

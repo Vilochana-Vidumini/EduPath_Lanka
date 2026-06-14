@@ -478,6 +478,16 @@ h1, h2, h3, h4 {
     align-items: center;
     border-top: 1px solid rgba(226, 232, 240, 0.6);
     padding-top: 1.25rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.mentor-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .exp-badge {
@@ -497,6 +507,65 @@ h1, h2, h3, h4 {
     border-radius: 8px;
     height: 36px;
     padding: 0 1rem;
+}
+
+.btn-request:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+
+.btn-view-mentor {
+    height: 36px;
+    padding: 0 0.9rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    color: var(--primary-blue);
+    background: rgba(255, 255, 255, 0.82);
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.mentor-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(15, 23, 42, 0.48);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.mentor-modal.hidden {
+    display: none;
+}
+
+.mentor-modal-card {
+    width: min(560px, 100%);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 18px;
+    box-shadow: var(--shadow-xl);
+    padding: 1.5rem;
+    position: relative;
+}
+
+.mentor-modal-close {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.9rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-heading);
+    font-size: 1.6rem;
+    cursor: pointer;
+}
+
+.mentor-profile-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
 }
 
 /* Footer styling */

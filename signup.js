@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 email,
                 phone,
                 userType: role,
-                accountStatus: 'active',
+                accountStatus: role === 'institute' ? 'pending' : 'active',
                 photoURL: role === 'institute' ? logoURL : '',
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
@@ -105,6 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     userType: 'mentor',
                     photoURL: '',
                     status: 'pending',
+                    accountStatus: 'active',
                     profileCompletion: 0,
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp()
@@ -123,8 +124,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     facebookPage: websiteURL,
                     description,
                     logoURL,
-                    status: 'active',
-                    verificationStatus: 'active',
+                    status: 'pending',
+                    verificationStatus: 'pending',
+                    approvalStatus: 'pending',
                     profileCompletion: completion,
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp()

@@ -1,16 +1,17 @@
 :root {
     --auth-font: 'Poppins', sans-serif;
     --auth-white: #ffffff;
-    --auth-muted: rgba(255, 255, 255, 0.78);
-    --auth-soft: rgba(255, 255, 255, 0.14);
-    --auth-soft-strong: rgba(255, 255, 255, 0.2);
-    --auth-border: rgba(255, 255, 255, 0.28);
+    --auth-text: #0b1736;
+    --auth-muted: #526178;
+    --auth-soft: rgba(37, 99, 235, 0.08);
+    --auth-soft-strong: rgba(37, 99, 235, 0.14);
+    --auth-border: rgba(255, 255, 255, 0.58);
     --auth-blue: #2563eb;
     --auth-indigo: #4f46e5;
-    --auth-cyan: #67e8f9;
-    --auth-error: #fecaca;
-    --auth-success: #bbf7d0;
-    --auth-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+    --auth-cyan: #0ea5e9;
+    --auth-error: #dc2626;
+    --auth-success: #15803d;
+    --auth-shadow: 0 24px 60px rgba(15, 23, 42, 0.16);
 }
 
 * {
@@ -26,7 +27,7 @@ html {
 body {
     min-height: 100vh;
     font-family: var(--auth-font);
-    color: var(--auth-white);
+    color: var(--auth-text);
     overflow-x: hidden;
 }
 
@@ -58,8 +59,8 @@ a {
     position: fixed;
     inset: 0;
     background:
-        radial-gradient(circle at 78% 18%, rgba(103, 232, 249, 0.18), transparent 30%),
-        linear-gradient(135deg, rgba(15, 23, 42, 0.76), rgba(30, 64, 175, 0.42));
+        radial-gradient(circle at 78% 18%, rgba(14, 165, 233, 0.16), transparent 30%),
+        linear-gradient(135deg, rgba(248, 252, 255, 0.92), rgba(224, 242, 254, 0.76));
     z-index: 0;
 }
 
@@ -73,19 +74,20 @@ a {
     gap: 8px;
     min-height: 40px;
     padding: 0 14px;
-    border: 1px solid rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(148, 163, 184, 0.28);
     border-radius: 999px;
-    background: rgba(15, 23, 42, 0.25);
+    background: rgba(255, 255, 255, 0.46);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    color: var(--auth-white);
+    color: #1d2a44;
     font-size: 0.88rem;
     font-weight: 600;
 }
 
 .back-home:hover,
 .back-home:focus-visible {
-    background: rgba(37, 99, 235, 0.35);
+    background: rgba(37, 99, 235, 0.1);
+    color: var(--auth-blue);
     outline: none;
 }
 
@@ -102,11 +104,11 @@ a {
     max-width: 460px;
     padding: 32px;
     border-radius: 24px;
-    background: rgba(255, 255, 255, 0.15);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.56), rgba(255, 255, 255, 0.34));
     border: 1px solid var(--auth-border);
     box-shadow: var(--auth-shadow);
-    backdrop-filter: blur(22px);
-    -webkit-backdrop-filter: blur(22px);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
 }
 
 .brand-mark {
@@ -115,24 +117,21 @@ a {
     justify-content: center;
     gap: 10px;
     margin-bottom: 24px;
-    font-size: 1.08rem;
+    color: var(--auth-text);
+    font-size: 1.18rem;
     font-weight: 800;
     letter-spacing: 0;
 }
 
 .brand-mark strong {
-    color: var(--auth-cyan);
+    color: var(--auth-blue);
 }
 
-.brand-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 14px;
-    background: linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(6, 182, 212, 0.85));
-    box-shadow: 0 12px 26px rgba(37, 99, 235, 0.34);
+.brand-logo {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 12px rgba(37, 99, 235, 0.14));
 }
 
 .form-header {
@@ -141,7 +140,7 @@ a {
 }
 
 .form-header h1 {
-    color: var(--auth-white);
+    color: var(--auth-text);
     font-size: clamp(1.75rem, 4vw, 2.25rem);
     line-height: 1.15;
     font-weight: 800;
@@ -168,7 +167,7 @@ a {
 }
 
 .input-group label {
-    color: rgba(255, 255, 255, 0.92);
+    color: #22304a;
     font-size: 0.88rem;
     font-weight: 650;
 }
@@ -182,7 +181,7 @@ a {
 .input-icon {
     position: absolute;
     left: 16px;
-    color: rgba(255, 255, 255, 0.72);
+    color: #64748b;
     pointer-events: none;
 }
 
@@ -191,21 +190,21 @@ a {
     height: 50px;
     padding: 0 48px 0 46px;
     border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.16);
-    color: var(--auth-white);
+    border: 1px solid rgba(255, 255, 255, 0.62);
+    background: rgba(255, 255, 255, 0.52);
+    color: var(--auth-text);
     font: 500 0.95rem var(--auth-font);
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 .auth-input::placeholder {
-    color: rgba(255, 255, 255, 0.68);
+    color: #94a3b8;
 }
 
 .auth-input:focus {
     border-color: #60a5fa;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.74);
     box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.18);
 }
 
@@ -225,14 +224,14 @@ a {
     border: 0;
     border-radius: 10px;
     background: transparent;
-    color: rgba(255, 255, 255, 0.78);
+    color: #64748b;
     cursor: pointer;
 }
 
 .toggle-password:hover,
 .toggle-password:focus-visible {
-    color: var(--auth-white);
-    background: rgba(255, 255, 255, 0.12);
+    color: var(--auth-blue);
+    background: rgba(37, 99, 235, 0.08);
     outline: none;
 }
 
@@ -249,12 +248,12 @@ a {
 }
 
 .auth-link a {
-    color: #bfdbfe;
+    color: var(--auth-blue);
     font-weight: 700;
 }
 
 .auth-link a:hover {
-    color: var(--auth-white);
+    color: var(--auth-indigo);
     text-decoration: underline;
 }
 
@@ -306,22 +305,115 @@ a {
 }
 
 .alert-error {
-    color: #fee2e2;
-    background: rgba(127, 29, 29, 0.38);
-    border: 1px solid rgba(254, 202, 202, 0.35);
+    color: #991b1b;
+    background: rgba(254, 226, 226, 0.9);
+    border: 1px solid rgba(248, 113, 113, 0.28);
 }
 
 .alert-success {
     color: var(--auth-success);
-    background: rgba(20, 83, 45, 0.36);
-    border: 1px solid rgba(187, 247, 208, 0.32);
+    background: rgba(220, 252, 231, 0.9);
+    border: 1px solid rgba(34, 197, 94, 0.28);
 }
 
 .alert-info,
 .alert-warning {
+    color: #1e3a8a;
+    background: rgba(219, 234, 254, 0.9);
+    border: 1px solid rgba(96, 165, 250, 0.28);
+}
+
+html[data-theme="dark"] body {
+    color: #eaf3ff;
+}
+
+html[data-theme="dark"] .auth-page::before {
+    background:
+        radial-gradient(circle at 78% 18%, rgba(56, 189, 248, 0.22), transparent 30%),
+        linear-gradient(135deg, rgba(2, 6, 23, 0.58), rgba(15, 23, 42, 0.34));
+}
+
+html[data-theme="dark"] .back-home {
+    background: rgba(15, 23, 42, 0.46);
+    border-color: rgba(148, 163, 184, 0.34);
     color: #dbeafe;
-    background: rgba(30, 64, 175, 0.36);
-    border: 1px solid rgba(191, 219, 254, 0.32);
+}
+
+html[data-theme="dark"] .back-home:hover,
+html[data-theme="dark"] .back-home:focus-visible {
+    background: rgba(37, 99, 235, 0.24);
+    color: #93c5fd;
+}
+
+html[data-theme="dark"] .auth-card {
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.66), rgba(30, 41, 59, 0.42)) !important;
+    border-color: rgba(148, 163, 184, 0.34) !important;
+    box-shadow: 0 24px 62px rgba(0, 0, 0, 0.34);
+}
+
+html[data-theme="dark"] .brand-mark,
+html[data-theme="dark"] .form-header h1 {
+    color: #f8fbff;
+}
+
+html[data-theme="dark"] .brand-mark strong,
+html[data-theme="dark"] .auth-link a {
+    color: #60a5fa;
+}
+
+html[data-theme="dark"] .form-header p,
+html[data-theme="dark"] .auth-link {
+    color: #cbd5e1;
+}
+
+html[data-theme="dark"] .input-group label {
+    color: #e2e8f0;
+}
+
+html[data-theme="dark"] .auth-input {
+    background: rgba(15, 23, 42, 0.48);
+    border-color: rgba(148, 163, 184, 0.38);
+    color: #f8fafc;
+}
+
+html[data-theme="dark"] .auth-input::placeholder {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .auth-input:focus {
+    background: rgba(15, 23, 42, 0.66);
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.2);
+}
+
+html[data-theme="dark"] .input-icon,
+html[data-theme="dark"] .toggle-password {
+    color: #94a3b8;
+}
+
+html[data-theme="dark"] .toggle-password:hover,
+html[data-theme="dark"] .toggle-password:focus-visible {
+    color: #bfdbfe;
+    background: rgba(96, 165, 250, 0.12);
+}
+
+html[data-theme="dark"] .alert-error {
+    color: #fecaca;
+    background: rgba(127, 29, 29, 0.46);
+    border-color: rgba(248, 113, 113, 0.34);
+}
+
+html[data-theme="dark"] .alert-success {
+    color: #bbf7d0;
+    background: rgba(20, 83, 45, 0.42);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+html[data-theme="dark"] .alert-info,
+html[data-theme="dark"] .alert-warning {
+    color: #dbeafe;
+    background: rgba(30, 64, 175, 0.42);
+    border-color: rgba(96, 165, 250, 0.3);
 }
 
 @media (max-width: 640px) {
