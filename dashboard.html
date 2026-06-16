@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wire Harness Production Monitoring</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        dashboard: {
+                            bg: '#050B14',
+                            card: 'rgba(13, 24, 43, 0.7)',
+                            cardBorder: 'rgba(56, 189, 248, 0.2)',
+                            cardGlow: 'rgba(56, 189, 248, 0.1)',
+                            accent: '#38bdf8', // Cyan
+                            accentHover: '#0ea5e9',
+                            success: '#22c55e',
+                            warning: '#eab308',
+                            danger: '#ef4444',
+                            purple: '#a855f7'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --glass-bg: rgba(13, 24, 43, 0.6);
+            --glass-border: rgba(56, 189, 248, 0.15);
+            --glass-glow: 0 0 15px rgba(56, 189, 248, 0.05);
+        }
+
+        body {
+            background: radial-gradient(circle at 50% 0%, #0a1128 0%, #050b14 100%);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-glow), inset 0 0 20px rgba(255, 255, 255, 0.02);
+            border-radius: 1rem;
+        }
+
+        .glass-panel-accent {
+            border-top: 2px solid #38bdf8;
+        }
+
+        .text-glow {
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+
+        .text-glow-green {
+            text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+
+        /* Number font */
+        .font-num {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Gradient Text */
+        .text-gradient {
+            background: linear-gradient(to right, #38bdf8, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Grid Layout */
+        #app {
+            display: grid;
+            grid-template-rows: 80px 1fr 60px;
+            grid-template-columns: 320px 1fr 350px;
+            grid-template-areas:
+                "header header header"
+                "sidebar main right"
+                "sidebar bottom bottom";
+            height: 100vh;
+        }
+
+        .area-header { grid-area: header; }
+        .area-sidebar { grid-area: sidebar; }
+        .area-main { grid-area: main; display: grid; grid-template-rows: auto 1fr; gap: 1rem; min-height: 0;}
+        .area-right { grid-area: right; }
+        .area-bottom { grid-area: bottom; }
+    </style>
+</head>
+<body class="bg-dashboard-bg text-white h-screen w-screen overflow-hidden font-sans">
+
+    <!-- Main Background Grid -->
+    <div class="fixed inset-0 z-[-1] pointer-events-none">
+        <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+CjxyZWN0IHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCIgZmlsbD0ibm9uZSI+PC9yZWN0Pgo8Y2lyY2xlIGN4PSIxIiBjeT0iMSIgcj0iMSIgZmlsbD0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjA1KSI+PC9jaXJjbGU+Cjwvc3ZnPg==')]"></div>
+        <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-dashboard-accent/10 rounded-full blur-[120px]"></div>
+        <div class="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-dashboard-purple/10 rounded-full blur-[150px]"></div>
+    </div>
+
+    <!-- Main Grid Container -->
+    <div id="app" class="p-4 gap-4 relative z-10">
+
+        <!-- HEADER -->
+        <header class="area-header glass-panel glass-panel-accent flex items-center justify-between px-6">
+            <div class="flex items-center gap-6">
+                <!-- Professional Wire Harness Logo -->
+                <div class="relative w-12 h-12 flex items-center justify-center">
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <path d="M 20 20 C 50 20, 50 80, 80 80" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M 20 40 C 40 40, 60 60, 80 60" fill="none" stroke="#22c55e" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M 20 60 C 60 60, 40 40, 80 40" fill="none" stroke="#eab308" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M 20 80 C 50 80, 50 20, 80 20" fill="none" stroke="#ef4444" stroke-width="4" stroke-linecap="round"/>
+                        <rect x="10" y="15" width="10" height="70" rx="2" fill="#94a3b8"/>
+                        <rect x="80" y="15" width="10" height="70" rx="2" fill="#94a3b8"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wider text-white">WIRE HARNESS PRODUCTION</h1>
+                    <h2 class="text-xs text-dashboard-accent tracking-[0.2em] font-medium">LIVE KPI CONTROL DASHBOARD</h2>
+                </div>
+            </div>
+
+            <div class="flex flex-col items-center">
+                <div class="text-sm text-slate-300 tracking-widest font-medium">Production KPI Command Center</div>
+                <div class="mt-1 px-4 py-0.5 bg-dashboard-accent/10 border border-dashboard-accent/30 rounded-full text-dashboard-accent text-sm font-bold tracking-widest">
+                    LINE 5
+                </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+                <div class="text-right border-r border-slate-700 pr-4">
+                    <div class="text-lg font-num font-bold text-white tracking-wider">03:53:38 PM</div>
+                    <div class="text-xs text-slate-400">May 06, 2026 | Tuesday</div>
+                </div>
+                <div class="flex items-center gap-2 px-4 py-2 bg-dashboard-success/10 border border-dashboard-success/30 rounded-lg">
+                    <div class="w-2.5 h-2.5 rounded-full bg-dashboard-success shadow-[0_0_8px_#22c55e] animate-pulse"></div>
+                    <span class="text-dashboard-success font-bold tracking-widest text-sm">RUNNING</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- LEFT SIDEBAR -->
+        <aside class="area-sidebar glass-panel flex flex-col p-5 gap-6">
+
+            <!-- Section 1: Running Project -->
+            <div class="flex flex-col gap-4">
+                <div class="flex items-center gap-2 text-dashboard-accent border-b border-slate-700/50 pb-2">
+                    <i data-lucide="target" class="w-5 h-5"></i>
+                    <h3 class="font-bold tracking-wider text-sm">RUNNING PROJECT</h3>
+                </div>
+
+                <div class="bg-dashboard-accent/5 border border-dashboard-accent/20 rounded-lg p-4 flex flex-col items-center justify-center mb-2">
+                    <div class="text-xs text-slate-400 uppercase tracking-widest mb-1">Project Number</div>
+                    <div class="text-3xl font-num font-bold text-white text-glow">9032072</div>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Customer</span>
+                        <span class="text-sm font-semibold text-white">ABC Wiring Systems</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Description</span>
+                        <span class="text-sm font-semibold text-white">Model ZX-120</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Order No.</span>
+                        <span class="text-sm font-num text-white">1207842</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Build Type</span>
+                        <span class="text-sm font-semibold text-dashboard-accent">Standard Build</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 2: Project Schedule -->
+            <div class="flex flex-col gap-4 mt-2">
+                <div class="flex items-center gap-2 text-dashboard-accent border-b border-slate-700/50 pb-2">
+                    <i data-lucide="calendar" class="w-5 h-5"></i>
+                    <h3 class="font-bold tracking-wider text-sm">PROJECT SCHEDULE</h3>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <div class="flex justify-between items-center bg-white/5 p-2 rounded">
+                        <span class="text-xs text-slate-300">Daily Target</span>
+                        <span class="text-base font-num font-bold text-white">240 PCS</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Start Date</span>
+                        <span class="text-sm font-num text-white">03/06/2026</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">End Date</span>
+                        <span class="text-sm font-num text-white">03/09/2026</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">Start Time</span>
+                        <span class="text-sm font-num text-white">11:15 AM</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400">End Time</span>
+                        <span class="text-sm font-num text-white">05:30 PM</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Badge Footer -->
+            <div class="mt-auto pt-4 border-t border-slate-700/50 flex justify-center">
+                <div class="text-4xl font-black text-slate-700/50 tracking-widest">BRP</div>
+            </div>
+        </aside>
+
+        <!-- MAIN AREA -->
+        <main class="area-main flex flex-col gap-4 min-h-0">
+            <!-- Hero / Top KPI -->
+            <div class="glass-panel p-6 flex items-center justify-between">
+
+                <!-- Main Output Highlight -->
+                <div class="flex items-center gap-6">
+                    <div class="flex flex-col">
+                        <div class="text-sm text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2">
+                            <i data-lucide="factory" class="w-4 h-4 text-dashboard-accent"></i>
+                            Current Output
+                        </div>
+                        <div class="flex items-end gap-3">
+                            <div class="text-7xl font-num font-black text-white text-glow leading-none tracking-tighter">173</div>
+                            <div class="text-lg text-slate-400 mb-1">PCS <br><span class="text-xs">completed today</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Circular Progress Ring -->
+                <div class="flex items-center gap-4 border-l border-slate-700/50 pl-6">
+                    <div class="relative w-24 h-24">
+                        <svg class="w-full h-full transform -rotate-90">
+                            <circle cx="48" cy="48" r="36" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8" />
+                            <circle cx="48" cy="48" r="36" fill="none" stroke="#22c55e" stroke-width="8" stroke-dasharray="226" stroke-dashoffset="115" class="shadow-[0_0_10px_#22c55e]" />
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center flex-col">
+                            <span class="text-2xl font-num font-bold text-white text-glow-green">49%</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-sm text-slate-400 uppercase tracking-widest">Target</span>
+                        <span class="text-2xl font-num font-bold text-white">240</span>
+                    </div>
+                </div>
+
+                <!-- Cycle & Yield Info -->
+                <div class="flex gap-4 border-l border-slate-700/50 pl-6">
+                    <div class="flex flex-col justify-center bg-white/5 px-4 py-3 rounded-lg border border-white/10">
+                        <span class="text-xs text-slate-400 uppercase tracking-widest mb-1">Cycle Time</span>
+                        <span class="text-xl font-num font-bold text-dashboard-accent">A | 23 Min</span>
+                    </div>
+                    <div class="flex flex-col justify-center bg-white/5 px-4 py-3 rounded-lg border border-white/10">
+                        <span class="text-xs text-slate-400 uppercase tracking-widest mb-1">1st Pass Yield</span>
+                        <span class="text-xl font-num font-bold text-dashboard-success">98%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Container Placeholder -->
+            <div class="glass-panel p-5 flex flex-col min-h-0 relative flex-grow">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-white font-bold tracking-wider text-sm uppercase">HOURLY OUTPUT</h3>
+                        <div class="text-xs text-slate-400">Final 02 PASS output by production hour</div>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="px-3 py-1 bg-white/5 border border-white/10 rounded text-xs text-slate-300">Today</span>
+                        <span class="px-3 py-1 bg-dashboard-accent/20 border border-dashboard-accent/30 rounded text-xs text-dashboard-accent font-semibold">Hourly</span>
+                    </div>
+                </div>
+
+                <div class="flex-grow relative min-h-0">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+        </main>
+
+        <!-- RIGHT QUALITY PANEL -->
+        <aside class="area-right glass-panel flex flex-col p-5 gap-4">
+            <div class="flex items-center justify-between border-b border-slate-700/50 pb-2">
+                <div class="flex items-center gap-2 text-dashboard-danger">
+                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                    <h3 class="font-bold tracking-wider text-sm uppercase">Quality Monitor</h3>
+                </div>
+                <div class="text-xs text-slate-400">Defect Breakdown</div>
+            </div>
+
+            <div class="flex flex-col gap-3 flex-grow">
+
+                <!-- Test Fail -->
+                <div class="flex items-center justify-between p-3 bg-dashboard-danger/10 border-l-4 border-dashboard-danger rounded-r-lg">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="zap" class="w-4 h-4 text-dashboard-danger"></i>
+                        <span class="text-sm font-semibold text-white">Test Fail</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-xs text-dashboard-danger font-num">1.0%</span>
+                        <span class="text-xl font-num font-bold text-white">2</span>
+                    </div>
+                </div>
+
+                <!-- Visual Fail -->
+                <div class="flex items-center justify-between p-3 bg-dashboard-warning/10 border-l-4 border-dashboard-warning rounded-r-lg">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="eye" class="w-4 h-4 text-dashboard-warning"></i>
+                        <span class="text-sm font-semibold text-white">Visual Fail</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-xs text-dashboard-warning font-num">0.5%</span>
+                        <span class="text-xl font-num font-bold text-white">1</span>
+                    </div>
+                </div>
+
+                <!-- Length Fail -->
+                <div class="flex items-center justify-between p-3 bg-yellow-300/10 border-l-4 border-yellow-300 rounded-r-lg">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="ruler" class="w-4 h-4 text-yellow-300"></i>
+                        <span class="text-sm font-semibold text-white">Length Fail</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-xs text-yellow-300 font-num">0.5%</span>
+                        <span class="text-xl font-num font-bold text-white">1</span>
+                    </div>
+                </div>
+
+                <div class="mt-auto border-t border-slate-700/50 pt-4">
+                    <div class="flex items-center justify-between p-4 bg-dashboard-danger/20 border border-dashboard-danger/50 rounded-lg shadow-[0_0_15px_rgba(239,68,68,0.15)]">
+                        <span class="text-base font-bold text-white uppercase tracking-wider">Total Fail</span>
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm text-dashboard-danger font-num font-bold">2.0%</span>
+                            <span class="text-3xl font-num font-black text-dashboard-danger text-glow">4</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </aside>
+
+        <!-- BOTTOM KPI SECTION -->
+        <footer class="area-bottom grid grid-cols-5 gap-4">
+
+            <div class="glass-panel p-4 flex items-center justify-between border-b-2 border-dashboard-accent">
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400 uppercase tracking-widest">CONWIP</span>
+                    <div class="flex items-end gap-1">
+                        <span class="text-2xl font-num font-bold text-white">23</span>
+                        <span class="text-xs text-slate-500 mb-1">Cards</span>
+                    </div>
+                </div>
+                <i data-lucide="layers" class="w-8 h-8 text-slate-600"></i>
+            </div>
+
+            <div class="glass-panel p-4 flex items-center justify-between border-b-2 border-dashboard-accent">
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400 uppercase tracking-widest">Running WIP</span>
+                    <div class="flex items-end gap-1">
+                        <span class="text-2xl font-num font-bold text-white">8</span>
+                        <span class="text-xs text-slate-500 mb-1">PCS</span>
+                    </div>
+                </div>
+                <i data-lucide="activity" class="w-8 h-8 text-slate-600"></i>
+            </div>
+
+            <div class="glass-panel p-4 flex items-center justify-between border-b-2 border-dashboard-success">
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400 uppercase tracking-widest">1st Pass Yield</span>
+                    <span class="text-2xl font-num font-bold text-dashboard-success">98.0%</span>
+                </div>
+                <div class="text-xs font-bold text-dashboard-success bg-dashboard-success/10 px-2 py-1 rounded">EXCELLENT</div>
+            </div>
+
+            <div class="glass-panel p-4 flex items-center justify-between border-b-2 border-dashboard-purple">
+                <div class="flex flex-col">
+                    <span class="text-xs text-slate-400 uppercase tracking-widest">Output Balance</span>
+                    <div class="flex items-end gap-1">
+                        <span class="text-2xl font-num font-bold text-white">67</span>
+                        <span class="text-xs text-slate-500 mb-1">PCS rem</span>
+                    </div>
+                </div>
+                <i data-lucide="scale" class="w-8 h-8 text-slate-600"></i>
+            </div>
+
+            <div class="glass-panel p-4 flex items-center justify-between border-b-2 border-slate-500">
+                <div class="flex flex-col w-full gap-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400 uppercase tracking-widest">Team Attendance</span>
+                        <i data-lucide="users" class="w-4 h-4 text-slate-500"></i>
+                    </div>
+                    <div class="flex justify-between items-center mt-1">
+                        <div class="flex items-center gap-2">
+                            <div class="flex gap-0.5">
+                                <div class="w-2 h-2 rounded-full bg-dashboard-success"></div>
+                                <div class="w-2 h-2 rounded-full bg-dashboard-success"></div>
+                                <div class="w-2 h-2 rounded-full bg-dashboard-success"></div>
+                            </div>
+                            <span class="text-lg font-num font-bold text-white">22</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg font-num font-bold text-dashboard-danger">2</span>
+                            <div class="flex gap-0.5">
+                                <div class="w-2 h-2 rounded-full bg-dashboard-danger"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </footer>
+
+        <!-- FOOTER STRIP -->
+        <div class="absolute bottom-1 left-4 right-4 flex justify-between items-center text-[10px] text-slate-500 tracking-widest z-20">
+            <div>QUALITY FIRST &middot; SAFETY ALWAYS &middot; ZERO DEFECTS</div>
+            <div class="flex items-center gap-4">
+                <span>LAST UPDATED: 03:53:38 PM</span>
+                <div class="flex items-center gap-1">
+                    <span>AUTO REFRESH: ON</span>
+                    <div class="w-1.5 h-1.5 rounded-full bg-dashboard-success animate-pulse"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Chart.js Setup
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+
+            // Custom plugin to draw clock icon on zero values (future slots)
+            const emptyStatePlugin = {
+                id: 'emptyStatePlugin',
+                afterDatasetsDraw(chart, args, options) {
+                    const { ctx, data, chartArea, scales: { x, y } } = chart;
+                    ctx.save();
+
+                    data.datasets[0].data.forEach((value, index) => {
+                        if (value === 0 && index >= 9) { // Future hours
+                            const xPos = x.getPixelForValue(index);
+                            const yPos = y.getPixelForValue(0);
+
+                            // Draw dashed placeholder bar
+                            ctx.beginPath();
+                            ctx.setLineDash([4, 4]);
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                            ctx.lineWidth = 1;
+                            ctx.moveTo(xPos - 10, y.getPixelForValue(30));
+                            ctx.lineTo(xPos + 10, y.getPixelForValue(30));
+                            ctx.lineTo(xPos + 10, yPos);
+                            ctx.lineTo(xPos - 10, yPos);
+                            ctx.closePath();
+                            ctx.stroke();
+
+                            // Draw clock icon
+                            ctx.beginPath();
+                            ctx.setLineDash([]);
+                            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+                            ctx.lineWidth = 1.5;
+                            ctx.arc(xPos, y.getPixelForValue(15), 6, 0, Math.PI * 2);
+                            ctx.stroke();
+
+                            // Clock hands
+                            ctx.beginPath();
+                            ctx.moveTo(xPos, y.getPixelForValue(15));
+                            ctx.lineTo(xPos, y.getPixelForValue(15) - 3);
+                            ctx.moveTo(xPos, y.getPixelForValue(15));
+                            ctx.lineTo(xPos + 2, y.getPixelForValue(15) + 2);
+                            ctx.stroke();
+                        }
+                    });
+                    ctx.restore();
+                }
+            };
+
+            // Gradient for bars
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, '#a855f7'); // Purple
+            gradient.addColorStop(1, '#38bdf8'); // Blue
+
+            new Chart(ctx, {
+                type: 'bar',
+                plugins: [emptyStatePlugin],
+                data: {
+                    labels: ['1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM'],
+                    datasets: [{
+                        label: 'Output',
+                        data: [7, 29, 31, 30, 28, 29, 22, 15, 16, 0, 0, 0, 0],
+                        backgroundColor: function(context) {
+                            return context.raw > 0 ? gradient : 'transparent';
+                        },
+                        borderRadius: 4,
+                        borderWidth: 0,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 20
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(13, 24, 43, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#38bdf8',
+                            titleFont: { family: 'Inter', size: 13 },
+                            bodyFont: { family: 'JetBrains Mono', size: 14, weight: 'bold' },
+                            padding: 10,
+                            borderColor: 'rgba(56, 189, 248, 0.3)',
+                            borderWidth: 1,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw + ' PCS';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 40,
+                            ticks: {
+                                stepSize: 10,
+                                color: '#64748b',
+                                font: {
+                                    family: 'JetBrains Mono',
+                                    size: 11
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false,
+                                borderDash: [4, 4]
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#94a3b8',
+                                font: {
+                                    family: 'Inter',
+                                    size: 11,
+                                    weight: 500
+                                }
+                            },
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            }
+                        }
+                    },
+                    animation: {
+                        onComplete: function() {
+                            const chartInstance = this;
+                            const ctx = chartInstance.ctx;
+                            ctx.font = 'bold 12px JetBrains Mono';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'bottom';
+                            ctx.fillStyle = '#fff';
+
+                            chartInstance.data.datasets.forEach(function(dataset, i) {
+                                const meta = chartInstance.getDatasetMeta(i);
+                                meta.data.forEach(function(bar, index) {
+                                    const data = dataset.data[index];
+                                    if (data > 0) {
+                                        ctx.fillText(data, bar.x, bar.y - 5);
+                                    }
+                                });
+                            });
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
