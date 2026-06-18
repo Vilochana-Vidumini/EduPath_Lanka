@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wire Harness Production Dashboard</title>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            800: '#1a1f35',
+                            900: '#0f1322',
+                        },
+                        glass: {
+                            100: 'rgba(255, 255, 255, 0.05)',
+                            200: 'rgba(255, 255, 255, 0.1)',
+                            border: 'rgba(255, 255, 255, 0.15)',
+                        },
+                        accent: {
+                            cyan: '#00f0ff',
+                            blue: '#0070f3',
+                            violet: '#7928ca',
+                            green: '#00e676',
+                        },
+                        status: {
+                            red: '#ff4d4f',
+                            orange: '#faad14',
+                            yellow: '#fadb14',
+                        }
+                    },
+                    backgroundImage: {
+                        'dashboard-bg': 'radial-gradient(circle at top right, #1a153a, #0b0f19 60%, #050810)',
+                        'glass-gradient': 'linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+                        'glow-cyan': '0 0 15px rgba(0, 240, 255, 0.4)',
+                        'glow-blue': '0 0 15px rgba(0, 112, 243, 0.4)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS for elements that Tailwind doesn't handle natively as easily -->
+    <style>
+        body {
+            background: radial-gradient(circle at top right, #1a153a, #0b0f19 60%, #050810);
+            color: #f8fafc;
+            /* 1920x1080 fixed aspect ratio */
+            width: 1920px;
+            height: 1080px;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        /* Circular Progress styling */
+        .circular-chart {
+            display: block;
+            margin: 0 auto;
+            max-width: 80%;
+            max-height: 250px;
+        }
+        .circle-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.1);
+            stroke-width: 3;
+        }
+        .circle {
+            fill: none;
+            stroke-width: 3;
+            stroke-linecap: round;
+        }
+    </style>
+
+    <!-- Chart.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Lucide Icons via CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="font-sans antialiased flex flex-col p-6 gap-4 box-border">
+    <!-- Main Header -->
+    <header class="w-full h-24 glass-panel rounded-2xl flex items-center justify-between px-6 shrink-0 border-b border-glass-border">
+        <!-- Left: Logo & Title -->
+        <div class="flex items-center gap-6">
+            <!-- Wire Harness Logo SVG -->
+            <div class="w-16 h-16 flex items-center justify-center bg-black/20 rounded-xl border border-glass-border shadow-inner">
+                <svg viewBox="0 0 100 100" class="w-12 h-12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Connector Left -->
+                    <rect x="10" y="25" width="15" height="50" rx="2" fill="#334155" stroke="#94a3b8" stroke-width="2"/>
+                    <rect x="5" y="30" width="5" height="40" rx="1" fill="#475569"/>
+                    <!-- Connector Right -->
+                    <rect x="75" y="25" width="15" height="50" rx="2" fill="#334155" stroke="#94a3b8" stroke-width="2"/>
+                    <rect x="90" y="30" width="5" height="40" rx="1" fill="#475569"/>
+                    <!-- Wires -->
+                    <path d="M25 35 C 40 35, 60 20, 75 35" stroke="#00f0ff" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <path d="M25 45 C 45 45, 55 45, 75 45" stroke="#00e676" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <path d="M25 55 C 50 65, 50 45, 75 55" stroke="#fadb14" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <path d="M25 65 C 40 80, 60 80, 75 65" stroke="#ff4d4f" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <!-- Wire Nodes -->
+                    <circle cx="25" cy="35" r="2" fill="#e2e8f0"/>
+                    <circle cx="75" cy="35" r="2" fill="#e2e8f0"/>
+                    <circle cx="25" cy="45" r="2" fill="#e2e8f0"/>
+                    <circle cx="75" cy="45" r="2" fill="#e2e8f0"/>
+                    <circle cx="25" cy="55" r="2" fill="#e2e8f0"/>
+                    <circle cx="75" cy="55" r="2" fill="#e2e8f0"/>
+                    <circle cx="25" cy="65" r="2" fill="#e2e8f0"/>
+                    <circle cx="75" cy="65" r="2" fill="#e2e8f0"/>
+                </svg>
+            </div>
+
+            <div class="flex flex-col">
+                <h1 class="text-2xl font-black tracking-wider text-white drop-shadow-md">WIRE HARNESS PRODUCTION</h1>
+                <h2 class="text-sm font-semibold text-accent-cyan tracking-widest uppercase">Live KPI Control Dashboard</h2>
+            </div>
+        </div>
+
+        <!-- Center: Badge & Line -->
+        <div class="flex flex-col items-center justify-center gap-2">
+            <div class="bg-navy-800/80 border border-accent-blue/30 px-6 py-1.5 rounded-full shadow-glow-blue">
+                <span class="text-sm font-bold text-blue-100 tracking-wider">PRODUCTION KPI COMMAND CENTER</span>
+            </div>
+            <div class="flex items-center gap-2 bg-black/30 px-4 py-1 rounded-full border border-glass-border">
+                <i data-lucide="factory" class="w-4 h-4 text-gray-400"></i>
+                <span class="text-sm font-bold text-gray-200">Line 5</span>
+            </div>
+        </div>
+
+        <!-- Right: Time, Date, Status -->
+        <div class="flex items-center gap-3">
+            <div class="flex flex-col items-end justify-center bg-black/20 px-4 py-2 rounded-xl border border-glass-border min-w-[140px]">
+                <div class="flex items-center gap-2 mb-1">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5 text-gray-400"></i>
+                    <span class="text-xs text-gray-300 font-medium uppercase">May 06, 2026 | Tuesday</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="clock" class="w-4 h-4 text-accent-cyan"></i>
+                    <span class="text-xl font-bold text-white tabular-nums tracking-tight">03:53:38 PM</span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-center bg-green-900/40 border border-status-green/50 px-6 py-3 rounded-xl shadow-[0_0_15px_rgba(0,230,118,0.2)] h-full">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-3 h-3 rounded-full bg-status-green animate-pulse shadow-[0_0_10px_#00e676]"></div>
+                    <span class="text-status-green font-bold tracking-widest text-lg">RUNNING</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex flex-row gap-4 flex-1 min-h-0">
+        <!-- Left Sidebar -->
+        <aside class="w-80 glass-panel rounded-2xl flex flex-col p-5 shrink-0 justify-between">
+            <div class="flex flex-col gap-6">
+                <!-- Section 1: Running Project -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i data-lucide="layers" class="w-4 h-4 text-accent-blue"></i>
+                        Running Project
+                    </h3>
+
+                    <div class="flex flex-col gap-3">
+                        <div class="bg-black/30 border border-accent-blue/40 p-3 rounded-xl shadow-[0_0_10px_rgba(0,112,243,0.15)] flex flex-col items-center justify-center">
+                            <span class="text-xs text-blue-200 mb-1">Project Number</span>
+                            <span class="text-2xl font-black text-white tracking-wider">9032072</span>
+                        </div>
+
+                        <div class="flex flex-col gap-1 mt-2">
+                            <span class="text-[11px] text-gray-400 uppercase tracking-wider">Customer</span>
+                            <span class="text-sm font-semibold text-gray-100">ABC Wiring Systems</span>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[11px] text-gray-400 uppercase tracking-wider">Description</span>
+                            <span class="text-sm font-semibold text-gray-100">Model ZX-120</span>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[11px] text-gray-400 uppercase tracking-wider">Order No.</span>
+                            <span class="text-sm font-semibold text-gray-100">1207842</span>
+                        </div>
+
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[11px] text-gray-400 uppercase tracking-wider">Build Type</span>
+                            <span class="text-sm font-semibold text-accent-cyan">Standard Build</span>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-glass-border">
+
+                <!-- Section 2: Project Schedule -->
+                <div>
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i data-lucide="calendar-clock" class="w-4 h-4 text-accent-violet"></i>
+                        Project Schedule
+                    </h3>
+
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg border border-glass-border">
+                            <span class="text-xs text-gray-400">Daily Target</span>
+                            <span class="text-sm font-bold text-white">240 PCS</span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="flex flex-col bg-white/5 p-2 rounded-lg border border-glass-border">
+                                <span class="text-[10px] text-gray-400 uppercase">Start Date</span>
+                                <span class="text-xs font-bold text-gray-200">03/06/2026</span>
+                            </div>
+                            <div class="flex flex-col bg-white/5 p-2 rounded-lg border border-glass-border">
+                                <span class="text-[10px] text-gray-400 uppercase">End Date</span>
+                                <span class="text-xs font-bold text-gray-200">03/09/2026</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="flex flex-col bg-white/5 p-2 rounded-lg border border-glass-border">
+                                <span class="text-[10px] text-gray-400 uppercase">Start Time</span>
+                                <span class="text-xs font-bold text-gray-200">11:15 AM</span>
+                            </div>
+                            <div class="flex flex-col bg-white/5 p-2 rounded-lg border border-glass-border">
+                                <span class="text-[10px] text-gray-400 uppercase">End Time</span>
+                                <span class="text-xs font-bold text-gray-200">05:30 PM</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Badge -->
+            <div class="w-full flex justify-center items-center mt-6">
+                <div class="w-24 h-24 rounded-full border-4 border-glass-border bg-black/40 flex items-center justify-center shadow-glass">
+                    <span class="text-3xl font-black text-gray-200 tracking-tighter opacity-80">BRP</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center Column -->
+        <section class="flex flex-col gap-4 flex-1 min-w-0">
+            <!-- Top Hero/KPI -->
+            <div class="h-48 glass-panel rounded-2xl flex shrink-0 p-6 items-center justify-between border border-accent-cyan/20 bg-gradient-to-r from-navy-800/80 to-black/40">
+                <!-- Current Output Large -->
+                <div class="flex flex-col h-full justify-center">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                        <i data-lucide="target" class="w-5 h-5 text-accent-cyan"></i>
+                        Current Output
+                    </h3>
+                    <div class="flex items-baseline gap-4">
+                        <span class="text-7xl font-black text-white drop-shadow-[0_0_20px_rgba(0,240,255,0.6)] tracking-tighter tabular-nums leading-none">173</span>
+                        <span class="text-lg font-medium text-gray-400">PCS completed today</span>
+                    </div>
+                </div>
+
+                <!-- Middle KPI mini cards -->
+                <div class="flex flex-col gap-3 justify-center h-full border-l border-r border-glass-border px-8">
+                    <div class="flex items-center justify-between bg-black/30 px-4 py-2 rounded-lg border border-glass-border min-w-[220px]">
+                        <span class="text-xs text-gray-400 uppercase tracking-wide">Daily Target</span>
+                        <span class="text-lg font-bold text-white tabular-nums">240 <span class="text-xs font-normal text-gray-500">PCS</span></span>
+                    </div>
+                    <div class="flex items-center justify-between bg-black/30 px-4 py-2 rounded-lg border border-glass-border min-w-[220px]">
+                        <span class="text-xs text-gray-400 uppercase tracking-wide">Cycle Time</span>
+                        <span class="text-lg font-bold text-accent-violet tabular-nums">A | 23 <span class="text-xs font-normal text-gray-500">Min</span></span>
+                    </div>
+                    <div class="flex items-center justify-between bg-black/30 px-4 py-2 rounded-lg border border-glass-border min-w-[220px]">
+                        <span class="text-xs text-gray-400 uppercase tracking-wide">1st Pass Yield</span>
+                        <span class="text-lg font-bold text-status-green tabular-nums">98%</span>
+                    </div>
+                </div>
+
+                <!-- Completed Percentage Ring -->
+                <div class="flex flex-col items-center justify-center relative w-40 h-40">
+                    <svg viewBox="0 0 36 36" class="circular-chart w-32 h-32 drop-shadow-[0_0_15px_rgba(0,230,118,0.3)]">
+                        <path class="circle-bg"
+                            d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path class="circle stroke-status-green"
+                            stroke-dasharray="49, 100"
+                            d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                    </svg>
+                    <div class="absolute flex flex-col items-center justify-center">
+                        <span class="text-3xl font-black text-white tabular-nums">49%</span>
+                        <span class="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Completed</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top KPI Cards (Removed to save space, integrated into Hero above as requested by design instructions "if space allows", since Hero covers them all beautifully) -->
+
+            <!-- Center Chart -->
+            <div class="glass-panel rounded-2xl flex-1 p-5 min-h-0 flex flex-col relative overflow-hidden">
+                <div class="flex justify-between items-center mb-4 shrink-0">
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-200 uppercase tracking-widest flex items-center gap-2">
+                            <i data-lucide="bar-chart-2" class="w-5 h-5 text-accent-blue"></i>
+                            HOURLY OUTPUT
+                        </h3>
+                        <span class="text-xs text-gray-400">Final 02 PASS output by production hour</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button class="bg-white/10 hover:bg-white/20 text-xs font-semibold px-3 py-1.5 rounded text-white transition-colors border border-glass-border">Today</button>
+                        <button class="bg-accent-blue/20 text-accent-cyan border border-accent-blue/40 text-xs font-semibold px-3 py-1.5 rounded transition-colors shadow-glow-blue">Hourly</button>
+                    </div>
+                </div>
+
+                <div class="flex-1 w-full relative min-h-0">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bottom KPI Section -->
+            <div class="flex flex-row gap-4 shrink-0 h-32">
+                <!-- CONWIP -->
+                <div class="flex-1 glass-panel rounded-xl flex items-center p-4 gap-4 border border-glass-border">
+                    <div class="w-12 h-12 rounded-lg bg-accent-blue/10 flex items-center justify-center border border-accent-blue/30">
+                        <i data-lucide="layers" class="w-6 h-6 text-accent-blue"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-1">CONWIP</span>
+                        <div class="flex items-baseline gap-1.5">
+                            <span class="text-3xl font-black text-white tabular-nums leading-none">23</span>
+                            <span class="text-[10px] text-gray-500 font-medium">Cards</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Running WIP -->
+                <div class="flex-1 glass-panel rounded-xl flex items-center p-4 gap-4 border border-glass-border">
+                    <div class="w-12 h-12 rounded-lg bg-accent-violet/10 flex items-center justify-center border border-accent-violet/30">
+                        <i data-lucide="loader" class="w-6 h-6 text-accent-violet"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-1">Running WIP</span>
+                        <div class="flex items-baseline gap-1.5">
+                            <span class="text-3xl font-black text-white tabular-nums leading-none">8</span>
+                            <span class="text-[10px] text-gray-500 font-medium">PCS</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 1st Pass Yield -->
+                <div class="flex-1 glass-panel rounded-xl flex items-center p-4 gap-4 border border-status-green/30 shadow-[0_0_10px_rgba(0,230,118,0.1)]">
+                    <div class="w-12 h-12 rounded-lg bg-status-green/10 flex items-center justify-center border border-status-green/30">
+                        <i data-lucide="check-circle-2" class="w-6 h-6 text-status-green"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-1">1st Pass Yield</span>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-3xl font-black text-status-green tabular-nums leading-none">98.0%</span>
+                            <span class="text-[10px] text-status-green/80 font-bold px-1.5 py-0.5 rounded bg-status-green/20">Excellent</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Output Balance -->
+                <div class="flex-1 glass-panel rounded-xl flex items-center p-4 gap-4 border border-glass-border">
+                    <div class="w-12 h-12 rounded-lg bg-accent-cyan/10 flex items-center justify-center border border-accent-cyan/30">
+                        <i data-lucide="scale" class="w-6 h-6 text-accent-cyan"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-1">Output Balance</span>
+                        <div class="flex items-baseline gap-1.5">
+                            <span class="text-3xl font-black text-white tabular-nums leading-none">67</span>
+                            <span class="text-[10px] text-gray-500 font-medium">PCS remaining</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Attendance -->
+                <div class="flex-[1.2] glass-panel rounded-xl flex items-center p-4 gap-4 border border-glass-border">
+                    <div class="w-12 h-12 rounded-lg bg-gray-500/10 flex items-center justify-center border border-gray-500/30">
+                        <i data-lucide="users" class="w-6 h-6 text-gray-300"></i>
+                    </div>
+                    <div class="flex flex-col flex-1">
+                        <span class="text-xs text-gray-400 uppercase tracking-widest font-semibold mb-2">Team Attendance</span>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 rounded-full bg-status-green shadow-[0_0_5px_#00e676]"></div>
+                                <span class="text-lg font-bold text-white tabular-nums">22 <span class="text-[10px] text-gray-400 font-normal uppercase">Present</span></span>
+                            </div>
+                            <div class="w-px h-6 bg-glass-border"></div>
+                            <div class="flex items-center gap-2">
+                                <div class="w-2 h-2 rounded-full bg-status-red shadow-[0_0_5px_#ff4d4f]"></div>
+                                <span class="text-lg font-bold text-gray-300 tabular-nums">2 <span class="text-[10px] text-gray-400 font-normal uppercase">Absent</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Quality Panel -->
+        <aside class="w-80 glass-panel rounded-2xl flex flex-col p-5 shrink-0">
+            <div class="mb-6">
+                <h3 class="text-sm font-bold text-gray-200 uppercase tracking-widest flex items-center gap-2">
+                    <i data-lucide="shield-alert" class="w-5 h-5 text-status-orange"></i>
+                    QUALITY MONITOR
+                </h3>
+                <span class="text-xs text-gray-400">Defect breakdown</span>
+            </div>
+
+            <div class="flex flex-col gap-4 flex-1">
+                <!-- Test Fail -->
+                <div class="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-status-red/30 relative overflow-hidden group">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-status-red"></div>
+                    <div class="flex items-center gap-3 pl-2">
+                        <div class="w-8 h-8 rounded bg-status-red/20 flex items-center justify-center">
+                            <i data-lucide="activity" class="w-4 h-4 text-status-red"></i>
+                        </div>
+                        <span class="text-sm font-semibold text-gray-200">Test Fail</span>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-xl font-bold text-status-red tabular-nums">2</span>
+                        <span class="text-[10px] text-status-red/80 font-medium">1.0%</span>
+                    </div>
+                </div>
+
+                <!-- Visual Fail -->
+                <div class="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-status-orange/30 relative overflow-hidden group">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-status-orange"></div>
+                    <div class="flex items-center gap-3 pl-2">
+                        <div class="w-8 h-8 rounded bg-status-orange/20 flex items-center justify-center">
+                            <i data-lucide="eye" class="w-4 h-4 text-status-orange"></i>
+                        </div>
+                        <span class="text-sm font-semibold text-gray-200">Visual Fail</span>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-xl font-bold text-status-orange tabular-nums">1</span>
+                        <span class="text-[10px] text-status-orange/80 font-medium">0.5%</span>
+                    </div>
+                </div>
+
+                <!-- Length Fail -->
+                <div class="flex items-center justify-between bg-black/20 p-3 rounded-xl border border-status-yellow/30 relative overflow-hidden group">
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-status-yellow"></div>
+                    <div class="flex items-center gap-3 pl-2">
+                        <div class="w-8 h-8 rounded bg-status-yellow/20 flex items-center justify-center">
+                            <i data-lucide="ruler" class="w-4 h-4 text-status-yellow"></i>
+                        </div>
+                        <span class="text-sm font-semibold text-gray-200">Length Fail</span>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-xl font-bold text-status-yellow tabular-nums">1</span>
+                        <span class="text-[10px] text-status-yellow/80 font-medium">0.5%</span>
+                    </div>
+                </div>
+
+                <div class="mt-auto"></div>
+
+                <!-- Total Fail -->
+                <div class="flex items-center justify-between bg-red-900/20 p-4 rounded-xl border border-status-red/50 shadow-[0_0_15px_rgba(255,77,79,0.15)] relative overflow-hidden">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded bg-status-red/20 flex items-center justify-center">
+                            <i data-lucide="alert-triangle" class="w-5 h-5 text-status-red"></i>
+                        </div>
+                        <span class="text-base font-black text-white tracking-wider">TOTAL FAIL</span>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-3xl font-black text-status-red tabular-nums drop-shadow-[0_0_8px_rgba(255,77,79,0.5)]">4</span>
+                        <span class="text-xs text-status-red font-bold">2.0%</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full h-12 glass-panel rounded-xl flex items-center justify-between px-6 shrink-0 border-t border-glass-border bg-black/40">
+        <div class="flex items-center gap-6">
+            <span class="text-xs font-bold text-gray-400 tracking-[0.2em]">QUALITY FIRST &middot; SAFETY ALWAYS &middot; ZERO DEFECTS</span>
+        </div>
+
+        <div class="flex items-center gap-6">
+            <div class="flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="w-3 h-3 text-gray-400"></i>
+                <span class="text-[10px] text-gray-400 uppercase tracking-wider">Last Updated: <span class="text-white font-semibold">03:53:38 PM</span></span>
+            </div>
+            <div class="flex items-center gap-2 bg-white/5 px-3 py-1 rounded border border-glass-border">
+                <div class="w-1.5 h-1.5 rounded-full bg-status-green animate-pulse"></div>
+                <span class="text-[10px] text-gray-300 uppercase tracking-wider font-semibold">Auto Refresh: <span class="text-status-green">ON</span></span>
+            </div>
+        </div>
+    </footer>
+    <!-- Scripts -->
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        // Initialize Hourly Output Chart
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('hourlyChart').getContext('2d');
+
+            // Create Gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, '#00f0ff'); // Cyan top
+            gradient.addColorStop(1, '#7928ca'); // Purple bottom
+
+            // Create Dashed Pattern for empty bars (approximated via plugin/styling)
+            // For simplicity in standard Chart.js, we'll use a semi-transparent gray with borderDash for empty
+
+            const labels = ['1 AM', '2 AM', '3 AM', '4 AM', '5 AM', '6 AM', '7 AM', '8 AM', '9 AM', '10 AM', '11 AM', '12 PM', '1 PM'];
+            const dataValues = [7, 29, 31, 30, 28, 29, 22, 15, 16, 0, 0, 0, 0];
+
+            const backgroundColors = dataValues.map(val => val > 0 ? gradient : 'rgba(255, 255, 255, 0.05)');
+            const borderColors = dataValues.map(val => val > 0 ? 'transparent' : 'rgba(255, 255, 255, 0.2)');
+            const borderDashes = dataValues.map(val => val > 0 ? [] : [5, 5]);
+            const borderThickness = dataValues.map(val => val > 0 ? 0 : 2);
+
+            // Custom plugin to draw labels above bars and clock icon for empty ones
+            const customDataLabels = {
+                id: 'customDataLabels',
+                afterDatasetsDraw(chart, args, pluginOptions) {
+                    const { ctx, data, chartArea: { top, bottom, left, right, width, height }, scales: { x, y } } = chart;
+                    ctx.save();
+
+                    data.datasets[0].data.forEach((datapoint, index) => {
+                        const val = datapoint;
+                        const xPos = chart.getDatasetMeta(0).data[index].x;
+                        const yPos = chart.getDatasetMeta(0).data[index].y;
+
+                        if (val > 0) {
+                            // Draw value above bar
+                            ctx.font = 'bold 14px Inter';
+                            ctx.fillStyle = '#ffffff';
+                            ctx.textAlign = 'center';
+                            ctx.fillText(val, xPos, yPos - 10);
+                        } else {
+                            // Draw clock icon (approximated with a circle and lines) for empty future bars
+                            // Using a simple circle to represent the "clock-style icon" requested
+                            ctx.beginPath();
+                            ctx.arc(xPos, bottom - 20, 8, 0, 2 * Math.PI);
+                            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+                            ctx.lineWidth = 1.5;
+                            ctx.stroke();
+
+                            ctx.beginPath();
+                            ctx.moveTo(xPos, bottom - 20);
+                            ctx.lineTo(xPos, bottom - 24);
+                            ctx.moveTo(xPos, bottom - 20);
+                            ctx.lineTo(xPos + 3, bottom - 20);
+                            ctx.stroke();
+                        }
+                    });
+
+                    ctx.restore();
+                }
+            };
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Output',
+                        data: dataValues,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: borderThickness,
+                        borderDash: borderDashes,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        barPercentage: 0.6,
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                        padding: {
+                            top: 30 // space for labels
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(15, 19, 34, 0.9)',
+                            titleFont: { family: 'Inter', size: 13 },
+                            bodyFont: { family: 'Inter', size: 14, weight: 'bold' },
+                            padding: 10,
+                            borderColor: 'rgba(255,255,255,0.1)',
+                            borderWidth: 1,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y + ' PCS';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 40,
+                            ticks: {
+                                stepSize: 10,
+                                color: '#94a3b8',
+                                font: {
+                                    family: 'Inter',
+                                    size: 11,
+                                    weight: '600'
+                                },
+                                padding: 10
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)',
+                                drawBorder: false,
+                                tickLength: 0,
+                                borderDash: [4, 4]
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#94a3b8',
+                                font: {
+                                    family: 'Inter',
+                                    size: 11,
+                                    weight: '600'
+                                },
+                                padding: 10
+                            },
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            }
+                        }
+                    }
+                },
+                plugins: [customDataLabels]
+            });
+        });
+    </script>
+</body>
+</html>
