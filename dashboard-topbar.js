@@ -8,37 +8,29 @@ let dashboardGreetingName = 'User';
 let activeNotificationUid = '';
 
 export function ensureDashboardTopbarLayout() {
+    const topbar = document.querySelector('.topbar');
     const topbarRight = document.querySelector('.topbar-right');
     if (!topbarRight) return;
 
     topbarRight.classList.add('dashboard-topbar-actions');
 
-    if (!document.querySelector('.dashboard-clock-card')) {
-        const welcomeSlot = document.querySelector('.dashboard-section.active .welcome-card, .welcome-card');
-        const profileSlot = topbarRight.querySelector('.user-profile, .ep-avatar-container');
-        const clock = document.createElement('div');
+    let clock = document.querySelector('.dashboard-clock-card');
+    if (!clock) {
+        clock = document.createElement('div');
         clock.className = 'dashboard-clock-card';
         clock.innerHTML = `
             <span class="dashboard-greeting" id="dashboard-greeting">Good Day, User</span>
             <span class="dashboard-date" id="dashboard-date">Today</span>
             <time class="dashboard-live-clock" id="dashboard-live-clock" datetime="">--:--:--</time>
         `;
-        if (welcomeSlot) {
-            welcomeSlot.appendChild(clock);
-        } else if (profileSlot) {
-            const topbar = document.querySelector('.topbar');
-            if (topbar?.parentElement) {
-                const strip = document.createElement('section');
-                strip.className = 'dashboard-welcome-strip';
-                strip.appendChild(clock);
-                topbar.insertAdjacentElement('afterend', strip);
-            } else {
-                topbarRight.insertBefore(clock, profileSlot);
-            }
-        } else {
-            topbarRight.appendChild(clock);
-        }
     }
+    clock.classList.add('topbar-clock-card');
+    const profileSlot = topbarRight.querySelector('.user-profile, .ep-avatar-container');
+    const firstAction = topbarRight.querySelector('.live-sync, .theme-toggle, .topbar-theme-wrap, .notification-wrap') || profileSlot || topbarRight.firstElementChild;
+    if (clock.parentElement !== topbarRight || clock.nextElementSibling !== firstAction) {
+        topbarRight.insertBefore(clock, firstAction);
+    }
+    if (topbar) topbar.classList.add('has-topbar-clock');
 
     if (!topbarRight.querySelector('.notification-wrap')) {
         const profileSlot = topbarRight.querySelector('.user-profile, .ep-avatar-container');
@@ -290,6 +282,16 @@ async function openNotification(notification = {}) {
             window.dispatchEvent(new HashChangeEvent('hashchange'));
         } else {
             window.location.href = 'admin-dashboard.html#support-inbox';
+        }
+    } else if (String(notification.type || '').startsWith('appointment_')) {
+        if (location.pathname.toLowerCase().endsWith('/mentor-dashboard.html') || document.getElementById('appointments')) {
+            location.hash = 'appointments';
+            window.dispatchEvent(new HashChangeEvent('hashchange'));
+            window.dispatchEvent(new PopStateEvent('popstate'));
+        } else if (location.pathname.toLowerCase().endsWith('/student-dashboard.html') || document.getElementById('mentor-sessions-section')) {
+            location.hash = 'mentor-sessions';
+            window.dispatchEvent(new HashChangeEvent('hashchange'));
+            window.dispatchEvent(new PopStateEvent('popstate'));
         }
     }
 }

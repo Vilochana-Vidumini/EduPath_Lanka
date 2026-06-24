@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS (Reusing some structure from student, but separate file) -->
     <link rel="stylesheet" href="mentor-dashboard.css">
-    <link rel="stylesheet" href="theme.css?v=20260614-mentor-student-tables">
+    <link rel="stylesheet" href="theme.css?v=20260624-mentor-toggle-fix">
 </head>
 <body class="mentor-dashboard-page">
 
@@ -37,13 +37,14 @@
             </div>
         </div>
         <ul class="sidebar-links">
-            <li><a href="#overview-section" data-section="overview-section" class="active" title="Dashboard"><i class="fas fa-tachometer-alt"></i><span class="sidebar-label">Dashboard</span></a></li>
+            <li><a href="#overview-section" data-section="overview-section" class="active" title="Dashboard"><i class="fas fa-table-cells-large"></i><span class="sidebar-label">Dashboard</span></a></li>
             <li><a href="profile.html" title="My Profile"><i class="fas fa-user-tie"></i><span class="sidebar-label">My Profile</span></a></li>
             <li><a href="#requests" data-section="requests" title="Student Requests"><i class="fas fa-user-plus"></i><span class="sidebar-label">Student Requests</span> <span class="badge badge-warning" id="req-count">0</span></a></li>
             <li><a href="#accepted" data-section="accepted" title="My Mentees"><i class="fas fa-user-check"></i><span class="sidebar-label">My Mentees</span></a></li>
             <li><a href="#messages" data-section="messages" title="Messages"><i class="fas fa-comments"></i><span class="sidebar-label">Messages</span></a></li>
             <li><a href="#rejected" data-section="rejected" title="Closed Requests"><i class="fas fa-user-times"></i><span class="sidebar-label">Closed Requests</span></a></li>
             <li><a href="#availability" data-section="availability" title="Availability"><i class="fas fa-calendar-check"></i><span class="sidebar-label">Availability</span></a></li>
+            <li><a href="#appointments" data-section="appointments" title="Appointments"><i class="fas fa-calendar-days"></i><span class="sidebar-label">Appointments</span></a></li>
             <li><a href="#resources" data-section="resources" title="Guidance Resources"><i class="fas fa-book-reader"></i><span class="sidebar-label">Guidance Resources</span></a></li>
             <li><a href="#support" data-section="support" title="Chat with Admin"><i class="fas fa-headset"></i><span class="sidebar-label">Chat with Admin</span></a></li>
             <li><a href="index.html" title="Home"><i class="fas fa-home"></i><span class="sidebar-label">Home</span></a></li>
@@ -60,6 +61,11 @@
                 <h2 class="page-title">Mentor Dashboard</h2>
             </div>
             <div class="topbar-right dashboard-topbar-actions">
+                <div class="dashboard-clock-card topbar-clock-card">
+                    <span class="dashboard-greeting" id="dashboard-greeting">Good Day</span>
+                    <span class="dashboard-date" id="dashboard-date">Today</span>
+                    <time class="dashboard-live-clock" id="dashboard-live-clock" datetime="">--:--</time>
+                </div>
                 <div class="user-profile">
                     <div class="avatar"><i class="fas fa-user-tie"></i></div>
                     <span class="user-name" id="top-user-name">Loading...</span>
@@ -74,15 +80,49 @@
             
             <!-- 1. Welcome Card -->
             <section class="welcome-card mentor-hero-card glass">
-                <div class="mentor-hero-visual" aria-hidden="true">
-                    <img src="images/mentor-dashboard-illustration.png" alt="">
+                <div class="mentor-hero-main">
+                    <div class="mentor-hero-visual" aria-hidden="true">
+                        <img src="images/mentor-dashboard-illustration.png" alt="">
+                    </div>
+                    <div class="welcome-content">
+                        <span class="mentor-kicker">Welcome back,</span>
+                        <h1 id="welcome-name">Mentor</h1>
+                        <p class="motivational-text">Every conversation can change a future. Keep guiding, keep inspiring!</p>
+                        <div class="mentor-hero-actions">
+                            <button class="btn btn-primary btn-sm" type="button" data-section-jump="appointments"><i class="fas fa-calendar-days"></i> View Appointments</button>
+                            <button class="btn btn-outline btn-sm" type="button" data-section-jump="availability"><i class="fas fa-calendar-plus"></i> Update Availability</button>
+                        </div>
+                        <div id="status-alert" class="alert hidden"></div>
+                    </div>
                 </div>
-                <div class="welcome-content">
-                    <span class="mentor-kicker">Welcome back,</span>
-                    <h1 id="welcome-name">Mentor</h1>
-                    <p class="motivational-text">Your guidance empowers students to find their path and achieve their dreams.</p>
-                    <div class="mentor-hero-note"><i class="fas fa-star"></i> One conversation can change a future.</div>
-                    <div id="status-alert" class="alert hidden"></div>
+                <div class="mentor-hero-side">
+                    <div class="mentor-summary-panel">
+                        <div class="mentor-summary-cell">
+                            <span class="summary-icon icon-calendar"><i class="fas fa-calendar-check"></i></span>
+                            <div>
+                                <span>Availability this week</span>
+                                <strong id="mentor-hero-availability">Set your availability</strong>
+                                <small>Choose mentoring days</small>
+                            </div>
+                        </div>
+                        <div class="mentor-summary-cell">
+                            <span class="summary-icon icon-people"><i class="fas fa-user-friends"></i></span>
+                            <div>
+                                <span>Next session</span>
+                                <strong id="mentor-next-session">No upcoming sessions</strong>
+                                <small>You're all caught up!</small>
+                            </div>
+                        </div>
+                        <div class="mentor-summary-progress">
+                            <div class="profile-ring"><span id="mentor-hero-profile-completion">0%</span></div>
+                            <div>
+                                <span>Profile completion</span>
+                                <strong>Almost there!</strong>
+                                <small>Complete your profile to unlock more opportunities.</small>
+                            </div>
+                            <button class="panel-link" type="button" data-section-jump="overview-section">Continue setup <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -115,9 +155,9 @@
                 <div class="stat-card glass mentor-stat-card">
                     <div class="stat-icon bg-blue"><i class="fas fa-comments"></i></div>
                     <div class="stat-info">
-                        <h4>Completed Sessions</h4>
-                        <h2>0</h2>
-                        <p>All time</p>
+                        <h4>Upcoming Sessions</h4>
+                        <h2 id="stat-upcoming-sessions">0</h2>
+                        <p>Accepted sessions</p>
                     </div>
                 </div>
                 <div class="stat-card glass mentor-stat-card">
@@ -183,6 +223,16 @@
 
                 <article class="overview-panel glass">
                     <div class="overview-panel-header">
+                        <h3>Upcoming Appointments</h3>
+                        <button class="panel-link" type="button" data-section-jump="appointments">View all</button>
+                    </div>
+                    <div id="overview-appointments-list" class="overview-list">
+                        <div class="empty-state compact"><i class="fas fa-calendar-check"></i><p>No upcoming sessions.</p></div>
+                    </div>
+                </article>
+
+                <article class="overview-panel glass">
+                    <div class="overview-panel-header">
                         <h3>Recent Messages</h3>
                         <button class="panel-link" type="button" data-section-jump="messages">View all</button>
                     </div>
@@ -202,7 +252,7 @@
             </div>
             
             <!-- Profile Strength & Checklist Section -->
-            <section class="content-section mentor-profile-strength" style="width: 100%;">
+            <section id="profile-strength" class="content-section mentor-profile-strength" style="width: 100%;">
                 <div class="stat-card profile-card glass" style="grid-column: span 2; display: flex; flex-direction: column; align-items: stretch; gap: 1.5rem; width: 100%;">
                     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.05); padding-bottom: 12px;">
                         <h3 style="margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--text-dark);"><i class="fas fa-chart-line text-primary" style="margin-right: 8px;"></i>Profile Strength & Verification Checklist</h3>
@@ -307,40 +357,160 @@
             <section id="availability" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Availability Management</h2>
+                    <p class="section-desc">Set the days and time slots students can use when booking mentoring sessions.</p>
                 </div>
-                <div class="form-card glass">
-                    <div class="grid-form">
-                        <div class="form-group">
-                            <label for="availableDays">Available Days</label>
-                            <input type="text" id="availableDays" class="form-control" placeholder="e.g. Weekends only">
+                <div class="availability-management-grid availability-management-layout">
+                    <article class="weekly-schedule-card availability-main-card glass">
+                        <div class="availability-card-heading">
+                            <span class="availability-heading-icon"><i class="fas fa-calendar-days"></i></span>
+                            <div>
+                                <h3>Weekly Schedule</h3>
+                                <p>Choose the days and time ranges you are available.</p>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="availableTime">Available Times</label>
-                            <input type="text" id="availableTime" class="form-control" placeholder="e.g. 6 PM - 8 PM">
+                        <div class="weekly-availability-editor" id="weekly-availability-editor">
+                            <div class="availability-day-row" data-day="monday"><label class="day-toggle"><input type="checkbox" data-day-toggle="monday"><span class="day-toggle-track"></span></label><span class="availability-day-name">Monday</span><div class="day-ranges time-range-list" data-day-ranges="monday"></div><button type="button" class="add-time-range-btn btn btn-outline btn-sm" data-add-range="monday">+ Add time range</button></div>
+                            <div class="availability-day-row" data-day="tuesday"><label class="day-toggle"><input type="checkbox" data-day-toggle="tuesday"><span class="day-toggle-track"></span></label><span class="availability-day-name">Tuesday</span><div class="day-ranges time-range-list" data-day-ranges="tuesday"></div><button type="button" class="add-time-range-btn btn btn-outline btn-sm" data-add-range="tuesday">+ Add time range</button></div>
+                            <div class="availability-day-row" data-day="wednesday"><label class="day-toggle"><input type="checkbox" data-day-toggle="wednesday"><span class="day-toggle-track"></span></label><span class="availability-day-name">Wednesday</span><div class="day-ranges time-range-list" data-day-ranges="wednesday"></div><button type="button" class="add-time-range-btn btn btn-outline btn-sm" data-add-range="wednesday">+ Add time range</button></div>
+                            <div class="availability-day-row" data-day="thursday"><label class="day-toggle"><input type="checkbox" data-day-toggle="thursday"><span class="day-toggle-track"></span></label><span class="availability-day-name">Thursday</span><div class="day-ranges time-range-list" data-day-ranges="thursday"></div><button type="button" class="add-time-range-btn btn btn-outline btn-sm" data-add-range="thursday">+ Add time range</button></div>
+                            <div class="availability-day-row" data-day="friday"><label class="day-toggle"><input type="checkbox" data-day-toggle="friday"><span class="day-toggle-track"></span></label><span class="availability-day-name">Friday</span><div class="day-ranges time-range-list" data-day-ranges="friday"></div><button type="button" class="add-time-range-btn btn btn-outline btn-sm" data-add-range="friday">+ Add time range</button></div>
+                            <div class="availability-day-row" data-day="saturday"><label class="day-toggle"><input type="checkbox" data-day-toggle="saturday"><span class="day-toggle-track"></span></label><span class="availability-day-name">Saturday</span><div class="day-ranges time-range-list" data-day-ranges="saturday"></div><button type="button" class="add-time-range-btn btn btn-outline btn-sm" data-add-range="saturday">+ Add time range</button></div>
+                            <div class="availability-day-row" data-day="sunday"><label class="day-toggle"><input type="checkbox" data-day-toggle="sunday"><span class="day-toggle-track"></span></label><span class="availability-day-name">Sunday</span><div class="day-ranges time-range-list" data-day-ranges="sunday"></div><button type="button" class="add-time-range-btn btn btn-outline btn-sm" data-add-range="sunday">+ Add time range</button></div>
                         </div>
-                        <div class="form-group">
-                            <label for="mentoringMode">Mentoring Mode</label>
-                            <select id="mentoringMode" class="form-control">
-                                <option value="Online (Zoom/Meet)">Online (Zoom/Meet)</option>
-                                <option value="Physical Meeting">Physical Meeting</option>
-                                <option value="Hybrid">Hybrid</option>
-                            </select>
+                        <div class="grid-form availability-settings-grid">
+                            <div class="form-group">
+                                <label for="sessionDuration">Session Duration</label>
+                                <select id="sessionDuration" class="form-control">
+                                    <option value="30">30 minutes</option>
+                                    <option value="45">45 minutes</option>
+                                    <option value="60">60 minutes</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="bufferMinutes">Buffer Between Sessions</label>
+                                <select id="bufferMinutes" class="form-control">
+                                    <option value="0">0 minutes</option>
+                                    <option value="10">10 minutes</option>
+                                    <option value="15">15 minutes</option>
+                                    <option value="30">30 minutes</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="mentoringMode">Mentoring Mode</label>
+                                <select id="mentoringMode" class="form-control">
+                                    <option value="Online">Online</option>
+                                    <option value="Physical">Physical</option>
+                                    <option value="Hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="availabilityStatus">Current Status</label>
+                                <select id="availabilityStatus" class="form-control">
+                                    <option value="available">Available to take new students</option>
+                                    <option value="unavailable">Currently Unavailable</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="maxSessionsPerDay">Max Sessions Per Day</label>
+                                <input type="number" id="maxSessionsPerDay" class="form-control" min="1" max="12" value="3">
+                            </div>
+                            <div class="form-group">
+                                <label for="unavailableDateInput">Unavailable Specific Dates</label>
+                                <div class="inline-form-row">
+                                    <input type="date" id="unavailableDateInput" class="form-control">
+                                    <button type="button" class="btn btn-outline" id="add-unavailable-date-btn">Add Date</button>
+                                </div>
+                                <div id="unavailable-dates-list" class="availability-chip-list"></div>
+                            </div>
+                            <div class="form-group full-width">
+                                <button id="save-availability-btn" class="update-availability-btn btn btn-primary" type="button"><i class="fas fa-calendar-check"></i> Update Availability</button>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="availabilityStatus">Current Status</label>
-                            <select id="availabilityStatus" class="form-control">
-                                <option value="available">Available to take new students</option>
-                                <option value="unavailable">Currently Unavailable</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="maxStudents">Maximum Active Students</label>
-                            <input type="number" id="maxStudents" class="form-control" min="1" max="50" placeholder="e.g. 5">
-                        </div>
-                        <div class="form-group full-width">
-                            <button id="save-availability-btn" class="btn btn-primary" type="button">Update Availability</button>
-                        </div>
+                    </article>
+
+                    <aside class="availability-sidebar">
+                        <article class="availability-overview-card glass">
+                            <div class="availability-card-heading">
+                                <span class="availability-heading-icon"><i class="fas fa-clock"></i></span>
+                                <div>
+                                    <h3>Availability Overview</h3>
+                                </div>
+                            </div>
+                            <div class="availability-overview-stats">
+                                <div class="availability-summary-item"><span class="summary-icon overview-stat-icon blue"><i class="fas fa-calendar-day"></i></span><div class="summary-copy"><strong>Available Days</strong><span id="availability-days-count">0 days</span></div></div>
+                                <div class="availability-summary-item"><span class="summary-icon overview-stat-icon green"><i class="fas fa-clock"></i></span><div class="summary-copy"><strong>Session Duration</strong><span id="availability-duration-summary">60 minutes</span></div></div>
+                                <div class="availability-summary-item"><span class="summary-icon overview-stat-icon orange"><i class="fas fa-stopwatch"></i></span><div class="summary-copy"><strong>Buffer Time</strong><span id="availability-buffer-summary">15 minutes</span></div></div>
+                            </div>
+                            <div class="availability-preview">
+                                <h4>Weekly Preview</h4>
+                                <div id="availability-weekly-preview" class="availability-preview-list"></div>
+                            </div>
+                        </article>
+                        <article class="availability-tip glass">
+                            <i class="far fa-lightbulb"></i>
+                            <p><strong>Tip:</strong> Keep your availability updated to help students find the best time to book with you.</p>
+                        </article>
+                    </aside>
+                </div>
+            </section>
+
+            <section id="appointments" class="dashboard-section content-section">
+                <div class="section-header">
+                    <div>
+                        <h2><i class="fas fa-calendar-days text-primary"></i> Appointments</h2>
+                        <p class="section-desc">Manage mentoring sessions and appointment requests.</p>
                     </div>
+                </div>
+
+                <div class="mentor-appointments-top">
+                    <article class="mentor-requests-panel glass">
+                        <div class="appointment-tab-buttons">
+                            <button type="button" class="active" data-appointment-tab="pending">Pending Requests <span id="appointment-summary-pending">0</span></button>
+                            <button type="button" data-appointment-tab="upcoming">Upcoming <span id="appointment-summary-upcoming">0</span></button>
+                            <button type="button" data-appointment-tab="completed">Completed <span id="appointment-summary-completed">0</span></button>
+                            <button type="button" data-appointment-tab="closed">Closed <span id="appointment-summary-closed">0</span></button>
+                        </div>
+                        <div class="mentor-request-table-head">
+                            <span>Student</span>
+                            <span>Topic</span>
+                            <span>Date</span>
+                            <span>Time</span>
+                            <span>Mode</span>
+                            <span>Actions</span>
+                        </div>
+                        <div class="appointment-tabs" id="appointments-list-view">
+                            <div id="mentor-pending-appointments" class="appointment-list appointment-tab-panel active" data-tab-panel="pending"></div>
+                            <div id="mentor-upcoming-appointments" class="appointment-list appointment-tab-panel" data-tab-panel="upcoming"></div>
+                            <div id="mentor-completed-appointments" class="appointment-list appointment-tab-panel" data-tab-panel="completed"></div>
+                            <div id="mentor-closed-appointments" class="appointment-list appointment-tab-panel" data-tab-panel="closed"></div>
+                        </div>
+                    </article>
+                </div>
+
+                <div class="appointments-layout" id="appointments-calendar-view">
+                    <article class="appointment-calendar-shell glass">
+                        <div class="calendar-header mentor-calendar-header">
+                            <div class="mentor-calendar-titlebar">
+                                <button type="button" class="calendar-nav" id="appointment-prev-month" aria-label="Previous month"><i class="fas fa-chevron-left"></i></button>
+                                <h3 id="appointment-calendar-title">Calendar</h3>
+                                <button type="button" class="calendar-nav" id="appointment-next-month" aria-label="Next month"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <div class="calendar-view-toggle" aria-label="Calendar view">
+                                <button type="button" class="active" data-calendar-view-mode="month">Month</button>
+                                <button type="button" data-calendar-view-mode="week">Week</button>
+                                <button type="button" data-calendar-view-mode="today">Today</button>
+                            </div>
+                        </div>
+                        <div class="calendar-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+                        <div id="mentor-month-calendar" class="mentor-month-calendar"></div>
+                    </article>
+                    <article class="selected-day-agenda glass">
+                        <div class="overview-panel-header">
+                            <h3 id="selected-agenda-title">Selected Day</h3>
+                            <span id="selected-agenda-count" class="text-muted">0 sessions</span>
+                        </div>
+                        <div id="selected-day-agenda-list" class="appointment-list"></div>
+                    </article>
                 </div>
             </section>
 
@@ -398,6 +568,6 @@
     <script type="module" src="theme.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="mentor-dashboard.js"></script>
+    <script type="module" src="mentor-dashboard.js?v=20260624-mentor-availability-compact"></script>
 </body>
 </html>

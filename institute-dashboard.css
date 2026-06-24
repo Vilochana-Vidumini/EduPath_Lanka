@@ -1196,3 +1196,134 @@ html[data-theme="dark"] .dash-section.active > .welcome-panel:first-child p {
         margin-left: 0 !important;
     }
 }
+
+/* Institute dashboard topbar clock */
+.dash-topbar {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+}
+
+.dash-topbar > div:not(.institute-topbar-actions) {
+    min-width: 0 !important;
+}
+
+.institute-topbar-actions {
+    margin-left: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    min-width: 0 !important;
+}
+
+.dash-topbar .institute-clock-card.topbar-clock-card {
+    width: auto !important;
+    min-width: 360px !important;
+    max-width: 430px !important;
+    height: 50px !important;
+    min-height: 50px !important;
+    padding: 0.42rem 0.85rem !important;
+    margin: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.78fr) !important;
+    gap: 0.8rem !important;
+    align-items: center !important;
+    border-radius: 18px !important;
+    background: rgba(255, 255, 255, 0.82) !important;
+    border: 1px solid rgba(191, 211, 238, 0.82) !important;
+    box-shadow: 0 10px 26px rgba(30, 64, 175, 0.08) !important;
+}
+
+.dash-topbar .institute-clock-card.topbar-clock-card #institute-time-greeting {
+    display: none !important;
+}
+
+.dash-topbar .institute-clock-card.topbar-clock-card::after {
+    left: 60% !important;
+    height: 28px !important;
+    background: rgba(148, 163, 184, 0.35) !important;
+}
+
+.dash-topbar .institute-clock-card.topbar-clock-card #institute-live-date,
+.dash-topbar .institute-clock-card.topbar-clock-card #institute-live-clock {
+    min-height: 36px !important;
+    padding-left: 42px !important;
+    padding-right: 0 !important;
+    margin-left: 0 !important;
+    font-size: 0.74rem !important;
+}
+
+.dash-topbar .institute-clock-card.topbar-clock-card #institute-live-clock {
+    font-size: 1.05rem !important;
+}
+
+.dash-topbar .institute-clock-card.topbar-clock-card #institute-live-date::before,
+.dash-topbar .institute-clock-card.topbar-clock-card #institute-live-clock::before {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    font-size: 0.85rem !important;
+}
+
+.dash-topbar .institute-clock-card.topbar-clock-card #institute-live-date::after,
+.dash-topbar .institute-clock-card.topbar-clock-card #institute-live-clock::after {
+    content: none !important;
+    display: none !important;
+}
+
+.dash-section.active > .welcome-panel:first-child {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    min-height: 180px !important;
+    gap: 1.4rem !important;
+}
+
+.dash-section.active > .welcome-panel:first-child > div:first-child {
+    grid-column: 1 !important;
+}
+
+.dash-section.active > .welcome-panel:first-child .btn {
+    grid-column: 2 !important;
+    justify-self: end !important;
+}
+
+html[data-theme="dark"] .dash-topbar .institute-clock-card.topbar-clock-card {
+    background: rgba(15, 23, 42, 0.82) !important;
+    border-color: rgba(96, 165, 250, 0.22) !important;
+}
+
+@media (max-width: 920px) {
+    .dash-topbar {
+        align-items: flex-start !important;
+        flex-wrap: wrap !important;
+    }
+
+    .institute-topbar-actions {
+        width: 100% !important;
+    }
+
+    .dash-topbar .institute-clock-card.topbar-clock-card {
+        min-width: 0 !important;
+        max-width: none !important;
+        width: 100% !important;
+    }
+
+    .dash-section.active > .welcome-panel:first-child {
+        grid-template-columns: 1fr !important;
+    }
+
+    .dash-section.active > .welcome-panel:first-child .btn {
+        grid-column: 1 !important;
+        justify-self: start !important;
+    }
+}
+
+@media (max-width: 560px) {
+    .dash-topbar .institute-clock-card.topbar-clock-card {
+        height: auto !important;
+        grid-template-columns: 1fr !important;
+    }
+
+    .dash-topbar .institute-clock-card.topbar-clock-card::after {
+        display: none !important;
+    }
+}

@@ -17,6 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeConversationId = null;
     let currentUserData = {};
     let currentRequestRows = [];
+    let mentorAvailability = {};
+    let mentorAppointments = {};
+    let appointmentCalendarDate = new Date();
+    let selectedAppointmentDate = dateKeyLocal(new Date());
+    let activeAppointmentTab = 'pending';
+    let mentorDateTimer = null;
+    const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
     // --- Authentication & Role Check ---
     onAuthStateChanged(auth, (user) => {
@@ -70,6 +77,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('mentor-support-form')?.addEventListener('submit', sendMentorSupportMessage);
     document.getElementById('save-availability-btn')?.addEventListener('click', saveAvailability);
+    document.getElementById('add-unavailable-date-btn')?.addEventListener('click', addUnavailableDateFromInput);
+    ['sessionDuration', 'bufferMinutes', 'mentoringMode', 'availabilityStatus', 'maxSessionsPerDay'].forEach((id) => {
+        document.getElementById(id)?.addEventListener('change', () => renderAvailabilityOverviewPanel(mentorAvailability));
+    });
+    bindWeeklyAvailabilityEditor();
+    bindAppointmentControls();
+    startMentorDateTime();
     setupSectionNavigation();
 
     async function recordMentorLogout() {
@@ -128,6 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
         // Setup Listeners
         listenForRequests(uid, userData.fullName);
         listenForConnectedStudents(uid);
+        listenForAvailability(uid);
+        listenForAppointments(uid);
     }
 
     function listenForAdminSupport(uid) {
@@ -257,6 +273,69 @@ document.addEventListener('DOMContentLoaded', () => {
         const time = getTimeValue(value);
         return time ? new Date(time).toLocaleString() : 'Just now';
     }
+    function timeToMinutes(value = '00:00') {
+        const [hours, minutes] = String(value).split(':').map(Number);
+        return (hours || 0) * 60 + (minutes || 0);
+    }
+    function minutesToTime(total) {
+        const hours = Math.floor(total / 60);
+        const minutes = total % 60;
+        return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    }
+    function formatTimeLabel(value = '') {
+        if (!value) return 'N/A';
+        const [hours, minutes] = String(value).split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours || 0, minutes || 0, 0, 0);
+        return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    }
+    function appointmentSortTime(item = {}) {
+        return new Date(`${item.date || '2099-12-31'}T${item.startTime || '23:59'}`).getTime() || getTimeValue(item.createdAt);
+    }
+    function formatDay(dateValue = '') {
+        const date = new Date(`${dateValue}T00:00:00`);
+        return Number.isNaN(date.getTime()) ? '--' : String(date.getDate()).padStart(2, '0');
+    }
+    function formatMonth(dateValue = '') {
+        const date = new Date(`${dateValue}T00:00:00`);
+        return Number.isNaN(date.getTime()) ? 'DATE' : date.toLocaleDateString(undefined, { month: 'short' });
+    }
+    function formatStatus(status = '') {
+        return String(status || '').split('-').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
+    }
+    function dateKeyLocal(date = new Date()) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    }
+    function intervalsOverlap(startA, endA, startB, endB) {
+        return timeToMinutes(startA) < timeToMinutes(endB) && timeToMinutes(endA) > timeToMinutes(startB);
+    }
+    function dayLabel(day = '') {
+        return day.charAt(0).toUpperCase() + day.slice(1);
+    }
+    function normalizeAvailability(data = {}) {
+        const legacyDays = Array.isArray(data.availableDays)
+            ? data.availableDays.map((day) => String(day).toLowerCase())
+            : String(data.availableDays || data.availabilityDays || '').split(',').map((day) => day.trim().toLowerCase()).filter(Boolean);
+        const availableDays = {};
+        const daySchedules = {};
+        weekDays.forEach((day) => {
+            const enabled = data.availableDays?.[day] === true || legacyDays.includes(day);
+            const ranges = Array.isArray(data.daySchedules?.[day]) ? data.daySchedules[day] : [];
+            availableDays[day] = enabled || ranges.length > 0;
+            daySchedules[day] = ranges.length ? ranges : (availableDays[day] ? [{ startTime: data.startTime || '18:00', endTime: data.endTime || '20:00' }] : []);
+        });
+        return {
+            timezone: data.timezone || 'Asia/Colombo',
+            availableDays,
+            daySchedules,
+            sessionDuration: Number(data.sessionDuration || 60),
+            bufferMinutes: Number(data.bufferMinutes || 15),
+            mentoringMode: data.mentoringMode || data.mode || 'Online',
+            maxSessionsPerDay: Number(data.maxSessionsPerDay || 3),
+            unavailableDates: data.unavailableDates || {},
+            availabilityStatus: data.availabilityStatus || data.currentStatus || 'available'
+        };
+    }
     function escapeHtml(value) {
         return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[ch]));
     }
@@ -283,17 +362,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderAvailability(mentorData = {}) {
-        const days = document.getElementById('availableDays');
-        const time = document.getElementById('availableTime');
+        const normalized = normalizeAvailability(mentorData);
+        const duration = document.getElementById('sessionDuration');
+        const buffer = document.getElementById('bufferMinutes');
         const mode = document.getElementById('mentoringMode');
         const status = document.getElementById('availabilityStatus');
-        const maxStudents = document.getElementById('maxStudents');
-        if (days) days.value = mentorData.availableDays || mentorData.availabilityDays || '';
-        if (time) time.value = mentorData.availableTime || mentorData.availabilityTime || '';
-        if (mode) mode.value = mentorData.mentoringMode || mentorData.mode || 'Online (Zoom/Meet)';
-        if (status) status.value = mentorData.availabilityStatus || mentorData.currentStatus || 'available';
-        if (maxStudents) maxStudents.value = mentorData.maxStudents || mentorData.maxActiveStudents || '';
-        renderOverviewAvailability(mentorData);
+        const maxSessions = document.getElementById('maxSessionsPerDay');
+        mentorAvailability = { ...normalized, mentorUid: currentUid };
+        renderWeeklyAvailability();
+        if (duration) duration.value = String(normalized.sessionDuration);
+        if (buffer) buffer.value = String(normalized.bufferMinutes);
+        if (mode) mode.value = normalized.mentoringMode;
+        if (status) status.value = normalized.availabilityStatus;
+        if (maxSessions) maxSessions.value = normalized.maxSessionsPerDay;
+        renderUnavailableDates();
+        renderAvailabilityOverviewPanel(normalized);
+        renderOverviewAvailability(mentorAvailability);
     }
 
     async function saveAvailability() {
@@ -305,21 +389,42 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         }
         try {
-            const maxStudentsValue = Number(document.getElementById('maxStudents')?.value || 0);
-            await update(ref(database, `mentors/${currentUid}`), {
-                availableDays: document.getElementById('availableDays')?.value.trim() || '',
-                availableTime: document.getElementById('availableTime')?.value.trim() || '',
-                mentoringMode: document.getElementById('mentoringMode')?.value || 'Online (Zoom/Meet)',
-                availabilityStatus: document.getElementById('availabilityStatus')?.value || 'available',
-                maxStudents: maxStudentsValue > 0 ? maxStudentsValue : '',
-                availabilityUpdatedAt: serverTimestamp(),
+            const { availableDays, daySchedules } = collectWeeklyAvailability();
+            const sessionDuration = Number(document.getElementById('sessionDuration')?.value || 60);
+            const bufferMinutes = Number(document.getElementById('bufferMinutes')?.value || 15);
+            const mentoringMode = document.getElementById('mentoringMode')?.value || 'Online';
+            const maxSessionsPerDay = Math.max(1, Number(document.getElementById('maxSessionsPerDay')?.value || 3));
+            const enabledDayLabels = Object.entries(availableDays).filter(([, enabled]) => enabled).map(([day]) => dayLabel(day));
+            if (!enabledDayLabels.length) throw new Error('Please select at least one available day.');
+            const availability = {
+                mentorUid: currentUid,
+                timezone: 'Asia/Colombo',
+                availableDays,
+                daySchedules,
+                sessionDuration,
+                bufferMinutes,
+                mentoringMode,
+                maxSessionsPerDay,
+                unavailableDates: mentorAvailability.unavailableDates || {},
                 updatedAt: serverTimestamp()
-            });
+            };
+            const firstRange = Object.values(daySchedules).flat()[0] || {};
+            const availableTime = firstRange.startTime && firstRange.endTime ? `${formatTimeLabel(firstRange.startTime)} - ${formatTimeLabel(firstRange.endTime)}` : 'Set mentoring hours';
+            const updates = {};
+            updates[`mentorAvailability/${currentUid}`] = availability;
+            updates[`mentors/${currentUid}/availableDays`] = enabledDayLabels;
+            updates[`mentors/${currentUid}/availableTime`] = availableTime;
+            updates[`mentors/${currentUid}/mentoringMode`] = mentoringMode;
+            updates[`mentors/${currentUid}/availabilityStatus`] = document.getElementById('availabilityStatus')?.value || 'available';
+            updates[`mentors/${currentUid}/availabilityUpdatedAt`] = serverTimestamp();
+            updates[`mentors/${currentUid}/updatedAt`] = serverTimestamp();
+            await update(ref(database), updates);
             renderOverviewAvailability({
-                availableDays: document.getElementById('availableDays')?.value.trim() || '',
-                availableTime: document.getElementById('availableTime')?.value.trim() || '',
-                mentoringMode: document.getElementById('mentoringMode')?.value || 'Online (Zoom/Meet)',
-                availabilityStatus: document.getElementById('availabilityStatus')?.value || 'available'
+                availableDays: enabledDayLabels,
+                availableTime,
+                mentoringMode,
+                availabilityStatus: document.getElementById('availabilityStatus')?.value || 'available',
+                maxSessionsPerDay
             });
             showToast('Availability updated successfully.', 'success');
         } catch (error) {
@@ -335,17 +440,200 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderOverviewAvailability(mentorData = {}) {
         const container = document.getElementById('overview-availability-list');
-        if (!container) return;
-        const days = mentorData.availableDays || mentorData.availabilityDays || 'Set days';
-        const time = mentorData.availableTime || mentorData.availabilityTime || 'Set mentoring hours';
+        const normalized = normalizeAvailability(mentorData);
+        const enabledDays = Object.entries(normalized.availableDays).filter(([, enabled]) => enabled).map(([day]) => dayLabel(day));
+        const firstRange = Object.values(normalized.daySchedules).flat()[0] || {};
+        const days = enabledDays.length ? enabledDays.join(', ') : 'Set days';
+        const time = mentorData.availableTime || mentorData.availabilityTime || (firstRange.startTime && firstRange.endTime ? `${formatTimeLabel(firstRange.startTime)} - ${formatTimeLabel(firstRange.endTime)}` : 'Set mentoring hours');
         const status = mentorData.availabilityStatus || mentorData.currentStatus || 'available';
-        container.innerHTML = `
+        if (container) container.innerHTML = `
             <div class="overview-row">
                 <span class="date-tile">${escapeHtml(String(days).slice(0, 3).toUpperCase())}</span>
                 <div><strong>${escapeHtml(days)}</strong><span>${escapeHtml(time)}</span></div>
                 <span class="status-pill ${status === 'unavailable' ? 'is-muted' : ''}">${escapeHtml(status === 'unavailable' ? 'Unavailable' : 'Available')}</span>
             </div>
         `;
+        const heroAvailability = document.getElementById('mentor-hero-availability');
+        if (heroAvailability) heroAvailability.textContent = enabledDays.length ? `${enabledDays.length} days this week` : 'Set your availability';
+    }
+
+    function renderAvailabilityOverviewPanel(data = mentorAvailability) {
+        const normalized = normalizeAvailability(data);
+        normalized.sessionDuration = Number(document.getElementById('sessionDuration')?.value || normalized.sessionDuration);
+        normalized.bufferMinutes = Number(document.getElementById('bufferMinutes')?.value || normalized.bufferMinutes);
+        const enabledDays = weekDays.filter((day) => normalized.availableDays[day]);
+        setTextSafe('availability-days-count', `${enabledDays.length} ${enabledDays.length === 1 ? 'day' : 'days'}`);
+        setTextSafe('availability-duration-summary', `${normalized.sessionDuration} minutes`);
+        setTextSafe('availability-buffer-summary', `${normalized.bufferMinutes} minutes`);
+        const preview = document.getElementById('availability-weekly-preview');
+        if (!preview) return;
+        preview.innerHTML = weekDays.map((day) => {
+            const ranges = normalized.daySchedules[day] || [];
+            const firstRange = ranges[0];
+            const text = normalized.availableDays[day] && firstRange
+                ? `${formatTimeLabel(firstRange.startTime)} - ${formatTimeLabel(firstRange.endTime)}`
+                : 'Not available';
+            return `
+                <div class="availability-preview-row weekly-preview-row ${normalized.availableDays[day] ? 'is-active' : ''}">
+                    <span class="weekday-pill">${escapeHtml(dayLabel(day).slice(0, 3))}</span>
+                    <i class="fas fa-circle"></i>
+                    <p>${escapeHtml(text)}</p>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function startMentorDateTime() {
+        updateMentorDateTime();
+        if (!mentorDateTimer) mentorDateTimer = setInterval(updateMentorDateTime, 1000);
+    }
+
+    function updateMentorDateTime() {
+        const now = new Date();
+        const dateText = now.toLocaleDateString('en-LK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const timeText = now.toLocaleTimeString('en-LK', { hour: '2-digit', minute: '2-digit', hour12: true });
+        const hour = now.getHours();
+        let greeting = 'Good Night';
+        if (hour >= 5 && hour < 12) greeting = 'Good Morning';
+        else if (hour >= 12 && hour < 17) greeting = 'Good Afternoon';
+        else if (hour >= 17 && hour < 21) greeting = 'Good Evening';
+        const dateEl = document.getElementById('mentor-dashboard-date');
+        const timeEl = document.getElementById('mentor-dashboard-time');
+        const greetingEl = document.getElementById('mentor-dashboard-greeting');
+        if (dateEl) dateEl.textContent = dateText;
+        if (timeEl) timeEl.textContent = timeText;
+        if (greetingEl) greetingEl.textContent = `${greeting},`;
+    }
+
+    function listenForAvailability(uid) {
+        onValue(ref(database, `mentorAvailability/${uid}`), (snapshot) => {
+            mentorAvailability = snapshot.val() || {};
+            renderAvailability(mentorAvailability);
+        });
+    }
+
+    function bindWeeklyAvailabilityEditor() {
+        document.querySelectorAll('[data-add-range]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const day = button.dataset.addRange;
+                const normalized = normalizeAvailability(mentorAvailability);
+                normalized.availableDays[day] = true;
+                normalized.daySchedules[day] = [...(normalized.daySchedules[day] || []), { startTime: '18:00', endTime: '20:00' }];
+                mentorAvailability = normalized;
+                renderWeeklyAvailability();
+                renderAvailabilityOverviewPanel(mentorAvailability);
+            });
+        });
+        document.querySelectorAll('[data-day-toggle]').forEach((input) => {
+            input.addEventListener('change', () => {
+                const day = input.dataset.dayToggle;
+                const normalized = normalizeAvailability(mentorAvailability);
+                normalized.availableDays[day] = input.checked;
+                if (input.checked && !(normalized.daySchedules[day] || []).length) normalized.daySchedules[day] = [{ startTime: '18:00', endTime: '20:00' }];
+                mentorAvailability = normalized;
+                renderWeeklyAvailability();
+                renderAvailabilityOverviewPanel(mentorAvailability);
+            });
+        });
+    }
+
+    function renderWeeklyAvailability() {
+        const normalized = normalizeAvailability(mentorAvailability);
+        weekDays.forEach((day) => {
+            const toggle = document.querySelector(`[data-day-toggle="${day}"]`);
+            const ranges = document.querySelector(`[data-day-ranges="${day}"]`);
+            const row = document.querySelector(`[data-day="${day}"]`);
+            const addButton = document.querySelector(`[data-add-range="${day}"]`);
+            if (toggle) toggle.checked = !!normalized.availableDays[day];
+            if (addButton) addButton.disabled = !normalized.availableDays[day];
+            row?.classList.toggle('is-disabled', !normalized.availableDays[day]);
+            row?.classList.toggle('is-active', !!normalized.availableDays[day]);
+            if (!ranges) return;
+            ranges.innerHTML = (normalized.daySchedules[day] || []).map((range, index) => `
+                <div class="time-range-row time-range-item">
+                    <label class="time-input-wrap"><i class="far fa-clock"></i><input type="time" value="${escapeHtml(range.startTime || '18:00')}" data-range-start="${escapeHtml(day)}" data-range-index="${index}"></label>
+                    <span class="time-range-separator">to</span>
+                    <label class="time-input-wrap"><i class="far fa-clock"></i><input type="time" value="${escapeHtml(range.endTime || '20:00')}" data-range-end="${escapeHtml(day)}" data-range-index="${index}"></label>
+                    <button class="remove-time-range" type="button" data-remove-range="${escapeHtml(day)}" data-range-index="${index}" aria-label="Remove range">&times;</button>
+                </div>
+            `).join('');
+            ranges.querySelectorAll('[data-range-start]').forEach((input) => input.addEventListener('change', updateRangeInput));
+            ranges.querySelectorAll('[data-range-end]').forEach((input) => input.addEventListener('change', updateRangeInput));
+            ranges.querySelectorAll('[data-remove-range]').forEach((button) => button.addEventListener('click', () => {
+                const data = normalizeAvailability(mentorAvailability);
+                data.daySchedules[button.dataset.removeRange].splice(Number(button.dataset.rangeIndex), 1);
+                data.availableDays[button.dataset.removeRange] = data.daySchedules[button.dataset.removeRange].length > 0;
+                mentorAvailability = data;
+                renderWeeklyAvailability();
+                renderAvailabilityOverviewPanel(mentorAvailability);
+            }));
+        });
+        renderAvailabilityOverviewPanel(normalized);
+    }
+
+    function updateRangeInput(event) {
+        const input = event.currentTarget;
+        const day = input.dataset.rangeStart || input.dataset.rangeEnd;
+        const index = Number(input.dataset.rangeIndex);
+        const data = normalizeAvailability(mentorAvailability);
+        const range = data.daySchedules[day]?.[index];
+        if (!range) return;
+        if (input.dataset.rangeStart) range.startTime = input.value;
+        if (input.dataset.rangeEnd) range.endTime = input.value;
+        mentorAvailability = data;
+        renderAvailabilityOverviewPanel(mentorAvailability);
+    }
+
+    function collectWeeklyAvailability() {
+        const availableDays = {};
+        const daySchedules = {};
+        weekDays.forEach((day) => {
+            const enabled = document.querySelector(`[data-day-toggle="${day}"]`)?.checked === true;
+            const ranges = Array.from(document.querySelectorAll(`[data-day-ranges="${day}"] .time-range-row`)).map((row) => {
+                const inputs = row.querySelectorAll('input[type="time"]');
+                return { startTime: inputs[0]?.value || '', endTime: inputs[1]?.value || '' };
+            }).filter((range) => range.startTime && range.endTime);
+            availableDays[day] = enabled && ranges.length > 0;
+            daySchedules[day] = availableDays[day] ? ranges : [];
+            ranges.forEach((range) => {
+                if (timeToMinutes(range.endTime) <= timeToMinutes(range.startTime)) {
+                    throw new Error(`${dayLabel(day)} has an invalid time range.`);
+                }
+            });
+        });
+        return { availableDays, daySchedules };
+    }
+
+    function addUnavailableDateFromInput() {
+        const input = document.getElementById('unavailableDateInput');
+        const value = input?.value;
+        if (!value) return;
+        mentorAvailability.unavailableDates = { ...(mentorAvailability.unavailableDates || {}), [value]: true };
+        input.value = '';
+        renderUnavailableDates();
+        renderAvailabilityOverviewPanel(mentorAvailability);
+    }
+
+    function renderUnavailableDates() {
+        const container = document.getElementById('unavailable-dates-list');
+        if (!container) return;
+        const dates = Object.keys(mentorAvailability.unavailableDates || {}).sort();
+        container.innerHTML = dates.length ? dates.map((date) => `
+            <span class="availability-chip unavailable-date-chip"><i class="far fa-calendar"></i>${escapeHtml(formatUnavailableDateLabel(date))}<button type="button" data-remove-unavailable="${escapeHtml(date)}" aria-label="Remove ${escapeHtml(date)}">&times;</button></span>
+        `).join('') : '<span class="text-muted text-sm">No unavailable dates added.</span>';
+        container.querySelectorAll('[data-remove-unavailable]').forEach((button) => {
+            button.addEventListener('click', () => {
+                delete mentorAvailability.unavailableDates[button.dataset.removeUnavailable];
+                renderUnavailableDates();
+                renderAvailabilityOverviewPanel(mentorAvailability);
+            });
+        });
+    }
+
+    function formatUnavailableDateLabel(value = '') {
+        const date = new Date(`${value}T00:00:00`);
+        if (Number.isNaN(date.getTime())) return value;
+        return date.toLocaleDateString(undefined, { month: 'long', day: '2-digit', year: 'numeric' });
     }
 
     function setupSectionNavigation() {
@@ -424,6 +712,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 : defaultSection;
 
         showSection(initialSection);
+    }
+
+    function bindAppointmentControls() {
+        document.getElementById('appointment-prev-month')?.addEventListener('click', () => {
+            appointmentCalendarDate.setMonth(appointmentCalendarDate.getMonth() - 1);
+            renderMentorAppointments();
+        });
+        document.getElementById('appointment-next-month')?.addEventListener('click', () => {
+            appointmentCalendarDate.setMonth(appointmentCalendarDate.getMonth() + 1);
+            renderMentorAppointments();
+        });
+        document.querySelectorAll('[data-appointment-tab]').forEach((button) => {
+            button.addEventListener('click', () => {
+                activeAppointmentTab = button.dataset.appointmentTab;
+                document.querySelectorAll('[data-appointment-tab]').forEach((item) => item.classList.toggle('active', item === button));
+                document.querySelectorAll('[data-tab-panel]').forEach((panel) => panel.classList.toggle('active', panel.dataset.tabPanel === activeAppointmentTab));
+            });
+        });
+        document.querySelectorAll('[data-calendar-view-mode]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const mode = button.dataset.calendarViewMode;
+                document.querySelectorAll('[data-calendar-view-mode]').forEach((item) => item.classList.toggle('active', item === button));
+                if (mode === 'today') {
+                    const today = new Date();
+                    appointmentCalendarDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                    selectedAppointmentDate = dateKeyLocal(today);
+                    renderMentorAppointments();
+                    return;
+                }
+                renderMonthlyAppointmentCalendar(Object.entries(mentorAppointments || {}));
+            });
+        });
+        document.querySelectorAll('[data-appointment-view]').forEach((button) => {
+            button.addEventListener('click', () => {
+                const view = button.dataset.appointmentView;
+                document.querySelectorAll('[data-appointment-view]').forEach((item) => item.classList.toggle('active', item === button));
+                document.getElementById('appointments-calendar-view')?.classList.toggle('hidden', view !== 'calendar');
+                document.getElementById('appointments-list-view')?.classList.toggle('is-list-only', view === 'list');
+            });
+        });
     }
 
     function updateStatusUI(status) {
@@ -544,12 +872,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const progressBar = document.getElementById('dynamic-profile-progress-bar');
         const progressBadge = document.getElementById('profile-strength-badge');
         const statProfileCompletion = document.getElementById('stat-profile-completion');
+        const heroProfileCompletion = document.getElementById('mentor-hero-profile-completion');
         const progressMsg = document.getElementById('profile-strength-message');
 
         if (progressBar) progressBar.style.width = `${percentage}%`;
         if (statProfileCompletion) {
             statProfileCompletion.textContent = `${percentage}%`;
             statProfileCompletion.parentElement?.style.setProperty('--profile-progress', `${percentage * 3.6}deg`);
+        }
+        if (heroProfileCompletion) {
+            heroProfileCompletion.textContent = `${percentage}%`;
+            heroProfileCompletion.parentElement?.style.setProperty('--profile-progress', `${percentage * 3.6}deg`);
         }
         if (progressBadge) {
             progressBadge.textContent = `${percentage}% Strength`;
@@ -662,6 +995,379 @@ document.addEventListener('DOMContentLoaded', () => {
             syncConversationListeners(uid);
             renderConnectedStudentsTable();
         });
+    }
+
+    function listenForAppointments(uid) {
+        const appointmentsRef = query(ref(database, 'mentorAppointments'), orderByChild('mentorUid'), equalTo(uid));
+        onValue(appointmentsRef, (snapshot) => {
+            mentorAppointments = snapshot.val() || {};
+            renderMentorAppointments();
+        });
+    }
+
+    function renderMentorAppointments() {
+        const entries = Object.entries(mentorAppointments || {});
+        const pending = entries.filter(([, item]) => String(item.status || '').toLowerCase() === 'pending')
+            .sort(([, a], [, b]) => appointmentSortTime(a) - appointmentSortTime(b));
+        const upcoming = entries.filter(([, item]) => String(item.status || '').toLowerCase() === 'accepted')
+            .sort(([, a], [, b]) => appointmentSortTime(a) - appointmentSortTime(b));
+        const completed = entries.filter(([, item]) => String(item.status || '').toLowerCase() === 'completed')
+            .sort(([, a], [, b]) => appointmentSortTime(b) - appointmentSortTime(a));
+        const closed = entries.filter(([, item]) => ['rejected', 'cancelled'].includes(String(item.status || '').toLowerCase()))
+            .sort(([, a], [, b]) => appointmentSortTime(b) - appointmentSortTime(a));
+        renderAppointmentList('mentor-pending-appointments', pending, 'pending');
+        renderAppointmentList('mentor-upcoming-appointments', upcoming, 'accepted');
+        renderAppointmentList('mentor-completed-appointments', completed, 'completed');
+        renderAppointmentList('mentor-closed-appointments', closed, 'closed');
+        renderMonthlyAppointmentCalendar(entries);
+        renderSelectedDayAgenda(entries);
+        renderOverviewAppointments(upcoming);
+        updateAppointmentSummaries({ pending, upcoming, completed, closed });
+        const completedStat = document.getElementById('stat-completed-sessions');
+        if (completedStat) completedStat.textContent = completed.length;
+        const upcomingStat = document.getElementById('stat-upcoming-sessions');
+        if (upcomingStat) upcomingStat.textContent = upcoming.length;
+        const nextSession = document.getElementById('mentor-next-session');
+        if (nextSession) nextSession.textContent = upcoming[0] ? `${upcoming[0][1].date}, ${formatTimeLabel(upcoming[0][1].startTime)}` : 'No upcoming sessions';
+    }
+
+    function renderAppointmentList(containerId, rows, mode) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        if (!rows.length) {
+            container.innerHTML = appointmentEmptyState(mode);
+            return;
+        }
+        container.innerHTML = rows.map(([id, item]) => appointmentCard(id, item, mode)).join('');
+        container.querySelectorAll('[data-accept-appointment]').forEach((button) => button.addEventListener('click', () => acceptAppointment(button.dataset.acceptAppointment)));
+        container.querySelectorAll('[data-reject-appointment]').forEach((button) => button.addEventListener('click', () => rejectAppointment(button.dataset.rejectAppointment)));
+        container.querySelectorAll('[data-complete-appointment]').forEach((button) => button.addEventListener('click', () => completeAppointment(button.dataset.completeAppointment)));
+        container.querySelectorAll('[data-message-student]').forEach((button) => button.addEventListener('click', () => openConversation(button.dataset.messageStudent)));
+        container.querySelectorAll('[data-view-appointment]').forEach((button) => button.addEventListener('click', () => openAppointmentDetail(button.dataset.viewAppointment)));
+    }
+
+    function appointmentCard(id, item, mode) {
+        const status = String(item.status || 'pending').toLowerCase();
+        const student = connectedStudents[item.studentUid] || {};
+        const avatar = item.studentPhotoURL || student.studentPhotoURL || student.photoURL || '';
+        const requested = item.createdAt ? formatRelativeTime(item.createdAt) : 'Recently requested';
+        const date = appointmentDateLabel(item.date);
+        const day = item.date ? new Date(`${item.date}T00:00:00`).toLocaleDateString(undefined, { weekday: 'long' }) : '';
+        const time = formatTimeLabel(item.startTime);
+        const duration = appointmentDurationLabel(item);
+        const modeLabel = item.mode || 'Online Session';
+        const actions = mode === 'pending' ? `
+            <button class="btn btn-success btn-sm" data-accept-appointment="${escapeHtml(id)}"><i class="fas fa-check"></i> Accept</button>
+            <button class="btn btn-danger btn-sm" data-reject-appointment="${escapeHtml(id)}"><i class="fas fa-xmark"></i> Reject</button>
+            <button class="btn btn-outline btn-sm full-action" data-view-appointment="${escapeHtml(id)}"><i class="fas fa-eye"></i> View Details</button>
+        ` : mode === 'accepted' ? `
+            ${item.meetingLink || item.joinLink ? `<a class="btn btn-primary btn-sm" href="${escapeHtml(item.meetingLink || item.joinLink)}" target="_blank" rel="noopener"><i class="fas fa-video"></i> Join</a>` : ''}
+            <button class="btn btn-primary btn-sm" data-message-student="${escapeHtml(item.studentUid || '')}"><i class="fas fa-message"></i> Message</button>
+            <button class="btn btn-secondary btn-sm" data-complete-appointment="${escapeHtml(id)}">Complete</button>
+        ` : mode === 'completed' ? `
+            <button class="btn btn-outline btn-sm" data-view-appointment="${escapeHtml(id)}"><i class="fas fa-eye"></i> View Details</button>
+            <button class="btn btn-primary btn-sm" data-message-student="${escapeHtml(item.studentUid || '')}">Message</button>
+        ` : mode === 'closed' ? `
+            <button class="btn btn-outline btn-sm" data-view-appointment="${escapeHtml(id)}"><i class="fas fa-eye"></i> View Details</button>
+        ` : '';
+        return `
+            <article class="appointment-card mentor-appointment-row ${escapeHtml(status)}">
+                <div class="appointment-student-cell">
+                    ${avatar ? `<img src="${escapeHtml(avatar)}" alt="">` : `<span class="mentor-table-avatar">${escapeHtml(getInitials(item.studentName || 'Student'))}</span>`}
+                    <div>
+                        <h4>${escapeHtml(item.studentName || 'Student')}</h4>
+                        <p>${escapeHtml(student.educationLevel || item.studentLevel || 'Student')}</p>
+                        <span><i class="far fa-clock"></i> ${escapeHtml(requested)}</span>
+                    </div>
+                </div>
+                <div class="appointment-topic-cell">
+                    <h4>${escapeHtml(item.topic || 'Mentoring Session')}</h4>
+                    ${status === 'pending' ? '<span class="new-pill">New</span>' : `<span class="appointment-status ${escapeHtml(status)}">${escapeHtml(formatStatus(status))}</span>`}
+                    ${item.message ? `<p>${escapeHtml(item.message)}</p>` : ''}
+                    ${item.rejectionReason ? `<p><strong>Reason:</strong> ${escapeHtml(item.rejectionReason)}</p>` : ''}
+                </div>
+                <div class="appointment-date-cell">
+                    <strong><i class="far fa-calendar"></i> ${escapeHtml(date)}</strong>
+                    <span>${escapeHtml(day)}</span>
+                </div>
+                <div class="appointment-time-cell">
+                    <strong><i class="far fa-clock"></i> ${escapeHtml(time)}</strong>
+                    <span>${escapeHtml(duration)}</span>
+                </div>
+                <div class="appointment-mode-cell">
+                    <strong><i class="fas ${/zoom/i.test(modeLabel) ? 'fa-video' : 'fa-video-camera'}"></i> ${escapeHtml(modeLabel)}</strong>
+                </div>
+                <div class="appointment-actions">
+                    ${actions}
+                </div>
+            </article>
+        `;
+    }
+
+    function appointmentEmptyState(mode) {
+        const copy = {
+            pending: ['fa-hourglass-half', 'No pending session requests.', 'New requests from your mentees will appear here.'],
+            accepted: ['fa-calendar-check', 'No upcoming mentoring sessions.', 'Accepted appointments will appear here.'],
+            completed: ['fa-check-double', 'No completed sessions yet.', 'Completed mentoring sessions will be saved here.'],
+            closed: ['fa-ban', 'No closed appointments.', 'Rejected or cancelled sessions will appear here.']
+        }[mode] || ['fa-inbox', 'No appointments yet.', ''];
+        return `<div class="empty-state"><i class="fas ${copy[0]}"></i><p>${copy[1]}</p><span>${copy[2]}</span></div>`;
+    }
+
+    function appointmentDateLabel(value = '') {
+        const date = new Date(`${value}T00:00:00`);
+        if (Number.isNaN(date.getTime())) return 'Date pending';
+        return date.toLocaleDateString(undefined, { month: 'long', day: '2-digit', year: 'numeric' });
+    }
+
+    function appointmentDurationLabel(item = {}) {
+        if (item.duration) return item.duration;
+        const start = timeToMinutes(item.startTime || '00:00');
+        const end = timeToMinutes(item.endTime || item.startTime || '00:00');
+        const minutes = Math.max(0, end - start) || 45;
+        return `${minutes} min`;
+    }
+
+    function totalAppointmentTime(rows = []) {
+        const minutes = rows.reduce((sum, [, item]) => {
+            const start = timeToMinutes(item.startTime || '00:00');
+            const end = timeToMinutes(item.endTime || item.startTime || '00:00');
+            return sum + Math.max(0, end - start);
+        }, 0);
+        if (!minutes) return '0h';
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        return `${hours ? `${hours}h` : ''}${hours && mins ? ' ' : ''}${mins ? `${mins}m` : ''}`;
+    }
+
+    function formatRelativeTime(value) {
+        const time = getTimeValue(value);
+        if (!time) return 'Recently requested';
+        const diff = Math.max(0, Date.now() - time);
+        const hours = Math.floor(diff / 3600000);
+        if (hours < 1) return 'Requested just now';
+        if (hours < 24) return `Requested ${hours} hour${hours === 1 ? '' : 's'} ago`;
+        const days = Math.floor(hours / 24);
+        return `Requested ${days} day${days === 1 ? '' : 's'} ago`;
+    }
+
+    function openAppointmentDetail(appointmentId) {
+        const item = mentorAppointments[appointmentId];
+        if (!item) return showToast('Appointment details are unavailable.', 'error');
+        let modal = document.getElementById('mentor-appointment-detail-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'mentor-appointment-detail-modal';
+            modal.className = 'modal-overlay hidden';
+            document.body.appendChild(modal);
+        }
+        modal.innerHTML = `
+            <div class="modal-card appointment-detail-modal">
+                <div class="modal-header">
+                    <div>
+                        <h3>Appointment Details</h3>
+                        <p class="text-muted">${escapeHtml(item.studentName || 'Student')} - ${escapeHtml(formatStatus(item.status || 'pending'))}</p>
+                    </div>
+                    <button type="button" class="modal-close" id="mentor-appointment-detail-close" aria-label="Close">&times;</button>
+                </div>
+                <div class="detail-grid recommendation-detail-grid">
+                    <div><span>Student</span><strong>${escapeHtml(item.studentName || 'Student')}</strong></div>
+                    <div><span>Topic</span><strong>${escapeHtml(item.topic || 'Mentoring Session')}</strong></div>
+                    <div><span>Date</span><strong>${escapeHtml(appointmentDateLabel(item.date))}</strong></div>
+                    <div><span>Time</span><strong>${escapeHtml(formatTimeLabel(item.startTime))} - ${escapeHtml(formatTimeLabel(item.endTime))}</strong></div>
+                    <div><span>Mode</span><strong>${escapeHtml(item.mode || 'Online Session')}</strong></div>
+                    <div><span>Duration</span><strong>${escapeHtml(appointmentDurationLabel(item))}</strong></div>
+                    <div class="full-width"><span>Message</span><strong>${escapeHtml(item.message || 'No message added.')}</strong></div>
+                    ${item.rejectionReason ? `<div class="full-width"><span>Rejection Reason</span><strong>${escapeHtml(item.rejectionReason)}</strong></div>` : ''}
+                    ${item.completedNote ? `<div class="full-width"><span>Completed Note</span><strong>${escapeHtml(item.completedNote)}</strong></div>` : ''}
+                </div>
+            </div>
+        `;
+        modal.classList.remove('hidden');
+        document.getElementById('mentor-appointment-detail-close')?.addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) modal.classList.add('hidden');
+        }, { once: true });
+    }
+
+    function updateAppointmentSummaries(groups) {
+        setTextSafe('appointment-summary-pending', groups.pending.length);
+        setTextSafe('appointment-summary-upcoming', groups.upcoming.length);
+        setTextSafe('appointment-summary-completed', groups.completed.length);
+        setTextSafe('appointment-summary-closed', groups.closed.length);
+        const today = dateKeyLocal(new Date());
+        const todayRows = [...groups.pending, ...groups.upcoming, ...groups.completed, ...groups.closed].filter(([, item]) => item.date === today);
+        const todayStudents = new Set(todayRows.map(([, item]) => item.studentUid).filter(Boolean));
+        setTextSafe('appointment-today-count', todayRows.length);
+        setTextSafe('appointment-today-students', todayStudents.size);
+        setTextSafe('appointment-today-time', totalAppointmentTime(todayRows));
+    }
+
+    function renderMonthlyAppointmentCalendar(entries) {
+        const container = document.getElementById('mentor-month-calendar');
+        if (!container) return;
+        const year = appointmentCalendarDate.getFullYear();
+        const month = appointmentCalendarDate.getMonth();
+        const first = new Date(year, month, 1);
+        const start = new Date(first);
+        start.setDate(first.getDate() - first.getDay());
+        const title = document.getElementById('appointment-calendar-title');
+        if (title) title.textContent = first.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+        const byDate = groupAppointmentsByDate(entries);
+        const today = dateKeyLocal(new Date());
+        const availability = normalizeAvailability(mentorAvailability);
+        container.innerHTML = Array.from({ length: 42 }, (_, index) => {
+            const date = new Date(start);
+            date.setDate(start.getDate() + index);
+            const value = dateKeyLocal(date);
+            const rows = byDate[value] || [];
+            const inMonth = date.getMonth() === month;
+            const weekday = weekDays[date.getDay() === 0 ? 6 : date.getDay() - 1];
+            const available = availability.availableDays?.[weekday] === true && availability.unavailableDates?.[value] !== true;
+            const classes = ['mentor-calendar-cell', inMonth ? '' : 'muted', value === today ? 'today' : '', value === selectedAppointmentDate ? 'selected' : '', available ? 'available' : 'unavailable'].filter(Boolean).join(' ');
+            const dots = rows.slice(0, 3).map((item) => `<span class="status-dot ${escapeHtml(item.status || 'pending')}"></span>`).join('');
+            return `<button type="button" class="${classes}" data-calendar-date="${value}">
+                <span class="day-number">${date.getDate()}</span>
+                <span class="calendar-dots">${dots}</span>
+                ${rows.length ? `<small>${rows.length}</small>` : ''}
+            </button>`;
+        }).join('');
+        container.querySelectorAll('[data-calendar-date]').forEach((button) => {
+            button.addEventListener('click', () => {
+                selectedAppointmentDate = button.dataset.calendarDate;
+                renderMonthlyAppointmentCalendar(Object.entries(mentorAppointments || {}));
+                renderSelectedDayAgenda(Object.entries(mentorAppointments || {}));
+            });
+        });
+    }
+
+    function renderSelectedDayAgenda(entries) {
+        const container = document.getElementById('selected-day-agenda-list');
+        const title = document.getElementById('selected-agenda-title');
+        if (!container) return;
+        const date = new Date(`${selectedAppointmentDate}T00:00:00`);
+        if (title) title.textContent = Number.isNaN(date.getTime()) ? 'Selected Day' : date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+        const rows = entries.filter(([, item]) => item.date === selectedAppointmentDate).sort(([, a], [, b]) => appointmentSortTime(a) - appointmentSortTime(b));
+        setTextSafe('selected-agenda-count', `${rows.length} ${rows.length === 1 ? 'session' : 'sessions'}`);
+        container.innerHTML = rows.length ? rows.map(([id, item]) => {
+            const status = String(item.status || 'pending').toLowerCase();
+            const mode = ['rejected', 'cancelled'].includes(status) ? 'closed' : status === 'accepted' ? 'accepted' : status;
+            return appointmentCard(id, item, mode);
+        }).join('') : '<div class="empty-state"><i class="fas fa-calendar"></i><p>No appointments for this date.</p></div>';
+        container.querySelectorAll('[data-accept-appointment]').forEach((button) => button.addEventListener('click', () => acceptAppointment(button.dataset.acceptAppointment)));
+        container.querySelectorAll('[data-reject-appointment]').forEach((button) => button.addEventListener('click', () => rejectAppointment(button.dataset.rejectAppointment)));
+        container.querySelectorAll('[data-complete-appointment]').forEach((button) => button.addEventListener('click', () => completeAppointment(button.dataset.completeAppointment)));
+        container.querySelectorAll('[data-message-student]').forEach((button) => button.addEventListener('click', () => openConversation(button.dataset.messageStudent)));
+        container.querySelectorAll('[data-view-appointment]').forEach((button) => button.addEventListener('click', () => openAppointmentDetail(button.dataset.viewAppointment)));
+    }
+
+    function groupAppointmentsByDate(entries) {
+        return entries.reduce((groups, [, item]) => {
+            if (!item.date) return groups;
+            groups[item.date] = [...(groups[item.date] || []), item];
+            return groups;
+        }, {});
+    }
+
+    function renderOverviewAppointments(upcoming) {
+        const container = document.getElementById('overview-appointments-list');
+        if (!container) return;
+        const rows = upcoming.slice(0, 3);
+        container.innerHTML = rows.length ? rows.map(([, item]) => `
+            <div class="overview-row">
+                <span class="date-tile">${escapeHtml(formatDay(item.date))}</span>
+                <div><strong>${escapeHtml(item.studentName || 'Student')}</strong><span>${escapeHtml(formatTimeLabel(item.startTime))} - ${escapeHtml(item.topic || 'Session')}</span></div>
+                <span class="status-pill">Accepted</span>
+            </div>
+        `).join('') : '<div class="empty-state compact"><i class="fas fa-calendar-check"></i><p>No upcoming sessions.</p></div>';
+    }
+
+    function setTextSafe(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+    }
+
+    async function acceptAppointment(appointmentId) {
+        const appointment = mentorAppointments[appointmentId];
+        if (!appointment) return;
+        const latestSnap = await get(query(ref(database, 'mentorAppointments'), orderByChild('mentorUid'), equalTo(currentUid)));
+        const latestAppointments = latestSnap.val() || {};
+        const conflict = Object.entries(latestAppointments || {}).some(([id, item]) => id !== appointmentId
+            && item.mentorUid === currentUid
+            && item.date === appointment.date
+            && ['accepted'].includes(String(item.status || '').toLowerCase())
+            && intervalsOverlap(appointment.startTime, appointment.endTime, item.startTime, item.endTime));
+        if (conflict) return showToast('This slot is already reserved.', 'error');
+        const notificationRef = push(ref(database, `notifications/${appointment.studentUid}`));
+        const updates = {};
+        updates[`mentorAppointments/${appointmentId}/status`] = 'accepted';
+        updates[`mentorAppointments/${appointmentId}/acceptedAt`] = serverTimestamp();
+        updates[`mentorAppointments/${appointmentId}/updatedAt`] = serverTimestamp();
+        updates[`notifications/${appointment.studentUid}/${notificationRef.key}`] = {
+            notificationId: notificationRef.key,
+            type: 'appointment_accepted',
+            title: 'Your mentoring session was accepted',
+            messagePreview: `${currentUserData.fullName || 'Your mentor'} accepted your session for ${appointment.date} at ${formatTimeLabel(appointment.startTime)}.`,
+            relatedAppointmentId: appointmentId,
+            mentorUid: currentUid,
+            read: false,
+            status: 'unread',
+            createdAt: serverTimestamp()
+        };
+        await update(ref(database), updates);
+        showToast('Appointment accepted.', 'success');
+    }
+
+    async function rejectAppointment(appointmentId) {
+        const appointment = mentorAppointments[appointmentId];
+        if (!appointment) return;
+        const reason = prompt('Optional rejection reason:') || '';
+        const notificationRef = push(ref(database, `notifications/${appointment.studentUid}`));
+        const updates = {};
+        updates[`mentorAppointments/${appointmentId}/status`] = 'rejected';
+        updates[`mentorAppointments/${appointmentId}/rejectionReason`] = reason;
+        updates[`mentorAppointments/${appointmentId}/rejectedAt`] = serverTimestamp();
+        updates[`mentorAppointments/${appointmentId}/updatedAt`] = serverTimestamp();
+        updates[`notifications/${appointment.studentUid}/${notificationRef.key}`] = {
+            notificationId: notificationRef.key,
+            type: 'appointment_rejected',
+            title: 'Your mentoring session request was rejected',
+            messagePreview: reason || `${currentUserData.fullName || 'Your mentor'} rejected your session request.`,
+            relatedAppointmentId: appointmentId,
+            mentorUid: currentUid,
+            read: false,
+            status: 'unread',
+            createdAt: serverTimestamp()
+        };
+        await update(ref(database), updates);
+        showToast('Appointment rejected.', 'success');
+    }
+
+    async function completeAppointment(appointmentId) {
+        const appointment = mentorAppointments[appointmentId];
+        if (!appointment) return;
+        const sessionStart = new Date(`${appointment.date}T${appointment.startTime || '00:00'}`).getTime();
+        if (Date.now() < sessionStart) return showToast('You can mark the session completed after it starts.', 'error');
+        const completedNote = prompt('Completion note optional:') || '';
+        const notificationRef = push(ref(database, `notifications/${appointment.studentUid}`));
+        const updates = {};
+        updates[`mentorAppointments/${appointmentId}/status`] = 'completed';
+        updates[`mentorAppointments/${appointmentId}/completedAt`] = serverTimestamp();
+        updates[`mentorAppointments/${appointmentId}/completedNote`] = completedNote;
+        updates[`mentorAppointments/${appointmentId}/updatedAt`] = serverTimestamp();
+        updates[`notifications/${appointment.studentUid}/${notificationRef.key}`] = {
+            notificationId: notificationRef.key,
+            type: 'appointment_completed',
+            title: 'Mentoring session marked as completed',
+            messagePreview: completedNote || 'Your mentor marked the session as completed.',
+            relatedAppointmentId: appointmentId,
+            mentorUid: currentUid,
+            read: false,
+            status: 'unread',
+            createdAt: serverTimestamp()
+        };
+        await update(ref(database), updates);
+        showToast('Session marked completed.', 'success');
     }
 
     async function enrichConnectedStudent(mentorUid, studentUid, item) {

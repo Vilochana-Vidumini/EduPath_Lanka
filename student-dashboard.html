@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="student-dashboard.css">
-    <link rel="stylesheet" href="theme.css?v=20260615-student-hero-image">
+    <link rel="stylesheet" href="theme.css?v=20260624-mentor-calendar-redesign">
+    <link rel="stylesheet" href="student-dashboard.css?v=20260624-session-redesign">
 </head>
 <body class="student-dashboard-page">
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -24,31 +24,43 @@
             <button type="button" class="sidebar-toggle sidebar-toggle-brand" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
             <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
         </div>
-        <div class="sidebar-user" id="sidebar-user">
+        <a class="sidebar-user" id="sidebar-user" href="profile.html" title="Profile">
             <div class="sidebar-user-avatar" id="sidebar-user-avatar"><span class="sidebar-initials">ST</span><span class="online-dot" aria-hidden="true"></span></div>
             <div class="sidebar-user-info">
                 <span class="sidebar-user-name" id="sidebar-user-name">Loading...</span>
                 <span class="sidebar-user-role role-student" id="sidebar-user-role">Student</span>
             </div>
-        </div>
-        <ul class="sidebar-links">
-            <li><a href="#overview" data-section="overview-section" class="active" title="Dashboard Overview"><i class="fas fa-tachometer-alt"></i><span class="sidebar-label">Dashboard Overview</span></a></li>
-            <li><a href="profile.html" title="My Profile"><i class="fas fa-user"></i><span class="sidebar-label">My Profile</span></a></li>
-            <li><a href="#pathway" data-section="pathway-section" title="My Pathway"><i class="fas fa-route"></i><span class="sidebar-label">My Pathway</span></a></li>
-            <li><a href="#pathway-history" data-section="pathway-history-section" title="Pathway History"><i class="fas fa-history"></i><span class="sidebar-label">Pathway History</span></a></li>
-            <li><a href="#recommended-courses" data-section="recommended-courses-section" title="Recommended Courses"><i class="fas fa-book-open"></i><span class="sidebar-label">Recommended Courses</span></a></li>
-            <li><a href="#saved-courses" data-section="saved-courses-section" title="Saved Courses"><i class="fas fa-bookmark"></i><span class="sidebar-label">Saved Courses</span></a></li>
-            <li><a href="#scholarships" data-section="scholarships-section" title="Scholarships"><i class="fas fa-hand-holding-usd"></i><span class="sidebar-label">Scholarships</span></a></li>
-            <li><a href="#mentors" data-section="mentors-section" title="Mentors"><i class="fas fa-chalkboard-teacher"></i><span class="sidebar-label">Mentors</span></a></li>
-            <li><a href="#mentor-requests" data-section="mentor-requests-section" title="My Mentor Requests"><i class="fas fa-user-check"></i><span class="sidebar-label">My Mentor Requests</span></a></li>
-            <li><a href="#connected-mentors" data-section="connected-mentors-section" title="Connected Mentors"><i class="fas fa-comments"></i><span class="sidebar-label">Connected Mentors</span></a></li>
-            <li><a href="#skills" data-section="skills-section" title="Skill Development"><i class="fas fa-chart-line"></i><span class="sidebar-label">Skill Development</span></a></li>
-            <li><a href="#career-guide" data-section="career-guide-section" title="Career Guidance"><i class="fas fa-compass"></i><span class="sidebar-label">Career Guidance</span></a></li>
-            <li><a href="#support" data-section="support-section" title="EduPath Support"><i class="fas fa-headset"></i><span class="sidebar-label">EduPath Support</span></a></li>
-            <li><a href="#notifications" data-section="notifications-section" title="Notifications"><i class="fas fa-bell"></i><span class="sidebar-label">Notifications</span></a></li>
-            <li><a href="index.html" title="Home"><i class="fas fa-home"></i><span class="sidebar-label">Home</span></a></li>
-            <li><a href="#" id="logout-btn-sidebar" class="text-danger" title="Logout"><i class="fas fa-sign-out-alt"></i><span class="sidebar-label">Logout</span></a></li>
+        </a>
+        <ul class="sidebar-links flat-sidebar-links">
+            <li class="sidebar-section-label"><span>MAIN</span></li>
+            <li><a href="#overview" data-section="overview-section" class="active" aria-current="page" title="Dashboard"><i class="fas fa-house" aria-hidden="true"></i><span class="sidebar-label">Dashboard</span></a></li>
+
+            <li class="sidebar-section-label"><span>MY JOURNEY</span></li>
+            <li><a href="#pathway" data-section="pathway-section" title="My Pathway"><i class="fas fa-route" aria-hidden="true"></i><span class="sidebar-label">My Pathway</span></a></li>
+            <li><a href="#next-steps" data-section="next-steps-section" title="Next Steps"><i class="fas fa-list-check" aria-hidden="true"></i><span class="sidebar-label">Next Steps</span></a></li>
+            <li><a href="#skills" data-section="skills-section" title="Skill Progress"><i class="fas fa-chart-line" aria-hidden="true"></i><span class="sidebar-label">Skill Progress</span></a></li>
+
+            <li class="sidebar-section-label"><span>OPPORTUNITIES</span></li>
+            <li><a href="#recommended-courses" data-section="recommended-courses-section" title="Courses"><i class="fas fa-book-open" aria-hidden="true"></i><span class="sidebar-label">Courses</span></a></li>
+            <li><a href="#scholarships" data-section="scholarships-section" title="Scholarships"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span class="sidebar-label">Scholarships</span></a></li>
+
+            <li class="sidebar-section-label"><span>GUIDANCE</span></li>
+            <li><a href="#mentors" data-section="mentors-section" title="Mentors"><i class="fas fa-user-group" aria-hidden="true"></i><span class="sidebar-label">Mentors</span></a></li>
+            <li><a href="#mentor-sessions" data-section="mentor-sessions-section" title="Sessions"><i class="fas fa-calendar-check" aria-hidden="true"></i><span class="sidebar-label">Sessions</span></a></li>
+
+            <li class="sidebar-section-label"><span>COMMUNICATION</span></li>
+            <li><a href="#mentor-messages" data-section="mentor-messages-section" title="Messages"><i class="fas fa-message" aria-hidden="true"></i><span class="sidebar-label">Messages</span><span class="nav-badge" id="sidebar-unread-message-count"></span></a></li>
+            <li><a href="#notifications" data-section="notifications-section" title="Notifications"><i class="fas fa-bell" aria-hidden="true"></i><span class="sidebar-label">Notifications</span><span class="nav-badge" id="sidebar-notification-count"></span></a></li>
+
+            <li class="sidebar-section-label"><span>ACCOUNT</span></li>
+            <li><a href="profile.html" title="Profile"><i class="fas fa-user" aria-hidden="true"></i><span class="sidebar-label">Profile</span></a></li>
+            <li><a href="index.html" title="Home"><i class="fas fa-house-user" aria-hidden="true"></i><span class="sidebar-label">Home</span></a></li>
+            <li><a href="#" id="logout-btn-sidebar" class="text-danger" title="Logout"><i class="fas fa-right-from-bracket" aria-hidden="true"></i><span class="sidebar-label">Logout</span></a></li>
         </ul>
+        <a href="#support" data-section="support-section" class="sidebar-support-link dashboard-jump" title="Contact Support">
+            <i class="fas fa-headset" aria-hidden="true"></i>
+            <div><strong>Need Help?</strong><span>Contact Support</span></div>
+        </a>
     </aside>
 
     <main class="main-content">
@@ -67,102 +79,113 @@
         </header>
 
         <div class="dashboard-container">
-            <section id="overview-section" class="dashboard-section active">
-                <div class="welcome-card glass">
-                    <div class="welcome-content">
+            <section id="overview-section" class="dashboard-section active student-overview">
+                <section class="student-hero glass reveal-card">
+                    <div class="student-hero-main">
                         <span id="outdated-badge" class="badge badge-warning hidden">Profile Updated - Recommendations May Be Outdated</span>
+                        <p class="student-hero-greeting">Good to see you again! <i class="fas fa-hand-sparkles"></i></p>
                         <h1 id="welcome-name">Welcome back, Student</h1>
                         <p class="motivational-text" id="welcome-flow-message">Loading your student journey...</p>
-                        <div class="welcome-meta">
-                            <div><span>First Name</span><strong id="welcome-first-name">Student</strong></div>
-                            <div><span>Education</span><strong id="welcome-education">Loading...</strong></div>
-                            <div><span>Interest</span><strong id="welcome-interest">Loading...</strong></div>
-                            <div><span>Pathway</span><strong id="welcome-pathway-status">Loading...</strong></div>
-                            <div><span>Last Update</span><strong id="welcome-last-updated">Loading...</strong></div>
+                        <div class="hero-summary-grid">
+                            <article class="hero-summary-card">
+                                <i class="fas fa-route"></i>
+                                <div><span>Your Pathway</span><strong id="hero-pathway-name">Loading...</strong><small>University Path</small></div>
+                            </article>
+                            <article class="hero-summary-card">
+                                <div class="student-profile-ring" aria-label="Profile completion"><span id="profile-completion-stat">0%</span></div>
+                                <div><span>Profile Completion</span><strong id="profile-completion-label">Getting Started</strong><small>Keep it updated</small></div>
+                            </article>
+                            <article class="hero-summary-card">
+                                <i class="fas fa-bullseye"></i>
+                                <div><span>Pathway Score</span><strong id="hero-pathway-score">--/100</strong><small id="hero-pathway-score-label">Complete Pathway Finder</small></div>
+                            </article>
                         </div>
                         <div class="welcome-buttons" id="welcome-actions"></div>
                     </div>
-                    <div class="welcome-student">
+                    <div class="student-hero-art">
+                        <div class="hero-orbit hero-orbit-one"></div>
+                        <div class="hero-orbit hero-orbit-two"></div>
                         <div class="student-hero-illustration">
                             <img src="images/student-dashboard-group.png" alt="Students learning together">
                         </div>
                         <div class="welcome-avatar" id="welcome-avatar"><span>ST</span></div>
                     </div>
-                </div>
+                </section>
 
-                <div class="stats-grid">
-                    <article class="stat-card glass">
-                        <div class="stat-icon bg-blue"><i class="fas fa-user-check"></i></div>
-                        <div class="stat-info"><h4>Profile Completion</h4><h2 id="profile-completion-stat">0%</h2></div>
-                    </article>
-                    <article class="stat-card glass">
-                        <div class="stat-icon bg-purple"><i class="fas fa-route"></i></div>
-                        <div class="stat-info"><h4>Pathway Results</h4><h2 id="pathway-results-stat">0</h2></div>
-                    </article>
-                    <article class="stat-card glass">
-                        <div class="stat-icon bg-cyan"><i class="fas fa-bookmark"></i></div>
-                        <div class="stat-info"><h4>Saved Courses</h4><h2 id="saved-courses-stat">0</h2></div>
-                    </article>
-                    <article class="stat-card glass">
-                        <div class="stat-icon bg-orange"><i class="fas fa-user-check"></i></div>
-                        <div class="stat-info"><h4>Mentor Requests</h4><h2 id="mentor-requests-stat">0</h2></div>
-                    </article>
-                    <article class="stat-card glass">
-                        <div class="stat-icon bg-green"><i class="fas fa-hand-holding-usd"></i></div>
-                        <div class="stat-info"><h4>Saved Scholarships</h4><h2 id="saved-scholarships-stat">0</h2></div>
-                    </article>
-                    <article class="stat-card glass">
-                        <div class="stat-icon bg-pink"><i class="fas fa-check-double"></i></div>
-                        <div class="stat-info"><h4>Completed Skills</h4><h2 id="completed-skills-stat">0</h2></div>
-                    </article>
-                    <article class="stat-card glass">
-                        <div class="stat-icon bg-blue"><i class="fas fa-envelope"></i></div>
-                        <div class="stat-info"><h4>Unread Messages</h4><h2 id="unread-messages-stat">0</h2></div>
-                    </article>
-                </div>
+                <section class="student-kpi-grid">
+                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-blue"><i class="fas fa-user-check"></i></div><div class="stat-info"><h4>Profile Completion</h4><h2 id="overview-profile-completion-stat">0%</h2><p id="overview-profile-status">Getting started</p></div></article>
+                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-purple"><i class="fas fa-route"></i></div><div class="stat-info"><h4>Pathway Results</h4><h2 id="pathway-results-stat">0</h2><p>Latest pathway ready</p></div></article>
+                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-cyan"><i class="fas fa-bookmark"></i></div><div class="stat-info"><h4>Saved Courses</h4><h2 id="saved-courses-stat">0</h2><p>Shortlisted options</p></div></article>
+                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-orange"><i class="fas fa-user-clock"></i></div><div class="stat-info"><h4>Mentor Requests</h4><h2 id="mentor-requests-stat">0</h2><p>Guidance status</p></div></article>
+                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-green"><i class="fas fa-award"></i></div><div class="stat-info"><h4>Saved Scholarships</h4><h2 id="saved-scholarships-stat">0</h2><p>Funding options</p></div></article>
+                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-pink"><i class="fas fa-envelope"></i></div><div class="stat-info"><h4>Unread Messages</h4><h2 id="unread-messages-stat">0</h2><p>Messages and alerts</p></div></article>
+                </section>
 
-                <div class="overview-grid">
-                    <article class="profile-card glass">
-                        <div class="profile-card-header">
-                            <h3><i class="fas fa-chart-line text-primary"></i> Profile Completion</h3>
-                            <span id="profile-strength-badge" class="badge">0% Complete</span>
-                        </div>
-                        <div class="profile-progress-panel">
-                            <div class="progress-bar-container">
-                                <div id="dynamic-profile-progress-bar" class="progress-bar"></div>
-                            </div>
-                            <p id="profile-strength-message">Loading profile status...</p>
-                            <p><strong>Pathway Setup:</strong> <span id="pathway-setup-status">Loading...</span></p>
-                            <div class="profile-actions">
-                                <a href="profile.html" class="btn btn-primary"><i class="fas fa-edit"></i> Complete Profile</a>
-                                <a href="profile.html" class="btn btn-outline">Update My Details</a>
-                            </div>
-                        </div>
-                        <div class="checklist-grid">
-                            <div>
-                                <h4>Completed</h4>
-                                <ul id="profile-completed-list" class="checklist"><li>Loading...</li></ul>
-                            </div>
-                            <div>
-                                <h4>To Do</h4>
-                                <ul id="profile-todo-list" class="checklist"><li>Loading...</li></ul>
-                                <ul id="pathway-setup-list" class="checklist pathway-setup-list"></ul>
-                            </div>
-                        </div>
+                <section class="student-overview-grid">
+                    <article class="journey-card glass reveal-card">
+                        <div class="card-heading"><div><h3><i class="fas fa-map-signs text-primary"></i> My Journey</h3><p>Your personalized roadmap to success</p></div><button class="btn btn-outline btn-sm dashboard-jump" data-section="next-steps-section">View Full Plan</button></div>
+                        <div id="journey-progress-list" class="journey-progress-list"></div>
                     </article>
+                    <article class="focus-card glass reveal-card">
+                        <div class="card-heading"><div><h3><i class="fas fa-bullseye text-primary"></i> Your Focus Today</h3><p>Recommended next step</p></div></div>
+                        <div id="focus-today-content" class="focus-today-content"></div>
+                    </article>
+                </section>
 
-                    <article class="content-section">
-                        <div class="section-header"><h2>Next Step Plan</h2></div>
-                        <div id="next-step-list" class="next-step-list">
-                            <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading next steps...</p></div>
-                        </div>
+                <section class="student-main-grid">
+                    <article class="best-matches-card glass reveal-card">
+                        <div class="card-heading"><div><h3><i class="fas fa-medal text-success"></i> Best Matches for You</h3><p>Top course, scholarship, and mentor picks</p></div><button class="btn btn-outline btn-sm dashboard-jump" data-section="recommended-courses-section">View All</button></div>
+                        <div id="overview-best-matches" class="overview-match-grid"></div>
                     </article>
-                </div>
+                    <article class="skill-growth-card glass reveal-card">
+                        <div class="card-heading"><div><h3><i class="fas fa-chart-line text-primary"></i> Skill Growth</h3></div><button class="btn btn-outline btn-sm dashboard-jump" data-section="skills-section">View All</button></div>
+                        <div id="overview-skill-growth" class="skill-growth-list"></div>
+                    </article>
+                    <article class="connected-mentor-card glass reveal-card">
+                        <div id="overview-connected-mentor"></div>
+                    </article>
+                    <article class="upcoming-calendar-card glass reveal-card">
+                        <div class="card-heading"><div><h3><i class="fas fa-calendar-alt text-primary"></i> Upcoming Calendar</h3></div><button class="btn btn-outline btn-sm dashboard-jump" data-section="mentor-sessions-section">View All</button></div>
+                        <div id="overview-calendar-list" class="overview-calendar-list"></div>
+                    </article>
+                    <article class="achievements-card glass reveal-card">
+                        <div class="card-heading"><div><h3><i class="fas fa-trophy text-warning"></i> Achievements</h3></div><button class="btn btn-outline btn-sm dashboard-jump" data-section="skills-section">View All</button></div>
+                        <div id="overview-achievements" class="achievement-list"></div>
+                    </article>
+                </section>
+
+                <section class="keep-growing-strip glass reveal-card">
+                    <div><h3><i class="fas fa-seedling text-success"></i> Keep Growing</h3><p>Small steps today, big future tomorrow.</p></div>
+                    <div id="keep-growing-metrics" class="keep-growing-metrics"></div>
+                    <blockquote>"The future depends on what you do today."</blockquote>
+                </section>
+
+                <article class="profile-card glass compact-profile-card reveal-card">
+                    <div class="profile-card-header">
+                        <h3><i class="fas fa-chart-line text-primary"></i> Profile Completion</h3>
+                        <span id="profile-strength-badge" class="badge">0% Complete</span>
+                    </div>
+                    <div class="profile-progress-panel">
+                        <div class="progress-bar-container"><div id="dynamic-profile-progress-bar" class="progress-bar"></div></div>
+                        <p id="profile-strength-message">Loading profile status...</p>
+                        <p><strong>Pathway Setup:</strong> <span id="pathway-setup-status">Loading...</span></p>
+                        <div class="profile-actions">
+                            <a href="profile.html" class="btn btn-primary"><i class="fas fa-edit"></i> Complete Profile</a>
+                            <button type="button" class="btn btn-outline" id="profile-details-toggle">Expand Details</button>
+                        </div>
+                    </div>
+                    <div class="checklist-grid hidden" id="profile-details-panel">
+                        <div><h4>Completed</h4><ul id="profile-completed-list" class="checklist"><li>Loading...</li></ul></div>
+                        <div><h4>To Do</h4><ul id="profile-todo-list" class="checklist"><li>Loading...</li></ul><ul id="pathway-setup-list" class="checklist pathway-setup-list"></ul></div>
+                    </div>
+                </article>
+
+                <div id="next-step-list" class="next-step-list overview-next-steps hidden"></div>
             </section>
 
             <section id="pathway-section" class="dashboard-section">
                 <div class="section-header">
-                    <h2>My Latest Pathway Result</h2>
+                    <h2>My Pathway Summary</h2>
                     <span class="badge badge-primary">Future Path Score: <span id="res-score">--</span>%</span>
                 </div>
                 <div class="result-card glass" id="pathway-content">
@@ -177,8 +200,20 @@
                 </div>
             </section>
 
+            <section id="next-steps-section" class="dashboard-section">
+                <div class="section-header"><h2>Next Step Plan</h2></div>
+                <div id="next-step-list-standalone" class="next-step-list">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading next steps...</p></div>
+                </div>
+            </section>
+
             <section id="recommended-courses-section" class="dashboard-section">
-                <div class="section-header"><h2>Recommended Courses</h2></div>
+                <div class="section-header"><h2>Courses I Can Proceed</h2></div>
+                <div class="section-tabs">
+                    <button type="button" class="active dashboard-jump" data-section="recommended-courses-section">Recommended</button>
+                    <button type="button" class="dashboard-jump" data-section="saved-courses-section">Saved</button>
+                    <button type="button" class="dashboard-jump" data-section="engaged-courses-section">Engaged</button>
+                </div>
                 <div id="courses-list" class="cards-grid">
                     <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading courses...</p></div>
                 </div>
@@ -186,23 +221,74 @@
 
             <section id="saved-courses-section" class="dashboard-section">
                 <div class="section-header"><h2>Saved Courses</h2></div>
+                <div class="section-tabs">
+                    <button type="button" class="dashboard-jump" data-section="recommended-courses-section">Recommended</button>
+                    <button type="button" class="active dashboard-jump" data-section="saved-courses-section">Saved</button>
+                    <button type="button" class="dashboard-jump" data-section="engaged-courses-section">Engaged</button>
+                </div>
                 <div id="saved-courses-list" class="list-card glass">
                     <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading saved courses...</p></div>
                 </div>
             </section>
 
+            <section id="engaged-courses-section" class="dashboard-section">
+                <div class="section-header"><h2>Courses I Engaged</h2></div>
+                <div class="section-tabs">
+                    <button type="button" class="dashboard-jump" data-section="recommended-courses-section">Recommended</button>
+                    <button type="button" class="dashboard-jump" data-section="saved-courses-section">Saved</button>
+                    <button type="button" class="active dashboard-jump" data-section="engaged-courses-section">Engaged</button>
+                </div>
+                <div id="engaged-courses-list" class="list-card glass">
+                    <div class="empty-state"><i class="fas fa-inbox"></i><p>You have not engaged with any courses yet.</p></div>
+                </div>
+            </section>
+
             <section id="scholarships-section" class="dashboard-section">
                 <div class="section-header">
-                    <h2>Scholarships & Aid</h2>
+                    <h2>Scholarships I Can Apply</h2>
                     <span id="scholarship-support-badge" class="badge badge-warning hidden">Scholarship Support Recommended</span>
+                </div>
+                <div class="section-tabs">
+                    <button type="button" class="active dashboard-jump" data-section="scholarships-section">Recommended</button>
+                    <button type="button" class="dashboard-jump" data-section="saved-scholarships-section">Saved</button>
+                    <button type="button" class="dashboard-jump" data-section="applied-scholarships-section">Applied</button>
                 </div>
                 <div id="scholarships-list" class="list-card glass">
                     <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading scholarships...</p></div>
                 </div>
             </section>
 
+            <section id="saved-scholarships-section" class="dashboard-section">
+                <div class="section-header"><h2>Saved Scholarships</h2></div>
+                <div class="section-tabs">
+                    <button type="button" class="dashboard-jump" data-section="scholarships-section">Recommended</button>
+                    <button type="button" class="active dashboard-jump" data-section="saved-scholarships-section">Saved</button>
+                    <button type="button" class="dashboard-jump" data-section="applied-scholarships-section">Applied</button>
+                </div>
+                <div id="saved-scholarships-list" class="list-card glass">
+                    <div class="empty-state"><i class="fas fa-inbox"></i><p>You have not saved any scholarships yet.</p></div>
+                </div>
+            </section>
+
+            <section id="applied-scholarships-section" class="dashboard-section">
+                <div class="section-header"><h2>Applied Scholarships / Progress</h2></div>
+                <div class="section-tabs">
+                    <button type="button" class="dashboard-jump" data-section="scholarships-section">Recommended</button>
+                    <button type="button" class="dashboard-jump" data-section="saved-scholarships-section">Saved</button>
+                    <button type="button" class="active dashboard-jump" data-section="applied-scholarships-section">Applied</button>
+                </div>
+                <div id="applied-scholarships-list" class="list-card glass">
+                    <div class="empty-state"><i class="fas fa-inbox"></i><p>No scholarship applications tracked yet.</p></div>
+                </div>
+            </section>
+
             <section id="mentors-section" class="dashboard-section">
-                <div class="section-header"><h2>Mentor Match</h2></div>
+                <div class="section-header"><h2>Mentors I Can Connect With</h2></div>
+                <div class="section-tabs">
+                    <button type="button" class="active dashboard-jump" data-section="mentors-section">Find Mentors</button>
+                    <button type="button" class="dashboard-jump" data-section="mentor-requests-section">My Requests</button>
+                    <button type="button" class="dashboard-jump" data-section="connected-mentors-section">Connected</button>
+                </div>
                 <div id="mentors-list" class="cards-grid">
                     <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading mentors...</p></div>
                 </div>
@@ -210,6 +296,11 @@
 
             <section id="mentor-requests-section" class="dashboard-section">
                 <div class="section-header"><h2>My Mentor Requests</h2></div>
+                <div class="section-tabs">
+                    <button type="button" class="dashboard-jump" data-section="mentors-section">Find Mentors</button>
+                    <button type="button" class="active dashboard-jump" data-section="mentor-requests-section">My Requests</button>
+                    <button type="button" class="dashboard-jump" data-section="connected-mentors-section">Connected</button>
+                </div>
                 <div id="mentor-requests-list" class="list-card glass">
                     <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading mentor requests...</p></div>
                 </div>
@@ -217,8 +308,79 @@
 
             <section id="connected-mentors-section" class="dashboard-section">
                 <div class="section-header"><h2>Connected Mentors</h2></div>
+                <div class="section-tabs">
+                    <button type="button" class="dashboard-jump" data-section="mentors-section">Find Mentors</button>
+                    <button type="button" class="dashboard-jump" data-section="mentor-requests-section">My Requests</button>
+                    <button type="button" class="active dashboard-jump" data-section="connected-mentors-section">Connected</button>
+                </div>
                 <div id="connected-mentors-list" class="cards-grid">
                     <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading connected mentors...</p></div>
+                </div>
+            </section>
+
+            <section id="mentor-messages-section" class="dashboard-section">
+                <div class="section-header"><h2>Mentor Messages</h2></div>
+                <div class="section-tabs">
+                    <button type="button" class="active dashboard-jump" data-section="mentor-messages-section">Mentor Messages</button>
+                    <button type="button" class="dashboard-jump" data-section="support-section">EduPath Support</button>
+                </div>
+                <div id="mentor-messages-list" class="list-card glass">
+                    <div class="empty-state"><i class="fas fa-inbox"></i><p>Your mentor conversations will appear here after a request is accepted.</p></div>
+                </div>
+            </section>
+
+            <section id="mentor-sessions-section" class="dashboard-section">
+                <div class="section-header"><h2>My Mentor Sessions</h2></div>
+                <div class="mentor-session-hero glass">
+                    <div class="mentor-session-hero-main">
+                        <div class="session-hero-icon"><i class="fas fa-calendar-plus" aria-hidden="true"></i></div>
+                        <div>
+                            <h3>Book a Mentor Session</h3>
+                            <p>Get personalized guidance from your mentor.</p>
+                            <button type="button" class="btn btn-primary btn-sm" id="session-hero-book-btn" data-dashboard-action="view-sessions">Book New Session</button>
+                        </div>
+                    </div>
+                    <div class="mentor-session-mentor-card" id="session-mentor-summary-card">
+                        <div class="empty-state compact"><i class="fas fa-user-tie"></i><p>Connect with a mentor to start booking sessions.</p></div>
+                    </div>
+                </div>
+                <div class="section-tabs session-tabs">
+                    <button type="button" class="active" data-session-scroll="pending-sessions-list"><i class="far fa-clock"></i> Pending <span id="session-tab-pending">0</span></button>
+                    <button type="button" data-session-scroll="upcoming-sessions-list"><i class="far fa-calendar-check"></i> Upcoming <span id="session-tab-upcoming">0</span></button>
+                    <button type="button" data-session-scroll="completed-sessions-list"><i class="far fa-circle-check"></i> Completed <span id="session-tab-completed">0</span></button>
+                    <button type="button" data-session-scroll="rejected-sessions-list"><i class="far fa-circle-xmark"></i> Rejected / Cancelled <span id="session-tab-rejected">0</span></button>
+                </div>
+                <div class="session-board">
+                    <article class="session-column glass">
+                        <h3>Book Mentor Session</h3>
+                        <div id="book-session-list" class="session-list">
+                            <div class="empty-state"><i class="fas fa-calendar-plus"></i><p>Appointment scheduling will appear here after connecting with a mentor.</p></div>
+                        </div>
+                    </article>
+                    <article class="session-column glass">
+                        <h3>Pending Sessions</h3>
+                        <div id="pending-sessions-list" class="session-list">
+                            <div class="empty-state"><i class="fas fa-clock"></i><p>No mentor sessions scheduled yet.</p></div>
+                        </div>
+                    </article>
+                    <article class="session-column glass">
+                        <h3>Upcoming Sessions</h3>
+                        <div id="upcoming-sessions-list" class="session-list">
+                            <div class="empty-state"><i class="fas fa-calendar-check"></i><p>No mentor sessions scheduled yet.</p></div>
+                        </div>
+                    </article>
+                    <article class="session-column glass">
+                        <h3>Completed Sessions</h3>
+                        <div id="completed-sessions-list" class="session-list">
+                            <div class="empty-state"><i class="fas fa-check-double"></i><p>No mentor sessions scheduled yet.</p></div>
+                        </div>
+                    </article>
+                    <article class="session-column glass">
+                        <h3>Rejected / Cancelled</h3>
+                        <div id="rejected-sessions-list" class="session-list">
+                            <div class="empty-state"><i class="fas fa-ban"></i><p>No rejected or cancelled sessions.</p></div>
+                        </div>
+                    </article>
                 </div>
             </section>
 
@@ -238,6 +400,10 @@
 
             <section id="support-section" class="dashboard-section">
                 <div class="section-header"><h2>EduPath Support</h2></div>
+                <div class="section-tabs">
+                    <button type="button" class="dashboard-jump" data-section="mentor-messages-section">Mentor Messages</button>
+                    <button type="button" class="active dashboard-jump" data-section="support-section">EduPath Support</button>
+                </div>
                 <div class="support-grid">
                     <form id="support-form" class="support-card glass">
                         <label for="support-subject">Subject</label>
@@ -267,6 +433,6 @@
     <script type="module" src="theme.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="student-dashboard.js?v=20260609-3"></script>
+    <script type="module" src="student-dashboard.js?v=20260624-session-redesign"></script>
 </body>
 </html>

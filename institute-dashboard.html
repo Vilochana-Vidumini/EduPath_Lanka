@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="theme.css?v=20260614-softglass">
+    <link rel="stylesheet" href="theme.css?v=20260615-topbar-clock">
     <link rel="stylesheet" href="institute-dashboard.css">
 </head>
 <body>
@@ -42,16 +42,18 @@
         <header class="dash-topbar">
             <button class="menu-toggle topbar-menu-toggle" id="sidebar-toggle" data-menu-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
             <div><h1 id="page-title">Dashboard</h1><p id="page-subtitle">Manage your courses and student inquiries.</p></div>
+            <div class="institute-topbar-actions">
+                <div class="institute-clock-card topbar-clock-card">
+                    <span id="institute-time-greeting">Good Day, Institute</span>
+                    <span id="institute-live-date">Today</span>
+                    <time id="institute-live-clock" datetime="">--:--</time>
+                </div>
+            </div>
         </header>
 
         <section id="dashboard-section" class="dash-section active">
             <div class="welcome-panel">
                 <div><span class="eyebrow">Institute Dashboard</span><h2 id="welcome-name">Welcome</h2><p>Publish courses, manage inquiries, and keep your institute profile complete.</p></div>
-                <div class="institute-clock-card">
-                    <span id="institute-time-greeting">Good Day, Institute</span>
-                    <span id="institute-live-date">Today</span>
-                    <time id="institute-live-clock" datetime="">--:--</time>
-                </div>
                 <button class="btn btn-primary" data-section-jump="add-course-section"><i class="fas fa-plus"></i>Add Course</button>
             </div>
             <div id="approval-notice" class="panel hidden">

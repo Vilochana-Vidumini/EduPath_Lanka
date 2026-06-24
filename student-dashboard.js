@@ -22,6 +22,11 @@ const state = {
     mentorConversations: {},
     mentorConversationRefs: {},
     activeMentorConversationId: null,
+    courseEngagements: {},
+    courseApplications: {},
+    scholarshipApplications: {},
+    mentorAppointments: {},
+    activeBooking: null,
     skills: {},
     careerGuides: {},
     notifications: {},
@@ -67,19 +72,56 @@ let recommendationFilterTimer = null;
 
 const sectionTitles = {
     "overview-section": "Student Dashboard",
-    "pathway-section": "My Pathway",
+    "pathway-section": "My Pathway Summary",
     "pathway-history-section": "Pathway History",
-    "recommended-courses-section": "Recommended Courses",
+    "next-steps-section": "Next Step Plan",
+    "recommended-courses-section": "Courses I Can Proceed",
     "saved-courses-section": "Saved Courses",
-    "scholarships-section": "Scholarships",
-    "mentors-section": "Mentors",
+    "engaged-courses-section": "Courses I Engaged",
+    "scholarships-section": "Scholarships I Can Apply",
+    "saved-scholarships-section": "Saved Scholarships",
+    "applied-scholarships-section": "Applied Scholarships",
+    "mentors-section": "Mentors I Can Connect With",
     "mentor-requests-section": "My Mentor Requests",
     "connected-mentors-section": "Connected Mentors",
+    "mentor-messages-section": "Mentor Messages",
+    "mentor-sessions-section": "My Mentor Sessions",
     "skills-section": "Skill Development",
     "career-guide-section": "Career Guidance",
     "support-section": "EduPath Support",
     "notifications-section": "Notifications"
 };
+
+const dashboardActions = {
+    "continue-plan": () => showDashboardSection("next-steps-section"),
+    "explore-matches": () => showDashboardSection("recommended-courses-section"),
+    "update-pathway": () => {
+        window.location.href = "pathway.html?mode=update";
+    },
+    "explore-courses": () => showDashboardSection("recommended-courses-section"),
+    "explore-scholarships": () => showDashboardSection("scholarships-section"),
+    "explore-mentors": () => showDashboardSection("mentors-section"),
+    "view-connected-mentors": () => showDashboardSection("connected-mentors-section"),
+    "view-sessions": () => showDashboardSection("mentor-sessions-section"),
+    "support": () => showDashboardSection("support-section")
+};
+
+function appointmentDebug(...args) {
+    if (localStorage.getItem("debugAppointments") === "true") console.log(...args);
+}
+
+function sidebarSectionFor(sectionId) {
+    const parentMap = {
+        "pathway-history-section": "pathway-section",
+        "saved-courses-section": "recommended-courses-section",
+        "engaged-courses-section": "recommended-courses-section",
+        "saved-scholarships-section": "scholarships-section",
+        "applied-scholarships-section": "scholarships-section",
+        "mentor-requests-section": "mentors-section",
+        "connected-mentors-section": "mentors-section"
+    };
+    return parentMap[sectionId] || sectionId;
+}
 
 const profileFields = [
     ["fullName", "Full Name", "user"],
@@ -144,7 +186,114 @@ function bindStaticActions() {
     });
 
     document.getElementById("support-form")?.addEventListener("submit", sendSupportMessage);
+    document.getElementById("profile-details-toggle")?.addEventListener("click", () => {
+        const panel = document.getElementById("profile-details-panel");
+        const button = document.getElementById("profile-details-toggle");
+        if (!panel || !button) return;
+        const isHidden = panel.classList.toggle("hidden");
+        button.textContent = isHidden ? "Expand Details" : "Hide Details";
+    });
+    bindDashboardActionDelegation();
     window.addEventListener("hashchange", () => showDashboardSection(getSectionFromHash()));
+}
+
+function bindDashboardActionDelegation() {
+    if (document.body.dataset.studentDashboardDelegated === "true") return;
+    document.body.dataset.studentDashboardDelegated = "true";
+    document.addEventListener("click", async (event) => {
+        const actionButton = event.target.closest("[data-dashboard-action]");
+        if (actionButton) {
+            const action = dashboardActions[actionButton.dataset.dashboardAction];
+            if (action) {
+                event.preventDefault();
+                action(actionButton);
+                return;
+            }
+        }
+
+        const closeBookingButton = event.target.closest("[data-close-booking-modal]");
+        if (closeBookingButton) {
+            event.preventDefault();
+            closeBookingModal();
+            return;
+        }
+
+        const sessionScrollButton = event.target.closest("[data-session-scroll]");
+        if (sessionScrollButton) {
+            event.preventDefault();
+            document.querySelectorAll("[data-session-scroll]").forEach((button) => button.classList.toggle("active", button === sessionScrollButton));
+            document.getElementById(sessionScrollButton.dataset.sessionScroll)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            return;
+        }
+
+        const sessionSummaryButton = event.target.closest("[data-view-session-summary]");
+        if (sessionSummaryButton) {
+            event.preventDefault();
+            const appointment = state.mentorAppointments?.[sessionSummaryButton.dataset.viewSessionSummary];
+            if (!appointment) return showToast("Session details are unavailable. Please refresh and try again.", "error");
+            openRecommendationDetail("Session Summary", sessionSummaryHtml(appointment));
+            return;
+        }
+
+        const jumpButton = event.target.closest(".dashboard-jump[data-section], [data-section].dashboard-jump");
+        if (jumpButton) {
+            event.preventDefault();
+            showDashboardSection(jumpButton.dataset.section);
+            return;
+        }
+
+        const bookingButton = event.target.closest("[data-book-session], [data-action='book-session'], [data-overview-book-session]");
+        if (bookingButton) {
+            event.preventDefault();
+            const mentorUid = bookingButton.dataset.bookSession || bookingButton.dataset.mentorUid || bookingButton.dataset.overviewBookSession;
+            await openBookingModalSafe(mentorUid, bookingButton);
+            return;
+        }
+
+        const cancelButton = event.target.closest("[data-cancel-appointment]");
+        if (cancelButton) {
+            event.preventDefault();
+            await cancelAppointmentSafe(cancelButton.dataset.cancelAppointment, cancelButton);
+            return;
+        }
+
+        const messageButton = event.target.closest("[data-message-mentor]");
+        if (messageButton) {
+            event.preventDefault();
+            const mentorUid = messageButton.dataset.messageMentor;
+            if (!mentorUid) return showToast("Mentor information is missing. Please refresh and try again.", "error");
+            if (!document.getElementById("session-booking-modal")?.classList.contains("hidden")) closeBookingModal();
+            openMentorConversation(mentorUid);
+            return;
+        }
+
+        const dateButton = event.target.closest("[data-booking-date]");
+        if (dateButton) {
+            event.preventDefault();
+            if (dateButton.disabled || dateButton.classList.contains("disabled") || !state.activeBooking) return;
+            state.activeBooking.selectedDate = dateButton.dataset.bookingDate;
+            state.activeBooking.selectedSlot = null;
+            renderBookingModal();
+            return;
+        }
+
+        const slotButton = event.target.closest("[data-slot-start], [data-start]");
+        if (slotButton) {
+            event.preventDefault();
+            if (slotButton.disabled || slotButton.classList.contains("disabled") || !state.activeBooking) return;
+            state.activeBooking.selectedSlot = {
+                startTime: slotButton.dataset.slotStart || slotButton.dataset.start,
+                endTime: slotButton.dataset.slotEnd || slotButton.dataset.end
+            };
+            renderBookingModal();
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && !document.getElementById("session-booking-modal")?.classList.contains("hidden")) {
+            closeBookingModal();
+        }
+    });
 }
 
 function setupRealtime(uid) {
@@ -182,10 +331,23 @@ function setupRealtime(uid) {
         renderNextSteps();
     }, renderError("saved-courses-list", "Unable to load saved courses."));
 
+    onValue(ref(database, `courseEngagements/${uid}`), (snap) => {
+        state.courseEngagements = snap.val() || {};
+        renderEngagedCourses();
+        renderStudentOverview();
+    }, renderError("engaged-courses-list", "Unable to load engaged courses."));
+
+    onValue(ref(database, `courseApplications/${uid}`), (snap) => {
+        state.courseApplications = snap.val() || {};
+        renderEngagedCourses();
+        renderStudentOverview();
+    }, renderError("engaged-courses-list", "Unable to load course applications."));
+
     onValue(ref(database, "scholarships"), (snap) => {
         state.scholarships = snap.val() || {};
         renderScholarships();
         renderSavedScholarships();
+        renderStudentOverview();
         scheduleRecommendationSave();
     }, renderError("scholarships-list", "Unable to load scholarships."));
 
@@ -197,10 +359,17 @@ function setupRealtime(uid) {
         renderNextSteps();
     }, renderError("scholarships-list", "Unable to load saved scholarships."));
 
+    onValue(ref(database, `scholarshipApplications/${uid}`), (snap) => {
+        state.scholarshipApplications = snap.val() || {};
+        renderAppliedScholarships();
+        renderStudentOverview();
+    }, renderError("applied-scholarships-list", "Unable to load scholarship applications."));
+
     onValue(query(ref(database, "mentors"), orderByChild("status"), equalTo("approved")), (snap) => {
         state.mentors = snap.val() || {};
         renderMentors();
         renderMentorRequests();
+        renderStudentOverview();
         scheduleRecommendationSave();
     }, renderError("mentors-list", "Unable to load mentors."));
 
@@ -215,9 +384,17 @@ function setupRealtime(uid) {
         state.connectedMentors = snap.val() || {};
         syncMentorConversationListeners();
         renderConnectedMentors();
+        renderMentorMessages();
+        renderMentorSessions();
         renderStats();
         renderNextSteps();
     }, renderError("connected-mentors-list", "Unable to load connected mentors."));
+
+    onValue(query(ref(database, "mentorAppointments"), orderByChild("studentUid"), equalTo(uid)), (snap) => {
+        state.mentorAppointments = snap.val() || {};
+        renderMentorSessions();
+        renderStudentOverview();
+    }, renderError("pending-sessions-list", "Unable to load mentor sessions."));
 
     onValue(ref(database, `studentProgress/${uid}/skills`), (snap) => {
         state.skills = snap.val() || {};
@@ -282,16 +459,22 @@ function renderAll() {
     renderPathwayHistory();
     renderCourses();
     renderSavedCourses();
+    renderEngagedCourses();
     renderScholarships();
+    renderSavedScholarships();
+    renderAppliedScholarships();
     renderMentors();
     renderMentorRequests();
     renderConnectedMentors();
+    renderMentorMessages();
+    renderMentorSessions();
     renderSkills();
     renderCareerGuides();
     renderSupportMessages();
     renderNotifications();
     renderStats();
     renderNextSteps();
+    renderStudentOverview();
 }
 
 function selectCurrentPathway() {
@@ -365,6 +548,7 @@ function renderIdentity() {
     setText("welcome-interest", state.student.interestArea || "Add interest area");
     setText("welcome-pathway-status", state.student.pathwayCompleted === true ? "Completed" : "Not completed");
     setText("welcome-last-updated", formatDate(state.student.pathwayLastUpdatedAt || state.currentResult?.createdAt));
+    setText("hero-pathway-name", state.currentResult?.recommendedPathway || "Complete Pathway Finder");
 
     const avatar = document.getElementById("welcome-avatar");
     if (avatar) {
@@ -386,8 +570,10 @@ function renderWelcome() {
         message.textContent = "Complete the Pathway Finder once to receive personalized course, scholarship, mentor, and skill recommendations.";
         buttons.innerHTML = `
             <a href="pathway.html?mode=first-time" class="btn btn-primary">Complete Pathway Finder <i class="fas fa-arrow-right"></i></a>
+            <button type="button" class="btn btn-outline dashboard-jump" data-section="recommended-courses-section">Explore Matches</button>
             <a href="profile.html" class="btn btn-outline">Complete Profile</a>
         `;
+        bindJumpButtons();
         return;
     }
 
@@ -395,7 +581,8 @@ function renderWelcome() {
         message.textContent = "Your profile information has changed. Recalculate your pathway to receive updated recommendations.";
         buttons.innerHTML = `
             <a href="pathway.html?mode=update" class="btn btn-primary">Recalculate Recommendations <i class="fas fa-sync-alt"></i></a>
-            <a href="profile.html" class="btn btn-outline">Update My Details</a>
+            <button type="button" class="btn btn-outline dashboard-jump" data-section="recommended-courses-section">Explore Matches</button>
+            <a href="pathway.html?mode=update" class="btn btn-outline">Update Pathway</a>
             <a href="#pathway-history" data-section="pathway-history-section" class="btn btn-outline dashboard-jump">View History</a>
         `;
         bindJumpButtons();
@@ -404,20 +591,15 @@ function renderWelcome() {
 
     message.textContent = "Your current pathway is ready. Review it, compare matches, or update details when your goals change.";
     buttons.innerHTML = `
-        <a href="#pathway" data-section="pathway-section" class="btn btn-primary dashboard-jump">View My Pathway <i class="fas fa-poll-h"></i></a>
-        <a href="profile.html" class="btn btn-outline">Update My Details</a>
-        <a href="#pathway-history" data-section="pathway-history-section" class="btn btn-outline dashboard-jump">View History</a>
+        <a href="#next-steps" data-section="next-steps-section" class="btn btn-primary dashboard-jump">Continue My Plan <i class="fas fa-arrow-right"></i></a>
+        <button type="button" class="btn btn-outline dashboard-jump" data-section="recommended-courses-section">Explore Matches <i class="fas fa-search"></i></button>
+        <a href="pathway.html?mode=update" class="btn btn-outline">Update Pathway <i class="fas fa-pen"></i></a>
     `;
     bindJumpButtons();
 }
 
 function bindJumpButtons() {
-    document.querySelectorAll(".dashboard-jump").forEach((button) => {
-        button.addEventListener("click", (event) => {
-            event.preventDefault();
-            showDashboardSection(button.dataset.section);
-        });
-    });
+    // Dynamic dashboard buttons are handled by bindDashboardActionDelegation().
 }
 
 function renderProfileCompletion() {
@@ -432,10 +614,15 @@ function renderProfileCompletion() {
     setText("profile-strength-badge", `${percentage}% Complete`);
     setText("profile-strength-message", percentage >= 90 ? "Your profile is strong and ready for accurate recommendations." : "Add missing details to improve recommendation quality.");
     setText("profile-completion-stat", `${percentage}%`);
+    setText("overview-profile-completion-stat", `${percentage}%`);
+    setText("overview-profile-status", percentage >= 100 ? "Complete" : percentage >= 80 ? "Almost there" : percentage >= 50 ? "In progress" : "Needs details");
+    setText("profile-completion-label", percentage >= 100 ? "Complete" : percentage >= 80 ? "Almost there" : percentage >= 50 ? "In progress" : "Needs details");
     setText("pathway-setup-status", state.student.pathwayCompleted === true || state.currentResult ? "Completed" : "Not Started");
 
     const bar = document.getElementById("dynamic-profile-progress-bar");
     if (bar) bar.style.width = `${percentage}%`;
+    const ring = document.querySelector(".student-profile-ring");
+    if (ring) ring.style.setProperty("--student-profile-progress", `${percentage * 3.6}deg`);
 
     renderChecklist("profile-completed-list", completed, true);
     renderChecklist("profile-todo-list", missing, false);
@@ -631,6 +818,43 @@ function renderSavedCourses() {
     });
 }
 
+function renderEngagedCourses() {
+    const container = document.getElementById("engaged-courses-list");
+    if (!container) return;
+    const combined = [
+        ...Object.entries(state.courseEngagements || {}).map(([id, item]) => [id, { source: "engagement", ...item }]),
+        ...Object.entries(state.courseApplications || {}).map(([id, item]) => [id, { source: "application", ...item }])
+    ].sort(([, a], [, b]) => getTimeValue(b.updatedAt || b.appliedAt || b.createdAt) - getTimeValue(a.updatedAt || a.appliedAt || a.createdAt));
+
+    if (!combined.length) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-book-open"></i>
+                <p>No engaged courses yet. When you apply or mark a course as started, it will appear here.</p>
+                <button class="btn btn-primary dashboard-jump" data-section="recommended-courses-section">Explore Recommended Courses</button>
+            </div>
+        `;
+        bindJumpButtons();
+        return;
+    }
+
+    container.innerHTML = combined.map(([id, item]) => {
+        const courseId = item.courseId || id;
+        const course = state.courses[courseId] || item.courseSnapshot || {};
+        return `
+            <article class="list-item">
+                <div class="list-icon bg-cyan"><i class="fas fa-book-reader"></i></div>
+                <div class="list-content">
+                    <h4>${escapeHtml(course.courseName || course.name || item.courseName || "Course")}</h4>
+                    <p>${escapeHtml(course.instituteName || course.institute || item.instituteName || "Institute")} - ${formatDate(item.updatedAt || item.appliedAt || item.createdAt)}</p>
+                    <span class="badge badge-primary">${escapeHtml(formatStatus(item.status || item.progressStatus || item.source))}</span>
+                </div>
+                <a class="btn btn-outline btn-sm" href="courses.html?course=${encodeURIComponent(courseId)}">View Course</a>
+            </article>
+        `;
+    }).join("");
+}
+
 async function saveCourse(courseId, matchScore) {
     const course = state.courses[courseId] || {};
     await set(ref(database, `savedCourses/${state.uid}/${courseId}`), {
@@ -684,6 +908,53 @@ function renderScholarships() {
 
 function renderSavedScholarships() {
     setText("saved-scholarships-stat", Object.keys(state.savedScholarships || {}).length);
+    const container = document.getElementById("saved-scholarships-list");
+    if (!container) return;
+    const saved = Object.entries(state.savedScholarships || {});
+    if (!saved.length) {
+        container.innerHTML = emptyBlock("You have not saved any scholarships yet.");
+        return;
+    }
+
+    container.innerHTML = saved.map(([id, savedData]) => {
+        const item = state.scholarships[id] || savedData.scholarshipSnapshot || {};
+        return `
+            <article class="list-item">
+                <div class="list-icon bg-green"><i class="fas fa-hand-holding-usd"></i></div>
+                <div class="list-content">
+                    <h4>${escapeHtml(item.title || item.name || "Saved Scholarship")}</h4>
+                    <p>${escapeHtml(item.provider || item.organization || "Provider")} - Saved ${formatDate(savedData.savedAt)}</p>
+                    <span class="badge badge-primary">${escapeHtml(savedData.matchScore ?? "--")}% match</span>
+                </div>
+                ${item.applyLink || item.url ? `<a class="btn btn-primary btn-sm" href="${escapeAttr(item.applyLink || item.url)}" target="_blank" rel="noopener">Apply</a>` : ""}
+            </article>
+        `;
+    }).join("");
+}
+
+function renderAppliedScholarships() {
+    const container = document.getElementById("applied-scholarships-list");
+    if (!container) return;
+    const applications = Object.entries(state.scholarshipApplications || {}).sort(([, a], [, b]) => getTimeValue(b.updatedAt || b.appliedAt || b.createdAt) - getTimeValue(a.updatedAt || a.appliedAt || a.createdAt));
+    if (!applications.length) {
+        container.innerHTML = emptyBlock("No scholarship applications tracked yet.");
+        return;
+    }
+
+    container.innerHTML = applications.map(([id, application]) => {
+        const scholarshipId = application.scholarshipId || id;
+        const item = state.scholarships[scholarshipId] || application.scholarshipSnapshot || {};
+        return `
+            <article class="list-item">
+                <div class="list-icon bg-green"><i class="fas fa-file-signature"></i></div>
+                <div class="list-content">
+                    <h4>${escapeHtml(item.title || item.name || application.scholarshipName || "Scholarship Application")}</h4>
+                    <p>${escapeHtml(item.provider || application.provider || "Provider")} - ${formatDate(application.updatedAt || application.appliedAt || application.createdAt)}</p>
+                    <span class="badge badge-primary">${escapeHtml(formatStatus(application.status || "submitted"))}</span>
+                </div>
+            </article>
+        `;
+    }).join("");
 }
 
 async function saveScholarship(id, matchScore) {
@@ -1573,14 +1844,652 @@ function renderConnectedMentors() {
                 </div>
                 <div class="card-actions">
                     <button class="btn btn-primary btn-sm" data-message-mentor="${escapeAttr(mentorUid)}">Message Mentor</button>
+                    <button class="btn btn-secondary btn-sm" data-book-session="${escapeAttr(mentorUid)}">Book Session</button>
                     <a class="btn btn-outline btn-sm" href="mentors.html?mentor=${encodeURIComponent(mentorUid)}">View Profile</a>
                 </div>
             </article>
         `;
     }).join("");
-    container.querySelectorAll("[data-message-mentor]").forEach((button) => {
-        button.addEventListener("click", () => openMentorConversation(button.dataset.messageMentor));
+}
+
+function renderMentorMessages() {
+    const container = document.getElementById("mentor-messages-list");
+    if (!container) return;
+    const conversations = Object.entries(state.mentorConversations || {})
+        .sort(([, a], [, b]) => getTimeValue(b.lastMessageAt || b.updatedAt) - getTimeValue(a.lastMessageAt || a.updatedAt));
+    if (!conversations.length) {
+        container.innerHTML = emptyBlock("Your mentor conversations will appear here after a request is accepted.");
+        return;
+    }
+
+    container.innerHTML = conversations.map(([conversationId, conversation]) => {
+        const mentorUid = conversation.mentorUid || conversationId.replace(/^mentor_/, "").replace(`_${state.uid}`, "");
+        const connection = state.connectedMentors[mentorUid] || {};
+        const mentor = state.mentors[mentorUid] || {};
+        const name = conversation.mentorName || connection.mentorName || mentor.fullName || "Mentor";
+        return `
+            <article class="list-item">
+                ${connection.mentorPhotoURL || mentor.photoURL ? `<img class="avatar-sm" src="${escapeAttr(connection.mentorPhotoURL || mentor.photoURL)}" alt="">` : `<div class="list-icon bg-blue"><i class="fas fa-comments"></i></div>`}
+                <div class="list-content">
+                    <h4>${escapeHtml(name)}</h4>
+                    <p>${escapeHtml(conversation.lastMessage || "No messages yet.")}</p>
+                    <span class="text-sm text-muted">${formatDateTime(conversation.lastMessageAt || conversation.updatedAt)}</span>
+                    ${Number(conversation.unreadByStudent || 0) ? `<span class="badge badge-primary">${Number(conversation.unreadByStudent || 0)} unread</span>` : ""}
+                </div>
+                <button class="btn btn-primary btn-sm" data-message-mentor="${escapeAttr(mentorUid)}">Open Chat</button>
+            </article>
+        `;
+    }).join("");
+
+}
+
+function renderMentorSessions() {
+    const bookContainer = document.getElementById("book-session-list");
+    const pendingContainer = document.getElementById("pending-sessions-list");
+    const upcomingContainer = document.getElementById("upcoming-sessions-list");
+    const completedContainer = document.getElementById("completed-sessions-list");
+    if (!bookContainer && !pendingContainer && !upcomingContainer && !completedContainer) return;
+
+    const connected = Object.entries(state.connectedMentors || {}).filter(([, item]) => normalize(item.status) === "connected");
+    renderMentorSessionHero(connected);
+    if (bookContainer) {
+        bookContainer.innerHTML = connected.length ? connected.map(([mentorUid, connection]) => `
+            <article class="session-item session-book-card">
+                <div class="session-date-tile blue"><i class="fas fa-calendar-plus"></i></div>
+                <div class="session-main">
+                    <span class="session-status-pill accepted">CONNECTED MENTOR</span>
+                    <h4>${escapeHtml(connection.mentorName || state.mentors[mentorUid]?.fullName || "Mentor")}</h4>
+                    <p>${escapeHtml(connection.mentorField || state.mentors[mentorUid]?.field || "Mentor guidance")}</p>
+                </div>
+                <div class="session-actions"><button class="btn btn-primary btn-sm" data-book-session="${escapeAttr(mentorUid)}">Book Session</button></div>
+            </article>
+        `).join("") : emptyBlock("Appointment scheduling will appear here after connecting with a mentor.");
+    }
+
+    const appointments = Object.entries(state.mentorAppointments || {});
+    const pendingRows = filterSessionRows(appointments, ["pending", "requested"]);
+    const upcomingRows = filterSessionRows(appointments, ["accepted", "upcoming", "scheduled", "confirmed"]);
+    const completedRows = filterSessionRows(appointments, ["completed", "done"]);
+    const rejectedRows = filterSessionRows(appointments, ["rejected", "cancelled"]);
+    setText("session-tab-pending", pendingRows.length);
+    setText("session-tab-upcoming", upcomingRows.length);
+    setText("session-tab-completed", completedRows.length);
+    setText("session-tab-rejected", rejectedRows.length);
+    renderSessionBucket(pendingContainer, pendingRows, ["pending", "requested"], "No pending sessions.");
+    renderSessionBucket(upcomingContainer, upcomingRows, ["accepted", "upcoming", "scheduled", "confirmed"], "No upcoming sessions.");
+    renderSessionBucket(completedContainer, completedRows, ["completed", "done"], "No completed sessions.");
+    renderSessionBucket(document.getElementById("rejected-sessions-list"), rejectedRows, ["rejected", "cancelled"], "No rejected or cancelled sessions.");
+}
+
+function renderMentorSessionHero(connected = []) {
+    const summary = document.getElementById("session-mentor-summary-card");
+    const bookButton = document.getElementById("session-hero-book-btn");
+    if (!summary || !bookButton) return;
+    if (!connected.length) {
+        bookButton.dataset.dashboardAction = "explore-mentors";
+        bookButton.removeAttribute("data-book-session");
+        bookButton.textContent = "Find a Mentor";
+        summary.innerHTML = `<div class="empty-state compact"><i class="fas fa-user-tie"></i><p>Connect with a mentor to start booking sessions.</p></div>`;
+        return;
+    }
+    const [mentorUid, connection] = connected[0];
+    const mentor = state.mentors[mentorUid] || {};
+    const availability = mentor.availability || mentor.availableTime || mentor.availabilityStatus || "Availability varies";
+    bookButton.removeAttribute("data-dashboard-action");
+    bookButton.dataset.bookSession = mentorUid;
+    bookButton.textContent = "Book New Session";
+    const name = connection.mentorName || mentor.fullName || "Your Mentor";
+    summary.innerHTML = `
+        <div class="session-mentor-head">
+            ${connection.mentorPhotoURL || mentor.photoURL ? `<img src="${escapeAttr(connection.mentorPhotoURL || mentor.photoURL)}" alt="${escapeAttr(name)}">` : `<div class="mentor-photo"><i class="fas fa-user-tie"></i></div>`}
+            <div><span>Your Mentor</span><strong>${escapeHtml(name)}</strong><small>${escapeHtml(connection.mentorField || mentor.field || mentor.mentoringField || "Mentor guidance")}</small></div>
+            <a class="btn btn-outline btn-sm" href="mentors.html?mentor=${encodeURIComponent(mentorUid)}">View Profile</a>
+        </div>
+        <div class="session-mentor-meta">
+            <span><i class="far fa-clock"></i><strong>60 min</strong><small>Session Duration</small></span>
+            <span><i class="fas fa-laptop"></i><strong>${escapeHtml(mentor.mentoringMode || "Online")}</strong><small>Session Mode</small></span>
+            <span><i class="far fa-calendar"></i><strong>${escapeHtml(availability)}</strong><small>Available Days</small></span>
+        </div>
+    `;
+}
+
+function filterSessionRows(appointments, statuses) {
+    return appointments
+        .filter(([, item]) => statuses.includes(normalize(item.status)))
+        .sort(([, a], [, b]) => getTimeValue(a.sessionAt || a.date || a.createdAt) - getTimeValue(b.sessionAt || b.date || b.createdAt));
+}
+
+function renderSessionBucket(container, rows, statuses, emptyMessage) {
+    if (!container) return;
+    if (!rows.length) {
+        container.innerHTML = emptyBlock(emptyMessage || "No mentor sessions scheduled yet.");
+        return;
+    }
+    container.innerHTML = rows.map(([id, session]) => sessionCardHtml(id, session)).join("");
+}
+
+function sessionCardHtml(id, session) {
+    const status = normalize(session.status || "pending");
+    const statusClass = status === "accepted" ? "accepted" : status === "completed" ? "completed" : status === "rejected" || status === "cancelled" ? "rejected" : "pending";
+    const date = session.date ? new Date(`${session.date}T00:00:00`) : null;
+    const month = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString(undefined, { month: "short" }) : "TBD";
+    const day = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString(undefined, { day: "2-digit" }) : "--";
+    const fullDate = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString(undefined, { weekday: "long", day: "2-digit", month: "short", year: "numeric" }) : "Date pending";
+    return `
+        <article class="session-item session-status-card ${statusClass}">
+            <div class="session-date-tile ${statusClass}">
+                <i class="fas ${statusClass === "pending" ? "fa-calendar-days" : statusClass === "accepted" ? "fa-calendar-check" : statusClass === "completed" ? "fa-calendar-check" : "fa-calendar-xmark"}"></i>
+                <strong>${escapeHtml(day)}</strong>
+                <span>${escapeHtml(month)}</span>
+            </div>
+            <div class="session-main">
+                <span class="session-status-pill ${statusClass}">${escapeHtml(status === "accepted" ? "Accepted" : formatStatus(session.status || "pending"))}</span>
+                <h4>${escapeHtml(session.topic || session.note || "Mentor Session")}</h4>
+                <p>${escapeHtml(session.message || session.rejectionReason || "Review your education path and next steps with your mentor.")}</p>
+            </div>
+            <div class="session-time">
+                <strong>${escapeHtml(fullDate)}</strong>
+                <span><i class="far fa-clock"></i> ${escapeHtml(formatTimeLabel(session.startTime))} - ${escapeHtml(formatTimeLabel(session.endTime))}</span>
+                ${statusClass === "accepted" ? `<a class="session-link" href="${escapeAttr(calendarLinkForSession(session))}" target="_blank" rel="noopener"><i class="far fa-calendar-plus"></i> Add to Calendar</a>` : ""}
+            </div>
+            <div class="session-meta">
+                <span><small>Type</small><strong><i class="fas fa-circle"></i> ${escapeHtml(session.mode || "Online Session")}</strong></span>
+                <span><small>Duration</small><strong>${escapeHtml(session.duration || "60 Minutes")}</strong></span>
+            </div>
+            <div class="session-actions">
+                ${statusClass === "pending" ? `<button class="btn btn-outline btn-sm danger-outline" data-cancel-appointment="${escapeAttr(id)}">Cancel Request</button>` : ""}
+                ${statusClass === "accepted" && (session.meetingLink || session.joinLink) ? `<a class="btn btn-primary btn-sm" href="${escapeAttr(session.meetingLink || session.joinLink)}" target="_blank" rel="noopener"><i class="fas fa-video"></i> Join Session</a>` : ""}
+                ${statusClass === "accepted" ? `<button class="btn btn-outline btn-sm" data-message-mentor="${escapeAttr(session.mentorUid)}"><i class="fas fa-envelope"></i> Message Mentor</button>` : ""}
+                ${statusClass === "completed" ? `<button class="btn btn-outline btn-sm" data-view-session-summary="${escapeAttr(id)}"><i class="fas fa-file-lines"></i> View Summary</button>` : ""}
+                ${statusClass === "rejected" ? `<button class="btn btn-outline btn-sm" data-book-session="${escapeAttr(session.mentorUid)}">Book Again</button>` : ""}
+                ${statusClass === "cancelled" ? `<button class="btn btn-outline btn-sm" data-book-session="${escapeAttr(session.mentorUid)}">Book Again</button>` : ""}
+                </div>
+            </div>
+        </article>
+    `;
+}
+
+function calendarLinkForSession(session = {}) {
+    const start = calendarDateToken(session.date, session.startTime);
+    const end = calendarDateToken(session.date, session.endTime);
+    const title = encodeURIComponent(session.topic || "Mentor Session");
+    const details = encodeURIComponent(session.message || "EduPath Lanka mentor session");
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&ctz=Asia/Colombo`;
+}
+
+function calendarDateToken(date = "", time = "00:00") {
+    const cleanDate = String(date || dateKeyLocal()).replaceAll("-", "");
+    const cleanTime = String(time || "00:00").replace(":", "").padEnd(4, "0");
+    return `${cleanDate}T${cleanTime}00`;
+}
+
+function sessionSummaryHtml(session = {}) {
+    return detailGrid({
+        "Session": session.topic || "Mentor Session",
+        "Mentor": session.mentorName || "Mentor",
+        "Date": session.date || "N/A",
+        "Time": `${formatTimeLabel(session.startTime)} - ${formatTimeLabel(session.endTime)}`,
+        "Mode": session.mode || "Online Session",
+        "Status": formatStatus(session.status || "completed"),
+        "Message": session.message || "N/A",
+        "Completed Note": session.completedNote || "No summary note added yet."
     });
+}
+
+async function openBookingModalSafe(mentorUid, clickedButton = null) {
+    const originalHtml = clickedButton?.innerHTML;
+    try {
+        if (!state.uid) return showToast("Please sign in again.", "error");
+        if (!mentorUid) {
+            console.error("Book Session button missing mentor UID", clickedButton);
+            return showToast("Mentor information is missing. Please refresh and try again.", "error");
+        }
+        const connection = state.connectedMentors?.[mentorUid];
+        if (!connection || normalize(connection.status) !== "connected") {
+            return showToast("You need to connect with a mentor before booking a session.", "error");
+        }
+        if (clickedButton) {
+            clickedButton.disabled = true;
+            clickedButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Opening...`;
+        }
+        await openBookingModal(mentorUid);
+    } catch (error) {
+        console.error("[Appointment] Error", error);
+        closeBookingModal();
+        const code = error?.code || "";
+        if (code === "PERMISSION_DENIED" || code === "permission-denied") {
+            showToast("Appointment data could not be loaded because access is restricted.", "error");
+        } else {
+            showToast("Could not open the appointment calendar. Please try again.", "error");
+        }
+    } finally {
+        if (clickedButton) {
+            clickedButton.disabled = false;
+            clickedButton.innerHTML = originalHtml;
+        }
+    }
+}
+
+async function openBookingModal(mentorUid) {
+    if (!state.uid) throw new Error("Student is not signed in.");
+    if (!mentorUid) throw new Error("Mentor UID is missing.");
+    const [connectionSnap, mentorSnap, availabilitySnap, appointmentsSnap] = await Promise.all([
+        get(ref(database, `studentMentors/${state.uid}/${mentorUid}`)),
+        get(ref(database, `mentors/${mentorUid}`)),
+        get(ref(database, `mentorAvailability/${mentorUid}`)),
+        get(query(ref(database, "mentorAppointments"), orderByChild("mentorUid"), equalTo(mentorUid)))
+    ]);
+    const connection = connectionSnap.val();
+    if (!connection || normalize(connection.status) !== "connected") {
+        throw new Error("Student and mentor are not connected.");
+    }
+    const mentor = mentorSnap.val() || state.mentors[mentorUid] || {};
+    const availability = availabilitySnap.val() || {};
+    const mentorAppointments = appointmentsSnap.val() || {};
+    appointmentDebug("[Appointment] Book button clicked", mentorUid);
+    appointmentDebug("[Appointment] Connection", connection);
+    appointmentDebug("[Appointment] Availability loaded", availability);
+    appointmentDebug("[Appointment] Existing appointments", mentorAppointments);
+    state.activeBooking = {
+        mentorUid,
+        connection,
+        mentor,
+        availability,
+        mentorAppointments,
+        calendarDate: new Date(),
+        selectedDate: "",
+        selectedSlot: null
+    };
+    ensureBookingModal();
+    renderBookingModal();
+    const modal = document.getElementById("session-booking-modal");
+    if (!modal) throw new Error("Booking modal was not created.");
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+    modal.querySelector(".modal-close")?.focus();
+}
+
+function ensureBookingModal() {
+    if (document.getElementById("session-booking-modal")) return;
+    document.body.insertAdjacentHTML("beforeend", `
+        <div id="session-booking-modal" class="modal-overlay hidden" aria-hidden="true">
+            <div class="modal-card booking-modal-card">
+                <div class="modal-header">
+                    <div>
+                        <h3 id="booking-modal-title">Book Session</h3>
+                        <p id="booking-modal-subtitle" class="text-muted"></p>
+                    </div>
+                    <button type="button" class="modal-close" id="booking-modal-close" aria-label="Close">&times;</button>
+                </div>
+                <div class="booking-modal-grid">
+                    <div>
+                        <div id="booking-mentor-summary" class="booking-summary"></div>
+                        <div class="booking-calendar-header">
+                            <button type="button" id="booking-prev-month" class="calendar-nav"><i class="fas fa-chevron-left"></i></button>
+                            <h4 id="booking-calendar-title">Choose Date</h4>
+                            <button type="button" id="booking-next-month" class="calendar-nav"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                        <div class="calendar-weekdays"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+                        <div id="booking-date-grid" class="booking-date-grid month-calendar"></div>
+                    </div>
+                    <form id="session-booking-form" class="booking-form">
+                        <h4>Available Time Slots</h4>
+                        <p id="booking-selected-date-label" class="text-muted"></p>
+                        <div id="booking-slot-list" class="booking-slot-list"></div>
+                        <label for="booking-topic">Topic</label>
+                        <input id="booking-topic" class="form-control" placeholder="What do you want to discuss?" required>
+                        <label for="booking-message">Message</label>
+                        <textarea id="booking-message" class="form-control" rows="4" placeholder="Add details for your mentor..."></textarea>
+                        <button class="btn btn-primary" id="booking-submit-btn" type="submit" disabled>Request Session</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `);
+    const modal = document.getElementById("session-booking-modal");
+    document.getElementById("booking-modal-close")?.addEventListener("click", closeBookingModal);
+    modal?.addEventListener("click", (event) => {
+        if (event.target === modal) closeBookingModal();
+    });
+    document.getElementById("session-booking-form")?.addEventListener("submit", submitAppointmentRequest);
+    document.getElementById("booking-prev-month")?.addEventListener("click", () => {
+        if (!state.activeBooking) return;
+        state.activeBooking.calendarDate.setMonth(state.activeBooking.calendarDate.getMonth() - 1);
+        renderBookingModal();
+    });
+    document.getElementById("booking-next-month")?.addEventListener("click", () => {
+        if (!state.activeBooking) return;
+        state.activeBooking.calendarDate.setMonth(state.activeBooking.calendarDate.getMonth() + 1);
+        renderBookingModal();
+    });
+}
+
+function closeBookingModal() {
+    const modal = document.getElementById("session-booking-modal");
+    modal?.classList.add("hidden");
+    modal?.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+    state.activeBooking = null;
+}
+
+function renderBookingModal() {
+    const booking = state.activeBooking;
+    if (!booking) return;
+    const { mentorUid, connection, mentor, availability } = booking;
+    const name = connection.mentorName || mentor.fullName || "Mentor";
+    setText("booking-modal-title", `Book Session with ${name}`);
+    setText("booking-modal-subtitle", connection.mentorField || mentor.field || mentor.mentoringField || "");
+    const summary = document.getElementById("booking-mentor-summary");
+    if (summary) {
+        const normalizedAvailability = normalizeBookingAvailability(availability);
+        const days = Object.entries(normalizedAvailability.availableDays).filter(([, enabled]) => enabled).map(([day]) => formatStatus(day)).join(", ") || "Not set";
+        summary.innerHTML = `
+            <div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(connection.mentorField || mentor.field || "Mentor")}</span></div>
+            <div><strong>${escapeHtml(normalizedAvailability.mentoringMode || mentor.mentoringMode || "Online")}</strong><span>${escapeHtml(days)}</span></div>
+            <div><strong>${Number(normalizedAvailability.sessionDuration || 60)} min sessions</strong><span>${Number(normalizedAvailability.bufferMinutes || 0)} min buffer</span></div>
+        `;
+    }
+    const submitButton = document.getElementById("booking-submit-btn");
+    const selectedDateLabel = document.getElementById("booking-selected-date-label");
+    if (submitButton) submitButton.disabled = !booking.selectedDate || !booking.selectedSlot || !hasValidAvailability(availability);
+    if (selectedDateLabel) selectedDateLabel.textContent = booking.selectedDate ? `Selected date: ${formatDate(booking.selectedDate)}` : "Select a date to view available times.";
+    if (!hasValidAvailability(availability)) {
+        const dateGrid = document.getElementById("booking-date-grid");
+        const slots = document.getElementById("booking-slot-list");
+        if (dateGrid) {
+            dateGrid.innerHTML = `
+                <div class="booking-empty-state">
+                    <i class="fas fa-calendar-times"></i>
+                    <h4>Your mentor has not published available appointment times yet.</h4>
+                    <p>Please message your mentor or check again later.</p>
+                    <button type="button" class="btn btn-primary btn-sm" data-message-mentor="${escapeAttr(mentorUid)}">Message Mentor</button>
+                    <button type="button" class="btn btn-outline btn-sm" data-close-booking-modal>Close</button>
+                </div>
+            `;
+        }
+        if (slots) slots.innerHTML = '<div class="empty-state"><i class="fas fa-clock"></i><p>This mentor has not published available appointment times yet.</p></div>';
+        return;
+    }
+    const dateGrid = document.getElementById("booking-date-grid");
+    if (dateGrid) {
+        const dates = buildBookingDates(availability, booking.calendarDate, booking.mentorAppointments);
+        const title = document.getElementById("booking-calendar-title");
+        if (title) title.textContent = booking.calendarDate.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+        dateGrid.innerHTML = dates.length ? dates.map((item) => `
+            <button type="button" class="booking-date ${item.inMonth ? "" : "muted"} ${item.available ? "available" : ""} ${item.disabled ? "disabled" : ""} ${booking.selectedDate === item.value ? "selected" : ""}" data-booking-date="${escapeAttr(item.value)}" title="${escapeAttr(item.reason || "")}" ${item.disabled ? "disabled" : ""}>
+                <strong>${escapeHtml(item.day)}</strong><span>${escapeHtml(item.label)}</span>${item.count ? `<small>${item.count}</small>` : ""}
+            </button>
+        `).join("") : emptyBlock("Mentor has not added available times yet.");
+    }
+    renderBookingSlots();
+}
+
+function renderBookingSlots() {
+    const container = document.getElementById("booking-slot-list");
+    const booking = state.activeBooking;
+    if (!container || !booking) return;
+    if (!booking.selectedDate) {
+        container.innerHTML = '<div class="empty-state"><i class="fas fa-calendar"></i><p>Select an available date first.</p></div>';
+        return;
+    }
+    const slots = buildAvailableSlots(booking.availability, booking.selectedDate, booking.mentorAppointments);
+    container.innerHTML = slots.length ? slots.map((slot) => `
+        <button type="button" class="booking-slot ${slot.disabled ? "disabled" : ""} ${booking.selectedSlot?.startTime === slot.startTime ? "selected" : ""}" data-slot-start="${escapeAttr(slot.startTime)}" data-slot-end="${escapeAttr(slot.endTime)}" ${slot.disabled ? "disabled" : ""}>
+            ${escapeHtml(formatTimeLabel(slot.startTime))} - ${escapeHtml(formatTimeLabel(slot.endTime))}
+        </button>
+    `).join("") : '<div class="empty-state"><i class="fas fa-clock"></i><p>No free time slots are available on this date.</p></div>';
+    const submitButton = document.getElementById("booking-submit-btn");
+    if (submitButton) submitButton.disabled = !booking.selectedSlot;
+}
+
+function normalizeBookingAvailability(data = {}) {
+    const weekDays = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+    const legacyDays = Array.isArray(data.availableDays)
+        ? data.availableDays.map((day) => String(day).toLowerCase())
+        : String(data.availableDays || "").split(",").map((day) => day.trim().toLowerCase()).filter(Boolean);
+    const availableDays = {};
+    const daySchedules = {};
+    weekDays.forEach((day) => {
+        const enabled = data.availableDays?.[day] === true || legacyDays.includes(day);
+        const ranges = Array.isArray(data.daySchedules?.[day]) ? data.daySchedules[day] : [];
+        availableDays[day] = enabled || ranges.length > 0;
+        daySchedules[day] = ranges.length ? ranges : (availableDays[day] ? [{ startTime: data.startTime || "18:00", endTime: data.endTime || "20:00" }] : []);
+    });
+    return {
+        availableDays,
+        daySchedules,
+        sessionDuration: Number(data.sessionDuration || 60),
+        bufferMinutes: Number(data.bufferMinutes || 0),
+        mentoringMode: data.mentoringMode || "Online",
+        maxSessionsPerDay: Number(data.maxSessionsPerDay || 99),
+        unavailableDates: data.unavailableDates || {}
+    };
+}
+
+function hasValidAvailability(availability = {}) {
+    const normalized = normalizeBookingAvailability(availability);
+    return Object.values(normalized.daySchedules || {}).some((ranges) => Array.isArray(ranges) && ranges.length > 0);
+}
+
+function buildBookingDates(availability = {}, calendarDate = new Date(), appointments = {}) {
+    const normalizedAvailability = normalizeBookingAvailability(availability);
+    const unavailable = availability.unavailableDates || {};
+    if (!Object.values(normalizedAvailability.availableDays).some(Boolean)) return [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const year = calendarDate.getFullYear();
+    const month = calendarDate.getMonth();
+    const first = new Date(year, month, 1);
+    const start = new Date(first);
+    start.setDate(first.getDate() - first.getDay());
+    return Array.from({ length: 42 }, (_, index) => {
+        const date = new Date(start);
+        date.setDate(start.getDate() + index);
+        const value = dateKeyLocal(date);
+        const dayKey = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][date.getDay()];
+        const past = date < today;
+        const blockedDate = unavailable[value] === true;
+        const availableDay = normalizedAvailability.availableDays[dayKey] === true;
+        const slots = buildAvailableSlots(availability, value, appointments);
+        const noSlots = availableDay && !slots.some((slot) => !slot.disabled);
+        const disabled = past || blockedDate || !availableDay || noSlots;
+        const reason = past ? "Past date" : blockedDate ? "Unavailable date" : !availableDay ? "Mentor unavailable" : noSlots ? "Fully booked" : "Available";
+        return {
+            value,
+            inMonth: date.getMonth() === month,
+            available: availableDay && !past && !blockedDate,
+            disabled,
+            reason,
+            count: Object.values(appointments || {}).filter((item) => item.date === value && ["pending", "accepted"].includes(normalize(item.status))).length,
+            day: String(date.getDate()),
+            label: date.toLocaleDateString(undefined, { weekday: "short" })
+        };
+    });
+}
+
+function buildAvailableSlots(availability = {}, date, appointments = {}) {
+    const normalizedAvailability = normalizeBookingAvailability(availability);
+    const dateObj = new Date(`${date}T00:00:00`);
+    const dayKey = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][dateObj.getDay()];
+    const ranges = normalizedAvailability.daySchedules[dayKey] || [];
+    const duration = Number(normalizedAvailability.sessionDuration || 60);
+    const buffer = Number(normalizedAvailability.bufferMinutes || 0);
+    if (!date || !ranges.length || duration <= 0) return [];
+    const dayBookings = Object.values(appointments || {}).filter((item) => item.date === date && ["pending", "accepted", "completed"].includes(normalize(item.status)));
+    const maxSessions = Number(normalizedAvailability.maxSessionsPerDay || 99);
+    const dayFull = dayBookings.length >= maxSessions;
+    const today = new Date();
+    const isToday = date === dateKeyLocal(today);
+    const nowMinutes = today.getHours() * 60 + today.getMinutes();
+    const slots = [];
+    ranges.forEach((range) => {
+        const start = timeToMinutes(range.startTime);
+        const end = timeToMinutes(range.endTime);
+        for (let minute = start; minute + duration <= end; minute += duration + buffer) {
+            const startTime = minutesToTime(minute);
+            const endTime = minutesToTime(minute + duration);
+            const overlaps = dayBookings.some((item) => intervalsOverlap(startTime, endTime, item.startTime, item.endTime));
+            const past = isToday && minute <= nowMinutes;
+            slots.push({ startTime, endTime, disabled: dayFull || overlaps || past });
+        }
+    });
+    return slots;
+}
+
+function intervalsOverlap(startA, endA, startB, endB) {
+    return timeToMinutes(startA) < timeToMinutes(endB) && timeToMinutes(endA) > timeToMinutes(startB);
+}
+
+async function submitAppointmentRequest(event) {
+    event.preventDefault();
+    const submitButton = document.getElementById("booking-submit-btn");
+    const originalText = submitButton?.innerHTML;
+    const booking = state.activeBooking;
+    const slot = booking?.selectedSlot;
+    const topic = document.getElementById("booking-topic")?.value.trim();
+    const message = document.getElementById("booking-message")?.value.trim() || "";
+    try {
+        if (!state.uid || !booking) return showToast("Please sign in again.", "error");
+        if (!hasValidAvailability(booking.availability)) return showToast("This mentor has not published available appointment times yet.", "error");
+        if (!booking.selectedDate || !slot) return showToast("Please select an available date and time.", "error");
+        if (!topic) return showToast("Please enter a session topic.", "error");
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Sending Request...`;
+        }
+        appointmentDebug("[Appointment] Selected date", booking.selectedDate);
+        appointmentDebug("[Appointment] Selected slot", slot);
+        const connectionSnap = await get(ref(database, `studentMentors/${state.uid}/${booking.mentorUid}`));
+        if (normalize(connectionSnap.val()?.status) !== "connected") return showToast("You can book only with connected mentors.", "error");
+        const latestAppointmentsSnap = await get(query(ref(database, "mentorAppointments"), orderByChild("mentorUid"), equalTo(booking.mentorUid)));
+        const latestAppointments = latestAppointmentsSnap.val() || {};
+        const stillAvailable = buildAvailableSlots(booking.availability, booking.selectedDate, latestAppointments)
+            .some((item) => item.startTime === slot.startTime && item.endTime === slot.endTime && !item.disabled);
+        const hasConflict = Object.values(latestAppointments).some((item) => item.date === booking.selectedDate
+            && ["pending", "accepted"].includes(normalize(item.status))
+            && intervalsOverlap(slot.startTime, slot.endTime, item.startTime, item.endTime));
+        const hasDuplicate = Object.values(latestAppointments).some((item) => item.studentUid === state.uid
+            && item.mentorUid === booking.mentorUid
+            && item.date === booking.selectedDate
+            && ["pending", "accepted"].includes(normalize(item.status))
+            && intervalsOverlap(slot.startTime, slot.endTime, item.startTime, item.endTime));
+        if (!stillAvailable || hasConflict || hasDuplicate) return showToast("This time slot was just booked. Please select another slot.", "error");
+        const appointmentRef = push(ref(database, "mentorAppointments"));
+        const notificationRef = push(ref(database, `notifications/${booking.mentorUid}`));
+        const logRef = push(ref(database, "activityLogs"));
+        const studentName = state.user.fullName || state.student.fullName || "Student";
+        const mentorName = booking.connection.mentorName || booking.mentor.fullName || "Mentor";
+        const appointmentMessage = `${studentName} requested a session on ${booking.selectedDate} at ${formatTimeLabel(slot.startTime)}.`;
+        const updates = {};
+        updates[`mentorAppointments/${appointmentRef.key}`] = {
+            appointmentId: appointmentRef.key,
+            mentorUid: booking.mentorUid,
+            studentUid: state.uid,
+            mentorName,
+            studentName,
+            studentEmail: state.user.email || state.student.email || auth.currentUser?.email || "",
+            studentPhotoURL: state.user.photoURL || state.student.photoURL || "",
+            date: booking.selectedDate,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            timezone: "Asia/Colombo",
+            topic,
+            message,
+            mode: booking.availability.mentoringMode || booking.mentor.mentoringMode || "Online",
+            status: "pending",
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            acceptedAt: null,
+            rejectedAt: null,
+            rejectionReason: "",
+            cancelledAt: null,
+            completedAt: null,
+            completedNote: ""
+        };
+        updates[`notifications/${booking.mentorUid}/${notificationRef.key}`] = {
+            notificationId: notificationRef.key,
+            type: "appointment_request",
+            title: "New mentoring session request",
+            message: appointmentMessage,
+            messagePreview: `${studentName} requested ${topic} on ${booking.selectedDate} at ${formatTimeLabel(slot.startTime)}.`,
+            relatedAppointmentId: appointmentRef.key,
+            studentUid: state.uid,
+            read: false,
+            status: "unread",
+            createdAt: serverTimestamp()
+        };
+        updates[`activityLogs/${logRef.key}`] = {
+            logId: logRef.key,
+            uid: state.uid,
+            userName: studentName,
+            userRole: "student",
+            actionType: "appointment_request_created",
+            description: `${studentName} requested a mentoring session with ${mentorName}`,
+            relatedEntityType: "mentorAppointment",
+            relatedEntityId: appointmentRef.key,
+            createdAt: serverTimestamp()
+        };
+        await update(ref(database), updates);
+        event.currentTarget.reset();
+        closeBookingModal();
+        showToast("Session request sent to mentor.", "success");
+    } catch (error) {
+        console.error("[Appointment] Error", error);
+        if (error?.code === "PERMISSION_DENIED" || error?.code === "permission-denied") {
+            showToast("Appointment data could not be loaded because access is restricted.", "error");
+        } else {
+            showToast("Could not send the appointment request. Please try again.", "error");
+        }
+    } finally {
+        if (submitButton && state.activeBooking) {
+            submitButton.innerHTML = originalText || "Request Session";
+            submitButton.disabled = !state.activeBooking.selectedDate || !state.activeBooking.selectedSlot;
+        }
+    }
+}
+
+async function cancelAppointment(appointmentId) {
+    const appointment = state.mentorAppointments[appointmentId];
+    if (!appointment || normalize(appointment.status) !== "pending") return;
+    const notificationRef = push(ref(database, `notifications/${appointment.mentorUid}`));
+    const updates = {};
+    updates[`mentorAppointments/${appointmentId}/status`] = "cancelled";
+    updates[`mentorAppointments/${appointmentId}/cancelledAt`] = serverTimestamp();
+    updates[`mentorAppointments/${appointmentId}/updatedAt`] = serverTimestamp();
+    updates[`notifications/${appointment.mentorUid}/${notificationRef.key}`] = {
+        notificationId: notificationRef.key,
+        type: "appointment_cancelled",
+        title: "Session request cancelled",
+        messagePreview: `${state.user.fullName || "A student"} cancelled a pending session request.`,
+        relatedAppointmentId: appointmentId,
+        studentUid: state.uid,
+        read: false,
+        status: "unread",
+        createdAt: serverTimestamp()
+    };
+    await update(ref(database), updates);
+    showToast("Session request cancelled.", "success");
+}
+
+async function cancelAppointmentSafe(appointmentId, clickedButton = null) {
+    const originalHtml = clickedButton?.innerHTML;
+    try {
+        if (!appointmentId) return showToast("Appointment information is missing. Please refresh and try again.", "error");
+        if (clickedButton) {
+            clickedButton.disabled = true;
+            clickedButton.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Cancelling...`;
+        }
+        await cancelAppointment(appointmentId);
+    } catch (error) {
+        console.error("[Appointment] Error", error);
+        showToast("Could not cancel the appointment request. Please try again.", "error");
+    } finally {
+        if (clickedButton) {
+            clickedButton.disabled = false;
+            clickedButton.innerHTML = originalHtml;
+        }
+    }
 }
 
 function syncMentorConversationListeners() {
@@ -1601,6 +2510,7 @@ function syncMentorConversationListeners() {
             if (snap.exists()) state.mentorConversations[conversationId] = snap.val();
             else delete state.mentorConversations[conversationId];
             renderConnectedMentors();
+            renderMentorMessages();
             renderStats();
             renderActiveMentorConversation();
         });
@@ -1966,17 +2876,295 @@ function renderStats() {
     const unreadMessages = Number(state.supportConversation?.unreadByUser || 0) + unreadMentorMessages;
     const unreadNotifications = Object.values(state.notifications || {}).filter((item) => item.status === "unread").length;
     setText("unread-messages-stat", unreadMessages + unreadNotifications);
+    setSidebarBadge("sidebar-unread-message-count", unreadMessages);
+    setSidebarBadge("sidebar-notification-count", unreadNotifications);
+    renderStudentOverview();
+}
+
+function setSidebarBadge(id, count) {
+    const badge = document.getElementById(id);
+    if (!badge) return;
+    badge.textContent = count > 0 ? String(count) : "";
+    badge.classList.toggle("visible", count > 0);
+}
+
+function renderStudentOverview() {
+    renderStudentHero();
+    renderJourneyProgress();
+    renderFocusToday();
+    renderBestMatchesOverview();
+    renderSkillGrowthOverview();
+    renderConnectedMentorOverview();
+    renderUpcomingCalendarOverview();
+    renderAchievementsOverview();
+    renderKeepGrowingOverview();
+    bindJumpButtons();
+    observeRevealCards();
+}
+
+function renderStudentHero() {
+    const score = Number(state.currentResult?.pathwayScore || 0);
+    setText("hero-pathway-name", state.currentResult?.recommendedPathway || "Complete Pathway Finder");
+    setText("hero-pathway-score", score ? `${score}/100` : "--/100");
+    setText("hero-pathway-score-label", score >= 75 ? "Great match!" : score ? "Review your plan" : "Start matching");
+}
+
+function renderJourneyProgress() {
+    const container = document.getElementById("journey-progress-list");
+    if (!container) return;
+    const profileCompletion = getProfileCompletionPercentage();
+    const savedCourses = Object.keys(state.savedCourses || {}).length;
+    const mentorRequests = Object.keys(state.mentorRequests || {}).length;
+    const appointments = Object.values(state.mentorAppointments || {});
+    const courseStarted = Object.keys(state.courseEngagements || {}).length || Object.keys(state.courseApplications || {}).length;
+    const steps = [
+        { title: "Complete Profile", date: "Profile", done: profileCompletion >= 80, section: "overview-section" },
+        { title: "Complete Pathway Finder", date: state.currentResult ? formatDate(state.currentResult.createdAt) : "Next", done: !!state.currentResult, section: "pathway-section" },
+        { title: "Save Courses", date: `${savedCourses} saved`, done: savedCourses > 0, section: "recommended-courses-section" },
+        { title: "Request Mentor", date: `${mentorRequests} requests`, done: mentorRequests > 0, section: "mentors-section" },
+        { title: "Book Session", date: appointments.length ? `${appointments.length} sessions` : "In progress", done: appointments.length > 0, section: "mentor-sessions-section" },
+        { title: "Start Course", date: courseStarted ? "Started" : "Upcoming", done: courseStarted > 0, section: "engaged-courses-section" }
+    ];
+    const currentIndex = Math.max(0, steps.findIndex((step) => !step.done));
+    container.innerHTML = steps.map((step, index) => `
+        <button type="button" class="journey-step ${step.done ? "done" : index === currentIndex ? "current" : "upcoming"} dashboard-jump" data-section="${escapeAttr(step.section)}">
+            <span>${step.done ? '<i class="fas fa-check"></i>' : index + 1}</span>
+            <strong>${escapeHtml(step.title)}</strong>
+            <small>${escapeHtml(step.date)}</small>
+        </button>
+    `).join("");
+}
+
+function renderFocusToday() {
+    const container = document.getElementById("focus-today-content");
+    if (!container) return;
+    const profileCompletion = getProfileCompletionPercentage();
+    const savedCourses = Object.keys(state.savedCourses || {}).length;
+    const mentorRequests = Object.keys(state.mentorRequests || {}).length;
+    const connected = Object.entries(state.connectedMentors || {}).filter(([, item]) => normalize(item.status) === "connected");
+    const appointments = Object.values(state.mentorAppointments || {});
+    const pending = appointments.find((item) => normalize(item.status) === "pending");
+    const upcoming = appointments.find((item) => normalize(item.status) === "accepted" && getTimeValue(item.date) >= Date.now() - 86400000);
+    let focus = { icon: "fa-route", title: "Complete your Pathway Finder.", text: "Unlock personalized courses, scholarships, mentors, and skills.", action: "Start Now", href: "pathway.html?mode=first-time" };
+    if (state.currentResult && profileCompletion < 80) focus = { icon: "fa-user-edit", title: "Complete your profile for better recommendations.", text: "A stronger profile improves every match.", action: "Complete Profile", href: "profile.html" };
+    else if (state.currentResult && savedCourses === 0) focus = { icon: "fa-bookmark", title: "Compare and save suitable courses.", text: "Shortlist options that fit your pathway and budget.", action: "Browse Courses", section: "recommended-courses-section" };
+    else if (state.currentResult && mentorRequests === 0) focus = { icon: "fa-user-tie", title: "Connect with a recommended mentor.", text: "Get guidance from someone who understands your pathway.", action: "Find Mentors", section: "mentors-section" };
+    else if (connected.length && !appointments.length) focus = { icon: "fa-calendar-plus", title: "Book a mentoring session.", text: "Turn your mentor connection into clear next steps.", action: "Book Now", mentorUid: connected[0][0] };
+    else if (pending) focus = { icon: "fa-hourglass-half", title: "Wait for your mentor to approve your session.", text: "Keep exploring courses while your request is pending.", action: "View Sessions", section: "mentor-sessions-section" };
+    else if (upcoming) focus = { icon: "fa-calendar-check", title: "Prepare for your upcoming mentor session.", text: `${formatDate(upcoming.date)} ${upcoming.startTime ? `at ${formatTimeLabel(upcoming.startTime)}` : ""}`, action: "View Session", section: "mentor-sessions-section" };
+    else if (state.currentResult) focus = { icon: "fa-chart-line", title: "Continue building your skills.", text: "Small skill progress compounds into stronger opportunities.", action: "Open Skills", section: "skills-section" };
+    container.innerHTML = `
+        <div class="focus-highlight">
+            <i class="fas ${focus.icon}"></i>
+            <div><h4>${escapeHtml(focus.title)}</h4><p>${escapeHtml(focus.text)}</p></div>
+        </div>
+        ${focus.href ? `<a class="btn btn-primary btn-sm" href="${escapeAttr(focus.href)}">${escapeHtml(focus.action)}</a>` : focus.mentorUid ? `<button class="btn btn-primary btn-sm" data-book-session="${escapeAttr(focus.mentorUid)}">${escapeHtml(focus.action)}</button>` : `<button class="btn btn-primary btn-sm dashboard-jump" data-section="${escapeAttr(focus.section)}">${escapeHtml(focus.action)}</button>`}
+        <div class="focus-quick-links">
+            <button class="btn btn-outline btn-sm dashboard-jump" data-section="scholarships-section"><i class="fas fa-award"></i> Explore Scholarships</button>
+            <button class="btn btn-outline btn-sm dashboard-jump" data-section="recommended-courses-section"><i class="fas fa-book-open"></i> Browse Courses</button>
+        </div>
+    `;
+}
+
+function renderBestMatchesOverview() {
+    const container = document.getElementById("overview-best-matches");
+    if (!container) return;
+    const bestCourse = getBestCourseMatch();
+    const bestScholarship = getBestScholarshipMatch();
+    const bestMentor = getBestMentorMatch();
+    const cards = [
+        overviewCourseCard(bestCourse),
+        overviewScholarshipCard(bestScholarship),
+        overviewMentorCard(bestMentor)
+    ].filter(Boolean);
+    container.innerHTML = cards.length ? cards.join("") : modernEmpty("fa-search", "No matches yet.", "Complete Pathway Finder to generate personalized matches.", "Start Pathway Finder", "pathway.html?mode=first-time");
+    container.querySelectorAll("[data-overview-save-course]").forEach((button) => button.addEventListener("click", () => saveCourse(button.dataset.overviewSaveCourse, Number(button.dataset.score || 0))));
+    container.querySelectorAll("[data-overview-save-scholarship]").forEach((button) => button.addEventListener("click", () => saveScholarship(button.dataset.overviewSaveScholarship, Number(button.dataset.score || 0))));
+    container.querySelectorAll("[data-overview-mentor-uid]").forEach((button) => button.addEventListener("click", () => requestMentor(button.dataset.overviewMentorUid)));
+}
+
+function renderSkillGrowthOverview() {
+    const container = document.getElementById("overview-skill-growth");
+    if (!container) return;
+    const skills = Object.values(state.skills || {});
+    const names = ["Problem Solving", "Programming / Technical Skill", "Communication", "English", "Leadership"];
+    const items = names.map((name) => {
+        const skill = skills.find((item) => normalize(item.name || item.skillName || item.title).includes(normalize(name.split("/")[0])) || normalize(name).includes(normalize(item.name || "")));
+        const status = normalize(skill?.status || "");
+        const progress = status === "completed" ? 100 : status === "in-progress" ? 60 : skill ? 30 : 0;
+        return { name, progress, status: skill ? formatStatus(skill.status || "planned") : "Recommended" };
+    });
+    container.innerHTML = items.map((item) => `
+        <div class="skill-growth-row">
+            <div><strong>${escapeHtml(item.name)}</strong><span>${escapeHtml(item.status)}</span></div>
+            <div class="skill-growth-bar"><span style="width:${item.progress}%"></span></div>
+        </div>
+    `).join("");
+}
+
+function renderConnectedMentorOverview() {
+    const container = document.getElementById("overview-connected-mentor");
+    if (!container) return;
+    const connected = Object.entries(state.connectedMentors || {}).filter(([, item]) => normalize(item.status) === "connected");
+    if (!connected.length) {
+        container.innerHTML = `
+            <div class="card-heading"><div><h3><i class="fas fa-user-tie text-primary"></i> Connected Mentor</h3><p>No mentor connected yet</p></div></div>
+            ${modernEmpty("fa-user-plus", "Find guidance from an expert mentor.", `${Object.keys(state.mentors || {}).length} recommended mentors may be available.`, "Explore Mentors", null, "mentors-section")}
+        `;
+        return;
+    }
+    const [mentorUid, connection] = connected[0];
+    const mentor = state.mentors[mentorUid] || connection;
+    const next = Object.values(state.mentorAppointments || {}).filter((item) => item.mentorUid === mentorUid && normalize(item.status) === "accepted").sort((a, b) => getTimeValue(a.date) - getTimeValue(b.date))[0];
+    const name = connection.mentorName || mentor.fullName || "Connected Mentor";
+    container.innerHTML = `
+        <div class="card-heading"><div><h3><i class="fas fa-user-tie text-primary"></i> Connected Mentor</h3><p>${escapeHtml(connection.mentorField || mentor.field || mentor.mentoringField || "Career guidance")}</p></div><span class="badge badge-success">Available</span></div>
+        <div class="mentor-mini-profile">
+            <div class="mentor-photo">${mentor.photoURL ? `<img src="${escapeAttr(mentor.photoURL)}" alt="${escapeAttr(name)}">` : `<i class="fas fa-user-tie"></i>`}</div>
+            <div><h4>${escapeHtml(name)}</h4><p>${escapeHtml(mentor.currentRole || mentor.organization || "EduPath Mentor")}</p><small>${next ? `Next session: ${formatDate(next.date)} ${next.startTime ? formatTimeLabel(next.startTime) : ""}` : "No upcoming session"}</small></div>
+        </div>
+        <div class="mentor-mini-actions">
+            <button class="btn btn-outline btn-sm" data-open-mentor-conversation="${escapeAttr(mentorUid)}"><i class="fas fa-comment"></i> Message</button>
+            <button class="btn btn-outline btn-sm dashboard-jump" data-section="connected-mentors-section"><i class="fas fa-eye"></i> View Profile</button>
+            ${next ? "" : `<button class="btn btn-primary btn-sm" data-overview-book-session="${escapeAttr(mentorUid)}"><i class="fas fa-calendar-plus"></i> Book Session</button>`}
+        </div>
+    `;
+    container.querySelector("[data-open-mentor-conversation]")?.setAttribute("data-message-mentor", mentorUid);
+}
+
+function renderUpcomingCalendarOverview() {
+    const container = document.getElementById("overview-calendar-list");
+    if (!container) return;
+    const events = [];
+    Object.values(state.mentorAppointments || {}).forEach((item) => {
+        if (!["accepted", "pending"].includes(normalize(item.status))) return;
+        events.push({ type: "mentor", date: item.date, title: normalize(item.status) === "pending" ? "Pending Mentor Session" : "Mentor Session", subtitle: item.mentorName || "Mentor", time: item.startTime ? formatTimeLabel(item.startTime) : formatStatus(item.status), icon: "fa-calendar-check" });
+    });
+    Object.entries(state.scholarships || {}).forEach(([id, item]) => {
+        const saved = state.savedScholarships?.[id];
+        const deadline = item.deadline || item.applicationDeadline;
+        if (saved && deadline) events.push({ type: "scholarship", date: deadline, title: item.title || item.name || "Scholarship Deadline", subtitle: item.provider || "Scholarship", time: "Deadline", icon: "fa-award" });
+    });
+    const upcoming = events.filter((item) => getTimeValue(item.date) >= Date.now() - 86400000).sort((a, b) => getTimeValue(a.date) - getTimeValue(b.date)).slice(0, 3);
+    container.innerHTML = upcoming.length ? upcoming.map(calendarEventCard).join("") : modernEmpty("fa-calendar", "No upcoming sessions.", "Book a session or save scholarships to see deadlines here.", "Book Session", null, "mentor-sessions-section");
+}
+
+function renderAchievementsOverview() {
+    const container = document.getElementById("overview-achievements");
+    if (!container) return;
+    const achievements = [
+        { title: "Pathway Starter", text: "Completed your pathway plan", unlocked: !!state.currentResult },
+        { title: "Profile Pro", text: "Completed 75% of your profile", unlocked: getProfileCompletionPercentage() >= 75 },
+        { title: "Course Explorer", text: "Saved your first course", unlocked: Object.keys(state.savedCourses || {}).length >= 1 },
+        { title: "Scholarship Hunter", text: "Saved a scholarship", unlocked: Object.keys(state.savedScholarships || {}).length >= 1 },
+        { title: "Mentor Connected", text: "Connected with a mentor", unlocked: Object.values(state.connectedMentors || {}).some((item) => normalize(item.status) === "connected") },
+        { title: "Session Starter", text: "Completed a mentor session", unlocked: Object.values(state.mentorAppointments || {}).some((item) => normalize(item.status) === "completed") },
+        { title: "Skill Builder", text: "Completed a skill", unlocked: Object.values(state.skills || {}).some((item) => normalize(item.status) === "completed") }
+    ].sort((a, b) => Number(b.unlocked) - Number(a.unlocked)).slice(0, 4);
+    container.innerHTML = achievements.map((item) => `
+        <div class="achievement-item ${item.unlocked ? "unlocked" : "locked"}">
+            <i class="fas ${item.unlocked ? "fa-star" : "fa-lock"}"></i>
+            <div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.text)}</span></div>
+        </div>
+    `).join("");
+}
+
+function renderKeepGrowingOverview() {
+    const container = document.getElementById("keep-growing-metrics");
+    if (!container) return;
+    const sessions = Object.values(state.mentorAppointments || {}).filter((item) => ["accepted", "completed"].includes(normalize(item.status))).length;
+    const skills = Object.keys(state.skills || {}).length;
+    container.innerHTML = [
+        ["Courses Saved", Object.keys(state.savedCourses || {}).length, "fa-bookmark"],
+        ["Mentor Sessions", sessions, "fa-calendar-check"],
+        ["Scholarships Saved", Object.keys(state.savedScholarships || {}).length, "fa-award"],
+        ["Skills Tracked", skills, "fa-chart-line"]
+    ].map(([label, value, icon]) => `<span><i class="fas ${icon}"></i><strong>${value}</strong>${label}</span>`).join("");
+}
+
+function getProfileCompletionPercentage() {
+    const completed = profileFields.filter(([key, , source]) => hasValue(source === "user" ? state.user[key] : state.student[key]));
+    return Math.round((completed.length / profileFields.length) * 100);
+}
+
+function getBestCourseMatch() {
+    if (!state.currentResult) return null;
+    return Object.entries(state.courses || {}).filter(([, course]) => normalize(course.status) === "active").map(([id, course]) => courseMatch(id, course)).sort((a, b) => b.matchScore - a.matchScore)[0] || null;
+}
+
+function getBestScholarshipMatch() {
+    if (!state.currentResult) return null;
+    return Object.entries(state.scholarships || {}).filter(([, item]) => normalize(item.status) === "active").map(([id, item]) => scholarshipMatch(id, item)).sort((a, b) => b.matchScore - a.matchScore)[0] || null;
+}
+
+function getBestMentorMatch() {
+    if (!state.currentResult) return null;
+    return Object.entries(state.mentors || {}).filter(([, mentor]) => isApprovedActiveMentor(mentor)).map(([uid, mentor]) => mentorMatch(uid, mentor)).sort((a, b) => b.matchScore - a.matchScore)[0] || null;
+}
+
+function overviewCourseCard(course) {
+    if (!course) return "";
+    const saved = !!state.savedCourses?.[course.courseId];
+    return `<article class="overview-match-card course"><div class="match-media"><i class="fas fa-laptop-code"></i><span>${course.matchScore}% Match</span></div><small>Course</small><h4>${escapeHtml(course.courseName)}</h4><p>${escapeHtml(course.instituteName)}</p><div class="match-meta"><span>${escapeHtml(course.duration)}</span><span>${escapeHtml(course.mode)}</span></div><button class="btn btn-outline btn-sm" data-overview-save-course="${escapeAttr(course.courseId)}" data-score="${course.matchScore}" ${saved ? "disabled" : ""}>${saved ? "Saved" : "Save Course"}</button></article>`;
+}
+
+function overviewScholarshipCard(item) {
+    if (!item) return "";
+    const saved = !!state.savedScholarships?.[item.scholarshipId];
+    return `<article class="overview-match-card scholarship"><div class="match-media"><i class="fas fa-graduation-cap"></i><span>${item.matchScore}% Match</span></div><small>Scholarship</small><h4>${escapeHtml(item.scholarshipName)}</h4><p>${escapeHtml(item.provider)}</p><div class="match-meta"><span>${escapeHtml(item.deadline || "Verify deadline")}</span></div><button class="btn btn-outline btn-sm" data-overview-save-scholarship="${escapeAttr(item.scholarshipId)}" data-score="${item.matchScore}" ${saved ? "disabled" : ""}>${saved ? "Saved" : "Save"}</button></article>`;
+}
+
+function overviewMentorCard(mentor) {
+    if (!mentor) return "";
+    const request = mentorRequestStatus(mentor.mentorUid);
+    return `<article class="overview-match-card mentor"><div class="match-media">${mentor.photoURL ? `<img src="${escapeAttr(mentor.photoURL)}" alt="${escapeAttr(mentor.mentorName)}">` : `<i class="fas fa-user-tie"></i>`}<span>${mentor.matchScore}% Match</span></div><small>Mentor</small><h4>${escapeHtml(mentor.mentorName)}</h4><p>${escapeHtml(mentor.mentorField)}</p><div class="match-meta"><span>${escapeHtml(mentor.availabilityNote || "Available")}</span></div><button class="btn btn-outline btn-sm" data-overview-mentor-uid="${escapeAttr(mentor.mentorUid)}" ${request.disabled ? "disabled" : ""}>${escapeHtml(request.label)}</button></article>`;
+}
+
+function calendarEventCard(item) {
+    const date = new Date(getTimeValue(item.date));
+    const month = Number.isNaN(date.getTime()) ? "TBD" : date.toLocaleDateString(undefined, { month: "short" });
+    const day = Number.isNaN(date.getTime()) ? "--" : date.toLocaleDateString(undefined, { day: "2-digit" });
+    return `<div class="calendar-event ${escapeAttr(item.type)}"><div class="date-badge"><span>${escapeHtml(month)}</span><strong>${escapeHtml(day)}</strong></div><i class="fas ${item.icon}"></i><div><strong>${escapeHtml(item.title)}</strong><span>${escapeHtml(item.subtitle)}</span><small>${escapeHtml(item.time)}</small></div></div>`;
+}
+
+function modernEmpty(icon, title, text, label, href, section) {
+    const action = href ? `<a class="btn btn-primary btn-sm" href="${escapeAttr(href)}">${escapeHtml(label)}</a>` : section ? `<button class="btn btn-primary btn-sm dashboard-jump" data-section="${escapeAttr(section)}">${escapeHtml(label)}</button>` : "";
+    return `<div class="modern-empty"><i class="fas ${icon}"></i><h4>${escapeHtml(title)}</h4><p>${escapeHtml(text)}</p>${action}</div>`;
+}
+
+function observeRevealCards() {
+    const cards = document.querySelectorAll(".reveal-card:not(.is-revealed)");
+    if (!cards.length) return;
+    if (!("IntersectionObserver" in window)) {
+        cards.forEach((card) => card.classList.add("is-revealed"));
+        return;
+    }
+    const observer = new IntersectionObserver((entries, obs) => {
+        entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add("is-revealed");
+            obs.unobserve(entry.target);
+        });
+    }, { threshold: 0.12 });
+    cards.forEach((card, index) => {
+        card.style.setProperty("--reveal-delay", `${Math.min(index * 45, 240)}ms`);
+        observer.observe(card);
+    });
 }
 
 function renderNextSteps() {
-    const container = document.getElementById("next-step-list");
-    if (!container) return;
+    const containers = ["next-step-list", "next-step-list-standalone"]
+        .map((id) => document.getElementById(id))
+        .filter(Boolean);
+    if (!containers.length) return;
     const steps = buildNextSteps();
     if (!steps.length) {
-        container.innerHTML = `<div class="empty-state glass"><i class="fas fa-check-circle"></i><p>You are making excellent progress. Continue learning and reviewing your pathway.</p></div>`;
+        containers.forEach((container) => {
+            container.innerHTML = `<div class="empty-state glass"><i class="fas fa-check-circle"></i><p>You are making excellent progress. Continue learning and reviewing your pathway.</p></div>`;
+        });
         return;
     }
-    container.innerHTML = steps.map((step) => `
+    const html = steps.map((step) => `
         <article class="next-step-card glass">
             <i class="${step.done ? "fas fa-check-circle text-success" : "far fa-circle text-muted"}"></i>
             <div>
@@ -1986,6 +3174,9 @@ function renderNextSteps() {
             ${step.href ? `<a class="btn btn-outline btn-sm" href="${escapeAttr(step.href)}">${escapeHtml(step.action)}</a>` : `<button class="btn btn-outline btn-sm dashboard-jump" data-section="${escapeAttr(step.section)}">${escapeHtml(step.action)}</button>`}
         </article>
     `).join("");
+    containers.forEach((container) => {
+        container.innerHTML = html;
+    });
     bindJumpButtons();
 }
 
@@ -2119,19 +3310,33 @@ function renderError(containerId, message) {
 
 function showDashboardSection(sectionId = "overview-section") {
     const normalized = sectionTitles[sectionId] ? sectionId : "overview-section";
-    document.querySelectorAll(".dashboard-section").forEach((section) => section.classList.toggle("active", section.id === normalized));
-    document.querySelectorAll(".sidebar-links a[data-section]").forEach((link) => link.classList.toggle("active", link.dataset.section === normalized));
+    document.querySelectorAll(".dashboard-section").forEach((section) => {
+        section.classList.toggle("active", section.id === normalized);
+        section.style.display = "";
+    });
+    const activeSidebarSection = sidebarSectionFor(normalized);
+    document.querySelectorAll(".sidebar-links a[data-section], .sidebar-support-link[data-section]").forEach((link) => {
+        const active = link.dataset.section === activeSidebarSection || link.dataset.section === normalized;
+        link.classList.toggle("active", active);
+        if (active) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
+    });
     setText("page-title", sectionTitles[normalized] || "Student Dashboard");
     const title = document.querySelector(".page-title");
     if (title) title.textContent = sectionTitles[normalized] || "Student Dashboard";
     if (normalized === "support-section") markStudentSupportRead();
+    localStorage.setItem("studentActiveSection", normalized);
+    const nextHash = `#${normalized.replace("-section", "")}`;
+    if (window.location.hash !== nextHash) history.replaceState(null, "", nextHash);
 
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("sidebar-overlay");
     if (sidebar && window.innerWidth <= 768) {
         sidebar.classList.remove("active");
+        sidebar.classList.remove("mobile-open");
         document.body.classList.remove("sidebar-mobile-open");
         overlay?.classList.remove("show");
+        overlay?.classList.remove("active");
     }
 }
 
@@ -2154,7 +3359,8 @@ async function markStudentSupportRead() {
 function getSectionFromHash() {
     const hash = window.location.hash.replace("#", "");
     const found = Object.keys(sectionTitles).find((id) => id.replace("-section", "") === hash || id === hash);
-    return found || "overview-section";
+    const saved = localStorage.getItem("studentActiveSection");
+    return found || (sectionTitles[saved] ? saved : "overview-section");
 }
 
 function setText(id, value) {
@@ -2170,6 +3376,29 @@ function formatDate(value) {
     const time = getTimeValue(value);
     if (!time) return "Not updated yet";
     return new Date(time).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function dateKeyLocal(date = new Date()) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function timeToMinutes(value = "00:00") {
+    const [hours, minutes] = String(value || "00:00").split(":").map(Number);
+    return (hours || 0) * 60 + (minutes || 0);
+}
+
+function minutesToTime(total) {
+    const hours = Math.floor(total / 60);
+    const minutes = total % 60;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function formatTimeLabel(value = "") {
+    if (!value) return "N/A";
+    const [hours, minutes] = String(value).split(":").map(Number);
+    const date = new Date();
+    date.setHours(hours || 0, minutes || 0, 0, 0);
+    return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
 function formatStatus(status) {
