@@ -1,6 +1,6 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { ref, get, update, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { ref, get, update, onValue, serverTimestamp, push } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast } from "./auth-nav.js?v=20260614-brand";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -8,6 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
     let userRole = 'student';
     let cachedUserData = null;
     let cachedRoleData = null;
+    let cachedPrivateData = {};
+    let cachedApplicationData = {};
+    let cachedAvailabilityData = {};
+    let mergedMentorProfile = {};
 
     // --- Modal overlays selectors ---
     const avatarModalOverlay = document.getElementById('avatar-modal-overlay');
@@ -24,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const editingControlsBlock = document.getElementById('editing-controls-block');
     const cancelEditBtn = document.getElementById('cancel-edit-btn');
     const profileDetailsForm = document.getElementById('profile-details-form');
+    const submitMentorProfileBtn = document.getElementById('submit-mentor-profile-btn');
     
     const openPwdBtn = document.getElementById('open-pwd-modal-btn');
     const changePwdForm = document.getElementById('profile-change-password-form');
@@ -73,6 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleEditingMode(true);
     });
 
+    submitMentorProfileBtn?.addEventListener('click', () => submitMentorProfileForReview());
+
+    document.querySelectorAll('[data-mentor-tab]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const tab = button.dataset.mentorTab;
+            document.querySelectorAll('[data-mentor-tab]').forEach((btn) => btn.classList.toggle('active', btn === button));
+            document.querySelectorAll('[data-mentor-panel]').forEach((panel) => panel.classList.toggle('active', panel.dataset.mentorPanel === tab));
+        });
+    });
+
     function toggleEditingMode(isEditing) {
         const inputs = profileDetailsForm.querySelectorAll('.form-input');
         inputs.forEach(input => {
@@ -85,6 +100,10 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 input.readOnly = !isEditing;
             }
+        });
+
+        profileDetailsForm.querySelectorAll('[data-profile-checkbox-group] input, .mentor-declarations input[type="checkbox"]').forEach(input => {
+            input.disabled = !isEditing;
         });
 
         if (isEditing) {
@@ -140,12 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('student-specific-card').classList.add('hidden');
                 document.getElementById('mentor-specific-card').classList.remove('hidden');
 
-                // Fetch mentor details
-                get(ref(database, 'mentors/' + uid)).then((roleSnap) => {
-                    cachedRoleData = roleSnap.exists() ? roleSnap.val() : {};
-                    populateFormData();
-                    calculateProfileStrength();
-                });
+                loadMentorProfileData(uid);
 
             } else { // Admin
                 document.getElementById('student-specific-card').classList.add('hidden');
@@ -155,6 +169,82 @@ document.addEventListener('DOMContentLoaded', () => {
                 calculateProfileStrength();
             }
         });
+    }
+
+    async function loadMentorProfileData(uid) {
+        const [mentorSnap, privateSnap, applicationSnap, availabilitySnap] = await Promise.all([
+            get(ref(database, `mentors/${uid}`)),
+            get(ref(database, `mentorPrivate/${uid}`)),
+            get(ref(database, `mentorApplications/${uid}`)),
+            get(ref(database, `mentorAvailability/${uid}`))
+        ]);
+
+        const mentorData = mentorSnap.exists() ? mentorSnap.val() : {};
+        cachedPrivateData = privateSnap.exists() ? privateSnap.val() : {};
+        cachedApplicationData = applicationSnap.exists() ? applicationSnap.val() : {};
+        cachedAvailabilityData = availabilitySnap.exists() ? availabilitySnap.val() : {};
+
+        await ensureExistingMentorProfile(uid, mentorData, cachedApplicationData, cachedPrivateData);
+
+        mergedMentorProfile = {
+            ...(cachedUserData || {}),
+            ...cachedApplicationData,
+            ...cachedPrivateData,
+            ...mentorData
+        };
+        cachedRoleData = mergedMentorProfile;
+        populateFormData();
+        calculateProfileStrength();
+        renderMentorProfileStatus();
+        renderAvailabilitySummary();
+    }
+
+    async function ensureExistingMentorProfile(uid, mentorData = {}, applicationData = {}, privateData = {}) {
+        const existingStatus = normalizeStatus(mentorData.approvalStatus || applicationData.approvalStatus || mentorData.status || cachedUserData?.mentorStatus || '');
+        const alreadyApproved = existingStatus === 'approved';
+        const preservedStatus = ['submitted', 'under_review', 'changes_requested', 'rejected'].includes(existingStatus) ? existingStatus : 'draft';
+        const defaultStatus = alreadyApproved ? 'approved' : preservedStatus;
+        const updates = {};
+        const mentorDefaults = {
+            uid,
+            fullName: mentorData.fullName || cachedUserData?.fullName || '',
+            email: mentorData.email || cachedUserData?.email || currentUser?.email || '',
+            phone: mentorData.phone || cachedUserData?.phone || '',
+            profileStatus: mentorData.profileStatus || (alreadyApproved ? 'completed' : 'incomplete'),
+            approvalStatus: mentorData.approvalStatus || defaultStatus,
+            applicationStatus: mentorData.applicationStatus || defaultStatus,
+            status: mentorData.status || (alreadyApproved ? 'approved' : 'draft')
+        };
+
+        Object.entries(mentorDefaults).forEach(([key, value]) => {
+            if ((mentorData[key] === undefined || mentorData[key] === '') && value !== undefined) {
+                updates[`mentors/${uid}/${key}`] = value;
+            }
+        });
+
+        if (mentorData.publicVisibility === undefined) updates[`mentors/${uid}/publicVisibility`] = alreadyApproved;
+        if (mentorData.mentoringEnabled === undefined) updates[`mentors/${uid}/mentoringEnabled`] = alreadyApproved;
+        if (!mentorData.createdAt && cachedUserData?.createdAt) updates[`mentors/${uid}/createdAt`] = cachedUserData.createdAt;
+        updates[`mentors/${uid}/updatedAt`] = serverTimestamp();
+
+        if (!Object.keys(applicationData).length) {
+            updates[`mentorApplications/${uid}/mentorUid`] = uid;
+            updates[`mentorApplications/${uid}/profileStatus`] = alreadyApproved ? 'completed' : 'incomplete';
+            updates[`mentorApplications/${uid}/approvalStatus`] = defaultStatus;
+            updates[`mentorApplications/${uid}/applicationStatus`] = defaultStatus;
+            updates[`mentorApplications/${uid}/createdAt`] = serverTimestamp();
+            updates[`mentorApplications/${uid}/updatedAt`] = serverTimestamp();
+        }
+
+        if (!Object.keys(privateData).length) {
+            updates[`mentorPrivate/${uid}/mentorUid`] = uid;
+            updates[`mentorPrivate/${uid}/createdAt`] = serverTimestamp();
+            updates[`mentorPrivate/${uid}/updatedAt`] = serverTimestamp();
+        }
+
+        if (Object.keys(updates).length) {
+            await update(ref(database), updates).catch((err) => console.warn('Mentor compatibility defaults skipped:', err));
+        }
     }
 
     // Populate all input values from cached values
@@ -200,22 +290,250 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('field-skills').value = cachedRoleData.skills || '';
 
         } else if (userRole === 'mentor' && cachedRoleData) {
-            document.getElementById('field-mentorType').value = cachedRoleData.mentorType || '';
-            document.getElementById('field-field').value = cachedRoleData.field || cachedRoleData.mentoringField || '';
-            document.getElementById('field-universityOrCompany').value = cachedRoleData.universityOrCompany || cachedRoleData.organization || '';
-            document.getElementById('field-experience').value = cachedRoleData.experience || '';
-            document.getElementById('field-availableTime').value = cachedRoleData.availableTime || '';
-            document.getElementById('field-availabilityStatus').value = cachedRoleData.availabilityStatus || 'active';
-            document.getElementById('field-bio').value = cachedRoleData.bio || '';
-
-            // Approval status node (read-only)
-            const approvalStatus = (cachedRoleData.status || 'pending').toLowerCase();
-            const badge = document.getElementById('verification-status-badge');
-            if (badge) {
-                badge.textContent = approvalStatus;
-                badge.className = `badge badge-${approvalStatus}`;
-            }
+            const mentor = mergedMentorProfile || cachedRoleData;
+            setValue('field-photoURL', valueFrom(mentor, 'photoURL'));
+            setValue('field-mentorDistrict', valueFrom(mentor, 'district'));
+            setValue('field-mentorCity', valueFrom(mentor, 'city'));
+            setProfileCheckedValues('preferredLanguages', arrayFrom(valueFrom(mentor, 'preferredLanguages', 'languages', 'language')));
+            setValue('field-mentorType', valueFrom(mentor, 'mentorType'));
+            setValue('field-field', valueFrom(mentor, 'field', 'mentoringField', 'expertise'));
+            setValue('field-currentPosition', valueFrom(mentor, 'currentPosition', 'currentRole'));
+            setValue('field-universityOrCompany', valueFrom(mentor, 'universityOrCompany', 'organization', 'company'));
+            setValue('field-highestQualification', valueFrom(mentor, 'highestQualification', 'qualification'));
+            setValue('field-studyArea', valueFrom(mentor, 'studyArea'));
+            setValue('field-yearsOfExperience', valueFrom(mentor, 'yearsOfExperience', 'experience'));
+            setValue('field-professionalMembership', valueFrom(mentor, 'professionalMembership'));
+            setValue('field-linkedInURL', valueFrom(mentor, 'linkedInURL'));
+            setValue('field-portfolioURL', valueFrom(mentor, 'portfolioURL'));
+            setProfileCheckedValues('guidanceAreas', arrayFrom(valueFrom(mentor, 'guidanceAreas')));
+            setProfileCheckedValues('studentLevelsSupported', arrayFrom(valueFrom(mentor, 'studentLevelsSupported')));
+            setProfileCheckedValues('streamsSupported', arrayFrom(valueFrom(mentor, 'streamsSupported')));
+            setValue('field-mentoringMode', valueFrom(mentor, 'mentoringMode'));
+            setValue('field-maxStudents', valueFrom(mentor, 'maxStudents'));
+            setValue('field-bio', valueFrom(mentor, 'bio', 'shortBio'));
+            setValue('field-whyMentor', valueFrom(mentor, 'whyMentor'));
+            setValue('field-studentExpectation', valueFrom(mentor, 'studentExpectation'));
+            setValue('field-cvURL', valueFrom(mentor, 'cvURL'));
+            setValue('field-qualificationDocumentURL', valueFrom(mentor, 'qualificationDocumentURL'));
+            setValue('field-experienceProofURL', valueFrom(mentor, 'experienceProofURL'));
+            setValue('field-professionalCertificateURL', valueFrom(mentor, 'professionalCertificateURL'));
+            setChecked('field-informationConfirmed', mentor.informationConfirmed === true);
+            setChecked('field-mentorGuidelinesAccepted', mentor.mentorGuidelinesAccepted === true);
+            setChecked('field-publicationConsent', mentor.publicationConsent === true);
+            renderMentorProfileStatus(mentor);
         }
+    }
+
+    const mentorRequiredFields = [
+        { key: 'photoURL', label: 'Profile Photo' },
+        { key: 'fullName', label: 'Full Name' },
+        { key: 'phone', label: 'Phone Number' },
+        { key: 'district', label: 'District' },
+        { key: 'city', label: 'City' },
+        { key: 'preferredLanguages', label: 'Preferred Languages' },
+        { key: 'mentorType', label: 'Mentor Type' },
+        { key: 'field', label: 'Field / Expertise' },
+        { key: 'currentPosition', label: 'Current Position' },
+        { key: 'universityOrCompany', label: 'University / Company' },
+        { key: 'highestQualification', label: 'Highest Qualification' },
+        { key: 'studyArea', label: 'Study Area' },
+        { key: 'yearsOfExperience', label: 'Years of Experience' },
+        { key: 'guidanceAreas', label: 'Guidance Areas' },
+        { key: 'studentLevelsSupported', label: 'Student Levels Supported' },
+        { key: 'streamsSupported', label: 'Streams Supported' },
+        { key: 'mentoringMode', label: 'Mentoring Mode' },
+        { key: 'maxStudents', label: 'Maximum Students' },
+        { key: 'bio', label: 'Short Biography' },
+        { key: 'whyMentor', label: 'Why You Want to Mentor' },
+        { key: 'qualificationDocumentURL', label: 'Qualification Document' },
+        { key: 'informationConfirmed', label: 'Information Accuracy Confirmation' },
+        { key: 'mentorGuidelinesAccepted', label: 'Mentoring Guidelines Agreement' },
+        { key: 'publicationConsent', label: 'Publication Consent' }
+    ];
+
+    function valueFrom(source, ...keys) {
+        for (const key of keys) {
+            const value = source?.[key];
+            if (Array.isArray(value) && value.length) return value;
+            if (value !== undefined && value !== null && String(value).trim() !== '') return value;
+        }
+        return '';
+    }
+
+    function arrayFrom(value) {
+        if (Array.isArray(value)) return value;
+        return String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
+    }
+
+    function setValue(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.value = value || '';
+    }
+
+    function setChecked(id, checked) {
+        const el = document.getElementById(id);
+        if (el) el.checked = checked;
+    }
+
+    function getValue(id) {
+        return document.getElementById(id)?.value.trim() || '';
+    }
+
+    function getProfileCheckedValues(group) {
+        return [...document.querySelectorAll(`[data-profile-checkbox-group="${group}"] input:checked`)].map((input) => input.value);
+    }
+
+    function setProfileCheckedValues(group, values) {
+        const selected = new Set(arrayFrom(values));
+        document.querySelectorAll(`[data-profile-checkbox-group="${group}"] input`).forEach((input) => {
+            input.checked = selected.has(input.value);
+        });
+    }
+
+    function normalizeStatus(status) {
+        return String(status || 'draft').trim().toLowerCase().replace(/\s+/g, '_');
+    }
+
+    function isApprovedMentor(profile = mergedMentorProfile) {
+        return normalizeStatus(profile?.approvalStatus || profile?.status) === 'approved';
+    }
+
+    function collectMentorProfilePayload() {
+        const payload = {
+            uid: currentUser.uid,
+            photoURL: getValue('field-photoURL'),
+            fullName: getValue('field-fullName'),
+            email: getValue('field-email') || currentUser.email || '',
+            phone: getValue('field-phone'),
+            district: getValue('field-mentorDistrict'),
+            city: getValue('field-mentorCity'),
+            preferredLanguages: getProfileCheckedValues('preferredLanguages'),
+            mentorType: getValue('field-mentorType'),
+            field: getValue('field-field'),
+            expertise: getValue('field-field'),
+            currentPosition: getValue('field-currentPosition'),
+            currentRole: getValue('field-currentPosition'),
+            universityOrCompany: getValue('field-universityOrCompany'),
+            organization: getValue('field-universityOrCompany'),
+            highestQualification: getValue('field-highestQualification'),
+            qualification: getValue('field-highestQualification'),
+            studyArea: getValue('field-studyArea'),
+            yearsOfExperience: getValue('field-yearsOfExperience'),
+            experience: getValue('field-yearsOfExperience'),
+            professionalMembership: getValue('field-professionalMembership'),
+            linkedInURL: getValue('field-linkedInURL'),
+            portfolioURL: getValue('field-portfolioURL'),
+            guidanceAreas: getProfileCheckedValues('guidanceAreas'),
+            studentLevelsSupported: getProfileCheckedValues('studentLevelsSupported'),
+            streamsSupported: getProfileCheckedValues('streamsSupported'),
+            mentoringMode: getValue('field-mentoringMode'),
+            maxStudents: getValue('field-maxStudents'),
+            bio: getValue('field-bio'),
+            shortBio: getValue('field-bio'),
+            whyMentor: getValue('field-whyMentor'),
+            studentExpectation: getValue('field-studentExpectation'),
+            cvURL: getValue('field-cvURL'),
+            qualificationDocumentURL: getValue('field-qualificationDocumentURL'),
+            experienceProofURL: getValue('field-experienceProofURL'),
+            professionalCertificateURL: getValue('field-professionalCertificateURL'),
+            informationConfirmed: document.getElementById('field-informationConfirmed')?.checked === true,
+            mentorGuidelinesAccepted: document.getElementById('field-mentorGuidelinesAccepted')?.checked === true,
+            publicationConsent: document.getElementById('field-publicationConsent')?.checked === true
+        };
+        payload.profileCompletion = calculateMentorCompletion(payload).percentage;
+        return payload;
+    }
+
+    function calculateMentorCompletion(profile = {}) {
+        const missing = mentorRequiredFields.filter((field) => {
+            const value = field.key === 'field' ? valueFrom(profile, 'field', 'mentoringField', 'expertise') : profile[field.key];
+            return Array.isArray(value) ? value.length === 0 : value !== true && String(value || '').trim() === '';
+        });
+        return {
+            percentage: Math.round(((mentorRequiredFields.length - missing.length) / mentorRequiredFields.length) * 100),
+            missing
+        };
+    }
+
+    function renderMentorProfileStatus(profile = mergedMentorProfile) {
+        if (userRole !== 'mentor') return;
+        const status = normalizeStatus(profile.approvalStatus || profile.applicationStatus || profile.status || 'draft');
+        const banner = document.getElementById('mentor-profile-status-banner');
+        const title = document.getElementById('mentor-profile-status-title');
+        const message = document.getElementById('mentor-profile-status-message');
+        const badge = document.getElementById('verification-status-badge');
+        const submitBtn = document.getElementById('submit-mentor-profile-btn');
+        const messages = {
+            draft: ['Your mentor profile is incomplete.', 'Save your missing professional details as a draft, then submit for admin approval.'],
+            incomplete: ['Your mentor profile is incomplete.', 'Complete the required details before submitting for review.'],
+            submitted: ['Waiting for admin review.', 'Your profile has been submitted and is waiting for EduPath Lanka admin approval.'],
+            under_review: ['Under admin review.', 'An administrator is currently reviewing your mentor application.'],
+            changes_requested: ['Changes required.', profile.adminRequestedChanges || profile.adminReviewReason || 'Please update the requested information and resubmit.'],
+            rejected: ['Application not approved.', profile.rejectionReason || 'You can update your profile and contact admin for the next steps.'],
+            suspended: ['Mentoring account suspended.', 'Your mentoring account is currently suspended.'],
+            approved: ['Your mentor profile is approved.', 'Your profile is visible to students and your mentoring functions remain active.']
+        };
+        const [statusTitle, statusMessage] = messages[status] || messages.draft;
+        if (title) title.textContent = statusTitle;
+        if (message) message.textContent = statusMessage;
+        if (badge) {
+            badge.textContent = status.replace(/_/g, ' ');
+            badge.className = `badge badge-${status}`;
+        }
+        if (banner) {
+            banner.className = `mentor-status-banner status-${status}`;
+        }
+        if (submitBtn) {
+            submitBtn.classList.toggle('hidden', userRole !== 'mentor');
+            submitBtn.innerHTML = status === 'changes_requested'
+                ? '<i class="fas fa-paper-plane"></i> Resubmit for Review'
+                : status === 'approved'
+                    ? '<i class="fas fa-paper-plane"></i> Submit Updates'
+                    : '<i class="fas fa-paper-plane"></i> Submit for Review';
+        }
+    }
+
+    function renderAvailabilitySummary() {
+        const target = document.getElementById('mentor-availability-summary');
+        if (!target) return;
+        const schedule = cachedAvailabilityData?.weeklySchedule || cachedAvailabilityData?.availability || {};
+        const availableDays = Object.entries(schedule).filter(([, day]) => {
+            if (Array.isArray(day)) return day.length;
+            return day?.enabled || day?.available || (day?.timeRanges && day.timeRanges.length);
+        });
+        const duration = cachedAvailabilityData?.sessionDuration || cachedAvailabilityData?.duration || mergedMentorProfile?.sessionDuration || '60';
+        const buffer = cachedAvailabilityData?.bufferMinutes || cachedAvailabilityData?.bufferTime || '15';
+        const status = cachedAvailabilityData?.currentStatus || cachedAvailabilityData?.availabilityStatus || mergedMentorProfile?.availabilityStatus || 'Not configured';
+
+        if (!availableDays.length) {
+            target.innerHTML = `
+                <div class="availability-empty">
+                    <strong>No availability added yet.</strong>
+                    <span>Use the existing Availability page to add the days and time slots students can book.</span>
+                </div>
+            `;
+            return;
+        }
+
+        target.innerHTML = `
+            <div class="availability-pill"><strong>${availableDays.length}</strong><span>Available days</span></div>
+            <div class="availability-pill"><strong>${duration} min</strong><span>Session duration</span></div>
+            <div class="availability-pill"><strong>${buffer} min</strong><span>Buffer time</span></div>
+            <div class="availability-pill"><strong>${String(status).replace(/_/g, ' ')}</strong><span>Status</span></div>
+            <div class="availability-days">
+                ${availableDays.map(([day, value]) => `<span>${day}: ${formatAvailabilityDay(value)}</span>`).join('')}
+            </div>
+        `;
+    }
+
+    function formatAvailabilityDay(value) {
+        if (Array.isArray(value)) return value.join(', ');
+        const ranges = value?.timeRanges || value?.ranges || [];
+        if (ranges.length) {
+            return ranges.map((range) => `${range.start || range.startTime || ''} - ${range.end || range.endTime || ''}`.trim()).join(', ');
+        }
+        if (value?.startTime || value?.endTime) return `${value.startTime || ''} - ${value.endTime || ''}`.trim();
+        return 'Available';
     }
 
     // --- Dynamic Profile Strength Calculation & Task List ---
@@ -255,12 +573,10 @@ document.addEventListener('DOMContentLoaded', () => {
             addFieldCheck('skills', 'Add Key Skills', cachedRoleData.skills);
 
         } else if (userRole === 'mentor') {
-            addFieldCheck('mentorType', 'Select Mentor Category', cachedRoleData.mentorType);
-            addFieldCheck('field', 'Add Field Expertise', cachedRoleData.field || cachedRoleData.mentoringField);
-            addFieldCheck('universityOrCompany', 'Add University or Company Affiliation', cachedRoleData.universityOrCompany || cachedRoleData.organization);
-            addFieldCheck('experience', 'Add Years of Experience', cachedRoleData.experience);
-            addFieldCheck('availableTime', 'Specify Available Time Slots', cachedRoleData.availableTime);
-            addFieldCheck('bio', 'Write a Short Professional Bio', cachedRoleData.bio);
+            const completion = calculateMentorCompletion(mergedMentorProfile || cachedRoleData);
+            completed = mentorRequiredFields.length - completion.missing.length;
+            total = mentorRequiredFields.length;
+            missing = completion.missing.map((field) => ({ key: field.key, label: field.label }));
         }
 
         const percentage = Math.round((completed / total) * 100);
@@ -379,28 +695,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
         } else if (userRole === 'mentor') {
-            const mentorUpdates = {
-                fullName: coreUpdates.fullName,
-                phone: coreUpdates.phone,
-                mentorType: document.getElementById('field-mentorType').value,
-                field: document.getElementById('field-field').value,
-                universityOrCompany: document.getElementById('field-universityOrCompany').value,
-                experience: parseInt(document.getElementById('field-experience').value) || 0,
-                availableTime: document.getElementById('field-availableTime').value,
-                availabilityStatus: document.getElementById('field-availabilityStatus').value,
-                bio: document.getElementById('field-bio').value,
-                updatedAt: now
-            };
-
-            Object.keys(mentorUpdates).forEach(key => {
-                batchUpdates[`mentors/${currentUser.uid}/${key}`] = mentorUpdates[key];
-            });
+            Object.assign(batchUpdates, buildMentorProfileUpdates('draft'));
         }
 
         update(ref(database), batchUpdates)
             .then(() => {
                 showToast("Profile details updated successfully!", "success");
                 toggleEditingMode(false);
+                if (userRole === 'mentor') {
+                    loadMentorProfileData(currentUser.uid);
+                }
             })
             .catch(err => {
                 console.error("Save details error:", err);
@@ -411,6 +715,148 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveBtn.disabled = false;
             });
     });
+
+    function buildMentorProfileUpdates(mode = 'draft') {
+        const uid = currentUser.uid;
+        const payload = collectMentorProfilePayload();
+        const completion = calculateMentorCompletion(payload);
+        const approved = isApprovedMentor(mergedMentorProfile);
+        const submitting = mode === 'submit';
+        const profileStatus = completion.missing.length ? 'incomplete' : 'completed';
+        const approvalStatus = approved ? 'approved' : (submitting ? 'submitted' : normalizeStatus(mergedMentorProfile.approvalStatus || 'draft'));
+        const applicationStatus = approved ? 'approved' : (submitting ? 'submitted' : normalizeStatus(mergedMentorProfile.applicationStatus || approvalStatus));
+        const status = approved ? 'approved' : (submitting ? 'pending' : normalizeStatus(mergedMentorProfile.status || 'draft'));
+        const mentorFields = { ...payload };
+        delete mentorFields.cvURL;
+        delete mentorFields.qualificationDocumentURL;
+        delete mentorFields.experienceProofURL;
+        delete mentorFields.professionalCertificateURL;
+
+        const updates = {};
+        updates[`users/${uid}/fullName`] = payload.fullName;
+        updates[`users/${uid}/phone`] = payload.phone;
+        updates[`users/${uid}/photoURL`] = payload.photoURL;
+        updates[`users/${uid}/updatedAt`] = serverTimestamp();
+        if (submitting && !approved) updates[`users/${uid}/mentorStatus`] = 'submitted';
+
+        Object.entries({
+            ...mentorFields,
+            profileCompletion: payload.profileCompletion,
+            profileStatus,
+            approvalStatus,
+            applicationStatus,
+            status,
+            publicVisibility: approved,
+            mentoringEnabled: approved,
+            profileUpdatePending: approved && submitting ? true : (mergedMentorProfile.profileUpdatePending || false),
+            submittedAt: submitting ? (mergedMentorProfile.submittedAt || serverTimestamp()) : (mergedMentorProfile.submittedAt || null),
+            resubmittedAt: submitting && mergedMentorProfile.submittedAt ? serverTimestamp() : (mergedMentorProfile.resubmittedAt || null),
+            updatedAt: serverTimestamp()
+        }).forEach(([key, value]) => {
+            if (value !== undefined) updates[`mentors/${uid}/${key}`] = value;
+        });
+
+        Object.entries({
+            mentorUid: uid,
+            ...payload,
+            profileCompletion: payload.profileCompletion,
+            profileStatus,
+            approvalStatus,
+            applicationStatus,
+            submittedAt: submitting ? (mergedMentorProfile.submittedAt || serverTimestamp()) : (mergedMentorProfile.submittedAt || null),
+            resubmittedAt: submitting && mergedMentorProfile.submittedAt ? serverTimestamp() : (mergedMentorProfile.resubmittedAt || null),
+            updatedAt: serverTimestamp()
+        }).forEach(([key, value]) => {
+            if (value !== undefined) updates[`mentorApplications/${uid}/${key}`] = value;
+        });
+
+        ['cvURL', 'qualificationDocumentURL', 'experienceProofURL', 'professionalCertificateURL'].forEach((key) => {
+            updates[`mentorPrivate/${uid}/${key}`] = payload[key];
+        });
+        updates[`mentorPrivate/${uid}/mentorUid`] = uid;
+        updates[`mentorPrivate/${uid}/updatedAt`] = serverTimestamp();
+
+        return updates;
+    }
+
+    async function submitMentorProfileForReview() {
+        if (!currentUser || userRole !== 'mentor') return;
+        const payload = collectMentorProfilePayload();
+        const completion = calculateMentorCompletion(payload);
+        if (completion.missing.length) {
+            renderMissingMentorFields(completion.missing);
+            scrollToMissingMentorField(completion.missing[0].key);
+            showToast("Complete all required mentor details before submitting.", "error");
+            return;
+        }
+
+        const submitBtn = document.getElementById('submit-mentor-profile-btn');
+        const originalText = submitBtn?.innerHTML;
+        if (submitBtn) {
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.disabled = true;
+        }
+
+        try {
+            const uid = currentUser.uid;
+            const notificationRef = push(ref(database, 'adminNotifications'));
+            const updates = buildMentorProfileUpdates('submit');
+            updates[`adminNotifications/${notificationRef.key}`] = {
+                notificationId: notificationRef.key,
+                type: 'mentor_application_submitted',
+                title: 'Mentor profile submitted',
+                message: `${payload.fullName || 'A mentor'} submitted a completed mentor profile for review.`,
+                mentorUid: uid,
+                read: false,
+                createdAt: serverTimestamp()
+            };
+            await update(ref(database), updates);
+            showToast(isApprovedMentor(mergedMentorProfile) ? "Your profile updates were saved for admin review." : "Your mentor profile has been submitted for admin review.", "success");
+            toggleEditingMode(false);
+            await loadMentorProfileData(uid);
+        } catch (err) {
+            console.error("Submit mentor profile error:", err);
+            showToast("Failed to submit mentor profile. Please try again.", "error");
+        } finally {
+            if (submitBtn) {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+    }
+
+    function renderMissingMentorFields(missing = calculateMentorCompletion(collectMentorProfilePayload()).missing) {
+        const missingList = document.getElementById('profile-missing-list');
+        const title = document.getElementById('profile-task-list-title');
+        if (title) title.innerHTML = `<i class="fas fa-tasks"></i> Missing Details`;
+        if (missingList) {
+            missingList.innerHTML = missing.map((field) => `<li><i class="far fa-circle text-muted"></i> ${field.label}</li>`).join('');
+        }
+    }
+
+    function scrollToMissingMentorField(key) {
+        const map = {
+            district: 'field-mentorDistrict',
+            city: 'field-mentorCity',
+            preferredLanguages: 'preferredLanguages',
+            guidanceAreas: 'guidanceAreas',
+            studentLevelsSupported: 'studentLevelsSupported',
+            streamsSupported: 'streamsSupported',
+            informationConfirmed: 'field-informationConfirmed',
+            mentorGuidelinesAccepted: 'field-mentorGuidelinesAccepted',
+            publicationConsent: 'field-publicationConsent'
+        };
+        const id = map[key] || `field-${key}`;
+        let target = document.getElementById(id) || document.querySelector(`[data-profile-checkbox-group="${id}"]`);
+        if (target) {
+            const panel = target.closest('[data-mentor-panel]');
+            if (panel) {
+                const tab = panel.dataset.mentorPanel;
+                document.querySelector(`[data-mentor-tab="${tab}"]`)?.click();
+            }
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
 
     // --- Profile Picture Update Modal Form Submit ---
     avatarUpdateForm?.addEventListener('submit', (e) => {

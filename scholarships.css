@@ -359,7 +359,7 @@ h1, h2, h3, h4 {
     background: #ffffff;
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    padding: 2.25rem;
+    padding: 0;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -388,6 +388,46 @@ h1, h2, h3, h4 {
 
 .scholarship-card:hover::before {
     opacity: 1;
+}
+
+.scholarship-card-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: linear-gradient(135deg, #ecfdf5, #eff6ff);
+}
+
+.scholarship-card-media img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+}
+
+.scholarship-card:hover .scholarship-card-media img {
+    transform: scale(1.035);
+}
+
+.scholarship-card-category {
+    position: absolute;
+    left: 14px;
+    bottom: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #059669;
+    font-size: 0.72rem;
+    font-weight: 800;
+    backdrop-filter: blur(8px);
+}
+
+.scholarship-card-content {
+    padding: 18px;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
 }
 
 .card-top {

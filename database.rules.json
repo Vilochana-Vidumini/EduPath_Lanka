@@ -19,12 +19,24 @@
     },
     "mentors": {
       ".read": "(query.orderByChild == 'status' && query.equalTo == 'approved') || (auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin')",
-      ".indexOn": ["status"],
+      ".indexOn": ["status", "approvalStatus"],
       "$uid": {
         ".read": "data.child('status').val() == 'approved' || (auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin'))",
-        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.child('approvalStatus').val() == data.child('approvalStatus').val() || newData.child('approvalStatus').val() == 'draft' || newData.child('approvalStatus').val() == 'submitted' || (newData.child('approvalStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('applicationStatus').val() == data.child('applicationStatus').val() || newData.child('applicationStatus').val() == 'draft' || newData.child('applicationStatus').val() == 'submitted' || (newData.child('applicationStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('status').val() == data.child('status').val() || newData.child('status').val() == 'draft' || newData.child('status').val() == 'pending' || (newData.child('status').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('publicVisibility').val() == false || newData.child('publicVisibility').val() == data.child('publicVisibility').val() || (newData.child('publicVisibility').val() == true && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('mentoringEnabled').val() == false || newData.child('mentoringEnabled').val() == data.child('mentoringEnabled').val() || (newData.child('mentoringEnabled').val() == true && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && newData.child('approvedAt').val() == data.child('approvedAt').val() && newData.child('approvedBy').val() == data.child('approvedBy').val() && newData.child('rejectedAt').val() == data.child('rejectedAt').val() && newData.child('rejectedBy').val() == data.child('rejectedBy').val() && newData.child('rejectionReason').val() == data.child('rejectionReason').val()))",
         "status": {
-          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == 'draft' || newData.val() == 'pending' || (newData.val() == 'approved' && (data.parent().child('approvalStatus').val() == 'approved' || data.parent().child('status').val() == 'approved')))))"
+        },
+        "approvalStatus": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == 'draft' || newData.val() == 'submitted' || (newData.val() == 'approved' && (data.parent().child('approvalStatus').val() == 'approved' || data.parent().child('status').val() == 'approved')))))"
+        },
+        "applicationStatus": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == 'draft' || newData.val() == 'submitted' || (newData.val() == 'approved' && (data.parent().child('approvalStatus').val() == 'approved' || data.parent().child('status').val() == 'approved')))))"
+        },
+        "publicVisibility": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == false || (newData.val() == true && (data.parent().child('approvalStatus').val() == 'approved' || data.parent().child('status').val() == 'approved')))))"
+        },
+        "mentoringEnabled": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == false || (newData.val() == true && (data.parent().child('approvalStatus').val() == 'approved' || data.parent().child('status').val() == 'approved')))))"
         },
         "approvedAt": {
           ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
@@ -41,6 +53,42 @@
         "rejectedBy": {
           ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
         }
+      }
+    },
+    "mentorApplications": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".indexOn": ["approvalStatus", "applicationStatus", "mentorUid"],
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.child('approvalStatus').val() == data.child('approvalStatus').val() || newData.child('approvalStatus').val() == 'draft' || newData.child('approvalStatus').val() == 'submitted' || (newData.child('approvalStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('status').val() == 'approved'))) && (newData.child('applicationStatus').val() == data.child('applicationStatus').val() || newData.child('applicationStatus').val() == 'draft' || newData.child('applicationStatus').val() == 'submitted' || (newData.child('applicationStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('status').val() == 'approved'))) && newData.child('approvedAt').val() == data.child('approvedAt').val() && newData.child('approvedBy').val() == data.child('approvedBy').val() && newData.child('rejectedAt').val() == data.child('rejectedAt').val() && newData.child('rejectedBy').val() == data.child('rejectedBy').val() && newData.child('rejectionReason').val() == data.child('rejectionReason').val()))",
+        "approvalStatus": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == 'draft' || newData.val() == 'submitted' || (newData.val() == 'approved' && (data.parent().child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('status').val() == 'approved')))))"
+        },
+        "applicationStatus": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == 'draft' || newData.val() == 'submitted' || (newData.val() == 'approved' && (data.parent().child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('status').val() == 'approved')))))"
+        },
+        "approvedAt": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "approvedBy": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "rejectionReason": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "rejectedAt": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "rejectedBy": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        }
+      }
+    },
+    "mentorPrivate": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
       }
     },
     "institutes": {

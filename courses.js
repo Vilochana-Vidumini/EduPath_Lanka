@@ -47,6 +47,35 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/"/g, '&quot;');
     }
 
+    function escapeAttr(str) {
+        return escapeHtml(str).replace(/'/g, '&#39;');
+    }
+
+    function sanitizeImageURL(value, fallback = '', defaultLocalFolder = 'images') {
+        const raw = String(value || '').trim();
+        let url = raw.replace(/\\/g, '/');
+        const imagesIndex = url.toLowerCase().lastIndexOf('/images/');
+        if (imagesIndex >= 0) url = url.slice(imagesIndex + 1);
+        if (/^[a-z]:\/images\//i.test(url)) url = url.replace(/^[a-z]:\//i, '');
+        if (!url) return fallback;
+        if (url.startsWith('images/') || url.startsWith('./images/') || url.startsWith('../images/')) return url;
+        if (defaultLocalFolder && /^[\w./ -]+\.(png|jpe?g|webp|gif|svg)$/i.test(url) && !/^[a-z][a-z0-9+.-]*:/i.test(url)) {
+            const normalized = url.replace(/^\.?\//, '');
+            return normalized.includes('/') ? `images/${normalized.replace(/^images\//, '')}` : `${defaultLocalFolder.replace(/\/$/, '')}/${normalized}`;
+        }
+        try {
+            const parsed = new URL(url);
+            if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return parsed.href;
+        } catch (error) {
+            console.warn('Invalid image URL:', url);
+        }
+        return fallback;
+    }
+
+    function getCourseImage(course = {}) {
+        return sanitizeImageURL(course.imageURL, 'images/course-placeholder.png', 'images');
+    }
+
     // --- Load Courses from Firebase ---
     function loadCoursesFromFirebase() {
         const coursesRef = ref(database, 'courses');
@@ -123,8 +152,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grid.innerHTML = filtered.map(course => `
             <div class="course-card">
+                <div class="course-card-media">
+                    <img src="${escapeAttr(getCourseImage(course))}" alt="${escapeAttr(course.courseName || course.courseTitle || 'Course image')}" title="${escapeAttr(course.imageURL || 'Using course placeholder')}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/course-placeholder.png';">
+                    <span class="course-card-category">${escapeHtml(displayVal(course.category || 'Course'))}</span>
+                </div>
+                <div class="course-card-content">
                 <div class="card-top">
-                    ${course.imageURL ? `<img src="${escapeHtml(course.imageURL)}" alt="${escapeHtml(course.courseName || course.courseTitle || 'Course')}" class="course-image" style="height:200px; object-fit:cover; width:100%; border-radius:8px; margin-bottom:1rem;">` : ''}
                     <span class="card-badge" style="background-color: ${getCategoryColor(course.category)};">${escapeHtml(displayVal(course.category))}</span>
                     <h3>${escapeHtml(course.courseName || course.courseTitle || course.name)}</h3>
                     <p class="text-sm text-muted"><strong>${escapeHtml(displayVal(course.instituteName || course.institute))}</strong></p>
@@ -149,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <i class="far fa-heart"></i>
                         </button>
                     </div>
+                </div>
                 </div>
             </div>
         `).join('');
@@ -249,7 +283,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="background: white; border-radius: 12px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem; position: relative;">
                     <button class="close-modal-btn" style="position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
 
-                    ${course.imageURL ? `<img src="${escapeHtml(course.imageURL)}" alt="${escapeHtml(course.courseName)}" style="width:100%; height:300px; object-fit:cover; border-radius:8px; margin-bottom:1.5rem;">` : ''}
+                    <img src="${escapeAttr(getCourseImage(course))}" alt="${escapeAttr(course.courseName || course.courseTitle || 'Course image')}" style="width:100%; height:300px; object-fit:cover; border-radius:8px; margin-bottom:1.5rem;" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/course-placeholder.png';">
 
                     <h2 style="margin: 0 0 0.5rem 0;">${escapeHtml(course.courseName || course.courseTitle || course.name)}</h2>
                     <p style="margin: 0 0 1.5rem 0; color: var(--text-muted);"><strong>${escapeHtml(displayVal(course.instituteName))}</strong> • ${escapeHtml(displayVal(course.category))}</p>

@@ -399,6 +399,201 @@ textarea.form-input {
     color: var(--danger);
 }
 
+.badge-draft,
+.badge-incomplete {
+    background: rgba(100, 116, 139, 0.12);
+    color: #475569;
+}
+
+.badge-submitted,
+.badge-pending {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+.badge-under_review {
+    background: rgba(14, 165, 233, 0.12);
+    color: #0284c7;
+}
+
+.badge-changes_requested {
+    background: rgba(139, 92, 246, 0.12);
+    color: #7c3aed;
+}
+
+.badge-suspended {
+    background: rgba(127, 29, 29, 0.12);
+    color: #7f1d1d;
+}
+
+.mentor-status-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    border-radius: 16px;
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    background: rgba(248, 250, 252, 0.72);
+}
+
+.mentor-status-banner strong {
+    display: block;
+    color: #0f172a;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.mentor-status-banner p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+
+.mentor-status-banner.status-approved {
+    border-color: rgba(16, 185, 129, 0.25);
+    background: rgba(16, 185, 129, 0.07);
+}
+
+.mentor-status-banner.status-changes_requested {
+    border-color: rgba(139, 92, 246, 0.25);
+    background: rgba(139, 92, 246, 0.07);
+}
+
+.mentor-status-banner.status-rejected,
+.mentor-status-banner.status-suspended {
+    border-color: rgba(239, 68, 68, 0.22);
+    background: rgba(239, 68, 68, 0.06);
+}
+
+.mentor-profile-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 22px;
+}
+
+.mentor-tab {
+    border: 1px solid rgba(203, 213, 225, 0.75);
+    background: rgba(255, 255, 255, 0.75);
+    color: #475569;
+    border-radius: 10px;
+    padding: 9px 13px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s ease;
+}
+
+.mentor-tab.active,
+.mentor-tab:hover {
+    border-color: rgba(79, 70, 229, 0.35);
+    background: rgba(79, 70, 229, 0.09);
+    color: var(--primary);
+}
+
+.mentor-tab-panel {
+    display: none;
+}
+
+.mentor-tab-panel.active {
+    display: block;
+}
+
+.checkbox-grid,
+.mentor-declarations {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.checkbox-grid label,
+.mentor-declarations label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.66);
+    color: #334155;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.checkbox-grid input,
+.mentor-declarations input {
+    accent-color: var(--primary);
+}
+
+.availability-summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.availability-pill,
+.availability-empty {
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.66);
+    padding: 14px;
+}
+
+.availability-pill strong {
+    display: block;
+    color: var(--primary);
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.availability-pill span,
+.availability-empty span {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.availability-days {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.availability-days span {
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.1);
+    color: #047857;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.availability-empty {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+@media (max-width: 767px) {
+    .mentor-status-banner {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .checkbox-grid,
+    .mentor-declarations,
+    .availability-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Form Action Controls */
 .action-footer {
     display: flex;

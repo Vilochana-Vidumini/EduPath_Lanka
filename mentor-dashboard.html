@@ -12,7 +12,7 @@
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS (Reusing some structure from student, but separate file) -->
-    <link rel="stylesheet" href="mentor-dashboard.css">
+    <link rel="stylesheet" href="mentor-dashboard.css?v=20260624-mentor-application">
     <link rel="stylesheet" href="theme.css?v=20260624-mentor-toggle-fix">
 </head>
 <body class="mentor-dashboard-page">
@@ -38,6 +38,7 @@
         </div>
         <ul class="sidebar-links">
             <li><a href="#overview-section" data-section="overview-section" class="active" title="Dashboard"><i class="fas fa-table-cells-large"></i><span class="sidebar-label">Dashboard</span></a></li>
+            <li><a href="#complete-profile" data-section="complete-profile" title="Complete Mentor Profile"><i class="fas fa-clipboard-check"></i><span class="sidebar-label">Complete Profile</span></a></li>
             <li><a href="profile.html" title="My Profile"><i class="fas fa-user-tie"></i><span class="sidebar-label">My Profile</span></a></li>
             <li><a href="#requests" data-section="requests" title="Student Requests"><i class="fas fa-user-plus"></i><span class="sidebar-label">Student Requests</span> <span class="badge badge-warning" id="req-count">0</span></a></li>
             <li><a href="#accepted" data-section="accepted" title="My Mentees"><i class="fas fa-user-check"></i><span class="sidebar-label">My Mentees</span></a></li>
@@ -123,6 +124,91 @@
                             <button class="panel-link" type="button" data-section-jump="overview-section">Continue setup <i class="fas fa-arrow-right"></i></button>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <section id="complete-profile" class="dashboard-section content-section">
+                <div class="section-header">
+                    <h2>Mentor Profile Application</h2>
+                    <p class="section-desc">Complete your professional profile and submit it for EduPath Lanka admin review.</p>
+                </div>
+                <div class="mentor-application-shell glass">
+                    <div class="application-status-panel">
+                        <div>
+                            <span class="mentor-kicker">Application Status</span>
+                            <h3 id="mentor-application-status-title">Draft</h3>
+                            <p id="mentor-application-status-message">Complete your mentor profile and submit it for review.</p>
+                        </div>
+                        <div class="application-progress">
+                            <strong id="mentor-application-completion">0%</strong>
+                            <span>Complete</span>
+                        </div>
+                    </div>
+                    <div id="mentor-admin-feedback" class="application-feedback hidden"></div>
+                    <form id="mentor-application-form" class="mentor-application-form">
+                        <fieldset>
+                            <legend>Personal Information</legend>
+                            <div class="grid-form">
+                                <div class="form-group"><label>Profile Photo URL *</label><input id="mentor-app-photoURL" class="form-control" type="text" placeholder="images/Mentor-Kasunperera.png"></div>
+                                <div class="form-group"><label>Full Name *</label><input id="mentor-app-fullName" class="form-control" type="text"></div>
+                                <div class="form-group"><label>Email</label><input id="mentor-app-email" class="form-control" type="email" readonly></div>
+                                <div class="form-group"><label>Phone *</label><input id="mentor-app-phone" class="form-control" type="tel"></div>
+                                <div class="form-group"><label>District *</label><input id="mentor-app-district" class="form-control" type="text"></div>
+                                <div class="form-group"><label>City</label><input id="mentor-app-city" class="form-control" type="text"></div>
+                                <div class="form-group full-width"><label>Preferred Languages *</label><div class="check-grid" data-checkbox-group="preferredLanguages"><label><input type="checkbox" value="Sinhala"> Sinhala</label><label><input type="checkbox" value="English"> English</label><label><input type="checkbox" value="Tamil"> Tamil</label></div></div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Professional Background</legend>
+                            <div class="grid-form">
+                                <div class="form-group"><label>Mentor Type *</label><select id="mentor-app-mentorType" class="form-control"><option value="">Select type</option><option>Industry Professional</option><option>Academic</option><option>Engineer</option><option>Healthcare Professional</option><option>Entrepreneur</option><option>Career Counselor</option><option>Skilled Professional</option><option>Other</option></select></div>
+                                <div class="form-group"><label>Field / Expertise *</label><input id="mentor-app-field" class="form-control" type="text"></div>
+                                <div class="form-group"><label>Current Position *</label><input id="mentor-app-currentPosition" class="form-control" type="text"></div>
+                                <div class="form-group"><label>University / Company / Organization *</label><input id="mentor-app-universityOrCompany" class="form-control" type="text"></div>
+                                <div class="form-group"><label>Highest Qualification *</label><input id="mentor-app-highestQualification" class="form-control" type="text"></div>
+                                <div class="form-group"><label>Study Area *</label><input id="mentor-app-studyArea" class="form-control" type="text"></div>
+                                <div class="form-group"><label>Years of Experience *</label><input id="mentor-app-yearsOfExperience" class="form-control" type="number" min="0"></div>
+                                <div class="form-group"><label>Professional Membership</label><input id="mentor-app-professionalMembership" class="form-control" type="text"></div>
+                                <div class="form-group"><label>LinkedIn URL</label><input id="mentor-app-linkedInURL" class="form-control" type="url"></div>
+                                <div class="form-group"><label>Portfolio URL</label><input id="mentor-app-portfolioURL" class="form-control" type="url"></div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Mentoring Preferences</legend>
+                            <div class="grid-form">
+                                <div class="form-group full-width"><label>Guidance Areas *</label><div class="check-grid" data-checkbox-group="guidanceAreas"><label><input type="checkbox" value="Course Selection"> Course Selection</label><label><input type="checkbox" value="Career Planning"> Career Planning</label><label><input type="checkbox" value="Skill Development"> Skill Development</label><label><input type="checkbox" value="CV Preparation"> CV Preparation</label><label><input type="checkbox" value="Interview Preparation"> Interview Preparation</label><label><input type="checkbox" value="Scholarship Guidance"> Scholarship Guidance</label><label><input type="checkbox" value="Industry Knowledge"> Industry Knowledge</label></div></div>
+                                <div class="form-group full-width"><label>Student Levels Supported *</label><div class="check-grid" data-checkbox-group="studentLevelsSupported"><label><input type="checkbox" value="After O/L"> After O/L</label><label><input type="checkbox" value="After A/L"> After A/L</label><label><input type="checkbox" value="Diploma Students"> Diploma Students</label><label><input type="checkbox" value="Undergraduates"> Undergraduates</label><label><input type="checkbox" value="Graduates"> Graduates</label><label><input type="checkbox" value="Career Changers"> Career Changers</label></div></div>
+                                <div class="form-group full-width"><label>Streams Supported *</label><div class="check-grid" data-checkbox-group="streamsSupported"><label><input type="checkbox" value="Information Technology"> Information Technology</label><label><input type="checkbox" value="Engineering"> Engineering</label><label><input type="checkbox" value="Science"> Science</label><label><input type="checkbox" value="Commerce"> Commerce</label><label><input type="checkbox" value="Arts"> Arts</label><label><input type="checkbox" value="Health Sciences"> Health Sciences</label><label><input type="checkbox" value="Entrepreneurship"> Entrepreneurship</label></div></div>
+                                <div class="form-group"><label>Mentoring Mode *</label><select id="mentor-app-mentoringMode" class="form-control"><option value="">Select mode</option><option>Online</option><option>Physical</option><option>Hybrid</option></select></div>
+                                <div class="form-group"><label>Maximum Students</label><input id="mentor-app-maxStudents" class="form-control" type="number" min="1"></div>
+                                <div class="form-group full-width"><label>Short Professional Biography *</label><textarea id="mentor-app-bio" class="form-control" rows="4"></textarea></div>
+                                <div class="form-group full-width"><label>Why do you want to become a mentor? *</label><textarea id="mentor-app-whyMentor" class="form-control" rows="3"></textarea></div>
+                                <div class="form-group full-width"><label>What can students expect from you?</label><textarea id="mentor-app-studentExpectation" class="form-control" rows="3"></textarea></div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Verification Documents</legend>
+                            <div class="grid-form">
+                                <div class="form-group"><label>CV URL</label><input id="mentor-app-cvURL" class="form-control" type="text"></div>
+                                <div class="form-group"><label>Qualification Document URL *</label><input id="mentor-app-qualificationDocumentURL" class="form-control" type="text"></div>
+                                <div class="form-group"><label>Experience Proof URL</label><input id="mentor-app-experienceProofURL" class="form-control" type="text"></div>
+                                <div class="form-group"><label>Professional Certificate URL</label><input id="mentor-app-professionalCertificateURL" class="form-control" type="text"></div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Declaration</legend>
+                            <div class="declaration-list">
+                                <label><input id="mentor-app-informationConfirmed" type="checkbox"> I confirm that the information provided is accurate.</label>
+                                <label><input id="mentor-app-mentorGuidelinesAccepted" type="checkbox"> I agree to follow EduPath Lanka mentoring guidelines.</label>
+                                <label><input id="mentor-app-publicationConsent" type="checkbox"> I understand that my profile will be reviewed before publication.</label>
+                            </div>
+                            <div id="mentor-application-missing" class="missing-fields"></div>
+                        </fieldset>
+                        <div class="form-actions">
+                            <button class="btn btn-outline" type="button" id="save-mentor-draft-btn"><i class="fas fa-save"></i> Save Draft</button>
+                            <button class="btn btn-primary" type="submit" id="submit-mentor-application-btn"><i class="fas fa-paper-plane"></i> Submit for Admin Review</button>
+                        </div>
+                    </form>
                 </div>
             </section>
 
@@ -568,6 +654,6 @@
     <script type="module" src="theme.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="mentor-dashboard.js?v=20260624-mentor-availability-compact"></script>
+    <script type="module" src="mentor-dashboard.js?v=20260624-mentor-application"></script>
 </body>
 </html>

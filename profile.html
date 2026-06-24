@@ -13,7 +13,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS files -->
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="profile.css">
+    <link rel="stylesheet" href="profile.css?v=20260625-mentor-profile-application">
     <link rel="stylesheet" href="theme.css?v=20260614-softglass">
 </head>
 <body>
@@ -265,17 +265,64 @@
 
                     <div class="glass-card details-card hidden" id="mentor-specific-card">
                         <div class="card-header">
-                            <h3><i class="fas fa-chalkboard-teacher"></i> Professional Experience & Verification</h3>
+                            <h3><i class="fas fa-chalkboard-teacher"></i> Mentor Professional Profile</h3>
+                        </div>
+
+                        <div class="mentor-status-banner status-draft" id="mentor-profile-status-banner">
+                            <div>
+                                <strong id="mentor-profile-status-title">Profile incomplete</strong>
+                                <p id="mentor-profile-status-message">Complete your mentor details and submit your profile for admin approval.</p>
+                            </div>
+                            <span class="badge" id="verification-status-badge">DRAFT</span>
+                        </div>
+
+                        <div class="mentor-profile-tabs" role="tablist" aria-label="Mentor profile sections">
+                            <button type="button" class="mentor-tab active" data-mentor-tab="personal">Personal</button>
+                            <button type="button" class="mentor-tab" data-mentor-tab="professional">Professional</button>
+                            <button type="button" class="mentor-tab" data-mentor-tab="preferences">Preferences</button>
+                            <button type="button" class="mentor-tab" data-mentor-tab="availability">Availability</button>
+                            <button type="button" class="mentor-tab" data-mentor-tab="documents">Documents</button>
                         </div>
                         
-                        <div class="form-grid">
+                        <div class="mentor-tab-panel active" data-mentor-panel="personal">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="field-photoURL">Profile Photo URL</label>
+                                    <input type="text" id="field-photoURL" class="form-input" placeholder="images/Mentor-Kasunperera.png" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="field-mentorDistrict">District</label>
+                                    <input type="text" id="field-mentorDistrict" class="form-input" placeholder="e.g. Colombo" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="field-mentorCity">City</label>
+                                    <input type="text" id="field-mentorCity" class="form-input" placeholder="e.g. Moratuwa" readonly>
+                                </div>
+                                <div class="form-group w-full">
+                                    <label>Preferred Languages</label>
+                                    <div class="checkbox-grid" data-profile-checkbox-group="preferredLanguages">
+                                        <label><input type="checkbox" value="Sinhala" disabled> Sinhala</label>
+                                        <label><input type="checkbox" value="English" disabled> English</label>
+                                        <label><input type="checkbox" value="Tamil" disabled> Tamil</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mentor-tab-panel" data-mentor-panel="professional">
+                            <div class="form-grid">
                             <div class="form-group">
                                 <label for="field-mentorType">Mentor Category</label>
                                 <select id="field-mentorType" class="form-input" disabled>
                                     <option value="">Select Category</option>
+                                    <option value="Industry Professional">Industry Professional</option>
                                     <option value="Academic">Academic</option>
-                                    <option value="Industry Expert">Industry Expert</option>
-                                    <option value="Student Mentor">Student Mentor</option>
+                                    <option value="Engineer">Engineer</option>
+                                    <option value="Healthcare Professional">Healthcare Professional</option>
+                                    <option value="Entrepreneur">Entrepreneur</option>
+                                    <option value="Career Counselor">Career Counselor</option>
+                                    <option value="Skilled Professional">Skilled Professional</option>
+                                    <option value="Other">Other</option>
                                 </select>
                             </div>
                             
@@ -283,42 +330,142 @@
                                 <label for="field-field">Field / Domain Expertise</label>
                                 <input type="text" id="field-field" class="form-input" placeholder="e.g. Computer Science / Management" readonly>
                             </div>
+
+                            <div class="form-group">
+                                <label for="field-currentPosition">Current Position</label>
+                                <input type="text" id="field-currentPosition" class="form-input" placeholder="e.g. Senior Software Engineer" readonly>
+                            </div>
                             
                             <div class="form-group">
                                 <label for="field-universityOrCompany">Affiliation (University or Company)</label>
                                 <input type="text" id="field-universityOrCompany" class="form-input" placeholder="e.g. University of Moratuwa / WSO2" readonly>
                             </div>
-                            
+
                             <div class="form-group">
-                                <label for="field-experience">Years of Experience</label>
-                                <input type="number" id="field-experience" class="form-input" placeholder="e.g. 5" readonly min="0">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="field-availableTime">Best Available Time Slot</label>
-                                <input type="text" id="field-availableTime" class="form-input" placeholder="e.g. Saturdays 4:00 PM - 6:00 PM" readonly>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="field-availabilityStatus">Availability Status</label>
-                                <select id="field-availabilityStatus" class="form-input" disabled>
-                                    <option value="">Select Status</option>
-                                    <option value="active">Active (Taking Requests)</option>
-                                    <option value="busy">Busy (On Hold)</option>
-                                    <option value="inactive">Inactive</option>
-                                </select>
+                                <label for="field-highestQualification">Highest Qualification</label>
+                                <input type="text" id="field-highestQualification" class="form-input" placeholder="e.g. BSc Engineering" readonly>
                             </div>
 
-                            <div class="form-group w-full">
-                                <label for="field-bio">Short Bio / Overview</label>
-                                <textarea id="field-bio" class="form-input" rows="3" placeholder="Briefly describe your experience and guidance philosophy..." readonly></textarea>
+                            <div class="form-group">
+                                <label for="field-studyArea">Study Area</label>
+                                <input type="text" id="field-studyArea" class="form-input" placeholder="e.g. Software Engineering" readonly>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="field-yearsOfExperience">Years of Experience</label>
+                                <input type="number" id="field-yearsOfExperience" class="form-input" placeholder="e.g. 5" readonly min="0">
                             </div>
 
-                            <!-- Read-only Mentor approval status -->
-                            <div class="form-group w-full">
-                                <label>Verification & Approval Status</label>
-                                <div class="verification-badge-container">
-                                    <span class="badge" id="verification-status-badge">PENDING</span>
+                            <div class="form-group">
+                                <label for="field-professionalMembership">Professional Membership</label>
+                                <input type="text" id="field-professionalMembership" class="form-input" placeholder="Optional" readonly>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="field-linkedInURL">LinkedIn URL</label>
+                                <input type="url" id="field-linkedInURL" class="form-input" placeholder="https://linkedin.com/in/..." readonly>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="field-portfolioURL">Portfolio URL</label>
+                                <input type="url" id="field-portfolioURL" class="form-input" placeholder="https://..." readonly>
+                            </div>
+                            </div>
+                        </div>
+
+                        <div class="mentor-tab-panel" data-mentor-panel="preferences">
+                            <div class="form-grid">
+                                <div class="form-group w-full">
+                                    <label>Guidance Areas</label>
+                                    <div class="checkbox-grid" data-profile-checkbox-group="guidanceAreas">
+                                        <label><input type="checkbox" value="Career Path Guidance" disabled> Career Path Guidance</label>
+                                        <label><input type="checkbox" value="University Selection" disabled> University Selection</label>
+                                        <label><input type="checkbox" value="Scholarship Guidance" disabled> Scholarship Guidance</label>
+                                        <label><input type="checkbox" value="Interview Preparation" disabled> Interview Preparation</label>
+                                        <label><input type="checkbox" value="Project Feedback" disabled> Project Feedback</label>
+                                        <label><input type="checkbox" value="Skill Development" disabled> Skill Development</label>
+                                    </div>
+                                </div>
+                                <div class="form-group w-full">
+                                    <label>Student Levels Supported</label>
+                                    <div class="checkbox-grid" data-profile-checkbox-group="studentLevelsSupported">
+                                        <label><input type="checkbox" value="O/L" disabled> O/L</label>
+                                        <label><input type="checkbox" value="A/L" disabled> A/L</label>
+                                        <label><input type="checkbox" value="After A/L" disabled> After A/L</label>
+                                        <label><input type="checkbox" value="Undergraduate" disabled> Undergraduate</label>
+                                        <label><input type="checkbox" value="Graduate" disabled> Graduate</label>
+                                    </div>
+                                </div>
+                                <div class="form-group w-full">
+                                    <label>Subject / Career Streams Supported</label>
+                                    <div class="checkbox-grid" data-profile-checkbox-group="streamsSupported">
+                                        <label><input type="checkbox" value="Physical Science" disabled> Physical Science</label>
+                                        <label><input type="checkbox" value="Biological Science" disabled> Biological Science</label>
+                                        <label><input type="checkbox" value="Commerce" disabled> Commerce</label>
+                                        <label><input type="checkbox" value="Arts" disabled> Arts</label>
+                                        <label><input type="checkbox" value="Technology" disabled> Technology</label>
+                                        <label><input type="checkbox" value="ICT" disabled> ICT</label>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="field-mentoringMode">Mentoring Mode</label>
+                                    <select id="field-mentoringMode" class="form-input" disabled>
+                                        <option value="">Select Mode</option>
+                                        <option value="Online">Online</option>
+                                        <option value="Physical">Physical</option>
+                                        <option value="Hybrid">Hybrid</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="field-maxStudents">Maximum Students</label>
+                                    <input type="number" id="field-maxStudents" class="form-input" placeholder="e.g. 3" readonly min="1">
+                                </div>
+                                <div class="form-group w-full">
+                                    <label for="field-bio">Short Professional Biography</label>
+                                    <textarea id="field-bio" class="form-input" rows="3" placeholder="Briefly describe your experience and guidance philosophy..." readonly></textarea>
+                                </div>
+                                <div class="form-group w-full">
+                                    <label for="field-whyMentor">Why do you want to mentor?</label>
+                                    <textarea id="field-whyMentor" class="form-input" rows="3" placeholder="Share your motivation for helping students..." readonly></textarea>
+                                </div>
+                                <div class="form-group w-full">
+                                    <label for="field-studentExpectation">What can students expect from you?</label>
+                                    <textarea id="field-studentExpectation" class="form-input" rows="3" placeholder="Optional" readonly></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mentor-tab-panel" data-mentor-panel="availability">
+                            <div class="availability-summary" id="mentor-availability-summary">
+                                <span class="text-muted">Loading availability...</span>
+                            </div>
+                            <a class="btn btn-secondary" href="mentor-dashboard.html?section=availability">
+                                <i class="fas fa-calendar-alt"></i> Update Availability
+                            </a>
+                        </div>
+
+                        <div class="mentor-tab-panel" data-mentor-panel="documents">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label for="field-cvURL">CV URL</label>
+                                    <input type="text" id="field-cvURL" class="form-input" placeholder="https://..." readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="field-qualificationDocumentURL">Qualification Document URL</label>
+                                    <input type="text" id="field-qualificationDocumentURL" class="form-input" placeholder="https://..." readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="field-experienceProofURL">Experience / Employment Proof URL</label>
+                                    <input type="text" id="field-experienceProofURL" class="form-input" placeholder="https://..." readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="field-professionalCertificateURL">Professional Certificate URL</label>
+                                    <input type="text" id="field-professionalCertificateURL" class="form-input" placeholder="https://..." readonly>
+                                </div>
+                                <div class="form-group w-full mentor-declarations">
+                                    <label><input id="field-informationConfirmed" type="checkbox" disabled> I confirm that the information provided is accurate.</label>
+                                    <label><input id="field-mentorGuidelinesAccepted" type="checkbox" disabled> I agree to follow EduPath Lanka mentoring guidelines.</label>
+                                    <label><input id="field-publicationConsent" type="checkbox" disabled> I consent to publishing my approved mentor profile.</label>
                                 </div>
                             </div>
                         </div>
@@ -336,6 +483,9 @@
                             </button>
                             <button type="submit" class="btn btn-success" id="save-profile-btn">
                                 <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <button type="button" class="btn btn-primary hidden" id="submit-mentor-profile-btn">
+                                <i class="fas fa-paper-plane"></i> Submit for Review
                             </button>
                         </div>
                     </div>
@@ -400,6 +550,6 @@
     <script type="module" src="theme.js"></script>
     <script type="module" src="firebase-config.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
-    <script type="module" src="profile.js"></script>
+    <script type="module" src="profile.js?v=20260625-mentor-profile-application"></script>
 </body>
 </html>

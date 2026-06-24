@@ -24,6 +24,7 @@ const adminState = {
     notifications: {},
     savedCourses: {},
     savedScholarships: {},
+    systemConnected: false,
     adminUid: "",
     adminUser: {},
     filters: {
@@ -40,7 +41,23 @@ const adminState = {
         activityRole: "",
         activityType: "",
         activitySearch: "",
+        activityPreview: "all",
         supportTab: "guest"
+    },
+    pagination: {
+        students: { page: 1, pageSize: 10 },
+        mentors: { page: 1, pageSize: 10 },
+        institutes: { page: 1, pageSize: 10 },
+        admins: { page: 1, pageSize: 10 },
+        mentorApprovals: { page: 1, pageSize: 10 },
+        courses: { page: 1, pageSize: 10 },
+        scholarships: { page: 1, pageSize: 10 },
+        mentorRequests: { page: 1, pageSize: 10 },
+        pathwayResults: { page: 1, pageSize: 10 },
+        messages: { page: 1, pageSize: 10 },
+        notifications: { page: 1, pageSize: 10 },
+        loginHistory: { page: 1, pageSize: 20 },
+        onlineUsers: { page: 1, pageSize: 20 }
     },
     editingCourseId: null,
     editingScholarshipId: null,
@@ -56,26 +73,33 @@ const supportState = {
     pendingDelete: null
 };
 
-const sectionTitles = {
-    overview: "Admin Dashboard",
-    "manage-students": "Manage Students",
-    "manage-mentors": "Manage Mentors",
-    "manage-institutes": "Manage Institutes",
-    "mentor-approvals": "Mentor Approvals",
-    "manage-courses": "Manage Courses",
-    "manage-scholarships": "Manage Scholarships",
-    "mentor-requests": "Mentor Requests",
-    "pathway-results": "Pathway Results",
-    "support-inbox": "Support Inbox",
-    "user-activity": "User Activity",
-    reports: "Reports & Insights",
-    "system-settings": "System Settings"
+const adminSections = {
+    overview: { title: "Admin Dashboard" },
+    "manage-students": { title: "Manage Students" },
+    "manage-mentors": { title: "Manage Mentors" },
+    "manage-institutes": { title: "Manage Institutes" },
+    "manage-admins": { title: "Manage Admins" },
+    "manage-courses": { title: "Manage Courses" },
+    "manage-scholarships": { title: "Manage Scholarships" },
+    "pathway-results": { title: "Pathway Results" },
+    "mentor-approvals": { title: "Mentor Approvals" },
+    "mentor-requests": { title: "Mentor Requests" },
+    "support-inbox": { title: "Support Inbox" },
+    "admin-messages": { title: "Messages" },
+    "admin-notifications": { title: "Notifications" },
+    reports: { title: "Reports & Insights" },
+    "user-activity": { title: "Activity Logs" },
+    "system-settings": { title: "System Settings" },
+    "system-status": { title: "System Status" }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
     initDashboardSidebar();
     bindNavigation();
     bindFormsAndFilters();
+    bindAdminCommandSearch();
+    startAdminClock();
+    validateAdminNavigation();
 
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
@@ -125,13 +149,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function bindNavigation() {
-    document.querySelectorAll(".sidebar-links a[data-section]").forEach((link) => {
-        link.addEventListener("click", (event) => {
-            event.preventDefault();
-            showAdminSection(link.dataset.section);
-        });
-    });
-
     window.addEventListener("hashchange", () => showAdminSection(getHashSection(), false));
 
     document.getElementById("logout-btn-sidebar")?.addEventListener("click", async (event) => {
@@ -147,38 +164,131 @@ function bindNavigation() {
         window.location.href = "profile.html";
     });
 
-    document.querySelectorAll("[data-kpi-section]").forEach((button) => {
+    document.addEventListener("click", (event) => {
+        const trigger = event.target.closest("[data-section], [data-kpi-section]");
+        if (!trigger) return;
+        const section = trigger.dataset.section || trigger.dataset.kpiSection;
+        if (!adminSections[section]) {
+            console.error("[Admin Navigation] No configuration for:", section);
+            return;
+        }
+        event.preventDefault();
+        if (trigger.dataset.kpiSupportFolder) {
+            supportState.activeFolder = trigger.dataset.kpiSupportFolder;
+            supportState.selectedItemId = null;
+            closeSupportDetail();
+        }
+        if (section === "support-inbox" && !trigger.dataset.kpiSupportFolder) {
+            supportState.activeFolder = "guest";
+            supportState.selectedItemId = null;
+            closeSupportDetail();
+        }
+        const opened = showAdminSection(section);
+        if (!opened) return;
+        runSectionRender(section);
+        if (trigger.dataset.quickAction === "add-course") openCourseFormForAdd();
+        if (trigger.dataset.quickAction === "add-scholarship") openScholarshipFormForAdd();
+    });
+
+    document.querySelectorAll("[data-activity-preview-filter]").forEach((button) => {
         button.addEventListener("click", () => {
-            if (button.dataset.kpiSupportFolder) {
-                supportState.activeFolder = button.dataset.kpiSupportFolder;
-                supportState.selectedItemId = null;
-                closeSupportDetail();
-            }
-            showAdminSection(button.dataset.kpiSection);
-            if (button.dataset.kpiSection === "support-inbox") renderSupportInbox();
+            adminState.filters.activityPreview = button.dataset.activityPreviewFilter || "all";
+            setActiveButton("[data-activity-preview-filter]", button);
+            renderRecentActivity();
         });
     });
 }
 
+function bindAdminCommandSearch() {
+    const input = document.getElementById("admin-command-search");
+    const list = document.getElementById("admin-command-list");
+    if (!input) return;
+    const commands = [
+        ["Students", "manage-students"],
+        ["Mentors", "manage-mentors"],
+        ["Institutes", "manage-institutes"],
+        ["Admins", "manage-admins"],
+        ["Courses", "manage-courses"],
+        ["Scholarships", "manage-scholarships"],
+        ["Mentor Approvals", "mentor-approvals"],
+        ["Mentor Requests", "mentor-requests"],
+        ["Pathway Results", "pathway-results"],
+        ["Support Inbox", "support-inbox"],
+        ["Messages", "admin-messages"],
+        ["Notifications", "admin-notifications"],
+        ["Activity Logs", "user-activity"],
+        ["Reports", "reports"],
+        ["Settings", "system-settings"],
+        ["System Status", "system-status"]
+    ];
+    if (list) list.innerHTML = commands.map(([label]) => `<option value="${escapeAttr(label)}"></option>`).join("");
+    input.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        const query = normalize(input.value);
+        const match = commands.find(([label]) => normalize(label).includes(query) || query.includes(normalize(label)));
+        if (match) {
+            if (showAdminSection(match[1])) runSectionRender(match[1]);
+            input.value = "";
+        }
+    });
+    window.addEventListener("keydown", (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key === "/") {
+            event.preventDefault();
+            input.focus();
+        }
+    });
+}
+
+function runSectionRender(sectionId) {
+    if (sectionId === "support-inbox") renderSupportInbox();
+    if (sectionId === "admin-messages") {
+        supportState.activeFolder = "conversations";
+        supportState.selectedItemId = null;
+        renderAdminMessages();
+    }
+    if (sectionId === "admin-notifications") renderAdminNotifications();
+    if (sectionId === "manage-admins") renderAdmins();
+    if (sectionId === "system-status") renderSystemStatus();
+}
+
+function startAdminClock() {
+    updateAdminClock();
+    setInterval(updateAdminClock, 1000);
+}
+
+function updateAdminClock() {
+    const now = new Date();
+    const dateText = now.toLocaleDateString("en-LK", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+    const timeText = now.toLocaleTimeString("en-LK", { hour: "2-digit", minute: "2-digit", hour12: true });
+    setText("admin-live-date", dateText);
+    setText("admin-live-time", timeText);
+    setText("admin-dashboard-date", dateText);
+    setText("admin-dashboard-time", timeText);
+    setText("admin-greeting", adminGreeting());
+    const footer = document.getElementById("admin-last-synced");
+    if (footer) footer.textContent = `Last synced ${timeText}`;
+}
+
 function bindFormsAndFilters() {
     const filterBindings = [
-        ["student-search", "studentSearch", "input", renderStudents],
-        ["student-filter-district", "studentDistrict", "change", renderStudents],
-        ["student-filter-interest", "studentInterest", "change", renderStudents],
-        ["student-filter-education", "studentEducation", "change", renderStudents],
-        ["student-filter-profile", "studentProfile", "change", renderStudents],
-        ["student-filter-online", "studentOnline", "change", renderStudents],
-        ["student-filter-status", "studentStatus", "change", renderStudents],
-        ["mentor-search", "mentorSearch", "input", renderMentors],
-        ["institute-search", "instituteSearch", "input", renderInstitutes],
-        ["activity-role-filter", "activityRole", "change", renderActivity],
-        ["activity-type-filter", "activityType", "change", renderActivity],
-        ["activity-search", "activitySearch", "input", renderActivity]
+        ["student-search", "studentSearch", "input", renderStudents, "students"],
+        ["student-filter-district", "studentDistrict", "change", renderStudents, "students"],
+        ["student-filter-interest", "studentInterest", "change", renderStudents, "students"],
+        ["student-filter-education", "studentEducation", "change", renderStudents, "students"],
+        ["student-filter-profile", "studentProfile", "change", renderStudents, "students"],
+        ["student-filter-online", "studentOnline", "change", renderStudents, "students"],
+        ["student-filter-status", "studentStatus", "change", renderStudents, "students"],
+        ["mentor-search", "mentorSearch", "input", renderMentors, "mentors"],
+        ["institute-search", "instituteSearch", "input", renderInstitutes, "institutes"],
+        ["activity-role-filter", "activityRole", "change", renderActivity, "loginHistory"],
+        ["activity-type-filter", "activityType", "change", renderActivity, "loginHistory"],
+        ["activity-search", "activitySearch", "input", renderActivity, "loginHistory"]
     ];
 
-    filterBindings.forEach(([id, key, eventName, render]) => {
+    filterBindings.forEach(([id, key, eventName, render, tableKey]) => {
         document.getElementById(id)?.addEventListener(eventName, (event) => {
             adminState.filters[key] = event.target.value.trim();
+            resetTablePage(tableKey);
             render();
         });
     });
@@ -187,6 +297,7 @@ function bindFormsAndFilters() {
         button.addEventListener("click", () => {
             setActiveButton("#request-filter-tabs .btn-filter", button);
             adminState.filters.requestStatus = button.dataset.filter || "all";
+            resetTablePage("mentorRequests");
             renderMentorRequests();
         });
     });
@@ -206,7 +317,37 @@ function bindFormsAndFilters() {
     document.getElementById("show-scholarship-form")?.addEventListener("click", openScholarshipFormForAdd);
     document.getElementById("scholarship-cancel-edit")?.addEventListener("click", closeScholarshipForm);
     document.getElementById("compose-message-form")?.addEventListener("submit", sendAdminMessage);
+    document.getElementById("admin-mark-all-notifications-read")?.addEventListener("click", markAllAdminNotificationsRead);
     bindSupportInboxControls();
+    bindTablePaginationControls();
+    bindImagePreview("course-image-url", "course-image-preview", "images/course-placeholder.png", "Course image preview", "images");
+    bindImagePreview("schol-image-url", "scholarship-image-preview", "images/scholarship-placeholder.png", "Scholarship image preview", "images");
+}
+
+function bindTablePaginationControls() {
+    document.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-table-page]");
+        if (!button) return;
+        const tableKey = button.dataset.tablePage;
+        const direction = button.dataset.pageDirection;
+        const config = adminState.pagination[tableKey];
+        if (!config) return;
+        event.preventDefault();
+        config.page += direction === "next" ? 1 : -1;
+        rerenderPaginatedTable(tableKey);
+        button.closest(".table-card")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+
+    document.addEventListener("change", (event) => {
+        const select = event.target.closest("[data-page-size-table]");
+        if (!select) return;
+        const tableKey = select.dataset.pageSizeTable;
+        const config = adminState.pagination[tableKey];
+        if (!config) return;
+        config.pageSize = Number(select.value) || 10;
+        resetTablePage(tableKey);
+        rerenderPaginatedTable(tableKey);
+    });
 }
 
 function bindSupportInboxControls() {
@@ -241,22 +382,22 @@ function bindSupportInboxControls() {
 
 function initRealtimeListeners() {
     const listeners = [
-        ["users", "users", () => { renderAdminIdentity(); renderOverview(); renderStudents(); renderMentors(); renderInstitutes(); renderUserDirectory(); renderPathwayResults(); renderReports(); renderActivity(); }],
+        ["users", "users", () => { renderAdminIdentity(); renderOverview(); renderStudents(); renderMentors(); renderInstitutes(); renderAdmins(); renderUserDirectory(); renderPathwayResults(); renderReports(); renderActivity(); renderSystemStatus(); }],
         ["students", "students", () => { renderOverview(); renderStudents(); renderPathwayResults(); renderReports(); }],
         ["mentors", "mentors", () => { renderOverview(); renderMentors(); renderMentorApprovals(); renderReports(); updateSidebarBadges(); }],
         ["institutes", "institutes", () => { renderOverview(); renderInstitutes(); renderReports(); }],
-        ["courses", "courses", () => { renderOverview(); renderCourses(); renderReports(); }],
-        ["scholarships", "scholarships", () => { renderOverview(); renderScholarships(); renderReports(); }],
+        ["courses", "courses", () => { renderOverview(); renderCourses(); renderReports(); renderSystemStatus(); }],
+        ["scholarships", "scholarships", () => { renderOverview(); renderScholarships(); renderReports(); renderSystemStatus(); }],
         ["pathwayResults", "pathwayResults", () => { renderOverview(); renderStudents(); renderPathwayResults(); renderReports(); }],
         ["mentorRequests", "mentorRequests", () => { renderOverview(); renderStudents(); renderMentorRequests(); renderReports(); updateSidebarBadges(); }],
         ["mentorStudents", "mentorStudents", () => { renderOverview(); renderMentorRequests(); renderReports(); }],
-        ["guestMessages", "guestMessages", () => { renderOverview(); renderSupportInbox(); updateSupportCounts(); updateSidebarBadges(); }],
-        ["contactMessages", "contactMessages", () => { renderOverview(); renderSupportInbox(); updateSidebarBadges(); }],
-        ["conversations", "conversations", () => { renderOverview(); renderSupportInbox(); renderUserDirectory(); updateSidebarBadges(); }],
+        ["guestMessages", "guestMessages", () => { renderOverview(); renderSupportInbox(); updateSupportCounts(); updateSidebarBadges(); renderSystemStatus(); }],
+        ["contactMessages", "contactMessages", () => { renderOverview(); renderSupportInbox(); updateSidebarBadges(); renderSystemStatus(); }],
+        ["conversations", "conversations", () => { renderOverview(); renderSupportInbox(); renderAdminMessages(); renderUserDirectory(); updateSidebarBadges(); renderSystemStatus(); }],
         ["activityLogs", "activityLogs", () => { renderOverview(); renderActivity(); }],
-        ["presence", "presence", () => { renderOverview(); renderStudents(); renderMentors(); renderActivity(); }],
+        ["presence", "presence", () => { renderOverview(); renderStudents(); renderMentors(); renderAdmins(); renderActivity(); renderSystemStatus(); }],
         ["loginHistory", "loginHistory", () => { renderActivity(); renderReports(); }],
-        ["notifications", "notifications", () => { updateSidebarBadges(); }],
+        ["notifications", "notifications", () => { updateSidebarBadges(); renderAdminNotifications(); }],
         ["savedCourses", "savedCourses", () => { renderStudents(); renderOverview(); }],
         ["savedScholarships", "savedScholarships", () => { renderStudents(); renderOverview(); }]
     ];
@@ -271,17 +412,33 @@ function initRealtimeListeners() {
             showErrorForPath(path, `Unable to load ${path}.`);
         });
     });
+
+    onValue(ref(database, ".info/connected"), (snapshot) => {
+        adminState.systemConnected = snapshot.val() === true;
+        renderSystemStatus();
+    });
 }
 
 function renderAdminIdentity() {
     const admin = adminState.users[adminState.adminUid] || adminState.adminUser || {};
     const fullName = admin.fullName || "EduPath Admin";
-    setText("top-user-name", fullName.split(" ")[0] || "Admin");
+    const adminFirstName = fullName.split(" ")[0] || "Admin";
+    setText("top-user-name", adminFirstName);
     setText("sidebar-user-name", fullName);
-    setText("welcome-name", `Admin Panel - ${fullName}`);
+    setText("admin-first-name", adminFirstName);
+    setText("admin-greeting", adminGreeting());
+    setText("welcome-name", `${adminGreeting()}, ${adminFirstName}!`);
     updateSidebarUser({ fullName, role: "admin", photoURL: admin.photoURL || "" });
     updateDashboardGreetingName(fullName);
     renderProfileStrength(admin);
+}
+
+function adminGreeting() {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return "Good Morning";
+    if (hour >= 12 && hour < 17) return "Good Afternoon";
+    if (hour >= 17 && hour < 21) return "Good Evening";
+    return "Good Night";
 }
 
 function renderProfileStrength(admin = {}) {
@@ -303,8 +460,10 @@ function renderOverview() {
     const stats = calculateStats();
     Object.entries(stats).forEach(([id, value]) => animateTile(id, value));
     renderProfileStrength(adminState.users[adminState.adminUid] || adminState.adminUser);
+    renderAdminIdentity();
     renderPendingActions();
     renderQuickActions();
+    renderAnalyticsCharts();
     renderRecentActivity();
     updateSidebarBadges();
 }
@@ -338,9 +497,12 @@ function calculateStats() {
         "kpi-institutes": institutes,
         "kpi-admins": admins,
         "kpi-online-users": onlineUsers,
+        "kpi-online-users-card": onlineUsers,
         "kpi-total-courses": courses.length,
+        "kpi-total-courses-group": courses.length,
         "kpi-active-courses": activeCourses,
         "kpi-total-scholarships": scholarships.length,
+        "kpi-total-scholarships-group": scholarships.length,
         "kpi-active-scholarships": activeScholarships,
         "kpi-pathway-results": pathwayResults,
         "kpi-mentor-requests": mentorRequests,
@@ -349,8 +511,144 @@ function calculateStats() {
         "kpi-pending-mentors": pendingMentors,
         "kpi-approved-mentors": approvedMentors,
         "kpi-unread-support": unreadSupport,
-        "kpi-guest-inquiries": guestInquiries
+        "kpi-unread-support-group": unreadSupport,
+        "kpi-guest-inquiries": guestInquiries,
+        "admin-open-conversations": Object.keys(adminState.conversations || {}).length,
+        "admin-hero-pending": pendingMentors,
+        "admin-hero-pending-approvals": pendingMentors,
+        "admin-notification-count": unreadSupport
     };
+}
+
+function paginateRows(rows, tableKey) {
+    const config = adminState.pagination[tableKey];
+    if (!config) {
+        return { rows, totalRows: rows.length, totalPages: 1, currentPage: 1, startIndex: rows.length ? 1 : 0, endIndex: rows.length };
+    }
+    const totalRows = rows.length;
+    const totalPages = Math.max(1, Math.ceil(totalRows / config.pageSize));
+    config.page = Math.min(Math.max(1, config.page), totalPages);
+    const start = (config.page - 1) * config.pageSize;
+    const end = start + config.pageSize;
+    return {
+        rows: rows.slice(start, end),
+        totalRows,
+        totalPages,
+        currentPage: config.page,
+        startIndex: totalRows ? start + 1 : 0,
+        endIndex: Math.min(end, totalRows)
+    };
+}
+
+function resetTablePage(tableKey) {
+    if (adminState.pagination[tableKey]) adminState.pagination[tableKey].page = 1;
+}
+
+function renderTablePagination(tableKey, result, tbody) {
+    const tableCard = tbody?.closest(".table-card");
+    if (!tableCard) return;
+    let footer = tableCard.querySelector(`[data-table-footer="${tableKey}"]`);
+    if (!footer) {
+        footer = document.createElement("div");
+        footer.className = "table-footer";
+        footer.dataset.tableFooter = tableKey;
+        const listActions = tableCard.querySelector(".course-list-actions");
+        if (listActions) tableCard.insertBefore(footer, listActions);
+        else tableCard.appendChild(footer);
+    }
+    const config = adminState.pagination[tableKey] || { pageSize: result.rows.length || 10 };
+    footer.innerHTML = `
+        <div class="table-result-summary">Showing ${result.startIndex}-${result.endIndex} of ${result.totalRows} records</div>
+        <label class="table-page-size">Rows
+            <select data-page-size-table="${escapeAttr(tableKey)}">
+                ${[10, 20, 50].map((size) => `<option value="${size}" ${Number(config.pageSize) === size ? "selected" : ""}>${size}</option>`).join("")}
+            </select>
+        </label>
+        <div class="table-pagination" aria-label="Table pagination">
+            <button type="button" data-table-page="${escapeAttr(tableKey)}" data-page-direction="previous" ${result.currentPage <= 1 ? "disabled" : ""}>Previous</button>
+            <span aria-live="polite">Page ${result.currentPage} of ${result.totalPages}</span>
+            <button type="button" data-table-page="${escapeAttr(tableKey)}" data-page-direction="next" ${result.currentPage >= result.totalPages ? "disabled" : ""}>Next</button>
+        </div>`;
+}
+
+function rerenderPaginatedTable(tableKey) {
+    const renderers = {
+        students: renderStudents,
+        mentors: renderMentors,
+        institutes: renderInstitutes,
+        admins: renderAdmins,
+        mentorApprovals: renderMentorApprovals,
+        courses: renderCourses,
+        scholarships: renderScholarships,
+        mentorRequests: renderMentorRequests,
+        pathwayResults: renderPathwayResults,
+        messages: renderAdminMessages,
+        notifications: renderAdminNotifications,
+        loginHistory: renderLoginHistory,
+        onlineUsers: renderOnlineUsers
+    };
+    renderers[tableKey]?.();
+}
+
+function contactCell(email, phone) {
+    return `<div class="table-contact-cell"><strong title="${escapeAttr(display(email))}">${escapeHtml(display(email))}</strong><small title="${escapeAttr(display(phone))}">${escapeHtml(display(phone))}</small></div>`;
+}
+
+function ellipsisCell(value, maxWidth = 190) {
+    return `<span class="table-cell-ellipsis" style="max-width:${maxWidth}px" title="${escapeAttr(display(value))}">${escapeHtml(display(value))}</span>`;
+}
+
+function sanitizeImageURL(value, fallback = "", defaultLocalFolder = "") {
+    const raw = String(value || "").trim();
+    let url = raw.replace(/\\/g, "/");
+    const imagesIndex = url.toLowerCase().lastIndexOf("/images/");
+    if (imagesIndex >= 0) url = url.slice(imagesIndex + 1);
+    if (/^[a-z]:\/images\//i.test(url)) url = url.replace(/^[a-z]:\//i, "");
+    if (!url) return fallback;
+    if (url.startsWith("images/") || url.startsWith("./images/") || url.startsWith("../images/")) return url;
+    if (defaultLocalFolder && /^[\w./ -]+\.(png|jpe?g|webp|gif|svg)$/i.test(url) && !/^[a-z][a-z0-9+.-]*:/i.test(url)) {
+        const normalized = url.replace(/^\.?\//, "");
+        return normalized.includes("/") ? `images/${normalized.replace(/^images\//, "")}` : `${defaultLocalFolder.replace(/\/$/, "")}/${normalized}`;
+    }
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol === "https:" || parsed.protocol === "http:") return parsed.href;
+    } catch (error) {
+        console.warn("Invalid image URL:", url);
+    }
+    return fallback;
+}
+
+function bindImagePreview(inputId, previewId, fallbackImage, emptyLabel = "Image preview", defaultLocalFolder = "") {
+    const input = document.getElementById(inputId);
+    const preview = document.getElementById(previewId);
+    if (!input || !preview) return;
+
+    function updatePreview() {
+        const raw = input.value.trim();
+        const imageURL = sanitizeImageURL(raw, fallbackImage, defaultLocalFolder);
+        preview.classList.remove("has-error");
+        if (!raw) {
+            preview.classList.add("empty");
+            preview.innerHTML = `<span class="admin-image-preview-placeholder">${escapeHtml(emptyLabel)}</span>`;
+            return;
+        }
+        preview.classList.remove("empty");
+        preview.innerHTML = `<img src="${escapeAttr(imageURL)}" alt="${escapeAttr(emptyLabel)}" loading="lazy">`;
+        preview.querySelector("img")?.addEventListener("error", () => {
+            preview.classList.add("has-error");
+            preview.innerHTML = `<div class="image-preview-error"><i class="fas fa-triangle-exclamation"></i><span>Image could not be loaded.</span></div>`;
+        });
+    }
+
+    input.addEventListener("input", updatePreview);
+    input.addEventListener("change", updatePreview);
+    input.updateImagePreview = updatePreview;
+    updatePreview();
+}
+
+function refreshImagePreview(inputId) {
+    document.getElementById(inputId)?.updateImagePreview?.();
 }
 
 function renderStudents() {
@@ -358,21 +656,19 @@ function renderStudents() {
     if (!tbody) return;
     const rows = getStudentRows().filter(matchesStudentFilters);
     updateStudentFilterOptions(getStudentRows());
-    if (!rows.length) return showTableEmpty(tbody, 13, "No students match the current filters.");
+    const result = paginateRows(rows, "students");
+    renderTablePagination("students", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 9, "No students match the current filters.");
 
-    tbody.innerHTML = rows.map((s) => `
+    tbody.innerHTML = result.rows.map((s) => `
         <tr>
             <td>${avatarCell(s, "ST")}</td>
-            <td>${escapeHtml(display(s.email))}</td>
-            <td>${escapeHtml(display(s.phone))}</td>
-            <td>${escapeHtml(display(s.district))}</td>
+            <td>${contactCell(s.email, s.phone)}</td>
             <td>${escapeHtml(display(s.educationLevel))}</td>
-            <td>${escapeHtml(display(s.interestArea))}</td>
+            <td>${ellipsisCell(s.interestArea, 150)}</td>
             <td>${progressMini(s.profileCompletion)}</td>
             <td><span class="badge ${s.pathwayCompleted ? "badge-success" : "badge-warning"}">${s.pathwayCompleted ? "Completed" : "Not Started"}</span></td>
             <td>${onlineBadge(s.uid)}</td>
-            <td>${formatDate(s.lastActiveAt || adminState.presence[s.uid]?.lastChanged)}</td>
-            <td>${formatDate(s.createdAt)}</td>
             <td><span class="badge ${accountBadgeClass(s.accountStatus)}">${escapeHtml(normalize(s.accountStatus || "active"))}</span></td>
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-student="${s.uid}">View</button>
@@ -454,20 +750,19 @@ function renderMentors() {
     let rows = getMentorRows();
     const q = normalize(adminState.filters.mentorSearch);
     if (q) rows = rows.filter((m) => normalize(`${m.fullName} ${m.email} ${m.field} ${m.universityOrCompany}`).includes(q));
-    if (!rows.length) return showTableEmpty(tbody, 11, "No mentors found.");
+    const result = paginateRows(rows, "mentors");
+    renderTablePagination("mentors", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 8, "No mentors found.");
 
-    tbody.innerHTML = rows.map((m) => `
+    tbody.innerHTML = result.rows.map((m) => `
         <tr>
             <td>${avatarCell(m, "MT")}</td>
-            <td>${escapeHtml(display(m.email))}</td>
-            <td>${escapeHtml(display(m.mentorType))}</td>
-            <td>${escapeHtml(display(m.field || m.mentoringField))}</td>
-            <td>${escapeHtml(display(m.universityOrCompany || m.organization))}</td>
+            <td>${ellipsisCell(m.field || m.mentoringField || m.mentorType, 150)}</td>
+            <td>${ellipsisCell(m.universityOrCompany || m.organization, 160)}</td>
             <td><span class="badge ${statusBadgeClass(m.status || "pending")}">${escapeHtml(normalize(m.status || "pending"))}</span></td>
-            <td>${escapeHtml(display(m.availability || m.availableTime || m.availabilityStatus))}</td>
+            <td>${ellipsisCell(m.availability || m.availableTime || m.availabilityStatus, 140)}</td>
             <td>${progressMini(m.profileCompletion)}</td>
             <td>${onlineBadge(m.uid)}</td>
-            <td>${formatDate(m.lastActiveAt || adminState.presence[m.uid]?.lastChanged)}</td>
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-mentor="${m.uid}">View</button>
                 <button class="btn btn-sm btn-success" data-approve-mentor="${m.uid}">Approve</button>
@@ -493,19 +788,18 @@ function renderInstitutes() {
     let rows = getInstituteRows();
     const q = normalize(adminState.filters.instituteSearch);
     if (q) rows = rows.filter((i) => normalize(`${i.instituteName} ${i.fullName} ${i.email} ${i.phone} ${i.district}`).includes(q));
-    if (!rows.length) return showTableEmpty(tbody, 10, "No institutes found.");
+    const result = paginateRows(rows, "institutes");
+    renderTablePagination("institutes", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 7, "No institutes found.");
 
-    tbody.innerHTML = rows.map((i) => `
+    tbody.innerHTML = result.rows.map((i) => `
         <tr>
             <td>${avatarCell({ ...i, fullName: i.instituteName || i.fullName }, "IN")}</td>
-            <td><strong>${escapeHtml(display(i.instituteName || i.fullName))}</strong><br><span class="text-muted">${escapeHtml(display(i.websiteURL || i.facebookPage))}</span></td>
-            <td>${escapeHtml(display(i.email))}</td>
-            <td>${escapeHtml(display(i.phone))}</td>
+            <td>${contactCell(i.email, i.phone)}</td>
             <td>${escapeHtml(display(i.district))}</td>
-            <td><span class="badge ${accountBadgeClass(i.accountStatus || i.status || "active")}">${escapeHtml(normalize(i.accountStatus || i.status || "active"))}</span></td>
-            <td>${progressMini(i.profileCompletion)}</td>
+            <td><span class="badge ${statusBadgeClass(i.verificationStatus || i.status || "pending")}">${escapeHtml(normalize(i.verificationStatus || i.status || "pending"))}</span></td>
             <td>${Object.values(adminState.courses).filter((c) => c.instituteUid === i.uid).length}</td>
-            <td>${formatDate(i.createdAt)}</td>
+            <td><span class="badge ${accountBadgeClass(i.accountStatus || i.status || "active")}">${escapeHtml(normalize(i.accountStatus || i.status || "active"))}</span></td>
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-institute="${i.uid}">View</button>
                 <button class="btn btn-sm btn-success" data-approve-institute="${i.uid}">Approve</button>
@@ -516,6 +810,30 @@ function renderInstitutes() {
         </tr>
     `).join("");
     bindRowActions(tbody);
+}
+
+function renderAdmins() {
+    const tbody = document.getElementById("admin-admins-tbody");
+    if (!tbody) return;
+    const rows = Object.entries(adminState.users)
+        .filter(([, user]) => userRole(user) === "admin")
+        .filter(([uid, user]) => !isHiddenAdminUser(uid, user) || uid === adminState.adminUid)
+        .map(([uid, user]) => ({ uid, ...user }))
+        .sort((a, b) => String(a.fullName || a.email || "").localeCompare(String(b.fullName || b.email || "")));
+    const result = paginateRows(rows, "admins");
+    renderTablePagination("admins", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 6, "No admin accounts found.");
+    tbody.innerHTML = result.rows.map((admin) => `
+        <tr>
+            <td>${avatarCell(admin, "AD")}</td>
+            <td>${contactCell(admin.email, admin.phone)}</td>
+            <td><span class="badge ${accountBadgeClass(admin.accountStatus)}">${escapeHtml(normalize(admin.accountStatus || "active"))}</span></td>
+            <td>${onlineBadge(admin.uid)}</td>
+            <td>${formatDate(admin.createdAt)}</td>
+            <td class="action-btns"><button class="btn btn-sm btn-info" data-view-admin="${admin.uid}">View</button></td>
+        </tr>
+    `).join("");
+    tbody.querySelectorAll("[data-view-admin]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Admin Details", adminDetails(btn.dataset.viewAdmin))));
 }
 
 function getInstituteRows() {
@@ -542,23 +860,24 @@ function getInstituteRows() {
 function renderMentorApprovals() {
     const tbody = document.getElementById("admin-approvals-tbody");
     if (!tbody) return;
-    const rows = getMentorRows().filter((m) => normalize(m.status || "pending") === "pending");
-    if (!rows.length) return showTableEmpty(tbody, 10, "No pending mentor approvals.");
+    const rows = getMentorRows().filter((m) => ["submitted", "under_review", "pending"].includes(normalize(m.approvalStatus || m.applicationStatus || m.status || "pending")));
+    const result = paginateRows(rows, "mentorApprovals");
+    renderTablePagination("mentorApprovals", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 7, "No pending mentor approvals.");
 
-    tbody.innerHTML = rows.map((m) => `
+    tbody.innerHTML = result.rows.map((m) => `
         <tr>
             <td>${avatarCell(m, "MT")}</td>
-            <td>${escapeHtml(display(m.field || m.mentoringField))}</td>
-            <td>${escapeHtml(display(m.highestQualification || m.qualification))}</td>
-            <td>${escapeHtml(display(m.experience))}</td>
-            <td>${escapeHtml(display(m.universityOrCompany || m.organization))}</td>
-            <td>${escapeHtml(display(m.preferredLanguages || m.language))}</td>
-            <td>${escapeHtml(display(m.guidanceAreas))}</td>
-            <td>${escapeHtml(display(m.availableTime || m.availability))}</td>
+            <td>${ellipsisCell(m.field || m.mentoringField, 150)}</td>
+            <td>${ellipsisCell(m.universityOrCompany || m.organization, 160)}</td>
+            <td><span class="badge ${statusBadgeClass(m.approvalStatus || m.status || "pending")}">${escapeHtml((m.approvalStatus || m.status || "pending").replace(/_/g, " "))}</span></td>
+            <td>${ellipsisCell(m.availableTime || m.availability, 150)}</td>
             <td>${progressMini(m.profileCompletion)}</td>
             <td class="action-btns">
-                <button class="btn btn-sm btn-info" data-view-mentor="${m.uid}">View Full Application</button>
+                <button class="btn btn-sm btn-info" data-view-mentor="${m.uid}">View</button>
+                <button class="btn btn-sm btn-primary" data-review-mentor="${m.uid}">Start Review</button>
                 <button class="btn btn-sm btn-success" data-approve-mentor="${m.uid}">Approve</button>
+                <button class="btn btn-sm btn-warning" data-changes-mentor="${m.uid}">Request Changes</button>
                 <button class="btn btn-sm btn-danger" data-reject-mentor="${m.uid}">Reject</button>
             </td>
         </tr>
@@ -573,13 +892,15 @@ function renderCourses() {
         .map(([id, c]) => ({ id, ...c }))
         .filter((c) => normalize(c.status) !== "deleted")
         .sort((a, b) => getTime(b.updatedAt || b.createdAt) - getTime(a.updatedAt || a.createdAt));
+    const result = paginateRows(rows, "courses");
+    renderTablePagination("courses", result, tbody);
     if (!rows.length) return showTableEmpty(tbody, 7, "No courses added yet.");
 
-    tbody.innerHTML = rows.map((c) => `
+    tbody.innerHTML = result.rows.map((c) => `
         <tr>
-            <td><strong>${escapeHtml(display(c.courseName || c.name))}</strong></td>
-            <td>${escapeHtml(display(c.instituteName || c.institute))}</td>
-            <td>${escapeHtml(display(c.category))}</td>
+            <td><strong>${ellipsisCell(c.courseName || c.name, 190)}</strong></td>
+            <td>${ellipsisCell(c.instituteName || c.institute, 170)}</td>
+            <td>${ellipsisCell(c.category, 130)}</td>
             <td>${escapeHtml(display(c.mode))}</td>
             <td>${escapeHtml(display(c.feeType))}</td>
             <td><span class="badge ${statusBadgeClass(c.status)}">${escapeHtml(normalize(c.status || "draft"))}</span></td>
@@ -641,7 +962,7 @@ function getCoursePayload() {
         applyLink: value("course-apply-link"),
         contactEmail: value("course-contact-email"),
         contactPhone: value("course-contact-phone"),
-        imageURL: value("course-image-url"),
+        imageURL: sanitizeImageURL(value("course-image-url"), "", "images"),
         status: value("course-status") || "draft"
     };
 }
@@ -669,6 +990,7 @@ function editCourse(id) {
     setValue("course-contact-email", c.contactEmail);
     setValue("course-contact-phone", c.contactPhone);
     setValue("course-image-url", c.imageURL);
+    refreshImagePreview("course-image-url");
     setValue("course-status", c.status || "draft");
     setText("course-form-title", "Edit Course");
     setText("course-submit-label", "Save Changes");
@@ -680,6 +1002,7 @@ function editCourse(id) {
 function resetCourseForm() {
     adminState.editingCourseId = null;
     document.getElementById("course-form")?.reset();
+    refreshImagePreview("course-image-url");
     setText("course-form-title", "Add Course");
     setText("course-submit-label", "Add Course");
     document.getElementById("course-cancel-edit")?.classList.add("hidden");
@@ -714,14 +1037,17 @@ function renderScholarships() {
         .map(([id, s]) => ({ id, ...s }))
         .filter((s) => normalize(s.status) !== "deleted")
         .sort((a, b) => getTime(b.updatedAt || b.createdAt) - getTime(a.updatedAt || a.createdAt));
-    if (!rows.length) return showTableEmpty(tbody, 6, "No scholarships added yet.");
+    const result = paginateRows(rows, "scholarships");
+    renderTablePagination("scholarships", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 7, "No scholarships added yet.");
 
-    tbody.innerHTML = rows.map((s) => `
+    tbody.innerHTML = result.rows.map((s) => `
         <tr>
-            <td><strong>${escapeHtml(display(s.scholarshipName || s.name))}</strong></td>
-            <td>${escapeHtml(display(s.provider))}</td>
-            <td>${escapeHtml(display(s.category || s.supportType))}</td>
+            <td><strong>${ellipsisCell(s.scholarshipName || s.name, 190)}</strong></td>
+            <td>${ellipsisCell(s.provider, 160)}</td>
+            <td>${ellipsisCell(s.category, 130)}</td>
             <td>${escapeHtml(display(s.deadline))}</td>
+            <td>${ellipsisCell(s.supportType || s.amount, 130)}</td>
             <td><span class="badge ${statusBadgeClass(s.status)}">${escapeHtml(normalize(s.status || "draft"))}</span></td>
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-scholarship="${s.id}">View</button>
@@ -774,7 +1100,7 @@ function getScholarshipPayload() {
         applyLink: value("schol-apply-link"),
         contactEmail: value("schol-contact-email"),
         contactPhone: value("schol-contact-phone"),
-        imageURL: value("schol-image-url"),
+        imageURL: sanitizeImageURL(value("schol-image-url"), "", "images"),
         status: value("schol-status") || "draft"
     };
 }
@@ -798,6 +1124,7 @@ function editScholarship(id) {
     setValue("schol-contact-email", s.contactEmail);
     setValue("schol-contact-phone", s.contactPhone);
     setValue("schol-image-url", s.imageURL);
+    refreshImagePreview("schol-image-url");
     setValue("schol-status", s.status || "draft");
     setText("scholarship-form-title", "Edit Scholarship");
     setText("scholarship-submit-label", "Save Changes");
@@ -809,6 +1136,7 @@ function editScholarship(id) {
 function resetScholarshipForm() {
     adminState.editingScholarshipId = null;
     document.getElementById("scholarship-form")?.reset();
+    refreshImagePreview("schol-image-url");
     setText("scholarship-form-title", "Add Scholarship");
     setText("scholarship-submit-label", "Add Scholarship");
     document.getElementById("scholarship-cancel-edit")?.classList.add("hidden");
@@ -840,17 +1168,18 @@ function renderPathwayResults() {
     const tbody = document.getElementById("admin-pathway-tbody");
     if (!tbody) return;
     const rows = flattenPathwayResults();
-    if (!rows.length) return showTableEmpty(tbody, 9, "No pathway results submitted yet.");
-    tbody.innerHTML = rows.map((r) => {
+    const result = paginateRows(rows, "pathwayResults");
+    renderTablePagination("pathwayResults", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 8, "No pathway results submitted yet.");
+    tbody.innerHTML = result.rows.map((r) => {
         const user = adminState.users[r.uid] || {};
         const student = adminState.students[r.uid] || {};
         return `
             <tr>
-                <td>${escapeHtml(display(user.fullName || r.studentName))}</td>
-                <td>${escapeHtml(display(user.email || r.studentEmail || r.email))}</td>
+                <td>${avatarCell({ fullName: user.fullName || r.studentName, photoURL: user.photoURL || student.photoURL }, "ST")}</td>
                 <td>${escapeHtml(display(r.educationLevel || r.basicProfile?.currentEducationLevel || student.educationLevel))}</td>
-                <td>${escapeHtml(display(r.interestArea || r.interests?.interestAreas?.[0]))}</td>
-                <td>${escapeHtml(display(r.futureGoal || r.goals?.dreamCareer || r.goals?.futurePreference?.[0]))}<br><span class="text-muted">${escapeHtml(display(r.recommendedPathway))}</span></td>
+                <td>${ellipsisCell(r.interestArea || r.interests?.interestAreas?.[0], 150)}</td>
+                <td>${ellipsisCell(r.recommendedPathway || r.futureGoal || r.goals?.dreamCareer || r.goals?.futurePreference?.[0], 190)}</td>
                 <td>${escapeHtml(display(r.pathwayScore))}%</td>
                 <td>${formatDate(r.createdAt)}</td>
                 <td><span class="badge ${student.currentPathwayResultId === r.resultId ? "badge-success" : "badge-info"}">${student.currentPathwayResultId === r.resultId ? "Current" : "Previous"}</span></td>
@@ -870,15 +1199,16 @@ function renderMentorRequests() {
     let rows = Object.entries(adminState.mentorRequests).map(([id, r]) => ({ id, ...r }));
     if (adminState.filters.requestStatus !== "all") rows = rows.filter((r) => normalize(r.status || "pending") === adminState.filters.requestStatus);
     rows.sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt));
-    if (!rows.length) return showTableEmpty(tbody, 7, "No mentor requests found.");
+    const result = paginateRows(rows, "mentorRequests");
+    renderTablePagination("mentorRequests", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 6, "No mentor requests found.");
 
-    tbody.innerHTML = rows.map((r) => `
+    tbody.innerHTML = result.rows.map((r) => `
         <tr>
             <td>${escapeHtml(display(r.studentName || adminState.users[r.studentUid]?.fullName))}</td>
             <td>${escapeHtml(display(r.mentorName || adminState.users[r.mentorUid]?.fullName))}</td>
-            <td class="wrap-cell">${escapeHtml(display(r.message))}</td>
-            <td><span class="badge ${statusBadgeClass(r.status)}">${escapeHtml(normalize(r.status || "pending"))}</span></td>
             <td>${formatDate(r.createdAt)}</td>
+            <td><span class="badge ${statusBadgeClass(r.status)}">${escapeHtml(normalize(r.status || "pending"))}</span></td>
             <td>${formatDate(r.acceptedAt || r.rejectedAt || r.updatedAt)}</td>
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-student="${r.studentUid}">Student</button>
@@ -1284,19 +1614,73 @@ function renderActivity() {
 }
 
 function renderRecentActivity() {
-    const container = document.getElementById("recent-activity-list");
-    if (!container) return;
+    const preview = document.getElementById("recent-activity-list");
+    const full = document.getElementById("full-activity-list");
     let rows = Object.entries(adminState.activityLogs)
         .map(([id, log]) => ({ id, ...log }))
         .filter((log) => !isHiddenActivityLog(log))
         .sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt));
-    const q = normalize(adminState.filters.activitySearch);
-    if (q) rows = rows.filter((log) => normalize(`${log.userName} ${log.actionType} ${log.description}`).includes(q));
-    if (adminState.filters.activityRole) rows = rows.filter((log) => normalize(log.userRole) === adminState.filters.activityRole);
-    if (adminState.filters.activityType) rows = rows.filter((log) => normalize(log.actionType) === adminState.filters.activityType);
-    if (!rows.length) return showEmpty(container, "No meaningful activity has been logged yet.");
-    container.innerHTML = rows.slice(0, 50).map(activityItem).join("");
     updateActivityTypeOptions(rows);
+    const q = normalize(adminState.filters.activitySearch);
+    const fullRows = rows
+        .filter((log) => !q || normalize(`${log.userName} ${log.actionType} ${log.description}`).includes(q))
+        .filter((log) => !adminState.filters.activityRole || normalize(log.userRole) === adminState.filters.activityRole)
+        .filter((log) => !adminState.filters.activityType || normalize(log.actionType) === adminState.filters.activityType);
+    if (full) {
+        if (!fullRows.length) showEmpty(full, "No meaningful activity has been logged yet.");
+        else full.innerHTML = fullRows.slice(0, 80).map(activityItem).join("");
+    }
+    if (!preview) return;
+    const previewFilter = adminState.filters.activityPreview || "all";
+    const previewRows = rows.filter((log) => matchesActivityPreviewFilter(log, previewFilter)).slice(0, 8);
+    if (!previewRows.length) {
+        preview.innerHTML = `<tr><td colspan="6" class="text-center py-4 text-muted">No recent platform activity.</td></tr>`;
+        return;
+    }
+    preview.innerHTML = previewRows.map(activityTableRow).join("");
+}
+
+function matchesActivityPreviewFilter(log = {}, filter = "all") {
+    if (filter === "all") return true;
+    const text = normalize(`${log.actionType || ""} ${log.description || ""} ${log.status || ""}`);
+    if (filter === "login") return text.includes("login") || text.includes("logout");
+    if (filter === "signup") return text.includes("signup") || text.includes("registered") || text.includes("sign up");
+    if (filter === "request") return text.includes("request");
+    if (filter === "message") return text.includes("message") || text.includes("support");
+    if (filter === "approval") return text.includes("approval") || text.includes("approved") || text.includes("rejected");
+    return true;
+}
+
+function activityTableRow(log = {}) {
+    const status = activityStatus(log);
+    return `<tr>
+        <td><span class="activity-title"><i class="fas ${activityIcon(log)}"></i>${escapeHtml(display(log.actionType || "Activity"))}</span></td>
+        <td>${escapeHtml(display(log.userName || "System"))}</td>
+        <td>${escapeHtml(display(log.userRole || "system"))}</td>
+        <td>${ellipsisCell(log.description || "Updated platform data", 220)}</td>
+        <td>${formatDateTime(log.createdAt)}</td>
+        <td><span class="status-chip ${status}">${escapeHtml(labelize(status))}</span></td>
+    </tr>`;
+}
+
+function activityIcon(log = {}) {
+    const text = normalize(`${log.actionType || ""} ${log.description || ""}`);
+    if (text.includes("login")) return "fa-right-to-bracket";
+    if (text.includes("signup") || text.includes("register")) return "fa-user-plus";
+    if (text.includes("message") || text.includes("support")) return "fa-message";
+    if (text.includes("approve")) return "fa-circle-check";
+    if (text.includes("request")) return "fa-user-clock";
+    return "fa-bolt";
+}
+
+function activityStatus(log = {}) {
+    const text = normalize(`${log.status || ""} ${log.actionType || ""} ${log.description || ""}`);
+    if (text.includes("reject") || text.includes("error") || text.includes("fail")) return "rejected";
+    if (text.includes("pending")) return "pending";
+    if (text.includes("open") || text.includes("new")) return "open";
+    if (text.includes("logout")) return "logout";
+    if (text.includes("approve") || text.includes("success") || text.includes("login") || text.includes("complete")) return "success";
+    return "open";
 }
 
 function isHiddenActivityLog(log = {}) {
@@ -1315,10 +1699,12 @@ function renderLoginHistory() {
         .filter(([uid]) => !isHiddenAdminUser(uid))
         .flatMap(([uid, records]) => Object.entries(records || {}).map(([id, item]) => ({ uid, id, ...item })))
         .sort((a, b) => getTime(b.loginAt) - getTime(a.loginAt));
+    const result = paginateRows(rows, "loginHistory");
+    renderTablePagination("loginHistory", result, tbody);
     if (!rows.length) return showTableEmpty(tbody, 6, "No login history yet.");
-    tbody.innerHTML = rows.slice(0, 100).map((r) => {
+    tbody.innerHTML = result.rows.map((r) => {
         const user = adminState.users[r.uid] || {};
-        return `<tr><td>${escapeHtml(display(user.fullName))}</td><td>${escapeHtml(display(user.userType))}</td><td>${formatDateTime(r.loginAt)}</td><td>${formatDateTime(r.logoutAt)}</td><td>${escapeHtml(display(r.sessionStatus))}</td><td>${escapeHtml(display(r.deviceType))} / ${escapeHtml(display(r.browserName))}</td></tr>`;
+        return `<tr><td>${escapeHtml(display(user.fullName))}</td><td>${escapeHtml(display(user.userType))}</td><td>${formatDateTime(r.loginAt)}</td><td>${formatDateTime(r.logoutAt)}</td><td><span class="badge ${statusBadgeClass(r.sessionStatus)}">${escapeHtml(display(r.sessionStatus))}</span></td><td>${ellipsisCell(`${display(r.deviceType)} / ${display(r.browserName)}`, 190)}</td></tr>`;
     }).join("");
 }
 
@@ -1326,8 +1712,10 @@ function renderOnlineUsers() {
     const tbody = document.getElementById("online-users-tbody");
     if (!tbody) return;
     const rows = Object.entries(adminState.presence).filter(([uid, p]) => normalize(p.state) === "online" && !isHiddenAdminUser(uid));
+    const result = paginateRows(rows, "onlineUsers");
+    renderTablePagination("onlineUsers", result, tbody);
     if (!rows.length) return showTableEmpty(tbody, 4, "No users online right now.");
-    tbody.innerHTML = rows.map(([uid, p]) => {
+    tbody.innerHTML = result.rows.map(([uid, p]) => {
         const user = adminState.users[uid] || {};
         return `<tr><td>${escapeHtml(display(user.fullName))}</td><td>${escapeHtml(display(user.userType))}</td><td>${formatDateTime(p.lastChanged)}</td><td>${formatDateTime(user.lastActiveAt)}</td></tr>`;
     }).join("");
@@ -1375,6 +1763,69 @@ function renderReports() {
     container.innerHTML = reports.map(([title, data]) => reportCard(title, data)).join("");
 }
 
+function renderAnalyticsCharts() {
+    const days = recentDayKeys(7);
+    const users = Object.entries(adminState.users)
+        .filter(([uid, user]) => !isHiddenAdminUser(uid, user))
+        .map(([, user]) => user);
+    const userSeries = countRowsByDay(users, days, (item) => item.createdAt || item.registeredAt || item.lastLoginAt);
+    const courseEvents = [
+        ...Object.values(adminState.courses || {}),
+        ...Object.values(adminState.savedCourses || {}).flatMap((records) => Object.values(records || {}))
+    ];
+    const courseSeries = countRowsByDay(courseEvents, days, (item) => item.savedAt || item.createdAt || item.updatedAt);
+    const supportEvents = [
+        ...Object.values(adminState.guestMessages || {}),
+        ...Object.values(adminState.contactMessages || {}),
+        ...Object.values(adminState.conversations || {}),
+        ...Object.values(adminState.conversations || {}).flatMap((conversation) => Object.values(conversation.messages || {}))
+    ];
+    const supportSeries = countRowsByDay(supportEvents, days, (item) => item.createdAt || item.lastMessageAt || item.updatedAt);
+    renderMiniChart("chart-users", "chart-users-total", days, userSeries, "#2563eb");
+    renderMiniChart("chart-courses", "chart-courses-total", days, courseSeries, "#16a34a");
+    renderMiniChart("chart-support", "chart-support-total", days, supportSeries, "#ef4444");
+}
+
+function recentDayKeys(count = 7) {
+    return Array.from({ length: count }, (_, index) => {
+        const date = new Date();
+        date.setDate(date.getDate() - (count - 1 - index));
+        return date.toISOString().slice(0, 10);
+    });
+}
+
+function countRowsByDay(rows, days, getter) {
+    const counts = Object.fromEntries(days.map((day) => [day, 0]));
+    rows.forEach((row) => {
+        const time = getTime(getter(row));
+        if (!time) return;
+        const key = new Date(time).toISOString().slice(0, 10);
+        if (key in counts) counts[key] += 1;
+    });
+    return days.map((day) => counts[day] || 0);
+}
+
+function renderMiniChart(containerId, totalId, days, values, color) {
+    const container = document.getElementById(containerId);
+    const total = values.reduce((sum, value) => sum + value, 0);
+    setText(totalId, formatNumber(total));
+    if (!container) return;
+    const max = Math.max(1, ...values);
+    const points = values.map((value, index) => {
+        const x = 12 + index * (276 / Math.max(1, values.length - 1));
+        const y = 112 - (value / max) * 82;
+        return [x, y];
+    });
+    const path = points.map(([x, y], index) => `${index ? "L" : "M"}${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
+    const area = `${path} L288 120 L12 120 Z`;
+    container.innerHTML = `<svg viewBox="0 0 300 140" role="img" aria-label="Last 7 days chart">
+        <path d="${area}" fill="${color}" opacity="0.1"></path>
+        <path d="${path}" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+        ${points.map(([x, y]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${color}"></circle>`).join("")}
+        ${days.map((day, index) => `<text x="${(12 + index * (276 / Math.max(1, days.length - 1))).toFixed(1)}" y="136" text-anchor="middle">${escapeHtml(new Date(`${day}T00:00:00`).toLocaleDateString(undefined, { weekday: "short" }).slice(0, 3))}</text>`).join("")}
+    </svg>`;
+}
+
 function bindRowActions(root) {
     root.querySelectorAll("[data-view-student]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Student Details", studentDetails(btn.dataset.viewStudent))));
     root.querySelectorAll("[data-view-mentor]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Mentor Details", mentorDetails(btn.dataset.viewMentor))));
@@ -1394,6 +1845,8 @@ function bindRowActions(root) {
     }));
     root.querySelectorAll("[data-toggle-account]").forEach((btn) => btn.addEventListener("click", () => toggleAccount(btn.dataset.toggleAccount)));
     root.querySelectorAll("[data-approve-mentor]").forEach((btn) => btn.addEventListener("click", () => approveMentor(btn.dataset.approveMentor)));
+    root.querySelectorAll("[data-review-mentor]").forEach((btn) => btn.addEventListener("click", () => startMentorReview(btn.dataset.reviewMentor)));
+    root.querySelectorAll("[data-changes-mentor]").forEach((btn) => btn.addEventListener("click", () => requestMentorChanges(btn.dataset.changesMentor)));
     root.querySelectorAll("[data-reject-mentor]").forEach((btn) => btn.addEventListener("click", () => rejectMentor(btn.dataset.rejectMentor)));
     root.querySelectorAll("[data-edit-course]").forEach((btn) => btn.addEventListener("click", () => editCourse(btn.dataset.editCourse)));
     root.querySelectorAll("[data-view-course]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Course Details", objectDetails(adminState.courses[btn.dataset.viewCourse]))));
@@ -1410,18 +1863,85 @@ function bindRowActions(root) {
 async function approveMentor(uid) {
     if (!confirm("Approve this mentor application?")) return;
     const mentor = adminState.mentors[uid] || {};
+    const status = normalize(mentor.approvalStatus || mentor.applicationStatus || mentor.status);
+    if (!["submitted", "under_review", "pending"].includes(status)) return showToast("Only submitted mentor applications can be approved.", "error");
     await update(ref(database), {
+        [`mentors/${uid}/profileStatus`]: "completed",
+        [`mentors/${uid}/approvalStatus`]: "approved",
+        [`mentors/${uid}/applicationStatus`]: "approved",
         [`mentors/${uid}/status`]: "approved",
+        [`mentors/${uid}/publicVisibility`]: true,
+        [`mentors/${uid}/mentoringEnabled`]: true,
         [`mentors/${uid}/userType`]: "mentor",
         [`mentors/${uid}/accountStatus`]: "active",
         [`mentors/${uid}/approvedAt`]: serverTimestamp(),
         [`mentors/${uid}/approvedBy`]: adminState.adminUid,
+        [`mentors/${uid}/adminReviewReason`]: "",
+        [`mentors/${uid}/adminRequestedChanges`]: "",
+        [`mentors/${uid}/updatedAt`]: serverTimestamp(),
+        [`mentorApplications/${uid}/profileStatus`]: "completed",
+        [`mentorApplications/${uid}/approvalStatus`]: "approved",
+        [`mentorApplications/${uid}/applicationStatus`]: "approved",
+        [`mentorApplications/${uid}/approvedAt`]: serverTimestamp(),
+        [`mentorApplications/${uid}/approvedBy`]: adminState.adminUid,
+        [`mentorApplications/${uid}/adminReviewReason`]: "",
+        [`mentorApplications/${uid}/adminRequestedChanges`]: "",
+        [`mentorApplications/${uid}/updatedAt`]: serverTimestamp(),
         [`users/${uid}/mentorStatus`]: "approved",
         [`users/${uid}/accountStatus`]: "active",
+        [`users/${uid}/updatedAt`]: serverTimestamp(),
         [`notifications/${uid}/${Date.now()}`]: notification("Mentor approved", "Your mentor application has been approved.")
     });
     await logActivity("mentor_approved", `Approved mentor ${mentor.fullName || uid}`, "mentor", uid);
     showToast("Mentor approved.", "success");
+}
+
+async function startMentorReview(uid) {
+    const mentor = adminState.mentors[uid] || {};
+    await update(ref(database), {
+        [`mentors/${uid}/approvalStatus`]: "under_review",
+        [`mentors/${uid}/applicationStatus`]: "under_review",
+        [`mentors/${uid}/reviewStartedAt`]: serverTimestamp(),
+        [`mentors/${uid}/reviewedBy`]: adminState.adminUid,
+        [`mentors/${uid}/updatedAt`]: serverTimestamp(),
+        [`mentorApplications/${uid}/approvalStatus`]: "under_review",
+        [`mentorApplications/${uid}/applicationStatus`]: "under_review",
+        [`mentorApplications/${uid}/reviewStartedAt`]: serverTimestamp(),
+        [`mentorApplications/${uid}/reviewedBy`]: adminState.adminUid,
+        [`mentorApplications/${uid}/updatedAt`]: serverTimestamp(),
+        [`notifications/${uid}/${Date.now()}`]: notification("Application under review", "Your mentor application is now under review.")
+    });
+    await logActivity("mentor_review_started", `Started review for mentor ${mentor.fullName || uid}`, "mentor", uid);
+    showToast("Mentor application marked under review.", "success");
+}
+
+async function requestMentorChanges(uid) {
+    const message = prompt("Enter requested changes for this mentor:");
+    if (!message?.trim()) return;
+    const mentor = adminState.mentors[uid] || {};
+    await update(ref(database), {
+        [`mentors/${uid}/approvalStatus`]: "changes_requested",
+        [`mentors/${uid}/applicationStatus`]: "changes_requested",
+        [`mentors/${uid}/status`]: "pending",
+        [`mentors/${uid}/publicVisibility`]: false,
+        [`mentors/${uid}/mentoringEnabled`]: false,
+        [`mentors/${uid}/adminReviewReason`]: message.trim(),
+        [`mentors/${uid}/adminRequestedChanges`]: message.trim(),
+        [`mentors/${uid}/changesRequestedAt`]: serverTimestamp(),
+        [`mentors/${uid}/reviewedBy`]: adminState.adminUid,
+        [`mentors/${uid}/updatedAt`]: serverTimestamp(),
+        [`mentorApplications/${uid}/approvalStatus`]: "changes_requested",
+        [`mentorApplications/${uid}/applicationStatus`]: "changes_requested",
+        [`mentorApplications/${uid}/adminReviewReason`]: message.trim(),
+        [`mentorApplications/${uid}/adminRequestedChanges`]: message.trim(),
+        [`mentorApplications/${uid}/changesRequestedAt`]: serverTimestamp(),
+        [`mentorApplications/${uid}/reviewedBy`]: adminState.adminUid,
+        [`mentorApplications/${uid}/updatedAt`]: serverTimestamp(),
+        [`users/${uid}/mentorStatus`]: "changes_requested",
+        [`notifications/${uid}/${Date.now()}`]: notification("Mentor application changes requested", message.trim())
+    });
+    await logActivity("mentor_changes_requested", `Requested changes for mentor ${mentor.fullName || uid}`, "mentor", uid);
+    showToast("Requested changes sent to mentor.", "success");
 }
 
 async function rejectMentor(uid) {
@@ -1429,11 +1949,23 @@ async function rejectMentor(uid) {
     if (!reason) return;
     const mentor = adminState.mentors[uid] || {};
     await update(ref(database), {
+        [`mentors/${uid}/approvalStatus`]: "rejected",
+        [`mentors/${uid}/applicationStatus`]: "rejected",
         [`mentors/${uid}/status`]: "rejected",
+        [`mentors/${uid}/publicVisibility`]: false,
+        [`mentors/${uid}/mentoringEnabled`]: false,
         [`mentors/${uid}/accountStatus`]: "rejected",
+        [`mentors/${uid}/adminReviewReason`]: reason,
         [`mentors/${uid}/rejectionReason`]: reason,
         [`mentors/${uid}/rejectedAt`]: serverTimestamp(),
         [`mentors/${uid}/rejectedBy`]: adminState.adminUid,
+        [`mentorApplications/${uid}/approvalStatus`]: "rejected",
+        [`mentorApplications/${uid}/applicationStatus`]: "rejected",
+        [`mentorApplications/${uid}/adminReviewReason`]: reason,
+        [`mentorApplications/${uid}/rejectionReason`]: reason,
+        [`mentorApplications/${uid}/rejectedAt`]: serverTimestamp(),
+        [`mentorApplications/${uid}/rejectedBy`]: adminState.adminUid,
+        [`mentorApplications/${uid}/updatedAt`]: serverTimestamp(),
         [`users/${uid}/mentorStatus`]: "rejected",
         [`notifications/${uid}/${Date.now()}`]: notification("Mentor application update", `Your mentor application was rejected. Reason: ${reason}`)
     });
@@ -1727,13 +2259,27 @@ function pathwayDetails(uid, resultId) {
 }
 
 function objectDetails(obj = {}) {
-    return `<div class="detail-grid">${Object.entries(obj).map(([key, value]) => `<div><span>${escapeHtml(key)}</span><strong>${escapeHtml(display(value))}</strong></div>`).join("")}</div>`;
+    return `<div class="detail-grid">${Object.entries(obj).map(([key, value]) => {
+        if (key === "imageURL") {
+            const fallback = obj.scholarshipName || obj.provider ? "images/scholarship-placeholder.png" : "images/course-placeholder.png";
+            const src = sanitizeImageURL(value, fallback);
+            return `<div class="detail-image-field full-width"><span>Image</span><img src="${escapeAttr(src)}" alt="${escapeAttr(obj.courseName || obj.scholarshipName || "Record image")}" loading="lazy" onerror="this.onerror=null;this.src='${escapeAttr(fallback)}';"></div>`;
+        }
+        return `<div><span>${escapeHtml(key)}</span><strong>${escapeHtml(display(value))}</strong></div>`;
+    }).join("")}</div>`;
 }
 
 function groupedDetails(groups, data) {
     return Object.entries(groups).map(([title, keys]) => `
         <section class="drawer-group"><h3>${escapeHtml(title)}</h3><div class="detail-grid">${keys.map((key) => `<div><span>${escapeHtml(labelize(key))}</span><strong>${escapeHtml(display(data[key]))}</strong></div>`).join("")}</div></section>
     `).join("");
+}
+
+function adminDetails(uid) {
+    const admin = adminState.users[uid] || {};
+    return groupedDetails({
+        "Admin Account": ["fullName", "email", "phone", "userType", "accountStatus", "createdAt", "lastActiveAt", "lastLoginAt"]
+    }, admin);
 }
 
 function openDetailDrawer(title, bodyHtml) {
@@ -1749,44 +2295,198 @@ function openDetailDrawer(title, bodyHtml) {
     document.getElementById("close-admin-drawer")?.addEventListener("click", () => drawer.classList.remove("open"));
 }
 
+function renderAdminMessages() {
+    const tbody = document.getElementById("admin-messages-tbody");
+    if (!tbody) return;
+    const rows = Object.entries(adminState.conversations || {})
+        .map(([id, conversation]) => ({ id, ...conversation }))
+        .filter(isSupportConversation)
+        .sort((a, b) => getTime(b.lastMessageAt || b.updatedAt || b.createdAt) - getTime(a.lastMessageAt || a.updatedAt || a.createdAt));
+    const result = paginateRows(rows, "messages");
+    renderTablePagination("messages", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 7, "No authenticated user conversations yet.");
+    tbody.innerHTML = result.rows.map((row) => {
+        const userUid = row.studentUid || row.userUid || Object.keys(row.participantIds || {}).find((uid) => uid !== adminState.adminUid) || "";
+        const user = adminState.users[userUid] || {};
+        const userName = row.participantNames?.[userUid] || user.fullName || row.studentName || "User";
+        const role = row.participantRoles?.[userUid] || userRole(user) || row.userRole || "user";
+        return `<tr>
+            <td>${escapeHtml(display(userName))}</td>
+            <td>${escapeHtml(display(role))}</td>
+            <td>${ellipsisCell(row.lastMessage || row.subject || "Conversation", 240)}</td>
+            <td><span class="badge ${statusBadgeClass(row.status || "open")}">${escapeHtml(display(row.status || "open"))}</span></td>
+            <td>${formatNumber(row.unreadByAdmin || 0)}</td>
+            <td>${formatDateTime(row.lastMessageAt || row.updatedAt || row.createdAt)}</td>
+            <td><button class="btn btn-sm btn-primary" data-open-admin-conversation="${escapeAttr(row.id)}">Open</button></td>
+        </tr>`;
+    }).join("");
+    tbody.querySelectorAll("[data-open-admin-conversation]").forEach((btn) => btn.addEventListener("click", () => {
+        supportState.activeFolder = "conversations";
+        supportState.selectedItemId = `conversation:${btn.dataset.openAdminConversation}`;
+        showAdminSection("support-inbox");
+        renderSupportInbox();
+    }));
+}
+
+function getAdminNotificationRows() {
+    const personal = Object.entries(adminState.notifications?.[adminState.adminUid] || {}).map(([id, notification]) => ({
+        id,
+        source: "personal",
+        path: `notifications/${adminState.adminUid}/${id}`,
+        ...notification
+    }));
+    const shared = Object.entries(adminState.notifications?.admin || {}).map(([id, notification]) => ({
+        id,
+        source: "admin",
+        path: `notifications/admin/${id}`,
+        ...notification
+    }));
+    return [...personal, ...shared].sort((a, b) => getTime(b.createdAt || b.updatedAt) - getTime(a.createdAt || a.updatedAt));
+}
+
+function renderAdminNotifications() {
+    const tbody = document.getElementById("admin-notifications-tbody");
+    if (!tbody) return;
+    const rows = getAdminNotificationRows();
+    const result = paginateRows(rows, "notifications");
+    renderTablePagination("notifications", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 6, "No admin notifications yet.");
+    tbody.innerHTML = result.rows.map((notification) => {
+        const unread = isAdminNotificationUnread(notification);
+        return `<tr>
+            <td><strong>${ellipsisCell(notification.title || notification.type || "Notification", 180)}</strong></td>
+            <td>${ellipsisCell(notification.message || notification.messagePreview || notification.body, 260)}</td>
+            <td>${escapeHtml(display(notification.type || notification.category || "general"))}</td>
+            <td>${formatDateTime(notification.createdAt || notification.updatedAt)}</td>
+            <td><span class="badge ${unread ? "badge-warning" : "badge-success"}">${unread ? "Unread" : "Read"}</span></td>
+            <td class="action-btns">
+                ${notification.relatedSection ? `<button class="btn btn-sm btn-info" data-section="${escapeAttr(notification.relatedSection)}">Open</button>` : ""}
+                ${unread ? `<button class="btn btn-sm btn-primary" data-mark-notification-read="${escapeAttr(notification.path)}" data-notification-source="${escapeAttr(notification.source)}">Mark Read</button>` : ""}
+            </td>
+        </tr>`;
+    }).join("");
+    tbody.querySelectorAll("[data-mark-notification-read]").forEach((btn) => btn.addEventListener("click", () => markAdminNotificationRead(btn.dataset.markNotificationRead, btn.dataset.notificationSource)));
+}
+
+function isAdminNotificationUnread(notification = {}) {
+    if (notification.source === "admin") return notification.readBy?.[adminState.adminUid] !== true;
+    return notification.isRead === false || notification.read === false || notification.status === "unread" || (notification.isRead === undefined && notification.read === undefined && notification.status === undefined);
+}
+
+async function markAdminNotificationRead(path, source = "personal") {
+    if (!path) return;
+    const payload = source === "admin"
+        ? { [`readBy/${adminState.adminUid}`]: true, updatedAt: serverTimestamp() }
+        : { read: true, isRead: true, status: "read", updatedAt: serverTimestamp() };
+    await update(ref(database, path), payload);
+    renderAdminNotifications();
+}
+
+async function markAllAdminNotificationsRead() {
+    const rows = getAdminNotificationRows().filter(isAdminNotificationUnread);
+    if (!rows.length) return showToast("No unread notifications.", "success");
+    const updates = {};
+    rows.forEach((notification) => {
+        if (notification.source === "admin") {
+            updates[`${notification.path}/readBy/${adminState.adminUid}`] = true;
+            updates[`${notification.path}/updatedAt`] = serverTimestamp();
+        } else {
+            updates[`${notification.path}/read`] = true;
+            updates[`${notification.path}/isRead`] = true;
+            updates[`${notification.path}/status`] = "read";
+            updates[`${notification.path}/updatedAt`] = serverTimestamp();
+        }
+    });
+    await update(ref(database), updates);
+    showToast("Notifications marked as read.", "success");
+}
+
+function renderSystemStatus() {
+    const container = document.getElementById("system-status-grid");
+    if (!container) return;
+    const stats = calculateStats();
+    const items = [
+        ["Firebase Connection", adminState.systemConnected ? "Connected" : "Disconnected", adminState.systemConnected ? "badge-success" : "badge-danger", "fa-plug"],
+        ["Admin Presence", isOnline(adminState.adminUid) ? "Online" : "Offline", isOnline(adminState.adminUid) ? "badge-success" : "badge-warning", "fa-user-shield"],
+        ["Online Users", stats["kpi-online-users"], "badge-info", "fa-signal"],
+        ["Active Courses", stats["kpi-active-courses"], "badge-success", "fa-book-open"],
+        ["Active Scholarships", stats["kpi-active-scholarships"], "badge-success", "fa-graduation-cap"],
+        ["Unread Support", stats["kpi-unread-support"], stats["kpi-unread-support"] ? "badge-warning" : "badge-success", "fa-headset"],
+        ["Realtime Listeners", "16 active paths", "badge-info", "fa-wave-square"],
+        ["Last Synced", new Date().toLocaleTimeString(), "badge-info", "fa-clock"]
+    ];
+    container.innerHTML = items.map(([label, value, badgeClass, icon]) => `
+        <article class="panel-card glass system-status-card">
+            <i class="fas ${icon} text-primary"></i>
+            <div><h3>${escapeHtml(label)}</h3><span class="badge ${badgeClass}">${escapeHtml(String(value))}</span></div>
+        </article>
+    `).join("");
+}
+
 function renderPendingActions() {
     const container = document.getElementById("pending-actions-list");
     if (!container) return;
     const actions = [
-        ["Pending mentor approvals", countWhere(adminState.mentors, (m) => normalize(m.status || "pending") === "pending"), "mentor-approvals"],
-        ["Unread support messages", getUnreadSupportCount(), "support-inbox"],
-        ["Pending mentor requests", countWhere(adminState.mentorRequests, (r) => normalize(r.status || "pending") === "pending"), "mentor-requests"],
-        ["Scholarships near deadline", nearDeadlineScholarships().length, "manage-scholarships"],
-        ["Draft courses", countWhere(adminState.courses, (c) => normalize(c.status) === "draft"), "manage-courses"]
+        { title: "Pending Mentor Approvals", desc: "Mentors waiting for approval", count: countWhere(adminState.mentors, (m) => normalize(m.status || "pending") === "pending"), section: "mentor-approvals", icon: "fa-user-check", tone: "orange" },
+        { title: "Unread Support Messages", desc: "Messages waiting for response", count: getUnreadSupportCount(), section: "support-inbox", icon: "fa-envelope", tone: "red" },
+        { title: "Pending Mentor Requests", desc: "Student mentoring requests", count: countWhere(adminState.mentorRequests, (r) => normalize(r.status || "pending") === "pending"), section: "mentor-requests", icon: "fa-user-clock", tone: "blue" },
+        { title: "Scholarships Near Deadline", desc: "Scholarships requiring attention", count: nearDeadlineScholarships().length, section: "manage-scholarships", icon: "fa-graduation-cap", tone: "green" },
+        { title: "Draft Courses", desc: "Courses waiting for admin review", count: countWhere(adminState.courses, (c) => normalize(c.status) === "draft"), section: "manage-courses", icon: "fa-book", tone: "purple" }
     ];
-    container.innerHTML = actions.map(([label, count, section]) => `<button class="pending-action" data-section="${section}"><strong>${count}</strong><span>${label}</span></button>`).join("");
-    container.querySelectorAll("[data-section]").forEach((btn) => btn.addEventListener("click", () => showAdminSection(btn.dataset.section)));
+    const visible = actions.filter((item) => item.count > 0);
+    if (!visible.length) {
+        container.innerHTML = `<div class="empty-state compact"><i class="fas fa-check-circle text-success"></i><p>You're all caught up.</p><span>No admin actions require review.</span></div>`;
+        return;
+    }
+    container.innerHTML = visible.map((item) => `<button class="pending-action tone-${item.tone}" data-section="${item.section}">
+        <span class="pending-icon"><i class="fas ${item.icon}"></i></span>
+        <span><strong>${escapeHtml(item.title)}</strong><small>${escapeHtml(item.desc)}</small></span>
+        <b>${formatNumber(item.count)}</b>
+        <em>Review</em>
+    </button>`).join("");
 }
 
 function renderQuickActions() {
     const container = document.getElementById("quick-actions-list");
     if (!container) return;
     container.innerHTML = [
-        ["Approve Mentors", "mentor-approvals", "fa-user-check"],
-        ["Add Course", "manage-courses", "fa-book"],
-        ["Add Scholarship", "manage-scholarships", "fa-hand-holding-usd"],
-        ["Send Message", "support-inbox", "fa-paper-plane"],
-        ["View Reports", "reports", "fa-chart-bar"]
-    ].map(([label, section, icon]) => `<button class="quick-action btn btn-primary" data-section="${section}"><i class="fas ${icon}"></i>${label}</button>`).join("");
-    container.querySelectorAll("[data-section]").forEach((btn) => btn.addEventListener("click", () => showAdminSection(btn.dataset.section)));
+        ["Approve Mentors", "mentor-approvals", "fa-user-check", "blue", ""],
+        ["Add Scholarship", "manage-scholarships", "fa-graduation-cap", "green", "add-scholarship"],
+        ["Add Course", "manage-courses", "fa-book-open", "purple", "add-course"],
+        ["View Reports", "reports", "fa-chart-column", "orange", ""],
+        ["Open Support Inbox", "support-inbox", "fa-headset", "red", ""],
+        ["Manage Users", "manage-students", "fa-users", "cyan", ""]
+    ].map(([label, section, icon, tone, action]) => `<button class="quick-action tone-${tone}" data-section="${section}" ${action ? `data-quick-action="${action}"` : ""}><i class="fas ${icon}"></i><span>${label}</span></button>`).join("");
 }
 
 function showAdminSection(sectionId = "overview", updateHash = true) {
-    const targetId = sectionTitles[sectionId] ? sectionId : "overview";
-    document.querySelectorAll(".dashboard-section").forEach((section) => section.classList.toggle("active", section.id === targetId));
-    document.querySelectorAll(".sidebar-links a[data-section]").forEach((link) => link.classList.toggle("active", link.dataset.section === targetId));
-    document.querySelector(".page-title") && (document.querySelector(".page-title").textContent = sectionTitles[targetId]);
-    if (updateHash && window.location.hash !== `#${targetId}`) window.history.replaceState(null, "", `#${targetId}`);
-    const heading = document.querySelector(`#${CSS.escape(targetId)} h2, #${CSS.escape(targetId)} h1`);
+    const config = adminSections[sectionId];
+    const target = document.getElementById(sectionId);
+    if (!config || !target) {
+        console.error("[Admin Navigation] Invalid or missing section:", sectionId);
+        showToast("This dashboard section is not available yet.", "error");
+        return false;
+    }
+    document.querySelectorAll(".dashboard-section").forEach((section) => {
+        const isActive = section.id === sectionId;
+        section.classList.toggle("active", isActive);
+        section.hidden = !isActive;
+        section.setAttribute("aria-hidden", String(!isActive));
+    });
+    document.querySelectorAll(".sidebar-links a[data-section]").forEach((link) => {
+        const isActive = link.dataset.section === sectionId;
+        link.classList.toggle("active", isActive);
+        if (isActive) link.setAttribute("aria-current", "page");
+        else link.removeAttribute("aria-current");
+    });
+    document.querySelector(".page-title") && (document.querySelector(".page-title").textContent = config.title);
+    if (updateHash && window.location.hash !== `#${sectionId}`) window.history.replaceState(null, "", `#${sectionId}`);
+    const heading = target.querySelector("h1, h2");
     if (heading) {
         heading.setAttribute("tabindex", "-1");
         heading.focus({ preventScroll: true });
     }
+    window.scrollTo({ top: 0, behavior: "smooth" });
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("sidebar-overlay");
     if (sidebar && window.innerWidth <= 768) {
@@ -1794,11 +2494,37 @@ function showAdminSection(sectionId = "overview", updateHash = true) {
         document.body.classList.remove("sidebar-mobile-open");
         overlay?.classList.remove("show");
     }
+    return true;
 }
 
 function getHashSection() {
-    const hash = window.location.hash.replace("#", "");
-    return sectionTitles[hash] ? hash : "overview";
+    const sectionId = decodeURIComponent(window.location.hash.replace(/^#/, ""));
+    if (!sectionId) return "overview";
+    if (adminSections[sectionId] && document.getElementById(sectionId)) return sectionId;
+    console.warn("[Admin Navigation] Unknown hash:", sectionId);
+    return "overview";
+}
+
+function validateAdminNavigation() {
+    const errors = [];
+    document.querySelectorAll("[data-section], [data-kpi-section]").forEach((element) => {
+        const sectionId = element.dataset.section || element.dataset.kpiSection;
+        if (!adminSections[sectionId]) errors.push(`Missing config for data-section="${sectionId}"`);
+        if (!document.getElementById(sectionId)) errors.push(`Missing HTML section id="${sectionId}"`);
+    });
+    Object.keys(adminSections).forEach((sectionId) => {
+        if (!document.getElementById(sectionId)) errors.push(`Configured section has no HTML: "${sectionId}"`);
+    });
+    const ids = [...document.querySelectorAll("[id]")].map((element) => element.id);
+    const duplicates = ids.filter((id, index) => ids.indexOf(id) !== index);
+    [...new Set(duplicates)].forEach((id) => errors.push(`Duplicate HTML id="${id}"`));
+    if (errors.length) {
+        console.group("[Admin Navigation] Validation errors");
+        errors.forEach((error) => console.error(error));
+        console.groupEnd();
+    } else {
+        console.log("[Admin Navigation] All menu mappings are valid.");
+    }
 }
 
 function setupPresence(uid) {
@@ -2009,7 +2735,7 @@ function nearDeadlineScholarships() {
 }
 
 function onlineBadge(uid) {
-    return `<span class="presence-dot ${isOnline(uid) ? "online" : ""}"></span>${isOnline(uid) ? "Online" : "Offline"}`;
+    return `<span class="presence-cell"><span class="presence-dot ${isOnline(uid) ? "online" : ""}"></span><span>${isOnline(uid) ? "Online" : "Offline"}</span></span>`;
 }
 
 function isOnline(uid) {
@@ -2022,13 +2748,15 @@ function userRole(user = {}) {
 
 function avatarCell(row, fallback) {
     const name = row.fullName || row.name || fallback;
-    const avatar = row.photoURL ? `<img src="${escapeAttr(row.photoURL)}" alt="">` : `<span class="avatar-mini">${escapeHtml(initials(name))}</span>`;
-    return `<div class="student-avatar-cell">${avatar}<strong>${escapeHtml(display(name))}</strong></div>`;
+    const secondary = row.email || row.websiteURL || row.facebookPage || row.mentorType || row.userType || "";
+    const avatar = row.photoURL ? `<span class="table-avatar"><img src="${escapeAttr(row.photoURL)}" alt=""></span>` : `<span class="table-avatar">${escapeHtml(initials(name))}</span>`;
+    return `<div class="table-person-cell">${avatar}<div class="table-person-copy"><strong class="table-text-ellipsis" title="${escapeAttr(display(name))}">${escapeHtml(display(name))}</strong>${secondary ? `<small class="table-text-ellipsis" title="${escapeAttr(display(secondary))}">${escapeHtml(display(secondary))}</small>` : ""}</div></div>`;
 }
 
 function progressMini(value) {
     const pct = Number(value || 0);
-    return `<div class="mini-progress"><span>${pct}%</span><div class="progress-bar-container"><div class="progress-bar bg-primary" style="width:${pct}%"></div></div></div>`;
+    const safePct = Math.max(0, Math.min(100, pct));
+    return `<div class="table-progress-cell"><div class="table-progress-header"><strong>${safePct}%</strong></div><div class="table-progress-track"><span style="width:${safePct}%"></span></div></div>`;
 }
 
 function accountBadgeClass(status) {

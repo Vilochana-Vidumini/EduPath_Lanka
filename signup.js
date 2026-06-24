@@ -77,8 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             if (role === 'mentor') {
-                userData.status = 'pending';
-                userData.mentorStatus = 'pending';
+                userData.mentorStatus = 'draft';
             }
 
             const writes = [set(ref(database, `users/${uid}`), userData)];
@@ -104,7 +103,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     phone,
                     userType: 'mentor',
                     photoURL: '',
-                    status: 'pending',
+                    profileStatus: 'incomplete',
+                    approvalStatus: 'draft',
+                    applicationStatus: 'draft',
+                    publicVisibility: false,
+                    mentoringEnabled: false,
+                    status: 'draft',
                     accountStatus: 'active',
                     profileCompletion: 0,
                     createdAt: serverTimestamp(),
@@ -153,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('userType', role);
             showAlert('Account created successfully! Redirecting...', 'success');
             setTimeout(() => {
-                window.location.href = role === 'institute' ? 'institute-dashboard.html' : role === 'mentor' ? 'mentor-dashboard.html' : 'student-dashboard.html';
+                window.location.href = role === 'institute' ? 'institute-dashboard.html' : role === 'mentor' ? 'mentor-dashboard.html?section=complete-profile' : 'student-dashboard.html';
             }, 1000);
         } catch (error) {
             console.error(error);

@@ -3101,3 +3101,56 @@ html[data-theme="dark"] .session-meta {
         column-gap: 0.35rem;
     }
 }
+/* Course and scholarship image support */
+.recommendation-card-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 14px;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, #eef4ff, #f3f0ff);
+}
+
+.recommendation-card-media img,
+.list-thumb img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+}
+
+.course-card-category,
+.scholarship-card-category {
+    position: absolute;
+    left: 12px;
+    bottom: 10px;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #2563eb;
+    font-size: 0.7rem;
+    font-weight: 800;
+    backdrop-filter: blur(8px);
+}
+
+.list-thumb {
+    width: 86px;
+    height: 64px;
+    flex: 0 0 86px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ecfdf5, #eff6ff);
+}
+
+.scholarship-recommendation-card {
+    align-items: flex-start;
+}
+
+@media (max-width: 640px) {
+    .list-thumb {
+        width: 72px;
+        height: 54px;
+        flex-basis: 72px;
+    }
+}

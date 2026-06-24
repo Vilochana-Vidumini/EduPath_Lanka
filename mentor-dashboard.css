@@ -333,3 +333,125 @@ ul {
     .grid-form { grid-template-columns: 1fr; }
     .data-table { display: block; overflow-x: auto; white-space: nowrap; }
 }
+.mentor-application-shell {
+    display: grid;
+    gap: 18px;
+    padding: 22px;
+    border-radius: 18px;
+}
+
+.application-status-panel {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    padding: 18px;
+    border: 1px solid rgba(37, 99, 235, 0.16);
+    border-radius: 16px;
+    background: linear-gradient(135deg, #f8fbff, #eef4ff);
+}
+
+.application-status-panel h3 {
+    margin: 4px 0;
+    color: var(--text-dark, #0f172a);
+}
+
+.application-progress {
+    width: 94px;
+    height: 94px;
+    flex: 0 0 94px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: #fff;
+    border: 8px solid #2563eb;
+    color: #0f172a;
+    text-align: center;
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);
+}
+
+.application-progress strong,
+.application-progress span {
+    display: block;
+}
+
+.application-progress span {
+    font-size: 0.72rem;
+    color: #64748b;
+}
+
+.application-feedback {
+    padding: 14px 16px;
+    border: 1px solid #fed7aa;
+    border-radius: 14px;
+    background: #fff7ed;
+    color: #9a3412;
+}
+
+.mentor-application-form {
+    display: grid;
+    gap: 18px;
+}
+
+.mentor-application-form fieldset {
+    margin: 0;
+    padding: 18px;
+    border: 1px solid #e3eaf5;
+    border-radius: 16px;
+}
+
+.mentor-application-form legend {
+    padding: 0 8px;
+    color: #0f172a;
+    font-weight: 800;
+}
+
+.mentor-application-form .grid-form {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.mentor-application-form .full-width {
+    grid-column: 1 / -1;
+}
+
+.check-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 8px;
+}
+
+.check-grid label,
+.declaration-list label {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: #475569;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.declaration-list {
+    display: grid;
+    gap: 10px;
+}
+
+.missing-fields {
+    margin-top: 12px;
+    color: #b45309;
+    font-size: 0.86rem;
+}
+
+.mentor-unapproved .sidebar-links a.locked-section {
+    opacity: 0.48;
+}
+
+@media (max-width: 720px) {
+    .mentor-application-form .grid-form,
+    .application-status-panel {
+        grid-template-columns: 1fr;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

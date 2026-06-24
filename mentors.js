@@ -92,6 +92,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             email: mentor.email || '',
                             status: mentor.status || 'approved',
                             accountStatus: mentor.accountStatus || 'active',
+                            approvalStatus: mentor.approvalStatus || mentor.status || '',
+                            publicVisibility: mentor.publicVisibility === true,
+                            mentoringEnabled: mentor.mentoringEnabled === true,
                             userType: mentor.userType || mentor.role || 'mentor'
                         });
                     }
@@ -220,6 +223,17 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.disabled = true;
 
         try {
+            const [mentorSnap, userSnap] = await Promise.all([
+                get(ref(database, `mentors/${mentorId}`)),
+                get(ref(database, `users/${mentorId}`)).catch(() => null)
+            ]);
+            const latestMentor = mentorSnap.val() || {};
+            const latestUser = userSnap?.val?.() || {};
+            if (!isApprovedActiveMentor({ ...latestUser, ...latestMentor, accountStatus: latestUser.accountStatus || latestMentor.accountStatus })) {
+                showToast('This mentor is not currently available for mentoring.', 'error');
+                renderMentors();
+                return;
+            }
             const requestRef = push(ref(database, 'mentorRequests'));
             const requestId = requestRef.key;
 
@@ -288,10 +302,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function isApprovedActiveMentor(mentor = {}) {
-        const status = String(mentor.status || '').trim().toLowerCase();
+        const status = String(mentor.approvalStatus || mentor.status || '').trim().toLowerCase();
         const accountStatus = String(mentor.accountStatus || 'active').trim().toLowerCase();
         const role = String(mentor.userType || mentor.role || 'mentor').trim().toLowerCase();
-        return status === 'approved' && role === 'mentor' && !['suspended', 'disabled', 'rejected'].includes(accountStatus);
+        return status === 'approved'
+            && mentor.publicVisibility === true
+            && mentor.mentoringEnabled === true
+            && role === 'mentor'
+            && accountStatus === 'active';
     }
 
     function getExistingRequestState(mentorId) {

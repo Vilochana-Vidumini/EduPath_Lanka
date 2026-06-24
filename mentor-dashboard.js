@@ -7,6 +7,7 @@ import { ensureDashboardTopbarLayout, initDashboardNotifications, updateDashboar
 
 document.addEventListener('DOMContentLoaded', () => {
     initDashboardSidebar();
+    normalizeMentorApplicationSection();
 
     let currentUid = null;
     let requestDetailCache = {};
@@ -18,12 +19,22 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUserData = {};
     let currentRequestRows = [];
     let mentorAvailability = {};
+    let currentMentorData = {};
+    let mentorAccessApproved = false;
     let mentorAppointments = {};
     let appointmentCalendarDate = new Date();
     let selectedAppointmentDate = dateKeyLocal(new Date());
     let activeAppointmentTab = 'pending';
     let mentorDateTimer = null;
     const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+    function normalizeMentorApplicationSection() {
+        const container = document.querySelector('.dashboard-container');
+        const application = document.getElementById('complete-profile');
+        const requests = document.getElementById('requests');
+        if (!container || !application || application.parentElement === container) return;
+        container.insertBefore(application, requests || null);
+    }
 
     // --- Authentication & Role Check ---
     onAuthStateChanged(auth, (user) => {
@@ -76,6 +87,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     document.getElementById('mentor-support-form')?.addEventListener('submit', sendMentorSupportMessage);
+    document.getElementById('mentor-application-form')?.addEventListener('submit', submitMentorApplication);
+    document.getElementById('save-mentor-draft-btn')?.addEventListener('click', saveMentorApplicationDraft);
     document.getElementById('save-availability-btn')?.addEventListener('click', saveAvailability);
     document.getElementById('add-unavailable-date-btn')?.addEventListener('click', addUnavailableDateFromInput);
     ['sessionDuration', 'bufferMinutes', 'mentoringMode', 'availabilityStatus', 'maxSessionsPerDay'].forEach((id) => {
@@ -133,17 +146,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (snapshot.exists()) {
                 mentorData = snapshot.val();
             }
-            
-            updateStatusUI(mentorData.status);
+            currentMentorData = { ...mentorData, email: mentorData.email || userData.email, fullName: mentorData.fullName || userData.fullName, phone: mentorData.phone || userData.phone };
+            mentorAccessApproved = isApprovedMentor(currentMentorData, userData);
+            updateStatusUI(mentorApprovalStatus(currentMentorData));
             calculateProfileCompletion(uid, userData, mentorData);
             renderAvailability(mentorData);
-        });
+            populateMentorApplicationForm(currentMentorData, userData);
+            renderMentorApplicationStatus(currentMentorData);
+            applyMentorAccessGate();
 
-        // Setup Listeners
-        listenForRequests(uid, userData.fullName);
-        listenForConnectedStudents(uid);
-        listenForAvailability(uid);
-        listenForAppointments(uid);
+            if (mentorAccessApproved) {
+                listenForRequests(uid, userData.fullName);
+                listenForConnectedStudents(uid);
+                listenForAvailability(uid);
+                listenForAppointments(uid);
+            } else {
+                showApplicationFirst();
+            }
+        });
     }
 
     function listenForAdminSupport(uid) {
@@ -636,12 +656,251 @@ document.addEventListener('DOMContentLoaded', () => {
         return date.toLocaleDateString(undefined, { month: 'long', day: '2-digit', year: 'numeric' });
     }
 
+    function mentorApprovalStatus(mentor = currentMentorData) {
+        return String(mentor.approvalStatus || mentor.applicationStatus || mentor.status || 'draft').trim().toLowerCase();
+    }
+
+    function isApprovedMentor(mentor = {}, user = currentUserData) {
+        return mentorApprovalStatus(mentor) === 'approved'
+            && mentor.publicVisibility === true
+            && mentor.mentoringEnabled === true
+            && String(user.accountStatus || mentor.accountStatus || 'active').toLowerCase() === 'active';
+    }
+
+    function canAccessMentorSection(sectionId) {
+        if (mentorAccessApproved) return true;
+        return ['overview-section', 'complete-profile', 'support'].includes(sectionId);
+    }
+
+    function showApplicationFirst() {
+        const sectionId = ['submitted', 'under_review'].includes(mentorApprovalStatus()) ? 'overview-section' : 'complete-profile';
+        document.querySelectorAll('.dashboard-section').forEach((section) => {
+            section.classList.toggle('active', section.id === sectionId);
+            section.style.display = section.id === sectionId ? '' : 'none';
+        });
+        document.querySelectorAll('.sidebar-links a[data-section]').forEach((link) => link.classList.toggle('active', link.dataset.section === sectionId));
+        localStorage.setItem('mentorActiveSection', sectionId);
+    }
+
+    function applyMentorAccessGate() {
+        document.body.classList.toggle('mentor-unapproved', !mentorAccessApproved);
+        document.querySelectorAll('.sidebar-links a[data-section]').forEach((link) => {
+            const locked = !canAccessMentorSection(link.dataset.section);
+            link.classList.toggle('locked-section', locked);
+            if (locked) link.title = 'Available after admin approval';
+        });
+    }
+
+    const mentorRequiredFields = [
+        'photoURL', 'fullName', 'phone', 'district', 'preferredLanguages', 'mentorType', 'field',
+        'currentPosition', 'universityOrCompany', 'highestQualification', 'studyArea', 'yearsOfExperience',
+        'guidanceAreas', 'studentLevelsSupported', 'streamsSupported', 'mentoringMode', 'bio', 'whyMentor',
+        'qualificationDocumentURL', 'informationConfirmed', 'mentorGuidelinesAccepted', 'publicationConsent'
+    ];
+
+    function collectMentorApplicationPayload() {
+        const payload = {
+            photoURL: appValue('photoURL'),
+            fullName: appValue('fullName'),
+            email: appValue('email'),
+            phone: appValue('phone'),
+            district: appValue('district'),
+            city: appValue('city'),
+            preferredLanguages: checkedValues('preferredLanguages'),
+            mentorType: appValue('mentorType'),
+            field: appValue('field'),
+            expertise: appValue('field'),
+            currentPosition: appValue('currentPosition'),
+            currentRole: appValue('currentPosition'),
+            universityOrCompany: appValue('universityOrCompany'),
+            organization: appValue('universityOrCompany'),
+            highestQualification: appValue('highestQualification'),
+            studyArea: appValue('studyArea'),
+            yearsOfExperience: appValue('yearsOfExperience'),
+            experience: appValue('yearsOfExperience'),
+            professionalMembership: appValue('professionalMembership'),
+            linkedInURL: appValue('linkedInURL'),
+            portfolioURL: appValue('portfolioURL'),
+            guidanceAreas: checkedValues('guidanceAreas'),
+            studentLevelsSupported: checkedValues('studentLevelsSupported'),
+            streamsSupported: checkedValues('streamsSupported'),
+            mentoringMode: appValue('mentoringMode'),
+            maxStudents: appValue('maxStudents'),
+            bio: appValue('bio'),
+            whyMentor: appValue('whyMentor'),
+            studentExpectation: appValue('studentExpectation'),
+            cvURL: appValue('cvURL'),
+            qualificationDocumentURL: appValue('qualificationDocumentURL'),
+            experienceProofURL: appValue('experienceProofURL'),
+            professionalCertificateURL: appValue('professionalCertificateURL'),
+            informationConfirmed: document.getElementById('mentor-app-informationConfirmed')?.checked === true,
+            mentorGuidelinesAccepted: document.getElementById('mentor-app-mentorGuidelinesAccepted')?.checked === true,
+            publicationConsent: document.getElementById('mentor-app-publicationConsent')?.checked === true
+        };
+        payload.profileCompletion = calculateMentorApplicationCompletion(payload).percentage;
+        return payload;
+    }
+
+    function calculateMentorApplicationCompletion(payload = collectMentorApplicationPayload()) {
+        const missing = mentorRequiredFields.filter((key) => {
+            const value = payload[key];
+            return Array.isArray(value) ? !value.length : value !== true && !String(value || '').trim();
+        });
+        return { percentage: Math.round(((mentorRequiredFields.length - missing.length) / mentorRequiredFields.length) * 100), missing };
+    }
+
+    function renderMentorApplicationStatus(mentor = currentMentorData) {
+        const status = mentorApprovalStatus(mentor);
+        const completion = calculateMentorApplicationCompletion({ ...mentor, preferredLanguages: mentor.preferredLanguages || [], guidanceAreas: mentor.guidanceAreas || [], studentLevelsSupported: mentor.studentLevelsSupported || [], streamsSupported: mentor.streamsSupported || [] });
+        setTextSafe('mentor-application-completion', `${mentor.profileCompletion || completion.percentage || 0}%`);
+        setTextSafe('mentor-application-status-title', status.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase()));
+        const messages = {
+            draft: 'Complete your professional mentor profile and submit it for review.',
+            incomplete: 'Complete your professional mentor profile and submit it for review.',
+            submitted: 'Your mentor application is under review. You will be notified when a decision is made.',
+            under_review: 'EduPath Lanka admin is currently reviewing your mentor application.',
+            changes_requested: 'Admin requested changes to your mentor application. Update the requested fields and resubmit.',
+            rejected: 'Your mentor application was rejected. Review the reason and contact admin if needed.',
+            approved: 'Your mentor profile is approved. You can now mentor students.'
+        };
+        setTextSafe('mentor-application-status-message', messages[status] || messages.draft);
+        const feedback = document.getElementById('mentor-admin-feedback');
+        if (feedback) {
+            const note = mentor.adminRequestedChanges || mentor.adminReviewReason || mentor.rejectionReason || '';
+            feedback.classList.toggle('hidden', !note);
+            feedback.innerHTML = note ? `<strong>Admin feedback</strong><p>${escapeHtml(note)}</p>` : '';
+        }
+        renderApplicationMissingFields();
+    }
+
+    function populateMentorApplicationForm(mentor = {}, user = {}) {
+        const data = { ...user, ...mentor, email: mentor.email || user.email, fullName: mentor.fullName || user.fullName, phone: mentor.phone || user.phone };
+        ['photoURL', 'fullName', 'email', 'phone', 'district', 'city', 'mentorType', 'field', 'currentPosition', 'universityOrCompany', 'highestQualification', 'studyArea', 'yearsOfExperience', 'professionalMembership', 'linkedInURL', 'portfolioURL', 'mentoringMode', 'maxStudents', 'bio', 'whyMentor', 'studentExpectation', 'cvURL', 'qualificationDocumentURL', 'experienceProofURL', 'professionalCertificateURL'].forEach((key) => setAppValue(key, data[key] || data[aliasKey(key)] || ''));
+        ['preferredLanguages', 'guidanceAreas', 'studentLevelsSupported', 'streamsSupported'].forEach((key) => setCheckedValues(key, data[key] || []));
+        ['informationConfirmed', 'mentorGuidelinesAccepted', 'publicationConsent'].forEach((key) => {
+            const el = document.getElementById(`mentor-app-${key}`);
+            if (el) el.checked = data[key] === true;
+        });
+    }
+
+    function aliasKey(key) {
+        return { currentPosition: 'currentRole', universityOrCompany: 'organization', yearsOfExperience: 'experience' }[key] || key;
+    }
+
+    async function saveMentorApplicationDraft() {
+        if (!currentUid) return;
+        const payload = collectMentorApplicationPayload();
+        const updates = {
+            ...payload,
+            profileStatus: payload.profileCompletion >= 100 ? 'completed' : 'incomplete',
+            approvalStatus: 'draft',
+            applicationStatus: 'draft',
+            status: 'draft',
+            publicVisibility: false,
+            mentoringEnabled: false,
+            updatedAt: serverTimestamp()
+        };
+        await update(ref(database, `mentors/${currentUid}`), updates);
+        currentMentorData = { ...currentMentorData, ...updates };
+        renderMentorApplicationStatus(currentMentorData);
+        showToast('Your mentor profile draft has been saved.', 'success');
+    }
+
+    async function submitMentorApplication(event) {
+        event.preventDefault();
+        if (!currentUid) return;
+        const payload = collectMentorApplicationPayload();
+        const result = calculateMentorApplicationCompletion(payload);
+        if (result.missing.length) {
+            renderApplicationMissingFields(result.missing);
+            showToast('Complete all required mentor application fields before submitting.', 'error');
+            return;
+        }
+        const notificationRef = push(ref(database, 'adminNotifications'));
+        const historyRef = push(ref(database, `mentorApplicationHistory/${currentUid}`));
+        const updates = {};
+        updates[`mentors/${currentUid}`] = {
+            ...currentMentorData,
+            ...payload,
+            profileStatus: 'completed',
+            approvalStatus: 'submitted',
+            applicationStatus: 'submitted',
+            status: 'pending',
+            publicVisibility: false,
+            mentoringEnabled: false,
+            submittedAt: currentMentorData.submittedAt || serverTimestamp(),
+            resubmittedAt: currentMentorData.submittedAt ? serverTimestamp() : null,
+            adminReviewReason: '',
+            adminRequestedChanges: '',
+            updatedAt: serverTimestamp()
+        };
+        updates[`users/${currentUid}/fullName`] = payload.fullName;
+        updates[`users/${currentUid}/phone`] = payload.phone;
+        updates[`users/${currentUid}/photoURL`] = payload.photoURL;
+        updates[`users/${currentUid}/mentorStatus`] = 'submitted';
+        updates[`users/${currentUid}/updatedAt`] = serverTimestamp();
+        updates[`adminNotifications/${notificationRef.key}`] = {
+            notificationId: notificationRef.key,
+            type: 'mentor_application_submitted',
+            title: 'New mentor application',
+            message: `${payload.fullName || 'A mentor'} submitted a mentor profile for review.`,
+            mentorUid: currentUid,
+            read: false,
+            createdAt: serverTimestamp()
+        };
+        updates[`mentorApplicationHistory/${currentUid}/${historyRef.key}`] = {
+            historyId: historyRef.key,
+            action: currentMentorData.submittedAt ? 'resubmitted' : 'submitted',
+            previousStatus: mentorApprovalStatus(),
+            newStatus: 'submitted',
+            message: 'Mentor submitted application for admin review.',
+            performedBy: currentUid,
+            performedByRole: 'mentor',
+            createdAt: serverTimestamp()
+        };
+        await update(ref(database), updates);
+        currentMentorData = updates[`mentors/${currentUid}`];
+        mentorAccessApproved = false;
+        renderMentorApplicationStatus(currentMentorData);
+        applyMentorAccessGate();
+        showApplicationFirst();
+        showToast('Your mentor application was submitted successfully. The EduPath Lanka admin team will review it.', 'success');
+    }
+
+    function renderApplicationMissingFields(missing = calculateMentorApplicationCompletion().missing) {
+        const target = document.getElementById('mentor-application-missing');
+        if (!target) return;
+        target.innerHTML = missing.length ? `<strong>Missing required fields:</strong><span>${missing.map((key) => escapeHtml(key.replace(/([A-Z])/g, ' $1'))).join(', ')}</span>` : '<span class="text-success">All required fields are complete.</span>';
+    }
+
+    function appValue(key) {
+        return document.getElementById(`mentor-app-${key}`)?.value.trim() || '';
+    }
+
+    function setAppValue(key, value) {
+        const el = document.getElementById(`mentor-app-${key}`);
+        if (el) el.value = value || '';
+    }
+
+    function checkedValues(group) {
+        return [...document.querySelectorAll(`[data-checkbox-group="${group}"] input:checked`)].map((input) => input.value);
+    }
+
+    function setCheckedValues(group, values) {
+        const selected = new Set(Array.isArray(values) ? values : String(values || '').split(',').map((item) => item.trim()).filter(Boolean));
+        document.querySelectorAll(`[data-checkbox-group="${group}"] input`).forEach((input) => { input.checked = selected.has(input.value); });
+    }
+
     function setupSectionNavigation() {
         const navLinks = document.querySelectorAll('.sidebar-links a[data-section]');
         const sections = document.querySelectorAll('.dashboard-section');
 
         function showSection(sectionId) {
             if (!sectionId) return;
+            if (!canAccessMentorSection(sectionId)) {
+                showToast('This mentor function becomes available after admin approval.', 'warning');
+                sectionId = 'complete-profile';
+            }
 
             const target = document.getElementById(sectionId);
             if (!target) {
@@ -702,7 +961,8 @@ document.addEventListener('DOMContentLoaded', () => {
             showSection(document.getElementById(sectionId) ? sectionId : 'overview-section');
         });
 
-        const hashSection = window.location.hash ? window.location.hash.replace('#', '') : '';
+        const urlSection = new URLSearchParams(window.location.search).get('section') || '';
+        const hashSection = window.location.hash ? window.location.hash.replace('#', '') : urlSection;
         const savedSection = localStorage.getItem('mentorActiveSection');
         const defaultSection = 'overview-section';
         const initialSection = document.getElementById(hashSection)
@@ -757,20 +1017,35 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateStatusUI(status) {
         const statEl = document.getElementById('stat-status');
         const alertEl = document.getElementById('status-alert');
+        const clean = String(status || 'draft').toLowerCase();
+        const label = clean.replace(/_/g, ' ').replace(/\b\w/g, (m) => m.toUpperCase());
+        statEl.textContent = label;
         
-        statEl.textContent = status ? status.charAt(0).toUpperCase() + status.slice(1) : "Pending";
-        
-        if (status === 'pending') {
+        if (['draft', 'incomplete'].includes(clean)) {
             statEl.className = 'text-warning';
             if (alertEl) {
-                alertEl.textContent = "Your mentor profile is currently under review by an admin. You can complete your profile details while waiting for approval.";
+                alertEl.textContent = 'Complete your professional mentor profile and submit it for review.';
+                alertEl.className = 'alert alert-warning';
+                alertEl.classList.remove('hidden');
+            }
+        } else if (['pending', 'submitted', 'under_review'].includes(clean)) {
+            statEl.className = 'text-warning';
+            if (alertEl) {
+                alertEl.textContent = "Your mentor application is under review. You will be notified when a decision is made.";
                 alertEl.className = "alert alert-warning";
                 alertEl.classList.remove('hidden');
             }
-        } else if (status === 'approved') {
+        } else if (clean === 'approved') {
             statEl.className = 'text-success';
             if (alertEl) alertEl.classList.add('hidden');
-        } else if (status === 'rejected') {
+        } else if (clean === 'changes_requested') {
+            statEl.className = 'text-warning';
+            if (alertEl) {
+                alertEl.textContent = 'Admin requested changes to your mentor application.';
+                alertEl.className = 'alert alert-warning';
+                alertEl.classList.remove('hidden');
+            }
+        } else if (clean === 'rejected') {
             statEl.className = 'text-danger';
             if (alertEl) {
                 alertEl.textContent = "Your mentor application was rejected. Please contact support.";

@@ -799,7 +799,7 @@ function renderSavedCourses() {
         const course = state.courses[courseId] || savedData.courseSnapshot || {};
         return `
             <article class="list-item">
-                <div class="list-icon bg-blue"><i class="fas fa-bookmark"></i></div>
+                <div class="list-thumb"><img src="${escapeAttr(getCourseImage(course))}" alt="${escapeAttr(course.courseName || course.name || "Saved course image")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/course-placeholder.png';"></div>
                 <div class="list-content">
                     <h4>${escapeHtml(course.courseName || course.name || "Saved Course")}</h4>
                     <p>${escapeHtml(course.instituteName || course.institute || "Institute")} • Saved ${formatDate(savedData.savedAt)}</p>
@@ -843,7 +843,7 @@ function renderEngagedCourses() {
         const course = state.courses[courseId] || item.courseSnapshot || {};
         return `
             <article class="list-item">
-                <div class="list-icon bg-cyan"><i class="fas fa-book-reader"></i></div>
+                <div class="list-thumb"><img src="${escapeAttr(getCourseImage(course))}" alt="${escapeAttr(course.courseName || course.name || item.courseName || "Course image")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/course-placeholder.png';"></div>
                 <div class="list-content">
                     <h4>${escapeHtml(course.courseName || course.name || item.courseName || "Course")}</h4>
                     <p>${escapeHtml(course.instituteName || course.institute || item.instituteName || "Institute")} - ${formatDate(item.updatedAt || item.appliedAt || item.createdAt)}</p>
@@ -920,7 +920,7 @@ function renderSavedScholarships() {
         const item = state.scholarships[id] || savedData.scholarshipSnapshot || {};
         return `
             <article class="list-item">
-                <div class="list-icon bg-green"><i class="fas fa-hand-holding-usd"></i></div>
+                <div class="list-thumb"><img src="${escapeAttr(getScholarshipImage(item))}" alt="${escapeAttr(item.scholarshipName || item.title || item.name || "Scholarship image")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/scholarship-placeholder.png';"></div>
                 <div class="list-content">
                     <h4>${escapeHtml(item.title || item.name || "Saved Scholarship")}</h4>
                     <p>${escapeHtml(item.provider || item.organization || "Provider")} - Saved ${formatDate(savedData.savedAt)}</p>
@@ -946,7 +946,7 @@ function renderAppliedScholarships() {
         const item = state.scholarships[scholarshipId] || application.scholarshipSnapshot || {};
         return `
             <article class="list-item">
-                <div class="list-icon bg-green"><i class="fas fa-file-signature"></i></div>
+                <div class="list-thumb"><img src="${escapeAttr(getScholarshipImage(item))}" alt="${escapeAttr(item.scholarshipName || item.title || item.name || application.scholarshipName || "Scholarship image")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/scholarship-placeholder.png';"></div>
                 <div class="list-content">
                     <h4>${escapeHtml(item.title || item.name || application.scholarshipName || "Scholarship Application")}</h4>
                     <p>${escapeHtml(item.provider || application.provider || "Provider")} - ${formatDate(application.updatedAt || application.appliedAt || application.createdAt)}</p>
@@ -1064,6 +1064,7 @@ function courseMatch(id, course) {
         eligibility: course.eligibility || "N/A",
         applicationDeadline: course.applicationDeadline || course.deadline || "",
         applyLink: course.applyLink || "",
+        imageURL: course.imageURL || "",
         description: course.description || "",
         matchScore,
         matchLevel: getMatchLevel(matchScore),
@@ -1111,6 +1112,7 @@ function scholarshipMatch(id, item) {
         eligibility: item.eligibility || "Confirm from provider",
         deadline: item.deadline || "",
         applyLink: item.applyLink || "",
+        imageURL: item.imageURL || "",
         description: item.description || "",
         matchScore,
         matchLevel: getMatchLevel(matchScore),
@@ -1171,7 +1173,9 @@ function mentorMatch(uid, mentor) {
 function isApprovedActiveMentor(mentor = {}) {
     const userType = normalize(mentor.userType || mentor.role || "mentor");
     const accountStatus = normalize(mentor.accountStatus || "active");
-    return normalize(mentor.status) === "approved"
+    return normalize(mentor.approvalStatus || mentor.status) === "approved"
+        && mentor.publicVisibility === true
+        && mentor.mentoringEnabled === true
         && userType === "mentor"
         && accountStatus === "active";
 }
@@ -1331,6 +1335,10 @@ function applyMentorFilters(items) {
 function courseCard(course) {
     return `
         <article class="item-card glass recommendation-card">
+            <div class="recommendation-card-media course-card-media">
+                <img src="${escapeAttr(getCourseImage(course))}" alt="${escapeAttr(course.courseName || "Course image")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/course-placeholder.png';">
+                <span class="course-card-category">${escapeHtml(course.category || "Course")}</span>
+            </div>
             <span class="badge ${course.matchScore >= 75 ? "badge-success" : "badge-primary"}">${course.matchScore}% • ${escapeHtml(course.matchLevel)}</span>
             <h4>${escapeHtml(course.courseName)}</h4>
             <p class="institute"><i class="fas fa-university"></i> ${escapeHtml(course.instituteName)}</p>
@@ -1355,8 +1363,10 @@ function courseCard(course) {
 
 function scholarshipCard(item) {
     return `
-        <article class="list-item recommendation-card">
-            <div class="list-icon bg-green"><i class="fas fa-hand-holding-usd"></i></div>
+        <article class="list-item recommendation-card scholarship-recommendation-card">
+            <div class="list-thumb">
+                <img src="${escapeAttr(getScholarshipImage(item))}" alt="${escapeAttr(item.scholarshipName || "Scholarship image")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/scholarship-placeholder.png';">
+            </div>
             <div class="list-content">
                 <h4>${escapeHtml(item.scholarshipName)} <span class="badge ${item.matchScore >= 75 ? "badge-success" : "badge-primary"}">${item.matchScore}% • ${escapeHtml(item.matchLevel)}</span></h4>
                 <p>${escapeHtml(item.provider)} • Deadline ${escapeHtml(item.deadline || "Check official notice")}</p>
@@ -1653,6 +1663,16 @@ async function requestMentor(mentorUid) {
     }
     if (!isApprovedActiveMentor(mentor)) {
         showToast("This mentor is not available for requests right now.", "error");
+        return;
+    }
+    const [mentorSnap, userSnap] = await Promise.all([
+        get(ref(database, `mentors/${mentorUid}`)),
+        get(ref(database, `users/${mentorUid}`)).catch(() => null)
+    ]);
+    const latestMentor = mentorSnap.val() || {};
+    const latestUser = userSnap?.val?.() || {};
+    if (!isApprovedActiveMentor({ ...latestUser, ...latestMentor, accountStatus: latestUser.accountStatus || latestMentor.accountStatus })) {
+        showToast("This mentor is not currently available for mentoring.", "error");
         return;
     }
     if (!state.currentResult) {
@@ -3425,4 +3445,33 @@ function escapeHtml(value) {
 
 function escapeAttr(value) {
     return escapeHtml(value).replace(/`/g, "&#096;");
+}
+
+function sanitizeImageURL(value, fallback = "", defaultLocalFolder = "images") {
+    const raw = String(value || "").trim();
+    let url = raw.replace(/\\/g, "/");
+    const imagesIndex = url.toLowerCase().lastIndexOf("/images/");
+    if (imagesIndex >= 0) url = url.slice(imagesIndex + 1);
+    if (/^[a-z]:\/images\//i.test(url)) url = url.replace(/^[a-z]:\//i, "");
+    if (!url) return fallback;
+    if (url.startsWith("images/") || url.startsWith("./images/") || url.startsWith("../images/")) return url;
+    if (defaultLocalFolder && /^[\w./ -]+\.(png|jpe?g|webp|gif|svg)$/i.test(url) && !/^[a-z][a-z0-9+.-]*:/i.test(url)) {
+        const normalized = url.replace(/^\.?\//, "");
+        return normalized.includes("/") ? `images/${normalized.replace(/^images\//, "")}` : `${defaultLocalFolder.replace(/\/$/, "")}/${normalized}`;
+    }
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol === "https:" || parsed.protocol === "http:") return parsed.href;
+    } catch (error) {
+        console.warn("Invalid image URL:", url);
+    }
+    return fallback;
+}
+
+function getCourseImage(course = {}) {
+    return sanitizeImageURL(course.imageURL || course.raw?.imageURL, "images/course-placeholder.png", "images");
+}
+
+function getScholarshipImage(scholarship = {}) {
+    return sanitizeImageURL(scholarship.imageURL || scholarship.raw?.imageURL, "images/scholarship-placeholder.png", "images");
 }

@@ -43,6 +43,35 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/"/g, '&quot;');
     }
 
+    function escapeAttr(str) {
+        return escapeHtml(str).replace(/'/g, '&#39;');
+    }
+
+    function sanitizeImageURL(value, fallback = '', defaultLocalFolder = 'images') {
+        const raw = String(value || '').trim();
+        let url = raw.replace(/\\/g, '/');
+        const imagesIndex = url.toLowerCase().lastIndexOf('/images/');
+        if (imagesIndex >= 0) url = url.slice(imagesIndex + 1);
+        if (/^[a-z]:\/images\//i.test(url)) url = url.replace(/^[a-z]:\//i, '');
+        if (!url) return fallback;
+        if (url.startsWith('images/') || url.startsWith('./images/') || url.startsWith('../images/')) return url;
+        if (defaultLocalFolder && /^[\w./ -]+\.(png|jpe?g|webp|gif|svg)$/i.test(url) && !/^[a-z][a-z0-9+.-]*:/i.test(url)) {
+            const normalized = url.replace(/^\.?\//, '');
+            return normalized.includes('/') ? `images/${normalized.replace(/^images\//, '')}` : `${defaultLocalFolder.replace(/\/$/, '')}/${normalized}`;
+        }
+        try {
+            const parsed = new URL(url);
+            if (parsed.protocol === 'https:' || parsed.protocol === 'http:') return parsed.href;
+        } catch (error) {
+            console.warn('Invalid image URL:', url);
+        }
+        return fallback;
+    }
+
+    function getScholarshipImage(scholarship = {}) {
+        return sanitizeImageURL(scholarship.imageURL, 'images/scholarship-placeholder.png', 'images');
+    }
+
     // --- Load Scholarships from Firebase ---
     function loadScholarshipsFromFirebase() {
         const scholRef = ref(database, 'scholarships');
@@ -109,8 +138,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         grid.innerHTML = filtered.map(item => `
             <div class="scholarship-card">
+                <div class="scholarship-card-media">
+                    <img src="${escapeAttr(getScholarshipImage(item))}" alt="${escapeAttr(item.scholarshipName || 'Scholarship image')}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/scholarship-placeholder.png';">
+                    <span class="scholarship-card-category">${escapeHtml(displayVal(item.category || 'Scholarship'))}</span>
+                </div>
+                <div class="scholarship-card-content">
                 <div class="card-top">
-                    ${item.imageURL ? `<img src="${escapeHtml(item.imageURL)}" alt="${escapeHtml(item.scholarshipName)}" style="height:200px; object-fit:cover; width:100%; border-radius:8px; margin-bottom:1rem;">` : ''}
                     <div class="card-header-row">
                         <span class="sponsor">${escapeHtml(displayVal(item.provider))}</span>
                         <span class="amount-tag" style="background-color: #e8f5e9; color: #2e7d32;">${escapeHtml(displayVal(item.supportType))}</span>
@@ -145,6 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn-card-outline save-scholarship-btn" data-id="${item.id}" title="Save Scholarship">
                         <i class="far fa-heart"></i>
                     </button>
+                </div>
                 </div>
             </div>
         `).join('');

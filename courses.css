@@ -364,7 +364,7 @@ h1, h2, h3, h4 {
     background: #ffffff;
     border: 1px solid var(--border-color);
     border-radius: 20px;
-    padding: 2rem;
+    padding: 0;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -393,6 +393,46 @@ h1, h2, h3, h4 {
 
 .course-card:hover::before {
     opacity: 1;
+}
+
+.course-card-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: linear-gradient(135deg, #eef4ff, #f3f0ff);
+}
+
+.course-card-media img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+    transition: transform 0.35s ease;
+}
+
+.course-card:hover .course-card-media img {
+    transform: scale(1.035);
+}
+
+.course-card-category {
+    position: absolute;
+    left: 14px;
+    bottom: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #2563eb;
+    font-size: 0.72rem;
+    font-weight: 800;
+    backdrop-filter: blur(8px);
+}
+
+.course-card-content {
+    padding: 18px;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
 }
 
 .card-top {
