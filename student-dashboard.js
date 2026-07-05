@@ -4,6 +4,8 @@ import { ref, get, set, update, push, remove, serverTimestamp, onValue, off, que
 import { showToast, preserveThemeOnClear } from "./auth-nav.js?v=20260614-brand";
 import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
 import { ensureDashboardTopbarLayout, initDashboardNotifications, updateDashboardGreetingName } from "./dashboard-topbar.js";
+import { calculateMentorRatingSummary, toRatingInt } from "./ratings.js";
+import { requiredText, validateNumberRange, showFieldError, clearFieldError, escapeHtml as escapeSharedHtml } from "./validation.js";
 
 const state = {
     uid: null,
@@ -26,6 +28,7 @@ const state = {
     courseApplications: {},
     scholarshipApplications: {},
     mentorAppointments: {},
+    mentorRatings: {},
     activeBooking: null,
     skills: {},
     careerGuides: {},
@@ -235,6 +238,22 @@ function bindDashboardActionDelegation() {
             return;
         }
 
+        const rateButton = event.target.closest("[data-rate-appointment]");
+        if (rateButton) {
+            event.preventDefault();
+            await openRatingModal(rateButton.dataset.rateAppointment);
+            return;
+        }
+
+        const viewRatingButton = event.target.closest("[data-view-rating]");
+        if (viewRatingButton) {
+            event.preventDefault();
+            const rating = state.mentorRatings?.[viewRatingButton.dataset.viewRating];
+            if (!rating) return showToast("Rating details are unavailable. Please refresh and try again.", "error");
+            openRecommendationDetail("Your Mentor Rating", ratingDetailHtml(rating));
+            return;
+        }
+
         const jumpButton = event.target.closest(".dashboard-jump[data-section], [data-section].dashboard-jump");
         if (jumpButton) {
             event.preventDefault();
@@ -395,6 +414,11 @@ function setupRealtime(uid) {
         renderMentorSessions();
         renderStudentOverview();
     }, renderError("pending-sessions-list", "Unable to load mentor sessions."));
+
+    onValue(ref(database, `studentRatings/${uid}`), (snap) => {
+        state.mentorRatings = snap.val() || {};
+        renderMentorSessions();
+    });
 
     onValue(ref(database, `studentProgress/${uid}/skills`), (snap) => {
         state.skills = snap.val() || {};
@@ -1653,6 +1677,9 @@ function displayValue(value) {
     return hasValue(value) ? String(value) : "N/A";
 }
 
+function firstName(value) {
+    return String(value || "Student").trim().split(/\s+/)[0] || "Student";
+}
 
 async function requestMentor(mentorUid) {
     const mentor = state.mentors[mentorUid];
@@ -1718,12 +1745,21 @@ async function requestMentor(mentorUid) {
     };
     updates[`notifications/${mentorUid}/${notificationRef.key}`] = {
         notificationId: notificationRef.key,
-        type: "mentor_request",
+        targetUserUid: mentorUid,
+        targetRole: "mentor",
+        senderUid: state.uid,
+        senderRole: "student",
+        type: "mentorship_request_received",
         title: "New Mentor Request",
         message: `${studentName} requested your guidance.`,
         messagePreview: requestMessage,
-        relatedRequestId: requestRef.key,
+        relatedEntityType: "mentorRequest",
+        relatedEntityId: requestRef.key,
+        requestId: requestRef.key,
         studentUid: state.uid,
+        targetPage: "mentor-dashboard.html",
+        targetSection: "requests",
+        targetQuery: { requestId: requestRef.key },
         read: false,
         status: "unread",
         createdAt: serverTimestamp()
@@ -1991,6 +2027,12 @@ function renderSessionBucket(container, rows, statuses, emptyMessage) {
 function sessionCardHtml(id, session) {
     const status = normalize(session.status || "pending");
     const statusClass = status === "accepted" ? "accepted" : status === "completed" ? "completed" : status === "rejected" || status === "cancelled" ? "rejected" : "pending";
+    const rating = state.mentorRatings?.[id];
+    const ratingAction = statusClass === "completed"
+        ? rating
+            ? `<button class="btn btn-outline btn-sm" data-view-rating="${escapeAttr(id)}"><i class="fas fa-star"></i> Your Rating: ${escapeHtml(rating.overallRating)} stars</button>`
+            : `<button class="btn btn-primary btn-sm" data-rate-appointment="${escapeAttr(id)}"><i class="fas fa-star"></i> Rate Your Mentor</button>`
+        : "";
     const date = session.date ? new Date(`${session.date}T00:00:00`) : null;
     const month = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString(undefined, { month: "short" }) : "TBD";
     const day = date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString(undefined, { day: "2-digit" }) : "--";
@@ -2021,6 +2063,7 @@ function sessionCardHtml(id, session) {
                 ${statusClass === "accepted" && (session.meetingLink || session.joinLink) ? `<a class="btn btn-primary btn-sm" href="${escapeAttr(session.meetingLink || session.joinLink)}" target="_blank" rel="noopener"><i class="fas fa-video"></i> Join Session</a>` : ""}
                 ${statusClass === "accepted" ? `<button class="btn btn-outline btn-sm" data-message-mentor="${escapeAttr(session.mentorUid)}"><i class="fas fa-envelope"></i> Message Mentor</button>` : ""}
                 ${statusClass === "completed" ? `<button class="btn btn-outline btn-sm" data-view-session-summary="${escapeAttr(id)}"><i class="fas fa-file-lines"></i> View Summary</button>` : ""}
+                ${ratingAction}
                 ${statusClass === "rejected" ? `<button class="btn btn-outline btn-sm" data-book-session="${escapeAttr(session.mentorUid)}">Book Again</button>` : ""}
                 ${statusClass === "cancelled" ? `<button class="btn btn-outline btn-sm" data-book-session="${escapeAttr(session.mentorUid)}">Book Again</button>` : ""}
                 </div>
@@ -2054,6 +2097,297 @@ function sessionSummaryHtml(session = {}) {
         "Message": session.message || "N/A",
         "Completed Note": session.completedNote || "No summary note added yet."
     });
+}
+
+function ratingDetailHtml(rating = {}) {
+    return `
+        ${detailGrid({
+            "Overall Rating": `${rating.overallRating || "-"} stars`,
+            "Communication": rating.communicationRating ? `${rating.communicationRating} stars` : "Not rated",
+            "Knowledge": rating.knowledgeRating ? `${rating.knowledgeRating} stars` : "Not rated",
+            "Helpfulness": rating.helpfulnessRating ? `${rating.helpfulnessRating} stars` : "Not rated",
+            "Professionalism": rating.professionalismRating ? `${rating.professionalismRating} stars` : "Not rated",
+            "Would Recommend": rating.wouldRecommend === true ? "Yes" : "No"
+        })}
+        ${rating.review ? `<div class="rating-review-text"><h4>Your written feedback</h4><p>${escapeHtml(rating.review)}</p></div>` : ""}
+    `;
+}
+
+async function openRatingModal(appointmentId) {
+    if (!state.uid) return showToast("Please sign in as a student to rate a mentor.", "error");
+    const appointment = state.mentorAppointments?.[appointmentId];
+    if (!appointment) return showToast("Session details are unavailable. Please refresh and try again.", "error");
+    if (state.mentorRatings?.[appointmentId] || appointment.ratingSubmitted === true) {
+        showToast("You have already rated this mentoring session.", "warning");
+        return;
+    }
+    if (normalize(appointment.status) !== "completed") return showToast("This session is not eligible for a rating.", "error");
+
+    const modal = ensureRatingModal();
+    const mentor = state.mentors[appointment.mentorUid] || {};
+    modal.dataset.appointmentId = appointmentId;
+    modal.querySelector("#rating-mentor-photo").src = appointment.mentorPhotoURL || mentor.photoURL || "images/default-mentor-avatar.png";
+    modal.querySelector("#rating-mentor-name").textContent = appointment.mentorName || mentor.fullName || "Mentor";
+    modal.querySelector("#rating-mentor-field").textContent = mentor.field || mentor.mentoringField || "Mentor guidance";
+    modal.querySelector("#rating-session-meta").textContent = `${formatDate(appointment.date)} • ${appointment.topic || "Mentor Session"} • ${formatTimeLabel(appointment.startTime)} - ${formatTimeLabel(appointment.endTime)}`;
+    modal.querySelector("form").reset();
+    modal.querySelector("#rating-review-counter").textContent = "0/1000";
+    modal.querySelector("#rating-inline-error").textContent = "";
+    modal.querySelectorAll(".field-error").forEach((el) => { el.textContent = ""; });
+    modal.classList.remove("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    modal.querySelector("input[name='overallRating']")?.focus();
+}
+
+function ensureRatingModal() {
+    let modal = document.getElementById("mentor-rating-modal");
+    if (modal) return modal;
+    modal = document.createElement("div");
+    modal.id = "mentor-rating-modal";
+    modal.className = "modal-overlay mentor-rating-modal hidden";
+    modal.setAttribute("aria-hidden", "true");
+    modal.innerHTML = `
+        <div class="modal-card rating-modal-card" role="dialog" aria-modal="true" aria-labelledby="rating-modal-title">
+            <div class="modal-header">
+                <div>
+                    <h3 id="rating-modal-title">Rate Your Mentor</h3>
+                    <p class="text-muted">Share feedback from your completed mentoring session.</p>
+                </div>
+                <button type="button" class="modal-close" data-close-rating-modal aria-label="Close">&times;</button>
+            </div>
+            <div class="rating-mentor-summary">
+                <img id="rating-mentor-photo" src="images/default-mentor-avatar.png" alt="">
+                <div>
+                    <strong id="rating-mentor-name">Mentor</strong>
+                    <span id="rating-mentor-field">Mentor guidance</span>
+                    <small id="rating-session-meta">Completed session</small>
+                </div>
+            </div>
+            <form id="mentor-rating-form" class="rating-form" novalidate>
+                ${starField("overallRating", "Overall Experience", true)}
+                ${starField("communicationRating", "Communication")}
+                ${starField("knowledgeRating", "Knowledge")}
+                ${starField("helpfulnessRating", "Helpfulness")}
+                ${starField("professionalismRating", "Professionalism")}
+                <fieldset class="rating-recommend-field">
+                    <legend>Would you recommend this mentor?</legend>
+                    <label><input type="radio" name="wouldRecommend" value="yes" checked> Yes</label>
+                    <label><input type="radio" name="wouldRecommend" value="no"> No</label>
+                </fieldset>
+                <div class="form-group">
+                    <label for="mentor-rating-review">Written feedback <span class="optional-text">optional</span></label>
+                    <textarea id="mentor-rating-review" rows="4" maxlength="1000" placeholder="What helped you most?"></textarea>
+                    <small class="form-helper-text">Minimum 10 characters when entered. Do not include private contact details.</small>
+                    <small id="rating-review-counter" class="form-helper-text">0/1000</small>
+                    <small id="mentor-rating-review-error" class="field-error" aria-live="polite"></small>
+                </div>
+                <div class="form-group">
+                    <label class="rating-checkbox-label"><input type="checkbox" id="rating-display-anonymous"> Publish as Verified Student</label>
+                </div>
+                <p id="rating-inline-error" class="field-error" aria-live="polite"></p>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" data-close-rating-modal>Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="submit-mentor-rating-btn">Submit Rating</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener("click", (event) => {
+        if (event.target === modal || event.target.closest("[data-close-rating-modal]")) closeRatingModal();
+    });
+    modal.querySelector("#mentor-rating-review")?.addEventListener("input", (event) => {
+        modal.querySelector("#rating-review-counter").textContent = `${event.target.value.length}/1000`;
+    });
+    modal.querySelector("#mentor-rating-form")?.addEventListener("submit", submitMentorRating);
+    return modal;
+}
+
+function starField(name, legend, required = false) {
+    return `
+        <fieldset class="rating-field">
+            <legend>${escapeHtml(legend)}${required ? " *" : ""}</legend>
+            <div class="star-rating" role="radiogroup" aria-label="${escapeAttr(legend)}">
+                ${[5, 4, 3, 2, 1].map((value) => `
+                    <input type="radio" id="${name}-${value}" name="${name}" value="${value}">
+                    <label for="${name}-${value}" aria-label="${value} stars">★</label>
+                `).join("")}
+            </div>
+            <small id="${name}-error" class="field-error" aria-live="polite"></small>
+        </fieldset>
+    `;
+}
+
+function closeRatingModal() {
+    const modal = document.getElementById("mentor-rating-modal");
+    modal?.classList.add("hidden");
+    modal?.setAttribute("aria-hidden", "true");
+}
+
+async function submitMentorRating(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const modal = document.getElementById("mentor-rating-modal");
+    const appointmentId = modal?.dataset.appointmentId || "";
+    const submitButton = document.getElementById("submit-mentor-rating-btn");
+    const inlineError = document.getElementById("rating-inline-error");
+    if (inlineError) inlineError.textContent = "";
+
+    const overallRating = toRatingInt(form.elements.overallRating?.value);
+    const communicationRating = toRatingInt(form.elements.communicationRating?.value) || null;
+    const knowledgeRating = toRatingInt(form.elements.knowledgeRating?.value) || null;
+    const helpfulnessRating = toRatingInt(form.elements.helpfulnessRating?.value) || null;
+    const professionalismRating = toRatingInt(form.elements.professionalismRating?.value) || null;
+    const review = String(document.getElementById("mentor-rating-review")?.value || "").trim();
+    const reviewError = review ? requiredText(review, "Written feedback", { minLength: 10, maxLength: 1000 }) || (/[<>]/.test(review) ? "Written feedback cannot contain HTML." : "") : "";
+
+    setRatingFieldError("overallRating", overallRating ? "" : "Overall experience is required.");
+    showFieldError("mentor-rating-review", reviewError);
+    if (!overallRating || reviewError) {
+        showToast("Please fix the highlighted rating fields.", "error");
+        return;
+    }
+
+    const originalHtml = submitButton?.innerHTML;
+    if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    }
+
+    try {
+        const appointmentSnap = await get(ref(database, `mentorAppointments/${appointmentId}`));
+        const appointment = appointmentSnap.val() || {};
+        const eligibilityError = await getRatingEligibilityError(appointmentId, appointment);
+        if (eligibilityError) {
+            showToast(eligibilityError, "error");
+            if (inlineError) inlineError.textContent = eligibilityError;
+            return;
+        }
+
+        const mentorUid = appointment.mentorUid;
+        const studentRatingSnap = await get(ref(database, `studentRatings/${state.uid}/${appointmentId}`));
+        const publicRatingSnap = await get(ref(database, `publicMentorReviews/${mentorUid}/${appointmentId}`));
+        if (studentRatingSnap.exists() || publicRatingSnap.exists() || appointment.ratingSubmitted === true) {
+            showToast("You have already rated this mentoring session.", "warning");
+            return;
+        }
+
+        const existingRatingsSnap = await get(ref(database, `publicMentorReviews/${mentorUid}`));
+        const existingRatings = existingRatingsSnap.val() || {};
+        const notificationRef = push(ref(database, `notifications/${mentorUid}`));
+        const nowServer = serverTimestamp();
+        const editableUntil = Date.now() + (24 * 60 * 60 * 1000);
+        const displayPreference = document.getElementById("rating-display-anonymous")?.checked ? "anonymous" : "first_name";
+        const studentDisplayName = displayPreference === "anonymous" ? "Verified Student" : firstName(state.user.fullName || state.user.displayName || "Student");
+        const ratingRecord = {
+            ratingId: appointmentId,
+            appointmentId,
+            requestId: appointment.requestId || state.connectedMentors?.[mentorUid]?.requestId || "",
+            mentorUid,
+            studentUid: state.uid,
+            overallRating,
+            communicationRating,
+            knowledgeRating,
+            helpfulnessRating,
+            professionalismRating,
+            wouldRecommend: form.elements.wouldRecommend?.value !== "no",
+            review,
+            reviewStatus: "pending",
+            isVerified: true,
+            displayPreference,
+            studentDisplayName,
+            editableUntil,
+            revisionCount: 0,
+            createdAt: nowServer,
+            updatedAt: nowServer
+        };
+        const summary = calculateMentorRatingSummary({ ...existingRatings, [appointmentId]: ratingRecord });
+        const ratingUpdates = {};
+        ratingUpdates[`mentorRatings/${mentorUid}/${appointmentId}`] = ratingRecord;
+        ratingUpdates[`studentRatings/${state.uid}/${appointmentId}`] = ratingRecord;
+        await update(ref(database), ratingUpdates);
+
+        const afterSaveUpdates = {};
+        afterSaveUpdates[`mentorRatingSummaries/${mentorUid}`] = { mentorUid, ...summary, updatedAt: nowServer };
+        afterSaveUpdates[`mentorAppointments/${appointmentId}/ratingSubmitted`] = true;
+        afterSaveUpdates[`mentorAppointments/${appointmentId}/ratingId`] = appointmentId;
+        afterSaveUpdates[`mentorAppointments/${appointmentId}/ratedAt`] = nowServer;
+        afterSaveUpdates[`notifications/admin/${notificationRef.key}`] = {
+            notificationId: notificationRef.key,
+            type: "mentor_review_submitted",
+            title: "New Mentor Review",
+            message: `${studentDisplayName} submitted a mentor review for approval.`,
+            mentorUid,
+            studentUid: state.uid,
+            appointmentId,
+            relatedEntityType: "mentor_rating",
+            relatedEntityId: appointmentId,
+            targetPage: "admin-dashboard.html",
+            targetSection: "mentor-reviews",
+            read: false,
+            status: "unread",
+            createdAt: nowServer
+        };
+        afterSaveUpdates[`notifications/${mentorUid}/${notificationRef.key}`] = {
+            notificationId: notificationRef.key,
+            type: "mentor_rating_received",
+            title: "New Mentor Rating",
+            message: "A student submitted a rating. It will appear publicly after admin approval.",
+            targetUserUid: mentorUid,
+            targetRole: "mentor",
+            senderUid: state.uid,
+            senderRole: "student",
+            relatedEntityType: "mentor_rating",
+            relatedEntityId: appointmentId,
+            appointmentId,
+            targetPage: "mentor-dashboard.html",
+            targetSection: "ratings",
+            read: false,
+            status: "unread",
+            createdAt: nowServer
+        };
+        update(ref(database), afterSaveUpdates).catch((error) => {
+            console.warn("Mentor rating saved, but follow-up rating metadata failed:", error);
+        });
+        showToast("Thank you. Your mentor review was sent for admin approval.", "success");
+        closeRatingModal();
+    } catch (error) {
+        console.error("Mentor rating submit failed:", error);
+        const detail = error?.code === "PERMISSION_DENIED" || error?.code === "permission-denied"
+            ? "Permission denied while saving the rating."
+            : "Your rating could not be submitted. Please try again.";
+        showToast(detail, "error");
+    } finally {
+        if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.innerHTML = originalHtml || "Submit Rating";
+        }
+    }
+}
+
+async function getRatingEligibilityError(appointmentId, appointment = {}) {
+    if (!auth.currentUser || state.uid !== auth.currentUser.uid) return "Please sign in as the student who attended this session.";
+    if (normalize(state.user.userType || "student") !== "student") return "Only students can submit mentor ratings.";
+    if (!appointmentId || appointment.appointmentId !== appointmentId) return "This session is not eligible for a rating.";
+    if (appointment.studentUid !== state.uid) return "This session is not eligible for a rating.";
+    if (!appointment.mentorUid) return "This session is not eligible for a rating.";
+    if (normalize(appointment.status) !== "completed") return "This session is not eligible for a rating.";
+    if (sessionEndTime(appointment) > Date.now()) return "You can rate this session after it has ended.";
+    const connectionSnap = await get(ref(database, `studentMentors/${state.uid}/${appointment.mentorUid}`));
+    if (normalize(connectionSnap.val()?.status) !== "connected") return "This session is not eligible for a rating.";
+    return "";
+}
+
+function setRatingFieldError(name, message) {
+    const el = document.getElementById(`${name}-error`);
+    if (el) el.textContent = message || "";
+}
+
+function sessionEndTime(session = {}) {
+    const date = session.date || "";
+    const time = session.endTime || session.startTime || "00:00";
+    const parsed = new Date(`${date}T${time}`).getTime();
+    return Number.isNaN(parsed) ? 0 : parsed;
 }
 
 async function openBookingModalSafe(mentorUid, clickedButton = null) {
@@ -2427,17 +2761,26 @@ async function submitAppointmentRequest(event) {
             completedAt: null,
             completedNote: ""
         };
-        updates[`notifications/${booking.mentorUid}/${notificationRef.key}`] = {
-            notificationId: notificationRef.key,
-            type: "appointment_request",
-            title: "New mentoring session request",
-            message: appointmentMessage,
-            messagePreview: `${studentName} requested ${topic} on ${booking.selectedDate} at ${formatTimeLabel(slot.startTime)}.`,
-            relatedAppointmentId: appointmentRef.key,
-            studentUid: state.uid,
-            read: false,
-            status: "unread",
-            createdAt: serverTimestamp()
+    updates[`notifications/${booking.mentorUid}/${notificationRef.key}`] = {
+        notificationId: notificationRef.key,
+        targetUserUid: booking.mentorUid,
+        targetRole: "mentor",
+        senderUid: state.uid,
+        senderRole: "student",
+        type: "appointment_created",
+        title: "New mentoring session request",
+        message: appointmentMessage,
+        messagePreview: `${studentName} requested ${topic} on ${booking.selectedDate} at ${formatTimeLabel(slot.startTime)}.`,
+        relatedEntityType: "mentorAppointment",
+        relatedEntityId: appointmentRef.key,
+        appointmentId: appointmentRef.key,
+        studentUid: state.uid,
+        targetPage: "mentor-dashboard.html",
+        targetSection: "appointments",
+        targetQuery: { appointmentId: appointmentRef.key },
+        read: false,
+        status: "unread",
+        createdAt: serverTimestamp()
         };
         updates[`activityLogs/${logRef.key}`] = {
             logId: logRef.key,
@@ -2479,11 +2822,20 @@ async function cancelAppointment(appointmentId) {
     updates[`mentorAppointments/${appointmentId}/updatedAt`] = serverTimestamp();
     updates[`notifications/${appointment.mentorUid}/${notificationRef.key}`] = {
         notificationId: notificationRef.key,
+        targetUserUid: appointment.mentorUid,
+        targetRole: "mentor",
+        senderUid: state.uid,
+        senderRole: "student",
         type: "appointment_cancelled",
         title: "Session request cancelled",
         messagePreview: `${state.user.fullName || "A student"} cancelled a pending session request.`,
-        relatedAppointmentId: appointmentId,
+        relatedEntityType: "mentorAppointment",
+        relatedEntityId: appointmentId,
+        appointmentId,
         studentUid: state.uid,
+        targetPage: "mentor-dashboard.html",
+        targetSection: "appointments",
+        targetQuery: { appointmentId },
         read: false,
         status: "unread",
         createdAt: serverTimestamp()
@@ -2632,12 +2984,21 @@ async function sendMentorConversationMessage(event) {
     updates[`mentorConversations/${conversationId}/updatedAt`] = serverTimestamp();
     updates[`notifications/${mentorUid}/${notificationRef.key}`] = {
         notificationId: notificationRef.key,
-        type: "mentor_message",
+        targetUserUid: mentorUid,
+        targetRole: "mentor",
+        senderUid: state.uid,
+        senderRole: "student",
+        type: "new_message",
         title: "New student message",
         message: `${senderName}: ${message.slice(0, 80)}`,
         messagePreview: message.slice(0, 140),
+        relatedEntityType: "mentorConversation",
+        relatedEntityId: conversationId,
         conversationId,
         studentUid: state.uid,
+        targetPage: "mentor-dashboard.html",
+        targetSection: "messages",
+        targetQuery: { conversationId },
         read: false,
         status: "unread",
         createdAt: serverTimestamp()

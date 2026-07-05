@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);if(localStorage.getItem('sidebarCollapsed')==='true'&&window.innerWidth>768){document.documentElement.classList.add('sidebar-collapsed');}})();</script>
+    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);var c=localStorage.getItem('edupathSidebarCollapsed')||localStorage.getItem('sidebarCollapsed');if(c==='true'&&window.innerWidth>768){document.documentElement.classList.add('sidebar-collapsed');}})();</script>
     <title>Mentor Dashboard | EduPath Lanka</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,8 +12,8 @@
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Custom CSS (Reusing some structure from student, but separate file) -->
-    <link rel="stylesheet" href="mentor-dashboard.css?v=20260624-mentor-application">
     <link rel="stylesheet" href="theme.css?v=20260624-mentor-toggle-fix">
+    <link rel="stylesheet" href="mentor-dashboard.css?v=20260705-approved-profile-workflow">
 </head>
 <body class="mentor-dashboard-page">
 
@@ -37,18 +37,19 @@
             </div>
         </div>
         <ul class="sidebar-links">
-            <li><a href="#overview-section" data-section="overview-section" class="active" title="Dashboard"><i class="fas fa-table-cells-large"></i><span class="sidebar-label">Dashboard</span></a></li>
-            <li><a href="#complete-profile" data-section="complete-profile" title="Complete Mentor Profile"><i class="fas fa-clipboard-check"></i><span class="sidebar-label">Complete Profile</span></a></li>
-            <li><a href="profile.html" title="My Profile"><i class="fas fa-user-tie"></i><span class="sidebar-label">My Profile</span></a></li>
+            <li><a href="#dashboard-overview" data-section="dashboard-overview" class="active" title="Dashboard"><i class="fas fa-table-cells-large"></i><span class="sidebar-label">Dashboard</span></a></li>
+            <li class="mentor-complete-profile-nav"><a href="#complete-profile" data-section="complete-profile" title="Complete Mentor Profile"><i class="fas fa-clipboard-check"></i><span class="sidebar-label">Complete Profile</span></a></li>
+            <li><a href="#my-profile" data-section="my-profile" title="My Profile"><i class="fas fa-user-tie"></i><span class="sidebar-label">My Profile</span></a></li>
             <li><a href="#requests" data-section="requests" title="Student Requests"><i class="fas fa-user-plus"></i><span class="sidebar-label">Student Requests</span> <span class="badge badge-warning" id="req-count">0</span></a></li>
             <li><a href="#accepted" data-section="accepted" title="My Mentees"><i class="fas fa-user-check"></i><span class="sidebar-label">My Mentees</span></a></li>
             <li><a href="#messages" data-section="messages" title="Messages"><i class="fas fa-comments"></i><span class="sidebar-label">Messages</span></a></li>
             <li><a href="#rejected" data-section="rejected" title="Closed Requests"><i class="fas fa-user-times"></i><span class="sidebar-label">Closed Requests</span></a></li>
             <li><a href="#availability" data-section="availability" title="Availability"><i class="fas fa-calendar-check"></i><span class="sidebar-label">Availability</span></a></li>
             <li><a href="#appointments" data-section="appointments" title="Appointments"><i class="fas fa-calendar-days"></i><span class="sidebar-label">Appointments</span></a></li>
+            <li><a href="#ratings" data-section="ratings" title="Ratings & Reviews"><i class="fas fa-star"></i><span class="sidebar-label">Ratings & Reviews</span></a></li>
             <li><a href="#resources" data-section="resources" title="Guidance Resources"><i class="fas fa-book-reader"></i><span class="sidebar-label">Guidance Resources</span></a></li>
             <li><a href="#support" data-section="support" title="Chat with Admin"><i class="fas fa-headset"></i><span class="sidebar-label">Chat with Admin</span></a></li>
-            <li><a href="index.html" title="Home"><i class="fas fa-home"></i><span class="sidebar-label">Home</span></a></li>
+            <li><a href="index.html" title="Public Home"><i class="fas fa-home"></i><span class="sidebar-label">Public Home</span></a></li>
             <li><a href="#" id="logout-btn-sidebar" class="text-danger" title="Logout"><i class="fas fa-sign-out-alt"></i><span class="sidebar-label">Logout</span></a></li>
         </ul>
     </aside>
@@ -56,16 +57,16 @@
     <!-- Main Content -->
     <main class="main-content">
         <!-- Topbar -->
-        <header class="topbar">
+        <header class="topbar mentor-topbar">
             <div class="topbar-left">
                 <button type="button" class="sidebar-toggle topbar-sidebar-toggle" id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
-                <h2 class="page-title">Mentor Dashboard</h2>
+                <h2 class="page-title mentor-topbar-title">Mentor Dashboard</h2>
             </div>
             <div class="topbar-right dashboard-topbar-actions">
-                <div class="dashboard-clock-card topbar-clock-card">
-                    <span class="dashboard-greeting" id="dashboard-greeting">Good Day</span>
-                    <span class="dashboard-date" id="dashboard-date">Today</span>
-                    <time class="dashboard-live-clock" id="dashboard-live-clock" datetime="">--:--</time>
+                <div class="mentor-date-time" aria-label="Current date and time">
+                    <span class="date-time-item"><i class="fas fa-calendar-days" aria-hidden="true"></i><span id="mentor-dashboard-date">Today</span></span>
+                    <span class="date-time-divider" aria-hidden="true"></span>
+                    <time class="date-time-item" id="mentor-dashboard-time" datetime=""><i class="fas fa-clock" aria-hidden="true"></i><span id="mentor-dashboard-time-text">--:--</span></time>
                 </div>
                 <div class="user-profile">
                     <div class="avatar"><i class="fas fa-user-tie"></i></div>
@@ -77,56 +78,245 @@
 
         <!-- Dashboard Content -->
         <div class="dashboard-container">
-            <section id="overview-section" class="dashboard-section active">
-            
-            <!-- 1. Welcome Card -->
-            <section class="welcome-card mentor-hero-card glass">
-                <div class="mentor-hero-main">
-                    <div class="mentor-hero-visual" aria-hidden="true">
-                        <img src="images/mentor-dashboard-illustration.png" alt="">
-                    </div>
-                    <div class="welcome-content">
-                        <span class="mentor-kicker">Welcome back,</span>
-                        <h1 id="welcome-name">Mentor</h1>
-                        <p class="motivational-text">Every conversation can change a future. Keep guiding, keep inspiring!</p>
-                        <div class="mentor-hero-actions">
-                            <button class="btn btn-primary btn-sm" type="button" data-section-jump="appointments"><i class="fas fa-calendar-days"></i> View Appointments</button>
-                            <button class="btn btn-outline btn-sm" type="button" data-section-jump="availability"><i class="fas fa-calendar-plus"></i> Update Availability</button>
-                        </div>
-                        <div id="status-alert" class="alert hidden"></div>
-                    </div>
+            <section id="dashboard-overview" class="dashboard-section active">
+                <div class="mentor-home-layout">
+                    <main class="mentor-home-main">
+                        <section class="mentor-home-welcome">
+                            <div class="mentor-home-content-row">
+                                <div class="mentor-home-intro">
+                                    <span class="mentor-home-eyebrow">Welcome back,</span>
+                                    <div class="mentor-home-name-row">
+                                        <h1 id="mentor-home-name">Mentor <span class="mentor-home-wave" aria-hidden="true">👋</span></h1>
+                                    </div>
+                                    <p id="mentor-home-message">Your guidance can shape a student's future.</p>
+                                </div>
+                                <article class="mentor-home-profile">
+                                    <div class="mentor-home-photo">
+                                        <img id="mentor-home-photo" src="images/mentor-dashboard-illustration.png" alt="Mentor profile">
+                                    </div>
+                                    <div class="mentor-home-profile-copy">
+                                        <span class="mentor-home-profile-label">Mentor Profile</span>
+                                        <h2 id="mentor-home-expertise">Mentor field</h2>
+                                        <p id="mentor-home-type"><i class="fas fa-briefcase" aria-hidden="true"></i><span>Mentor type</span></p>
+                                    </div>
+                                </article>
+                            </div>
+                            <div class="mentor-home-actions" id="mentor-home-actions">
+                                <button class="btn btn-primary" type="button" id="mentor-home-primary-action" data-section-jump="requests">
+                                    <i class="fas fa-user-plus" aria-hidden="true"></i> View Student Requests
+                                </button>
+                                <button class="btn btn-outline" type="button" id="mentor-home-secondary-action" data-section-jump="appointments">
+                                    <i class="fas fa-calendar-days" aria-hidden="true"></i> View Appointments
+                                </button>
+                                <button class="btn btn-outline" type="button" id="mentor-home-tertiary-action" data-section-jump="availability">
+                                    <i class="fas fa-calendar-plus" aria-hidden="true"></i> Update Availability
+                                </button>
+                            </div>
+                        </section>
+
+                        <section class="mentor-home-glance">
+                            <h2>At a Glance</h2>
+                            <div class="mentor-home-glance-grid">
+                                <article class="mentor-home-glance-item">
+                                    <div class="glance-icon blue"><i class="fas fa-calendar-check"></i></div>
+                                    <span>Availability</span>
+                                    <strong id="mentor-modern-availability">Set availability</strong>
+                                    <small id="mentor-modern-availability-note">For approved mentoring</small>
+                                    <button class="btn btn-outline btn-sm" type="button" data-section-jump="availability">Manage Availability</button>
+                                </article>
+                                <article class="mentor-home-glance-item">
+                                    <div class="glance-icon purple"><i class="fas fa-video"></i></div>
+                                    <span>Next Session</span>
+                                    <strong id="mentor-modern-next-session">Locked until approval</strong>
+                                    <small id="mentor-modern-next-session-note">Appointments open after approval</small>
+                                    <button class="btn btn-outline btn-sm" type="button" id="mentor-modern-session-action" data-section-jump="appointments">View Appointments</button>
+                                </article>
+                                <article class="mentor-home-glance-item">
+                                    <div class="glance-icon green"><i class="fas fa-lock"></i></div>
+                                    <span>Mentoring Access</span>
+                                    <strong id="mentor-modern-access">Locked</strong>
+                                    <small id="mentor-modern-access-note">Your mentoring features will be available after admin approval.</small>
+                                    <button class="btn btn-outline btn-sm" type="button" id="mentor-modern-access-action" data-section-jump="requests">View Requests</button>
+                                </article>
+                            </div>
+                            <div class="mentor-home-info-banner" id="mentor-dashboard-info-banner">
+                                <i class="fas fa-circle-info"></i>
+                                <div>
+                                    <strong id="mentor-info-banner-title">Your mentor profile status will appear here.</strong>
+                                    <p id="mentor-info-banner-text">Complete your profile to start the admin review process.</p>
+                                </div>
+                            </div>
+                        </section>
+                    </main>
+
+                    <aside class="mentor-home-sidebar">
+                        <section class="mentor-home-status">
+                            <div class="mentor-home-status-header">
+                                <span>Mentor Status</span>
+                                <span class="status-badge status-draft" id="mentor-modern-status-badge">Draft</span>
+                            </div>
+                            <h2 id="mentor-modern-status-title">Complete your mentor profile</h2>
+                            <p id="mentor-modern-status-description">Add the required professional details and submit your profile for review.</p>
+                            <div class="mentor-home-status-notice" id="mentor-application-card-notice">
+                                <i class="fas fa-hourglass-half"></i>
+                                <span id="mentor-application-card-notice-text">You will be notified once the review is complete.</span>
+                            </div>
+                        </section>
+
+                        <section class="mentor-home-links">
+                            <h2>Quick Links</h2>
+                            <button class="mentor-home-link" type="button" data-section-jump="my-profile" data-approved-section-jump="my-profile" data-unapproved-section-jump="complete-profile">
+                                <span class="quick-link-icon blue"><i class="fas fa-user"></i></span>
+                                <span class="mentor-home-link-copy"><strong>My Profile</strong><small>View and update your profile</small></span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button class="mentor-home-link mentor-application-status-link" type="button" data-section-jump="complete-profile">
+                                <span class="quick-link-icon purple"><i class="fas fa-clipboard-check"></i></span>
+                                <span class="mentor-home-link-copy"><strong>Application Status</strong><small>Check your application progress</small></span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button class="mentor-home-link" type="button" data-section-jump="support">
+                                <span class="quick-link-icon violet"><i class="fas fa-comment-dots"></i></span>
+                                <span class="mentor-home-link-copy"><strong>Messages</strong><small>Chat with admin team</small></span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                            <button class="mentor-home-link" type="button" data-section-jump="support">
+                                <span class="quick-link-icon red"><i class="fas fa-bell"></i></span>
+                                <span class="mentor-home-link-copy"><strong>Notifications</strong><small>View your recent notifications</small></span>
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </section>
+                    </aside>
                 </div>
-                <div class="mentor-hero-side">
-                    <div class="mentor-summary-panel">
-                        <div class="mentor-summary-cell">
-                            <span class="summary-icon icon-calendar"><i class="fas fa-calendar-check"></i></span>
-                            <div>
-                                <span>Availability this week</span>
-                                <strong id="mentor-hero-availability">Set your availability</strong>
-                                <small>Choose mentoring days</small>
+
+                <!-- Approved Only Operational Container -->
+                <div id="approved-mentor-overview" class="approved-mentor-overview" hidden>
+                    <div class="mentor-overview-grid">
+                        <article class="overview-panel glass">
+                            <div class="overview-panel-header">
+                                <h3>Pending Student Requests <span class="badge badge-warning" id="overview-requests-count">0</span></h3>
+                                <button class="panel-link" type="button" data-section-jump="requests">View all</button>
+                            </div>
+                            <div id="overview-requests-list" class="overview-list">
+                                <div class="empty-state compact"><i class="fas fa-user-clock"></i><p>No pending requests yet.</p></div>
+                            </div>
+                        </article>
+
+                        <article class="overview-panel glass overview-panel-tall">
+                            <div class="overview-panel-header">
+                                <h3>My Mentees</h3>
+                                <button class="panel-link" type="button" data-section-jump="accepted">View all</button>
+                            </div>
+                            <div id="overview-mentees-list" class="overview-list">
+                                <div class="empty-state compact"><i class="fas fa-user-graduate"></i><p>No mentees connected yet.</p></div>
+                            </div>
+                        </article>
+
+                        <article class="overview-panel glass">
+                            <div class="overview-panel-header">
+                                <h3>Guidance Resources</h3>
+                                <button class="panel-link" type="button" data-section-jump="resources">View all</button>
+                            </div>
+                            <div class="overview-list">
+                                <div class="overview-row resource-blue"><i class="fas fa-book"></i><div><strong>University & Course Guide 2026</strong><span>Updated 2 days ago</span></div><i class="fas fa-chevron-right"></i></div>
+                                <div class="overview-row resource-purple"><i class="fas fa-file-alt"></i><div><strong>Scholarships in Sri Lanka</strong><span>Updated 1 week ago</span></div><i class="fas fa-chevron-right"></i></div>
+                                <div class="overview-row resource-green"><i class="fas fa-calendar-check"></i><div><strong>Study Skills & Time Management</strong><span>Updated 2 weeks ago</span></div><i class="fas fa-chevron-right"></i></div>
+                            </div>
+                        </article>
+
+                        <article class="overview-panel glass">
+                            <div class="overview-panel-header">
+                                <h3>Upcoming Availability</h3>
+                                <button class="panel-link" type="button" data-section-jump="availability">View calendar</button>
+                            </div>
+                            <div id="overview-availability-list" class="overview-list">
+                                <div class="overview-row"><span class="date-tile">SET</span><div><strong>Set your availability</strong><span>Choose days and mentoring hours</span></div><span class="status-pill">Available</span></div>
+                            </div>
+                        </article>
+
+                        <article class="overview-panel glass">
+                            <div class="overview-panel-header">
+                                <h3>Upcoming Appointments</h3>
+                                <button class="panel-link" type="button" data-section-jump="appointments">View all</button>
+                            </div>
+                            <div id="overview-appointments-list" class="overview-list">
+                                <div class="empty-state compact"><i class="fas fa-calendar-check"></i><p>No upcoming sessions.</p></div>
+                            </div>
+                        </article>
+
+                        <article class="overview-panel glass">
+                            <div class="overview-panel-header">
+                                <h3>Recent Messages</h3>
+                                <button class="panel-link" type="button" data-section-jump="messages">View all</button>
+                            </div>
+                            <div id="overview-messages-list" class="overview-list">
+                                <div class="empty-state compact"><i class="fas fa-comments"></i><p>No recent messages.</p></div>
+                            </div>
+                        </article>
+                    </div>
+
+                    <!-- 2. Status & Stats Grid -->
+                    <div class="stats-grid">
+                        <div class="stat-card glass mentor-stat-card">
+                            <div class="stat-icon bg-green"><i class="fas fa-user-check"></i></div>
+                            <div class="stat-info">
+                                <h4>Profile Status</h4>
+                                <h2 id="stat-status" class="text-warning">Pending</h2>
+                                <p><i class="fas fa-check-circle"></i> Active profile</p>
                             </div>
                         </div>
-                        <div class="mentor-summary-cell">
-                            <span class="summary-icon icon-people"><i class="fas fa-user-friends"></i></span>
-                            <div>
-                                <span>Next session</span>
-                                <strong id="mentor-next-session">No upcoming sessions</strong>
-                                <small>You're all caught up!</small>
+                        <div class="stat-card glass mentor-stat-card">
+                            <div class="stat-icon bg-orange"><i class="fas fa-user-clock"></i></div>
+                            <div class="stat-info">
+                                <h4>Pending Requests</h4>
+                                <h2 id="stat-requests">0</h2>
+                                <p>New this week</p>
                             </div>
                         </div>
-                        <div class="mentor-summary-progress">
-                            <div class="profile-ring"><span id="mentor-hero-profile-completion">0%</span></div>
-                            <div>
-                                <span>Profile completion</span>
-                                <strong>Almost there!</strong>
-                                <small>Complete your profile to unlock more opportunities.</small>
+                        <div class="stat-card glass mentor-stat-card">
+                            <div class="stat-icon bg-green"><i class="fas fa-user-check"></i></div>
+                            <div class="stat-info">
+                                <h4>Accepted Students</h4>
+                                <h2 id="stat-accepted">0</h2>
+                                <p>Total mentees</p>
                             </div>
-                            <button class="panel-link" type="button" data-section-jump="overview-section">Continue setup <i class="fas fa-arrow-right"></i></button>
                         </div>
+                        <div class="stat-card glass mentor-stat-card">
+                            <div class="stat-icon bg-blue"><i class="fas fa-comments"></i></div>
+                            <div class="stat-info">
+                                <h4>Upcoming Sessions</h4>
+                                <h2 id="stat-upcoming-sessions">0</h2>
+                                <p>Accepted sessions</p>
+                            </div>
+                        </div>
+                        <div class="stat-card glass mentor-stat-card">
+                            <div class="stat-icon bg-purple"><i class="fas fa-envelope"></i></div>
+                            <div class="stat-info">
+                                <h4>Unread Messages</h4>
+                                <h2 id="stat-unread">0</h2>
+                                <p>From students</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mentor-impact-strip">
+                        <div class="impact-icon"><i class="fas fa-star"></i></div>
+                        <div>
+                            <h3>Keep making an impact!</h3>
+                            <p>You've helped <span id="mentor-impact-count">0</span> students take confident steps toward their future.</p>
+                        </div>
+                        <button class="btn btn-secondary" type="button" data-section-jump="accepted">View My Impact <i class="fas fa-arrow-right"></i></button>
                     </div>
                 </div>
             </section>
 
+            <section id="my-profile" class="dashboard-section content-section">
+                <div id="approved-mentor-profile-root" class="approved-profile-shell">
+                    <div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading profile...</p></div>
+                </div>
+            </section>
+
+            <!-- 3. Complete Profile Section -->
             <section id="complete-profile" class="dashboard-section content-section">
                 <div class="section-header">
                     <h2>Mentor Profile Application</h2>
@@ -212,131 +402,6 @@
                 </div>
             </section>
 
-            <!-- 2. Status & Stats Grid -->
-            <div class="stats-grid">
-                <div class="stat-card glass mentor-stat-card">
-                    <div class="stat-icon bg-green"><i class="fas fa-user-check"></i></div>
-                    <div class="stat-info">
-                        <h4>Profile Status</h4>
-                        <h2 id="stat-status" class="text-warning">Pending</h2>
-                        <p><i class="fas fa-check-circle"></i> Active profile</p>
-                    </div>
-                </div>
-                <div class="stat-card glass mentor-stat-card">
-                    <div class="stat-icon bg-orange"><i class="fas fa-user-clock"></i></div>
-                    <div class="stat-info">
-                        <h4>Pending Requests</h4>
-                        <h2 id="stat-requests">0</h2>
-                        <p>New this week</p>
-                    </div>
-                </div>
-                <div class="stat-card glass mentor-stat-card">
-                    <div class="stat-icon bg-green"><i class="fas fa-user-check"></i></div>
-                    <div class="stat-info">
-                        <h4>Accepted Students</h4>
-                        <h2 id="stat-accepted">0</h2>
-                        <p>Total mentees</p>
-                    </div>
-                </div>
-                <div class="stat-card glass mentor-stat-card">
-                    <div class="stat-icon bg-blue"><i class="fas fa-comments"></i></div>
-                    <div class="stat-info">
-                        <h4>Upcoming Sessions</h4>
-                        <h2 id="stat-upcoming-sessions">0</h2>
-                        <p>Accepted sessions</p>
-                    </div>
-                </div>
-                <div class="stat-card glass mentor-stat-card">
-                    <div class="stat-icon bg-purple"><i class="fas fa-envelope"></i></div>
-                    <div class="stat-info">
-                        <h4>Unread Messages</h4>
-                        <h2 id="stat-unread">0</h2>
-                        <p>From students</p>
-                    </div>
-                </div>
-                <div class="stat-card glass mentor-stat-card profile-meter-card">
-                    <div class="profile-ring"><span id="stat-profile-completion">0%</span></div>
-                    <div class="stat-info">
-                        <h4>Profile Completion</h4>
-                        <h2>Almost there!</h2>
-                        <p>Keep it up</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mentor-overview-grid">
-                <article class="overview-panel glass">
-                    <div class="overview-panel-header">
-                        <h3>Pending Student Requests <span class="badge badge-warning" id="overview-requests-count">0</span></h3>
-                        <button class="panel-link" type="button" data-section-jump="requests">View all</button>
-                    </div>
-                    <div id="overview-requests-list" class="overview-list">
-                        <div class="empty-state compact"><i class="fas fa-user-clock"></i><p>No pending requests yet.</p></div>
-                    </div>
-                </article>
-
-                <article class="overview-panel glass overview-panel-tall">
-                    <div class="overview-panel-header">
-                        <h3>My Mentees</h3>
-                        <button class="panel-link" type="button" data-section-jump="accepted">View all</button>
-                    </div>
-                    <div id="overview-mentees-list" class="overview-list">
-                        <div class="empty-state compact"><i class="fas fa-user-graduate"></i><p>No mentees connected yet.</p></div>
-                    </div>
-                </article>
-
-                <article class="overview-panel glass">
-                    <div class="overview-panel-header">
-                        <h3>Guidance Resources</h3>
-                        <button class="panel-link" type="button" data-section-jump="resources">View all</button>
-                    </div>
-                    <div class="overview-list">
-                        <div class="overview-row resource-blue"><i class="fas fa-book"></i><div><strong>University & Course Guide 2026</strong><span>Updated 2 days ago</span></div><i class="fas fa-chevron-right"></i></div>
-                        <div class="overview-row resource-purple"><i class="fas fa-file-alt"></i><div><strong>Scholarships in Sri Lanka</strong><span>Updated 1 week ago</span></div><i class="fas fa-chevron-right"></i></div>
-                        <div class="overview-row resource-green"><i class="fas fa-calendar-check"></i><div><strong>Study Skills & Time Management</strong><span>Updated 2 weeks ago</span></div><i class="fas fa-chevron-right"></i></div>
-                    </div>
-                </article>
-
-                <article class="overview-panel glass">
-                    <div class="overview-panel-header">
-                        <h3>Upcoming Availability</h3>
-                        <button class="panel-link" type="button" data-section-jump="availability">View calendar</button>
-                    </div>
-                    <div id="overview-availability-list" class="overview-list">
-                        <div class="overview-row"><span class="date-tile">SET</span><div><strong>Set your availability</strong><span>Choose days and mentoring hours</span></div><span class="status-pill">Available</span></div>
-                    </div>
-                </article>
-
-                <article class="overview-panel glass">
-                    <div class="overview-panel-header">
-                        <h3>Upcoming Appointments</h3>
-                        <button class="panel-link" type="button" data-section-jump="appointments">View all</button>
-                    </div>
-                    <div id="overview-appointments-list" class="overview-list">
-                        <div class="empty-state compact"><i class="fas fa-calendar-check"></i><p>No upcoming sessions.</p></div>
-                    </div>
-                </article>
-
-                <article class="overview-panel glass">
-                    <div class="overview-panel-header">
-                        <h3>Recent Messages</h3>
-                        <button class="panel-link" type="button" data-section-jump="messages">View all</button>
-                    </div>
-                    <div id="overview-messages-list" class="overview-list">
-                        <div class="empty-state compact"><i class="fas fa-comments"></i><p>No recent messages.</p></div>
-                    </div>
-                </article>
-            </div>
-
-            <div class="mentor-impact-strip">
-                <div class="impact-icon"><i class="fas fa-star"></i></div>
-                <div>
-                    <h3>Keep making an impact!</h3>
-                    <p>You've helped <span id="mentor-impact-count">0</span> students take confident steps toward their future.</p>
-                </div>
-                <button class="btn btn-secondary" type="button" data-section-jump="accepted">View My Impact <i class="fas fa-arrow-right"></i></button>
-            </div>
-            
             <!-- Profile Strength & Checklist Section -->
             <section id="profile-strength" class="content-section mentor-profile-strength" style="width: 100%;">
                 <div class="stat-card profile-card glass" style="grid-column: span 2; display: flex; flex-direction: column; align-items: stretch; gap: 1.5rem; width: 100%;">
@@ -600,6 +665,74 @@
                 </div>
             </section>
 
+            <section id="ratings" class="dashboard-section content-section">
+                <div class="mentor-ratings-hero">
+                    <span class="ratings-hero-icon"><i class="fas fa-star"></i></span>
+                    <div>
+                        <h2>Ratings & Reviews</h2>
+                        <p class="section-desc">Read verified feedback from completed mentoring sessions.</p>
+                    </div>
+                </div>
+                <div class="mentor-ratings-shell">
+                    <div class="ratings-overview-grid">
+                        <article class="rating-summary-card glass metric-average">
+                            <span>Average Rating</span>
+                            <strong id="mentor-rating-average">New Mentor</strong>
+                            <div id="mentor-rating-stars" class="rating-card-stars" aria-hidden="true">☆☆☆☆☆</div>
+                            <small id="mentor-rating-total">No verified ratings yet</small>
+                        </article>
+                        <article class="rating-summary-card glass metric-recommend">
+                            <span>Recommendation Rate</span>
+                            <strong id="mentor-rating-recommend">--</strong>
+                            <small>Students who recommend you</small>
+                        </article>
+                        <article class="rating-summary-card glass metric-strength">
+                            <span>Top Strength</span>
+                            <strong id="mentor-rating-top-category">--</strong>
+                            <small>Highest rated category</small>
+                        </article>
+                        <article class="rating-summary-card glass metric-total">
+                            <span>Total Reviews</span>
+                            <strong id="mentor-rating-count">0</strong>
+                            <small>All verified reviews</small>
+                        </article>
+                    </div>
+                    <div class="ratings-layout">
+                        <article class="glass rating-breakdown-card recent-reviews-panel">
+                            <div class="ratings-card-head">
+                                <h3>Recent Reviews</h3>
+                                <button type="button" id="mentor-view-all-reviews" class="ratings-link-btn">View all reviews <i class="fas fa-arrow-right"></i></button>
+                            </div>
+                            <div id="mentor-reviews-list" class="review-list"></div>
+                        </article>
+                    </div>
+                    <div class="ratings-insights-grid">
+                        <article class="glass rating-breakdown-card">
+                            <div class="ratings-card-head">
+                                <h3>Feedback Trends</h3>
+                                <select id="mentor-rating-trend-range" class="form-control compact-select" aria-label="Rating trend range">
+                                    <option value="6">Last 6 Months</option>
+                                </select>
+                            </div>
+                            <div id="mentor-rating-trends" class="rating-trend-chart"></div>
+                            <small>Average rating over the last 6 months</small>
+                        </article>
+                        <article class="glass rating-breakdown-card">
+                            <div class="ratings-card-head">
+                                <h3>Common Praise</h3>
+                            </div>
+                            <div id="mentor-common-praise" class="common-praise-grid"></div>
+                        </article>
+                        <article class="glass rating-breakdown-card">
+                            <div class="ratings-card-head">
+                                <h3>Areas to Improve</h3>
+                            </div>
+                            <div id="mentor-improvement-panel" class="improvement-panel"></div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
             <!-- 7. Guidance Resources (Placeholders) -->
             <section id="resources" class="dashboard-section content-section">
                 <div class="section-header">
@@ -654,6 +787,6 @@
     <script type="module" src="theme.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="mentor-dashboard.js?v=20260624-mentor-application"></script>
+    <script type="module" src="mentor-dashboard.js?v=20260705-profile-loading-fix"></script>
 </body>
 </html>

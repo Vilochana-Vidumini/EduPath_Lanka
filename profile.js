@@ -2,6 +2,20 @@ import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, update, onValue, serverTimestamp, push } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast } from "./auth-nav.js?v=20260614-brand";
+import {
+    requiredText,
+    validatePhone,
+    normalizeSriLankanPhone,
+    validateImageUrl,
+    validatePublicUrl,
+    validateDocumentUrl,
+    validateNumberRange,
+    validateForm,
+    showFieldError,
+    clearFieldError,
+    normalizeList
+} from "./validation.js";
+import { getDashboardDestination, normalizeRole } from "./shared-navigation.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
@@ -135,12 +149,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             cachedUserData = userSnapshot.val();
-            userRole = (cachedUserData.userType || 'student').toLowerCase();
+            userRole = normalizeRole(cachedUserData.userType || 'student') || 'student';
             
             // Set dynamic sidebar back-link URL
             const backLink = document.getElementById('dashboard-back-link');
             if (backLink) {
-                backLink.href = `${userRole}-dashboard.html`;
+                backLink.href = getDashboardDestination(userRole);
             }
 
             // Bind role specifics
@@ -361,8 +375,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function arrayFrom(value) {
-        if (Array.isArray(value)) return value;
-        return String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
+        return normalizeList(value);
     }
 
     function setValue(id, value) {
@@ -404,10 +417,10 @@ document.addEventListener('DOMContentLoaded', () => {
             photoURL: getValue('field-photoURL'),
             fullName: getValue('field-fullName'),
             email: getValue('field-email') || currentUser.email || '',
-            phone: getValue('field-phone'),
+            phone: normalizeSriLankanPhone(getValue('field-phone')) || getValue('field-phone'),
             district: getValue('field-mentorDistrict'),
             city: getValue('field-mentorCity'),
-            preferredLanguages: getProfileCheckedValues('preferredLanguages'),
+            preferredLanguages: normalizeList(getProfileCheckedValues('preferredLanguages')),
             mentorType: getValue('field-mentorType'),
             field: getValue('field-field'),
             expertise: getValue('field-field'),
@@ -418,16 +431,16 @@ document.addEventListener('DOMContentLoaded', () => {
             highestQualification: getValue('field-highestQualification'),
             qualification: getValue('field-highestQualification'),
             studyArea: getValue('field-studyArea'),
-            yearsOfExperience: getValue('field-yearsOfExperience'),
-            experience: getValue('field-yearsOfExperience'),
+            yearsOfExperience: Number(getValue('field-yearsOfExperience') || 0),
+            experience: Number(getValue('field-yearsOfExperience') || 0),
             professionalMembership: getValue('field-professionalMembership'),
             linkedInURL: getValue('field-linkedInURL'),
             portfolioURL: getValue('field-portfolioURL'),
-            guidanceAreas: getProfileCheckedValues('guidanceAreas'),
-            studentLevelsSupported: getProfileCheckedValues('studentLevelsSupported'),
-            streamsSupported: getProfileCheckedValues('streamsSupported'),
+            guidanceAreas: normalizeList(getProfileCheckedValues('guidanceAreas')),
+            studentLevelsSupported: normalizeList(getProfileCheckedValues('studentLevelsSupported')),
+            streamsSupported: normalizeList(getProfileCheckedValues('streamsSupported')),
             mentoringMode: getValue('field-mentoringMode'),
-            maxStudents: getValue('field-maxStudents'),
+            maxStudents: Number(getValue('field-maxStudents') || 0),
             bio: getValue('field-bio'),
             shortBio: getValue('field-bio'),
             whyMentor: getValue('field-whyMentor'),
@@ -453,6 +466,45 @@ document.addEventListener('DOMContentLoaded', () => {
             percentage: Math.round(((mentorRequiredFields.length - missing.length) / mentorRequiredFields.length) * 100),
             missing
         };
+    }
+
+    function validateProfileDetailsBeforeSave() {
+        const rules = [
+            { id: 'field-fullName', validate: (value) => requiredText(value, 'Full name', { minLength: 2, maxLength: 100 }) },
+            { id: 'field-phone', validate: (value) => validatePhone(value, 'Contact number', { optional: true }) }
+        ];
+
+        if (userRole === 'student') {
+            rules.push(
+                { id: 'field-futureGoal', validate: (value) => value ? requiredText(value, 'Future career goal', { minLength: 2, maxLength: 120 }) : '' },
+                { id: 'field-skills', validate: (value) => value && value.length > 500 ? 'Skills must not exceed 500 characters.' : '' }
+            );
+        }
+
+        if (userRole === 'mentor') {
+            rules.push(
+                { id: 'field-photoURL', validate: (value) => validateImageUrl(value, 'Profile photo URL', { optional: true }) },
+                { id: 'field-mentorDistrict', validate: (value) => requiredText(value, 'District', { minLength: 2, maxLength: 80 }) },
+                { id: 'field-mentorCity', validate: (value) => requiredText(value, 'City', { minLength: 2, maxLength: 80 }) },
+                { id: 'field-field', validate: (value) => requiredText(value, 'Field / expertise', { minLength: 2, maxLength: 120 }) },
+                { id: 'field-currentPosition', validate: (value) => requiredText(value, 'Current position', { minLength: 2, maxLength: 120 }) },
+                { id: 'field-universityOrCompany', validate: (value) => requiredText(value, 'Affiliation', { minLength: 2, maxLength: 150 }) },
+                { id: 'field-highestQualification', validate: (value) => requiredText(value, 'Highest qualification', { minLength: 2, maxLength: 150 }) },
+                { id: 'field-yearsOfExperience', validate: (value) => validateNumberRange(value, 'Years of experience', { min: 0, max: 60, integer: true }) },
+                { id: 'field-linkedInURL', validate: (value) => validatePublicUrl(value, 'LinkedIn URL', { optional: true }) },
+                { id: 'field-portfolioURL', validate: (value) => validatePublicUrl(value, 'Portfolio URL', { optional: true }) },
+                { id: 'field-maxStudents', validate: (value) => validateNumberRange(value, 'Maximum students', { min: 1, max: 100, integer: true }) },
+                { id: 'field-bio', validate: (value) => requiredText(value, 'Short biography', { minLength: 30, maxLength: 1500 }) },
+                { id: 'field-whyMentor', validate: (value) => requiredText(value, 'Why you want to mentor', { minLength: 20, maxLength: 1000 }) },
+                { id: 'field-studentExpectation', validate: (value) => value ? requiredText(value, 'Student expectations', { minLength: 20, maxLength: 1000 }) : '' },
+                { id: 'field-cvURL', validate: (value) => validateDocumentUrl(value, 'CV URL', { optional: true }) },
+                { id: 'field-qualificationDocumentURL', validate: (value) => validateDocumentUrl(value, 'Qualification document URL', { optional: true }) },
+                { id: 'field-experienceProofURL', validate: (value) => validateDocumentUrl(value, 'Experience proof URL', { optional: true }) },
+                { id: 'field-professionalCertificateURL', validate: (value) => validateDocumentUrl(value, 'Professional certificate URL', { optional: true }) }
+            );
+        }
+
+        return validateForm(rules);
     }
 
     function renderMentorProfileStatus(profile = mergedMentorProfile) {
@@ -639,15 +691,22 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         if (!currentUser) return;
 
+        const validation = validateProfileDetailsBeforeSave();
+        if (!validation.valid) {
+            showToast("Please fix the highlighted profile fields.", "error");
+            return;
+        }
+
         const saveBtn = document.getElementById('save-profile-btn');
         const originalBtnText = saveBtn.textContent;
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         saveBtn.disabled = true;
 
         const now = Date.now();
+        const normalizedPhone = normalizeSriLankanPhone(document.getElementById('field-phone').value) || document.getElementById('field-phone').value.trim();
         const coreUpdates = {
             fullName: document.getElementById('field-fullName').value,
-            phone: document.getElementById('field-phone').value,
+            phone: normalizedPhone,
             updatedAt: now
         };
 
@@ -679,7 +738,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 futureGoal: document.getElementById('field-futureGoal').value,
                 financialSupport: document.getElementById('field-financialSupport').value,
                 learningMode: document.getElementById('field-learningMode').value,
-                skills: document.getElementById('field-skills').value,
+                skills: normalizeList(document.getElementById('field-skills').value).join(', '),
                 updatedAt: now
             };
             const recommendationDataChanged = recommendationFields.some((field) => {
@@ -799,15 +858,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const uid = currentUser.uid;
-            const notificationRef = push(ref(database, 'adminNotifications'));
+            const notificationRef = push(ref(database, 'notifications/admin'));
             const updates = buildMentorProfileUpdates('submit');
-            updates[`adminNotifications/${notificationRef.key}`] = {
+            updates[`notifications/admin/${notificationRef.key}`] = {
                 notificationId: notificationRef.key,
+                targetUserUid: 'admin',
+                targetRole: 'admin',
+                senderUid: uid,
+                senderRole: 'mentor',
                 type: 'mentor_application_submitted',
                 title: 'Mentor profile submitted',
                 message: `${payload.fullName || 'A mentor'} submitted a completed mentor profile for review.`,
+                relatedEntityType: 'mentorApplication',
+                relatedEntityId: uid,
                 mentorUid: uid,
+                targetPage: 'admin-dashboard.html',
+                targetSection: 'mentor-approvals',
+                targetQuery: { mentorUid: uid },
                 read: false,
+                status: 'unread',
                 createdAt: serverTimestamp()
             };
             await update(ref(database), updates);
@@ -863,12 +932,20 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         if (!currentUser) return;
 
+        const photoInput = document.getElementById('input-photoURL');
+        const photoError = validateImageUrl(photoInput.value, 'Profile photo URL');
+        showFieldError(photoInput, photoError);
+        if (photoError) {
+            showToast("Please enter a valid image URL.", "error");
+            return;
+        }
+
         const submitBtn = document.getElementById('submit-avatar-btn');
         const originalBtnText = submitBtn.textContent;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         submitBtn.disabled = true;
 
-        const newPhotoURL = document.getElementById('input-photoURL').value;
+        const newPhotoURL = document.getElementById('input-photoURL').value.trim();
         const now = Date.now();
 
         const batchUpdates = {};
@@ -911,8 +988,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const confirmPwd = document.getElementById('settings-confirm-password').value;
         const errorEl = document.getElementById('password-match-error');
 
+        clearFieldError('settings-new-password');
+        clearFieldError('settings-confirm-password');
+        if (newPwd.length < 8) {
+            showFieldError('settings-new-password', 'Password must contain at least 8 characters.');
+            showToast("Please fix the highlighted password field.", "error");
+            return;
+        }
         if (newPwd !== confirmPwd) {
             errorEl.classList.remove('hidden');
+            showFieldError('settings-confirm-password', 'Passwords do not match.');
             return;
         }
         errorEl.classList.add('hidden');

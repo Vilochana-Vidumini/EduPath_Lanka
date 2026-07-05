@@ -1,9 +1,10 @@
 import { auth, database } from "./firebase-config.js";
-import { onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { EmailAuthProvider, onAuthStateChanged, reauthenticateWithCredential, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, set, update, push, onValue, off, serverTimestamp, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast, preserveThemeOnClear } from "./auth-nav.js?v=20260614-brand";
 import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
 import { ensureDashboardTopbarLayout, initDashboardNotifications, updateDashboardGreetingName } from "./dashboard-topbar.js";
+import { calculateMentorRatingSummary, normalizeRatingStatus, publicReviewRows } from "./ratings.js?v=20260705-rating-breakdown-fix";
 
 document.addEventListener('DOMContentLoaded', () => {
     initDashboardSidebar();
@@ -22,6 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentMentorData = {};
     let mentorAccessApproved = false;
     let mentorAppointments = {};
+    let mentorRatings = {};
+    let mentorPublicReviews = {};
+    let mentorRatingSummary = {};
     let appointmentCalendarDate = new Date();
     let selectedAppointmentDate = dateKeyLocal(new Date());
     let activeAppointmentTab = 'pending';
@@ -89,6 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mentor-support-form')?.addEventListener('submit', sendMentorSupportMessage);
     document.getElementById('mentor-application-form')?.addEventListener('submit', submitMentorApplication);
     document.getElementById('save-mentor-draft-btn')?.addEventListener('click', saveMentorApplicationDraft);
+    document.addEventListener('click', handleApprovedProfileClick);
+    document.addEventListener('change', handleApprovedProfileChange);
+    document.addEventListener('submit', handleApprovedProfileSubmit);
     document.getElementById('save-availability-btn')?.addEventListener('click', saveAvailability);
     document.getElementById('add-unavailable-date-btn')?.addEventListener('click', addUnavailableDateFromInput);
     ['sessionDuration', 'bufferMinutes', 'mentoringMode', 'availabilityStatus', 'maxSessionsPerDay'].forEach((id) => {
@@ -133,12 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
             photoURL: userData.photoURL || '',
         });
         updateDashboardGreetingName(userData.fullName || 'Mentor');
-
-        const firstName = (userData.fullName || 'Mentor').split(' ')[0];
-        const welcomeNameEl = document.getElementById('welcome-name');
-        if (welcomeNameEl) {
-            welcomeNameEl.textContent = firstName;
-        }
+        updateMentorHeroName(userData.fullName || 'Mentor');
 
         // Load Mentor Specific Data from /mentors/{uid}
         get(ref(database, 'mentors/' + uid)).then((snapshot) => {
@@ -154,15 +156,24 @@ document.addEventListener('DOMContentLoaded', () => {
             populateMentorApplicationForm(currentMentorData, userData);
             renderMentorApplicationStatus(currentMentorData);
             applyMentorAccessGate();
+            listenForAvailability(uid);
+            renderMentorHero();
 
             if (mentorAccessApproved) {
                 listenForRequests(uid, userData.fullName);
                 listenForConnectedStudents(uid);
-                listenForAvailability(uid);
                 listenForAppointments(uid);
+                listenForRatings(uid);
             } else {
                 showApplicationFirst();
             }
+        }).catch((error) => {
+            console.error('Mentor profile load failed:', error);
+            const root = document.getElementById('approved-mentor-profile-root');
+            if (root) {
+                root.innerHTML = `<div class="mentor-profile-readonly-card glass"><h3>Profile could not load</h3><p>${escapeHtml(friendlyFirebaseError(error))}</p></div>`;
+            }
+            showToast(friendlyFirebaseError(error), 'error');
         });
     }
 
@@ -360,6 +371,33 @@ document.addEventListener('DOMContentLoaded', () => {
         return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[ch]));
     }
 
+    function displayVal(value) {
+        if (Array.isArray(value)) return value.length ? value.join(', ') : 'N/A';
+        if (value && typeof value === 'object') return JSON.stringify(value);
+        const text = String(value ?? '').trim();
+        return text || 'N/A';
+    }
+
+    function formatDateTime(value) {
+        const time = getTimestamp(value);
+        if (!time) return 'Not recorded';
+        return new Date(time).toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    function getTimestamp(value) {
+        if (!value) return 0;
+        if (typeof value === 'number') return value;
+        if (typeof value === 'object' && typeof value.seconds === 'number') return value.seconds * 1000;
+        const parsed = Date.parse(value);
+        return Number.isNaN(parsed) ? 0 : parsed;
+    }
+
     function firstMeaningful(...values) {
         for (const value of values) {
             if (Array.isArray(value) && value.length) return value;
@@ -473,8 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="status-pill ${status === 'unavailable' ? 'is-muted' : ''}">${escapeHtml(status === 'unavailable' ? 'Unavailable' : 'Available')}</span>
             </div>
         `;
-        const heroAvailability = document.getElementById('mentor-hero-availability');
-        if (heroAvailability) heroAvailability.textContent = enabledDays.length ? `${enabledDays.length} days this week` : 'Set your availability';
+        updateHeroAvailabilityMetric();
     }
 
     function renderAvailabilityOverviewPanel(data = mentorAvailability) {
@@ -505,24 +542,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function startMentorDateTime() {
         updateMentorDateTime();
-        if (!mentorDateTimer) mentorDateTimer = setInterval(updateMentorDateTime, 1000);
+        if (!mentorDateTimer) mentorDateTimer = setInterval(updateMentorDateTime, 60000);
     }
 
     function updateMentorDateTime() {
         const now = new Date();
-        const dateText = now.toLocaleDateString('en-LK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        const timeText = now.toLocaleTimeString('en-LK', { hour: '2-digit', minute: '2-digit', hour12: true });
-        const hour = now.getHours();
-        let greeting = 'Good Night';
-        if (hour >= 5 && hour < 12) greeting = 'Good Morning';
-        else if (hour >= 12 && hour < 17) greeting = 'Good Afternoon';
-        else if (hour >= 17 && hour < 21) greeting = 'Good Evening';
+        const dateText = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const timeText = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
         const dateEl = document.getElementById('mentor-dashboard-date');
         const timeEl = document.getElementById('mentor-dashboard-time');
-        const greetingEl = document.getElementById('mentor-dashboard-greeting');
+        const timeTextEl = document.getElementById('mentor-dashboard-time-text');
         if (dateEl) dateEl.textContent = dateText;
-        if (timeEl) timeEl.textContent = timeText;
-        if (greetingEl) greetingEl.textContent = `${greeting},`;
+        if (timeTextEl) timeTextEl.textContent = timeText;
+        if (timeEl) timeEl.dateTime = now.toISOString();
     }
 
     function listenForAvailability(uid) {
@@ -657,23 +689,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function mentorApprovalStatus(mentor = currentMentorData) {
-        return String(mentor.approvalStatus || mentor.applicationStatus || mentor.status || 'draft').trim().toLowerCase();
+        return normalizeStatus(mentor.approvalStatus || mentor.applicationStatus || mentor.status || 'draft');
+    }
+
+    function normalizeStatus(value) {
+        return String(value || '').trim().toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_');
     }
 
     function isApprovedMentor(mentor = {}, user = currentUserData) {
         return mentorApprovalStatus(mentor) === 'approved'
-            && mentor.publicVisibility === true
-            && mentor.mentoringEnabled === true
-            && String(user.accountStatus || mentor.accountStatus || 'active').toLowerCase() === 'active';
+            && normalizeStatus(user.accountStatus || mentor.accountStatus || 'active') !== 'suspended';
     }
 
     function canAccessMentorSection(sectionId) {
+        if (mentorAccessApproved && sectionId === 'complete-profile') return false;
         if (mentorAccessApproved) return true;
-        return ['overview-section', 'complete-profile', 'support'].includes(sectionId);
+        return ['dashboard-overview', 'my-profile', 'complete-profile', 'availability', 'support'].includes(sectionId);
     }
 
     function showApplicationFirst() {
-        const sectionId = ['submitted', 'under_review'].includes(mentorApprovalStatus()) ? 'overview-section' : 'complete-profile';
+        const sectionId = ['submitted', 'under_review'].includes(mentorApprovalStatus()) ? 'dashboard-overview' : 'complete-profile';
         document.querySelectorAll('.dashboard-section').forEach((section) => {
             section.classList.toggle('active', section.id === sectionId);
             section.style.display = section.id === sectionId ? '' : 'none';
@@ -684,11 +719,294 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function applyMentorAccessGate() {
         document.body.classList.toggle('mentor-unapproved', !mentorAccessApproved);
+        document.body.classList.toggle('mentor-approved', mentorAccessApproved);
+        document.querySelector('.mentor-complete-profile-nav')?.classList.toggle('hidden', mentorAccessApproved);
+        document.querySelector('.mentor-application-status-link')?.classList.toggle('hidden', mentorAccessApproved);
+        document.querySelectorAll('[data-approved-section-jump]').forEach((button) => {
+            button.dataset.sectionJump = mentorAccessApproved ? button.dataset.approvedSectionJump : (button.dataset.unapprovedSectionJump || button.dataset.sectionJump);
+        });
+        if (mentorAccessApproved && window.location.hash === '#complete-profile') {
+            history.replaceState(null, '', '#my-profile');
+        }
+        if (mentorAccessApproved && document.querySelector('.dashboard-section.active')?.id === 'complete-profile') {
+            document.querySelectorAll('.dashboard-section').forEach((section) => {
+                const active = section.id === 'my-profile';
+                section.classList.toggle('active', active);
+                section.style.display = active ? '' : 'none';
+            });
+            document.querySelectorAll('.sidebar-links a[data-section]').forEach((link) => {
+                link.classList.toggle('active', link.dataset.section === 'my-profile');
+            });
+            localStorage.setItem('mentorActiveSection', 'my-profile');
+        }
         document.querySelectorAll('.sidebar-links a[data-section]').forEach((link) => {
             const locked = !canAccessMentorSection(link.dataset.section);
             link.classList.toggle('locked-section', locked);
             if (locked) link.title = 'Available after admin approval';
         });
+        const approvedOverview = document.getElementById("approved-mentor-overview");
+        if (approvedOverview) {
+            approvedOverview.hidden = !mentorAccessApproved;
+        }
+        renderApprovedMentorProfile();
+        renderMentorHero();
+    }
+
+    function updateMentorHeroName(fullName) {
+        const welcomeNameEl = document.getElementById('mentor-home-name');
+        if (!welcomeNameEl) return;
+        welcomeNameEl.innerHTML = `${escapeHtml(fullName || 'Mentor')} <span class="mentor-home-wave" aria-hidden="true">👋</span>`;
+        
+        const len = (fullName || '').length;
+        welcomeNameEl.classList.toggle('is-long-name', len > 15 && len <= 25);
+        welcomeNameEl.classList.toggle('is-very-long-name', len > 25);
+    }
+
+    function renderMentorHero() {
+        const mentor = currentMentorData || {};
+        const user = currentUserData || {};
+        const status = mentorApprovalStatus(mentor).replace(/\s+/g, '_');
+        const statusInfo = getMentorHeroStatusInfo(status);
+        const fullName = mentor.fullName || user.fullName || 'Mentor';
+        const photo = mentor.photoURL || user.photoURL || 'images/mentor-dashboard-illustration.png';
+        const field = mentor.field || mentor.expertise || mentor.mentoringField || 'Field not set';
+        const type = mentor.mentorType || 'Complete your mentor details';
+        const approved = mentorAccessApproved;
+
+        updateMentorHeroName(fullName);
+        setTextSafe('mentor-home-message', statusInfo.heroMessage);
+        setTextSafe('mentor-home-expertise', field);
+        const typeEl = document.getElementById('mentor-home-type');
+        if (typeEl) {
+            const label = typeEl.querySelector('span');
+            if (label) label.textContent = type;
+            else typeEl.textContent = type;
+        }
+        setTextSafe('mentor-modern-status-title', statusInfo.title);
+        setTextSafe('mentor-modern-status-description', statusInfo.description);
+        setTextSafe('mentor-modern-access', approved ? 'Active' : 'Locked');
+        setTextSafe('mentor-modern-access-note', approved ? `${connectedStudentCount()} connected students or pending requests` : 'Your mentoring features will be available after admin approval.');
+        toggleElementHidden('mentor-modern-access-action', !approved);
+        setTextSafe('mentor-info-banner-title', statusInfo.bannerTitle);
+        setTextSafe('mentor-info-banner-text', statusInfo.bannerText);
+        setTextSafe('mentor-application-card-notice-text', statusInfo.notice);
+
+        const modernAvatar = document.getElementById('mentor-home-photo');
+        if (modernAvatar) {
+            modernAvatar.src = photo;
+            modernAvatar.alt = `${fullName} profile`;
+            modernAvatar.onerror = () => {
+                modernAvatar.onerror = null;
+                modernAvatar.src = 'images/mentor-dashboard-illustration.png';
+            };
+        }
+
+        const modernBadge = document.getElementById('mentor-modern-status-badge');
+        if (modernBadge) {
+            modernBadge.textContent = statusInfo.badge;
+            modernBadge.className = `status-badge status-${status}`;
+        }
+
+        renderMentorHomeActions(status);
+        updateHeroAvailabilityMetric();
+        updateHeroNextSessionMetric();
+    }
+
+    function getMentorHeroStatusInfo(status) {
+        const approved = mentorAccessApproved;
+        const map = {
+            draft: {
+                title: 'Complete your mentor profile',
+                description: 'Add the missing professional details and submit your application.',
+                badge: 'Draft',
+                heroMessage: 'Your guidance can shape a student\'s future.',
+                notice: 'Complete your profile to begin the review process.',
+                bannerTitle: 'Complete your mentor profile to submit for review.',
+                bannerText: 'Add the required professional details, documents, and declarations before sending it to admin.',
+                primary: { label: 'Complete Profile', icon: 'fa-user-check', section: 'complete-profile' }
+            },
+            incomplete: {
+                title: 'Complete your mentor profile',
+                description: 'Add the missing professional details and submit your application.',
+                badge: 'Draft',
+                heroMessage: 'Finish your profile so students can find the right guidance.',
+                notice: 'Required details are still missing.',
+                bannerTitle: 'Your mentor profile needs a few more details.',
+                bannerText: 'Finish the required information so the admin team can review your application.',
+                primary: { label: 'Complete Profile', icon: 'fa-user-check', section: 'complete-profile' }
+            },
+            submitted: {
+                title: 'Application submitted',
+                description: 'Your mentor profile is waiting for admin review.',
+                badge: 'Submitted',
+                heroMessage: 'Your application is with the EduPath Lanka admin team.',
+                notice: 'You will be notified when the review begins.',
+                bannerTitle: 'Your mentor profile was submitted successfully.',
+                bannerText: 'Our admin team is reviewing your profile. You will be notified when there is an update.',
+                primary: { label: 'View Submitted Profile', icon: 'fa-file-lines', section: 'complete-profile' }
+            },
+            under_review: {
+                title: 'Application under review',
+                description: 'Your mentor profile is waiting for admin review.',
+                badge: 'Under Review',
+                heroMessage: 'You are almost ready to start guiding students.',
+                notice: 'You will be notified when the review begins.',
+                bannerTitle: 'Your mentor profile was submitted successfully.',
+                bannerText: 'Our admin team is reviewing your profile. You will receive a notification when there is an update.',
+                primary: { label: 'View Application', icon: 'fa-file-lines', section: 'complete-profile' }
+            },
+            changes_requested: {
+                title: 'Updates required',
+                description: mentorAdminFeedbackText() || 'Review the admin feedback, update your profile, and resubmit.',
+                badge: 'Changes Requested',
+                heroMessage: 'Update the requested details and send your profile back for review.',
+                notice: mentorAdminFeedbackText() || 'Update the requested information and resubmit.',
+                bannerTitle: 'Admin requested profile updates.',
+                bannerText: mentorAdminFeedbackText() || 'Review the feedback, update your mentor profile, and resubmit for review.',
+                primary: { label: 'Update Profile', icon: 'fa-pen-to-square', section: 'complete-profile' }
+            },
+            approved: {
+                title: 'Approved mentor',
+                description: 'Your profile is visible to students and mentoring features are active.',
+                badge: 'Approved',
+                heroMessage: 'Your guidance can shape a student\'s future.',
+                notice: 'Students can now discover your mentor profile.',
+                bannerTitle: 'Your mentoring access is active.',
+                bannerText: 'Review new student requests and keep your availability up to date.',
+                primary: { label: 'View Student Requests', icon: 'fa-user-clock', section: 'requests' }
+            },
+            rejected: {
+                title: 'Application requires attention',
+                description: mentorAdminFeedbackText() || 'View the admin decision and available next steps.',
+                badge: 'Rejected',
+                heroMessage: 'Review the decision and contact admin if you need help.',
+                notice: mentorAdminFeedbackText() || 'Contact admin if you need clarification.',
+                bannerTitle: 'Your application needs attention.',
+                bannerText: mentorAdminFeedbackText() || 'Review the admin decision and available next steps.',
+                primary: { label: 'View Decision', icon: 'fa-circle-exclamation', section: 'complete-profile' }
+            },
+            suspended: {
+                title: 'Mentoring temporarily unavailable',
+                description: 'Your mentoring access is currently suspended.',
+                badge: 'Suspended',
+                heroMessage: 'Please contact EduPath Lanka support for assistance.',
+                notice: 'Contact admin to resolve your account status.',
+                bannerTitle: 'Mentoring access is suspended.',
+                bannerText: 'Please contact EduPath Lanka support for assistance.',
+                primary: { label: 'Contact Admin', icon: 'fa-headset', section: 'support' }
+            }
+        };
+        return map[status] || (approved ? map.approved : map.draft);
+    }
+
+    function getProfileCompletionMessage(completion, approvalStatus, missingCount) {
+        if (completion >= 100 && approvalStatus === 'approved') {
+            return { title: 'Profile complete', description: 'Your approved profile is visible to students.' };
+        }
+        if (completion >= 100 && ['submitted', 'under_review'].includes(approvalStatus)) {
+            return { title: 'Profile submitted', description: 'Your profile is currently being reviewed.' };
+        }
+        if (completion >= 100) {
+            return { title: 'Profile complete', description: 'Submit your completed profile for admin review.' };
+        }
+        return {
+            title: 'Complete your profile',
+            description: `${missingCount} required ${missingCount === 1 ? 'detail is' : 'details are'} still missing.`
+        };
+    }
+
+    function configureHeroAction(id, config = {}) {
+        const button = document.getElementById(id);
+        if (!button) return;
+        button.classList.toggle('hidden', config.hidden === true);
+        button.dataset.sectionJump = config.section || 'dashboard-overview';
+        button.innerHTML = `<i class="fas ${config.icon || 'fa-arrow-right'}"></i> ${escapeHtml(config.label || 'Open')}`;
+    }
+
+    function renderMentorHomeActions(status) {
+        const actionsByStatus = {
+            draft: [
+                { label: 'Complete Profile', icon: 'fa-user-check', section: 'complete-profile' },
+                { label: 'Prepare Availability', icon: 'fa-calendar-plus', section: 'availability' }
+            ],
+            incomplete: [
+                { label: 'Complete Profile', icon: 'fa-user-check', section: 'complete-profile' },
+                { label: 'Prepare Availability', icon: 'fa-calendar-plus', section: 'availability' }
+            ],
+            submitted: [
+                { label: 'View Submitted Profile', icon: 'fa-file-lines', section: 'complete-profile' },
+                { label: 'Prepare Availability', icon: 'fa-calendar-plus', section: 'availability' }
+            ],
+            under_review: [
+                { label: 'View Submitted Profile', icon: 'fa-file-lines', section: 'complete-profile' },
+                { label: 'Prepare Availability', icon: 'fa-calendar-plus', section: 'availability' }
+            ],
+            changes_requested: [
+                { label: 'Update Profile', icon: 'fa-pen-to-square', section: 'complete-profile' },
+                { label: 'View Admin Feedback', icon: 'fa-comment-dots', section: 'complete-profile' }
+            ],
+            approved: [
+                { label: 'View Student Requests', icon: 'fa-user-plus', section: 'requests' },
+                { label: 'View Appointments', icon: 'fa-calendar-days', section: 'appointments' },
+                { label: 'Update Availability', icon: 'fa-calendar-plus', section: 'availability' }
+            ],
+            rejected: [
+                { label: 'View Decision', icon: 'fa-circle-exclamation', section: 'complete-profile' },
+                { label: 'Contact Admin', icon: 'fa-headset', section: 'support' }
+            ],
+            suspended: [
+                { label: 'Contact Admin', icon: 'fa-headset', section: 'support' }
+            ]
+        };
+        const actions = actionsByStatus[status] || actionsByStatus.draft;
+        ['mentor-home-primary-action', 'mentor-home-secondary-action', 'mentor-home-tertiary-action'].forEach((id, index) => {
+            configureHeroAction(id, actions[index] || { hidden: true });
+        });
+    }
+
+    function updateHeroAvailabilityMetric() {
+        const normalized = normalizeAvailability(mentorAvailability || currentMentorData || {});
+        const enabledDays = weekDays.filter((day) => normalized.availableDays[day]);
+        const labels = enabledDays.map(dayLabel);
+        setTextSafe('mentor-modern-availability', enabledDays.length ? `${enabledDays.length} ${enabledDays.length === 1 ? 'day' : 'days'} this week` : 'Set availability');
+        setTextSafe('mentor-modern-availability-note', labels.length ? labels.join(', ') : 'For when your profile is approved');
+    }
+
+    function updateHeroNextSessionMetric() {
+        const upcoming = Object.values(mentorAppointments || {})
+            .filter((item) => String(item.status || '').toLowerCase() === 'accepted')
+            .sort((a, b) => appointmentSortTime(a) - appointmentSortTime(b));
+        if (!mentorAccessApproved) {
+            setTextSafe('mentor-modern-next-session', 'Locked until approval');
+            setTextSafe('mentor-modern-next-session-note', 'Appointments open after approval');
+            toggleElementHidden('mentor-modern-session-action', true);
+            return;
+        }
+        if (!upcoming.length) {
+            setTextSafe('mentor-modern-next-session', 'No upcoming sessions');
+            setTextSafe('mentor-modern-next-session-note', 'Nothing scheduled yet');
+            toggleElementHidden('mentor-modern-session-action', false);
+            return;
+        }
+        setTextSafe('mentor-modern-next-session', `${upcoming[0].date || 'Next date'}, ${formatTimeLabel(upcoming[0].startTime)}`);
+        setTextSafe('mentor-modern-next-session-note', upcoming[0].studentName || 'Accepted session');
+        toggleElementHidden('mentor-modern-session-action', false);
+    }
+
+    function toggleElementHidden(id, hidden) {
+        document.getElementById(id)?.classList.toggle('hidden', hidden);
+    }
+
+    function connectedStudentCount() {
+        return Object.values(connectedStudents || {}).filter((item) => String(item.status || '').toLowerCase() === 'connected').length;
+    }
+
+    function mentorAdminFeedbackText() {
+        return currentMentorData.adminRequestedChanges || currentMentorData.adminReviewReason || currentMentorData.rejectionReason || '';
+    }
+
+    function arrayValue(value) {
+        return Array.isArray(value) ? value : String(value || '').split(',').map((item) => item.trim()).filter(Boolean);
     }
 
     const mentorRequiredFields = [
@@ -788,7 +1106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function saveMentorApplicationDraft() {
-        if (!currentUid) return;
+        if (!currentUid) return showToast('Your session has expired. Please log in again.', 'error');
         const payload = collectMentorApplicationPayload();
         const updates = {
             ...payload,
@@ -800,27 +1118,78 @@ document.addEventListener('DOMContentLoaded', () => {
             mentoringEnabled: false,
             updatedAt: serverTimestamp()
         };
-        await update(ref(database, `mentors/${currentUid}`), updates);
-        currentMentorData = { ...currentMentorData, ...updates };
-        renderMentorApplicationStatus(currentMentorData);
-        showToast('Your mentor profile draft has been saved.', 'success');
+        const button = document.getElementById('save-mentor-draft-btn');
+        const originalText = button?.innerHTML;
+        if (button) {
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+        }
+        try {
+            const batchUpdates = {};
+            Object.entries(updates).forEach(([key, value]) => {
+                if (value !== undefined && value !== null) batchUpdates[`mentors/${currentUid}/${key}`] = value;
+            });
+            Object.entries({
+                mentorUid: currentUid,
+                ...payload,
+                profileStatus: updates.profileStatus,
+                approvalStatus: 'draft',
+                applicationStatus: 'draft',
+                updatedAt: serverTimestamp()
+            }).forEach(([key, value]) => {
+                if (value !== undefined && value !== null) batchUpdates[`mentorApplications/${currentUid}/${key}`] = value;
+            });
+            ['cvURL', 'qualificationDocumentURL', 'experienceProofURL', 'professionalCertificateURL'].forEach((key) => {
+                batchUpdates[`mentorPrivate/${currentUid}/${key}`] = payload[key] || '';
+            });
+            batchUpdates[`mentorPrivate/${currentUid}/mentorUid`] = currentUid;
+            batchUpdates[`mentorPrivate/${currentUid}/updatedAt`] = serverTimestamp();
+            await update(ref(database), batchUpdates);
+            currentMentorData = { ...currentMentorData, ...updates };
+            renderMentorApplicationStatus(currentMentorData);
+            renderMentorHero();
+            showMentorApplicationFeedback('Your mentor profile draft has been saved.', 'success');
+            showToast('Your mentor profile draft has been saved.', 'success');
+        } catch (error) {
+            console.error('Mentor draft save failed:', error);
+            showMentorApplicationFeedback(friendlyFirebaseError(error), 'error');
+            showToast(friendlyFirebaseError(error), 'error');
+        } finally {
+            if (button) {
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }
     }
 
     async function submitMentorApplication(event) {
         event.preventDefault();
-        if (!currentUid) return;
+        const submitButton = document.getElementById('submit-mentor-application-btn');
+        if (submitButton?.dataset.submitting === 'true') return;
+        const originalText = submitButton?.innerHTML;
+        if (submitButton) {
+            submitButton.dataset.submitting = 'true';
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        }
+        try {
+        const user = auth.currentUser;
+        if (!currentUid || !user) throw new Error('Your session has expired. Please log in again.');
         const payload = collectMentorApplicationPayload();
         const result = calculateMentorApplicationCompletion(payload);
         if (result.missing.length) {
             renderApplicationMissingFields(result.missing);
+            focusFirstMentorApplicationField(result.missing[0]);
+            showMentorApplicationFeedback('Please complete all required mentor profile details before submitting.', 'error');
             showToast('Complete all required mentor application fields before submitting.', 'error');
             return;
         }
-        const notificationRef = push(ref(database, 'adminNotifications'));
+        const notificationRef = push(ref(database, 'notifications/admin'));
         const historyRef = push(ref(database, `mentorApplicationHistory/${currentUid}`));
         const updates = {};
-        updates[`mentors/${currentUid}`] = {
-            ...currentMentorData,
+        const submittedAt = currentMentorData.submittedAt || serverTimestamp();
+        const resubmittedAt = currentMentorData.submittedAt ? serverTimestamp() : null;
+        const mentorUpdates = {
             ...payload,
             profileStatus: 'completed',
             approvalStatus: 'submitted',
@@ -828,24 +1197,54 @@ document.addEventListener('DOMContentLoaded', () => {
             status: 'pending',
             publicVisibility: false,
             mentoringEnabled: false,
-            submittedAt: currentMentorData.submittedAt || serverTimestamp(),
-            resubmittedAt: currentMentorData.submittedAt ? serverTimestamp() : null,
+            submittedAt,
+            resubmittedAt,
             adminReviewReason: '',
             adminRequestedChanges: '',
             updatedAt: serverTimestamp()
         };
+        Object.entries(mentorUpdates).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) updates[`mentors/${currentUid}/${key}`] = value;
+        });
+        Object.entries({
+            mentorUid: currentUid,
+            ...payload,
+            profileStatus: 'completed',
+            approvalStatus: 'submitted',
+            applicationStatus: 'submitted',
+            submittedAt,
+            resubmittedAt,
+            updatedAt: serverTimestamp()
+        }).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) updates[`mentorApplications/${currentUid}/${key}`] = value;
+        });
+        ['cvURL', 'qualificationDocumentURL', 'experienceProofURL', 'professionalCertificateURL'].forEach((key) => {
+            updates[`mentorPrivate/${currentUid}/${key}`] = payload[key] || '';
+        });
+        updates[`mentorPrivate/${currentUid}/mentorUid`] = currentUid;
+        updates[`mentorPrivate/${currentUid}/updatedAt`] = serverTimestamp();
         updates[`users/${currentUid}/fullName`] = payload.fullName;
         updates[`users/${currentUid}/phone`] = payload.phone;
         updates[`users/${currentUid}/photoURL`] = payload.photoURL;
         updates[`users/${currentUid}/mentorStatus`] = 'submitted';
         updates[`users/${currentUid}/updatedAt`] = serverTimestamp();
-        updates[`adminNotifications/${notificationRef.key}`] = {
+        updates[`notifications/admin/${notificationRef.key}`] = {
             notificationId: notificationRef.key,
+            targetUserUid: 'admin',
+            targetRole: 'admin',
+            senderUid: currentUid,
+            senderRole: 'mentor',
             type: 'mentor_application_submitted',
             title: 'New mentor application',
             message: `${payload.fullName || 'A mentor'} submitted a mentor profile for review.`,
+            relatedEntityType: 'mentorApplication',
+            relatedEntityId: currentUid,
             mentorUid: currentUid,
+            targetPage: 'admin-dashboard.html',
+            targetSection: 'mentor-approvals',
+            targetQuery: { mentorUid: currentUid },
             read: false,
+            status: 'unread',
             createdAt: serverTimestamp()
         };
         updates[`mentorApplicationHistory/${currentUid}/${historyRef.key}`] = {
@@ -859,18 +1258,63 @@ document.addEventListener('DOMContentLoaded', () => {
             createdAt: serverTimestamp()
         };
         await update(ref(database), updates);
-        currentMentorData = updates[`mentors/${currentUid}`];
+        currentMentorData = { ...currentMentorData, ...mentorUpdates };
         mentorAccessApproved = false;
         renderMentorApplicationStatus(currentMentorData);
         applyMentorAccessGate();
+        renderMentorHero();
         showApplicationFirst();
+        showMentorApplicationFeedback('Your mentor application was submitted successfully. You will be notified after admin review.', 'success');
         showToast('Your mentor application was submitted successfully. The EduPath Lanka admin team will review it.', 'success');
+        } catch (error) {
+            console.error('Mentor application submission failed:', error);
+            const message = friendlyFirebaseError(error);
+            showMentorApplicationFeedback(message, 'error');
+            showToast(message, 'error');
+        } finally {
+            if (submitButton) {
+                submitButton.dataset.submitting = 'false';
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalText;
+            }
+        }
     }
 
     function renderApplicationMissingFields(missing = calculateMentorApplicationCompletion().missing) {
         const target = document.getElementById('mentor-application-missing');
         if (!target) return;
         target.innerHTML = missing.length ? `<strong>Missing required fields:</strong><span>${missing.map((key) => escapeHtml(key.replace(/([A-Z])/g, ' $1'))).join(', ')}</span>` : '<span class="text-success">All required fields are complete.</span>';
+    }
+
+    function showMentorApplicationFeedback(message, type = 'info') {
+        const target = document.getElementById('mentor-application-missing');
+        if (!target) return;
+        target.innerHTML = `<div class="mentor-form-feedback ${escapeHtml(type)}">${escapeHtml(message)}</div>`;
+        target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function friendlyFirebaseError(error) {
+        const message = String(error?.message || error || '');
+        if (message.includes('PERMISSION_DENIED') || message.includes('permission_denied')) {
+            return 'Firebase permissions blocked one submit path. Refresh the page and try again after the updated rules are deployed.';
+        }
+        if (message.includes('session has expired')) return message;
+        if (message.includes('network')) return 'Network connection failed. Please check your internet and try again.';
+        return message || 'Something went wrong. Please try again.';
+    }
+
+    function focusFirstMentorApplicationField(key) {
+        const groupMap = {
+            preferredLanguages: 'preferredLanguages',
+            guidanceAreas: 'guidanceAreas',
+            studentLevelsSupported: 'studentLevelsSupported',
+            streamsSupported: 'streamsSupported'
+        };
+        const checkboxGroup = groupMap[key] ? document.querySelector(`[data-checkbox-group="${groupMap[key]}"]`) : null;
+        const field = document.getElementById(`mentor-app-${key}`) || checkboxGroup;
+        field?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        field?.querySelector?.('input')?.focus?.();
+        field?.focus?.();
     }
 
     function appValue(key) {
@@ -891,15 +1335,484 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll(`[data-checkbox-group="${group}"] input`).forEach((input) => { input.checked = selected.has(input.value); });
     }
 
+    const approvedProfileArrayFields = ['preferredLanguages', 'guidanceAreas', 'studentLevelsSupported', 'streamsSupported'];
+    const approvedProfileEditableFields = [
+        'fullName', 'phone', 'district', 'city', 'preferredLanguages',
+        'mentorType', 'field', 'currentPosition', 'organization', 'highestQualification', 'studyArea',
+        'yearsOfExperience', 'professionalMembership', 'linkedInURL', 'portfolioURL',
+        'guidanceAreas', 'studentLevelsSupported', 'streamsSupported', 'mentoringMode', 'maxStudents',
+        'bio', 'whyMentor', 'studentExpectation', 'photoURL'
+    ];
+    const criticalProfileFields = [
+        'mentorType', 'field', 'expertise', 'currentPosition', 'organization', 'highestQualification',
+        'studyArea', 'yearsOfExperience', 'qualificationDocumentURL', 'experienceProofURL',
+        'professionalCertificateURL'
+    ];
+
+    function handleApprovedProfileClick(event) {
+        const button = event.target.closest('[data-approved-profile-action]');
+        if (!button) return;
+        const action = button.dataset.approvedProfileAction;
+        if (action === 'edit') renderApprovedMentorProfile(true);
+        if (action === 'cancel') renderApprovedMentorProfile(false);
+        if (action === 'photo') document.getElementById('approved-profile-photo-file')?.click();
+        if (action === 'password') renderApprovedPasswordModal();
+        if (action === 'public') window.open(`mentor-profile.html?mentorUid=${encodeURIComponent(currentUid || '')}`, '_blank', 'noopener');
+    }
+
+    function handleApprovedProfileChange(event) {
+        if (event.target?.id !== 'approved-profile-photo-file') return;
+        validateApprovedProfilePhoto(event.target.files?.[0]);
+    }
+
+    function handleApprovedProfileSubmit(event) {
+        if (event.target?.id === 'approved-profile-form') {
+            event.preventDefault();
+            saveApprovedMentorProfile(event.target);
+        }
+        if (event.target?.id === 'approved-password-form') {
+            event.preventDefault();
+            changeApprovedMentorPassword(event.target);
+        }
+    }
+
+    function approvedProfileData() {
+        return {
+            ...currentUserData,
+            ...currentMentorData,
+            email: currentMentorData.email || currentUserData.email || auth.currentUser?.email || '',
+            fullName: currentMentorData.fullName || currentUserData.fullName || '',
+            phone: currentMentorData.phone || currentUserData.phone || '',
+            photoURL: currentMentorData.photoURL || currentUserData.photoURL || ''
+        };
+    }
+
+    function renderApprovedMentorProfile(editing = false) {
+        const root = document.getElementById('approved-mentor-profile-root');
+        if (!root) return;
+        const data = approvedProfileData();
+        if (!mentorAccessApproved) {
+            root.innerHTML = `
+                <div class="section-header">
+                    <h2>My Profile</h2>
+                    <p class="section-desc">Complete your mentor application before your approved profile becomes active.</p>
+                </div>
+                <div class="mentor-profile-readonly-card glass">
+                    <h3>Profile Application</h3>
+                    <p>Your editable application is available in Complete Profile until admin approval.</p>
+                    <button class="btn btn-primary" type="button" data-section-jump="complete-profile"><i class="fas fa-clipboard-check"></i> Complete Profile</button>
+                </div>`;
+            return;
+        }
+        root.innerHTML = editing ? approvedProfileEditHtml(data) : approvedProfileReadOnlyHtml(data);
+    }
+
+    function approvedProfileReadOnlyHtml(data) {
+        return `
+            <header class="approved-profile-header glass">
+                <div class="approved-profile-photo">
+                    <img src="${escapeHtml(data.photoURL || 'images/mentor-dashboard-illustration.png')}" alt="${escapeHtml(data.fullName || 'Mentor')} profile" onerror="this.src='images/mentor-dashboard-illustration.png'">
+                </div>
+                <div class="approved-profile-identity">
+                    <span class="status-badge status-approved">Approved Mentor</span>
+                    <h2>${escapeHtml(data.fullName || 'Mentor')}</h2>
+                    <p>${escapeHtml(data.field || data.expertise || 'Field not set')}</p>
+                    <small>${escapeHtml(data.currentPosition || data.currentRole || 'Position not set')}${data.organization || data.universityOrCompany ? ` at ${escapeHtml(data.organization || data.universityOrCompany)}` : ''}</small>
+                </div>
+                <div class="approved-profile-actions">
+                    <button class="btn btn-primary" type="button" data-approved-profile-action="edit"><i class="fas fa-pen"></i> Edit Profile</button>
+                    <button class="btn btn-outline" type="button" data-approved-profile-action="public"><i class="fas fa-eye"></i> View Public Profile</button>
+                </div>
+            </header>
+            <div class="approved-profile-grid">
+                <main class="approved-profile-main">
+                    ${approvedProfileCard('Personal Information', [
+                        ['Full Name', data.fullName], ['Email', data.email], ['Phone', data.phone], ['District', data.district], ['City', data.city]
+                    ], [['Preferred Languages', data.preferredLanguages]])}
+                    ${approvedProfileCard('Professional Background', [
+                        ['Mentor Type', data.mentorType], ['Field / Expertise', data.field || data.expertise], ['Current Position', data.currentPosition || data.currentRole],
+                        ['Organization', data.organization || data.universityOrCompany], ['Highest Qualification', data.highestQualification], ['Study Area', data.studyArea],
+                        ['Years of Experience', data.yearsOfExperience || data.experience], ['Professional Membership', data.professionalMembership],
+                        ['LinkedIn', data.linkedInURL], ['Portfolio', data.portfolioURL]
+                    ])}
+                    ${approvedProfileCard('Mentoring Preferences', [
+                        ['Mentoring Mode', data.mentoringMode], ['Maximum Students', data.maxStudents]
+                    ], [
+                        ['Guidance Areas', data.guidanceAreas], ['Student Levels', data.studentLevelsSupported], ['Streams', data.streamsSupported]
+                    ])}
+                    ${approvedProfileCard('Biography and Expectations', [
+                        ['Biography', data.bio], ['Why Mentor', data.whyMentor], ['Student Expectations', data.studentExpectation]
+                    ])}
+                </main>
+                <aside class="approved-profile-side">
+                    <section class="mentor-profile-readonly-card glass">
+                        <h3>Account and Security</h3>
+                        ${profileDetail('Email', data.email)}
+                        ${profileDetail('Password Updated', data.passwordUpdatedAt ? formatDateTime(data.passwordUpdatedAt) : 'Not recorded')}
+                        <button class="btn btn-outline" type="button" data-approved-profile-action="password"><i class="fas fa-lock"></i> Change Password</button>
+                    </section>
+                    <section class="mentor-profile-readonly-card glass">
+                        <h3>Profile Photo</h3>
+                        <p>Use Edit Profile to update your public mentor photo URL.</p>
+                        <button class="btn btn-outline" type="button" data-approved-profile-action="edit"><i class="fas fa-image"></i> Change Profile Photo</button>
+                    </section>
+                    <section class="mentor-profile-readonly-card glass">
+                        <h3>Verification Status</h3>
+                        ${profileDetail('Status', 'Approved')}
+                        ${profileDetail('Visibility', data.publicVisibility === false ? 'Hidden' : 'Visible to students')}
+                        ${profileDetail('Last Updated', data.profileUpdatedAt || data.updatedAt ? formatDateTime(data.profileUpdatedAt || data.updatedAt) : 'Not recorded')}
+                    </section>
+                    <section class="mentor-profile-readonly-card glass">
+                        <h3>Documents</h3>
+                        ${documentStatusRow('CV', data.cvURL)}
+                        ${documentStatusRow('Qualification Document', data.qualificationDocumentURL)}
+                        ${documentStatusRow('Experience Proof', data.experienceProofURL)}
+                        ${documentStatusRow('Professional Certificate', data.professionalCertificateURL)}
+                    </section>
+                </aside>
+            </div>`;
+    }
+
+    function approvedProfileCard(title, details = [], tagRows = []) {
+        return `<section class="mentor-profile-readonly-card glass"><h3>${escapeHtml(title)}</h3><div class="approved-detail-grid">${details.map(([label, value]) => profileDetail(label, value)).join('')}</div>${tagRows.map(([label, values]) => profileTagRow(label, values)).join('')}</section>`;
+    }
+
+    function profileDetail(label, value) {
+        return `<div class="mentor-profile-detail"><span class="detail-label">${escapeHtml(label)}</span><strong class="detail-value">${escapeHtml(displayVal(value || 'Not provided'))}</strong></div>`;
+    }
+
+    function profileTagRow(label, values) {
+        const rows = arrayValue(values);
+        return `<div class="mentor-profile-tags-row"><span class="detail-label">${escapeHtml(label)}</span><div class="mentor-profile-tags">${rows.length ? rows.map((item) => `<span>${escapeHtml(item)}</span>`).join('') : '<span>Not provided</span>'}</div></div>`;
+    }
+
+    function documentStatusRow(label, url) {
+        return `<div class="mentor-doc-status"><span>${escapeHtml(label)}</span><strong>${url ? 'Submitted' : 'Not submitted'}</strong>${url ? `<a class="btn btn-outline btn-sm" href="${escapeHtml(url)}" target="_blank" rel="noopener">View</a>` : ''}</div>`;
+    }
+
+    function approvedProfileEditHtml(data) {
+        const languageOptions = ['Sinhala', 'English', 'Tamil'];
+        const guidanceOptions = ['Course Selection', 'Career Planning', 'Skill Development', 'CV Preparation', 'Interview Preparation', 'Scholarship Guidance', 'Industry Knowledge'];
+        const levelOptions = ['After O/L', 'After A/L', 'Diploma Students', 'Undergraduates', 'Graduates', 'Career Changers'];
+        const streamOptions = ['Information Technology', 'Engineering', 'Science', 'Commerce', 'Arts', 'Health Sciences', 'Entrepreneurship'];
+        return `
+            <form id="approved-profile-form" class="approved-profile-edit glass" novalidate>
+                <div class="approved-profile-edit-head">
+                    <div>
+                        <h2>Edit My Profile</h2>
+                        <p>Update approved profile details without submitting a new mentor application.</p>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-outline" type="button" data-approved-profile-action="cancel">Cancel</button>
+                        <button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> Save Changes</button>
+                    </div>
+                </div>
+                <div id="approved-profile-errors" class="missing-fields"></div>
+                <fieldset><legend>Personal Information</legend><div class="grid-form">
+                    ${profileInput('fullName', 'Full Name *', data.fullName)}
+                    ${profileInput('email', 'Email', data.email, 'email', true)}
+                    ${profileInput('phone', 'Phone *', data.phone)}
+                    ${profileInput('district', 'District *', data.district)}
+                    ${profileInput('city', 'City', data.city)}
+                    ${profileInput('photoURL', 'Profile Photo URL', data.photoURL)}
+                    <div class="form-group full-width"><label>Preferred Languages *</label>${profileCheckboxes('preferredLanguages', languageOptions, data.preferredLanguages)}</div>
+                    <div class="form-group full-width"><button class="btn btn-outline btn-sm" type="button" data-approved-profile-action="photo"><i class="fas fa-image"></i> Preview Image File</button><input id="approved-profile-photo-file" type="file" accept="image/jpeg,image/png,image/webp" hidden><small id="approved-profile-photo-feedback">JPEG, PNG, or WebP. Maximum 5 MB. File preview does not upload until storage is configured.</small></div>
+                </div></fieldset>
+                <fieldset><legend>Professional Background</legend><div class="grid-form">
+                    ${profileSelect('mentorType', 'Mentor Type *', ['Industry Professional', 'Academic', 'Engineer', 'Healthcare Professional', 'Entrepreneur', 'Career Counselor', 'Skilled Professional', 'Other'], data.mentorType)}
+                    ${profileInput('field', 'Field / Expertise *', data.field || data.expertise)}
+                    ${profileInput('currentPosition', 'Current Position *', data.currentPosition || data.currentRole)}
+                    ${profileInput('organization', 'Organization *', data.organization || data.universityOrCompany)}
+                    ${profileInput('highestQualification', 'Highest Qualification *', data.highestQualification)}
+                    ${profileInput('studyArea', 'Study Area *', data.studyArea)}
+                    ${profileInput('yearsOfExperience', 'Years of Experience *', data.yearsOfExperience || data.experience, 'number')}
+                    ${profileInput('professionalMembership', 'Professional Membership', data.professionalMembership)}
+                    ${profileInput('linkedInURL', 'LinkedIn URL', data.linkedInURL, 'url')}
+                    ${profileInput('portfolioURL', 'Portfolio URL', data.portfolioURL, 'url')}
+                </div></fieldset>
+                <fieldset><legend>Mentoring Preferences</legend><div class="grid-form">
+                    <div class="form-group full-width"><label>Guidance Areas *</label>${profileCheckboxes('guidanceAreas', guidanceOptions, data.guidanceAreas)}</div>
+                    <div class="form-group full-width"><label>Student Levels Supported *</label>${profileCheckboxes('studentLevelsSupported', levelOptions, data.studentLevelsSupported)}</div>
+                    <div class="form-group full-width"><label>Streams Supported *</label>${profileCheckboxes('streamsSupported', streamOptions, data.streamsSupported)}</div>
+                    ${profileSelect('mentoringMode', 'Mentoring Mode *', ['Online', 'Physical', 'Hybrid'], data.mentoringMode)}
+                    ${profileInput('maxStudents', 'Maximum Students *', data.maxStudents, 'number')}
+                    ${profileTextarea('bio', 'Short Biography *', data.bio, 4)}
+                    ${profileTextarea('whyMentor', 'Why Mentor *', data.whyMentor, 3)}
+                    ${profileTextarea('studentExpectation', 'Student Expectations *', data.studentExpectation, 3)}
+                </div></fieldset>
+            </form>`;
+    }
+
+    function profileInput(name, label, value = '', type = 'text', readonly = false) {
+        return `<div class="form-group"><label for="approved-profile-${name}">${escapeHtml(label)}</label><input id="approved-profile-${name}" name="${escapeHtml(name)}" class="form-control" type="${escapeHtml(type)}" value="${escapeHtml(value || '')}" ${readonly ? 'readonly' : ''}></div>`;
+    }
+
+    function profileTextarea(name, label, value = '', rows = 3) {
+        return `<div class="form-group full-width"><label for="approved-profile-${name}">${escapeHtml(label)}</label><textarea id="approved-profile-${name}" name="${escapeHtml(name)}" class="form-control" rows="${rows}">${escapeHtml(value || '')}</textarea></div>`;
+    }
+
+    function profileSelect(name, label, options, value = '') {
+        return `<div class="form-group"><label for="approved-profile-${name}">${escapeHtml(label)}</label><select id="approved-profile-${name}" name="${escapeHtml(name)}" class="form-control"><option value="">Select</option>${options.map((option) => `<option value="${escapeHtml(option)}" ${String(value || '') === option ? 'selected' : ''}>${escapeHtml(option)}</option>`).join('')}</select></div>`;
+    }
+
+    function profileCheckboxes(name, options, values = []) {
+        const selected = new Set(arrayValue(values));
+        return `<div class="check-grid" data-approved-checkbox-group="${escapeHtml(name)}">${options.map((option) => `<label><input type="checkbox" value="${escapeHtml(option)}" ${selected.has(option) ? 'checked' : ''}> ${escapeHtml(option)}</label>`).join('')}</div>`;
+    }
+
+    function collectApprovedProfileForm(form) {
+        const data = {};
+        approvedProfileEditableFields.forEach((field) => {
+            if (approvedProfileArrayFields.includes(field)) {
+                data[field] = [...form.querySelectorAll(`[data-approved-checkbox-group="${field}"] input:checked`)].map((input) => input.value);
+            } else {
+                data[field] = String(form.elements[field]?.value || '').trim();
+            }
+        });
+        data.expertise = data.field;
+        data.currentRole = data.currentPosition;
+        data.universityOrCompany = data.organization;
+        data.experience = data.yearsOfExperience;
+        return data;
+    }
+
+    function validateApprovedProfile(data) {
+        const errors = [];
+        const textLength = (key, label, min, max) => {
+            const length = String(data[key] || '').trim().length;
+            if (length < min || length > max) errors.push(`${label} must be ${min}-${max} characters.`);
+        };
+        textLength('fullName', 'Full name', 2, 100);
+        if (!/^(\+94|0)?7\d{8}$/.test(data.phone.replace(/\s+/g, ''))) errors.push('Phone must be a valid Sri Lankan mobile number.');
+        ['district', 'field', 'currentPosition', 'organization', 'highestQualification', 'studyArea', 'mentoringMode'].forEach((key) => {
+            if (!String(data[key] || '').trim()) errors.push(`${formatCategoryLabel(key)} is required.`);
+        });
+        if (!data.preferredLanguages.length) errors.push('Select at least one preferred language.');
+        if (!data.guidanceAreas.length) errors.push('Select at least one guidance area.');
+        if (!data.studentLevelsSupported.length) errors.push('Select at least one student level.');
+        if (!data.streamsSupported.length) errors.push('Select at least one stream.');
+        const years = Number(data.yearsOfExperience);
+        if (!Number.isFinite(years) || years < 0 || years > 60) errors.push('Years of experience must be between 0 and 60.');
+        const maxStudents = Number(data.maxStudents);
+        if (!Number.isFinite(maxStudents) || maxStudents < 1 || maxStudents > 100) errors.push('Maximum students must be between 1 and 100.');
+        textLength('bio', 'Biography', 30, 1500);
+        textLength('whyMentor', 'Why mentor', 20, 1000);
+        textLength('studentExpectation', 'Student expectations', 20, 1000);
+        ['linkedInURL', 'portfolioURL'].forEach((key) => {
+            if (data[key] && !/^https:\/\/\S+\.\S+/.test(data[key])) errors.push(`${formatCategoryLabel(key)} must be a valid HTTPS URL.`);
+        });
+        if (data.photoURL && !/^(https?:\/\/|images\/|\.\/|\/)/.test(data.photoURL)) errors.push('Profile photo must be a valid URL or project image path.');
+        return errors;
+    }
+
+    function buildProfileChanges(oldData, newData) {
+        const changedFields = {};
+        const previousValues = {};
+        const newValues = {};
+        approvedProfileEditableFields.forEach((field) => {
+            const previous = oldData[field] ?? oldData[aliasKey(field)] ?? '';
+            const next = newData[field] ?? '';
+            if (normalizeComparable(previous) !== normalizeComparable(next)) {
+                changedFields[field] = true;
+                previousValues[field] = previous;
+                newValues[field] = next;
+            }
+        });
+        return { changedFields, previousValues, newValues };
+    }
+
+    async function saveApprovedMentorProfile(form) {
+        if (!currentUid || !mentorAccessApproved) return showToast('Approved profile updates are available after admin approval.', 'error');
+        const sanitized = collectApprovedProfileForm(form);
+        const errors = validateApprovedProfile(sanitized);
+        const errorBox = document.getElementById('approved-profile-errors');
+        if (errors.length) {
+            if (errorBox) errorBox.innerHTML = `<div class="mentor-form-feedback error">${errors.map(escapeHtml).join('<br>')}</div>`;
+            const firstField = form.querySelector('.form-control:not([readonly])');
+            firstField?.focus();
+            showToast('Please fix the highlighted profile fields.', 'error');
+            return;
+        }
+        const previous = approvedProfileData();
+        const { changedFields, previousValues, newValues } = buildProfileChanges(previous, sanitized);
+        if (!Object.keys(changedFields).length) {
+            showToast('No profile changes to save.', 'info');
+            renderApprovedMentorProfile(false);
+            return;
+        }
+        const requiresAdminReview = Object.keys(changedFields).some((field) => criticalProfileFields.includes(field));
+        const changeRef = push(ref(database, `mentorProfileChanges/${currentUid}`));
+        const notificationRef = push(ref(database, 'notifications/admin'));
+        const logRef = push(ref(database, 'activityLogs'));
+        const mentorRecord = {
+            ...currentMentorData,
+            ...sanitized,
+            approvalStatus: 'approved',
+            applicationStatus: 'approved',
+            status: 'approved',
+            accountStatus: 'active',
+            publicVisibility: currentMentorData.publicVisibility !== false,
+            mentoringEnabled: currentMentorData.mentoringEnabled !== false,
+            profileUpdatedAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            updatedBy: currentUid
+        };
+        const updates = {
+            [`users/${currentUid}/fullName`]: sanitized.fullName,
+            [`users/${currentUid}/phone`]: sanitized.phone,
+            [`users/${currentUid}/photoURL`]: sanitized.photoURL,
+            [`users/${currentUid}/updatedAt`]: serverTimestamp(),
+            [`mentors/${currentUid}`]: mentorRecord,
+            [`mentorProfileChanges/${currentUid}/${changeRef.key}`]: {
+                changeId: changeRef.key,
+                mentorUid: currentUid,
+                mentorName: sanitized.fullName,
+                changedFields,
+                previousValues,
+                newValues,
+                requiresAdminReview,
+                status: 'recorded',
+                createdAt: serverTimestamp()
+            },
+            [`notifications/admin/${notificationRef.key}`]: {
+                notificationId: notificationRef.key,
+                type: 'approved_mentor_profile_updated',
+                title: 'Approved Mentor Updated Profile',
+                message: `${sanitized.fullName || 'A mentor'} updated mentor profile details.`,
+                targetUserUid: 'admin',
+                targetRole: 'admin',
+                senderUid: currentUid,
+                senderRole: 'mentor',
+                relatedEntityType: 'mentor_profile_update',
+                relatedEntityId: changeRef.key,
+                mentorUid: currentUid,
+                changeId: changeRef.key,
+                targetPage: 'admin-dashboard.html',
+                targetSection: 'mentor-profile-updates',
+                targetQuery: { mentorUid: currentUid, changeId: changeRef.key },
+                read: false,
+                status: 'unread',
+                createdAt: serverTimestamp()
+            },
+            [`activityLogs/${logRef.key}`]: {
+                logId: logRef.key,
+                action: 'approved_mentor_profile_updated',
+                entityType: 'mentor',
+                entityId: currentUid,
+                actorUid: currentUid,
+                actorRole: 'mentor',
+                changedFields,
+                requiresAdminReview,
+                createdAt: serverTimestamp()
+            }
+        };
+        try {
+            await update(ref(database), updates);
+            currentUserData = { ...currentUserData, fullName: sanitized.fullName, phone: sanitized.phone, photoURL: sanitized.photoURL };
+            currentMentorData = { ...currentMentorData, ...mentorRecord };
+            updateSidebarUser({ fullName: sanitized.fullName, role: 'mentor', photoURL: sanitized.photoURL });
+            renderMentorHero();
+            renderApprovedMentorProfile(false);
+            showToast(requiresAdminReview ? 'Profile saved. Admin was notified about critical changes.' : 'Profile saved successfully.', 'success');
+        } catch (error) {
+            console.error('Approved mentor profile update failed:', error);
+            if (errorBox) errorBox.innerHTML = `<div class="mentor-form-feedback error">${escapeHtml(friendlyFirebaseError(error))}</div>`;
+            showToast(friendlyFirebaseError(error), 'error');
+        }
+    }
+
+    function validateApprovedProfilePhoto(file) {
+        const feedback = document.getElementById('approved-profile-photo-feedback');
+        if (!file) return;
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            if (feedback) feedback.textContent = 'Invalid image type. Use JPEG, PNG, or WebP.';
+            showToast('Invalid image type. Use JPEG, PNG, or WebP.', 'error');
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            if (feedback) feedback.textContent = 'Image is too large. Maximum size is 5 MB.';
+            showToast('Image is too large. Maximum size is 5 MB.', 'error');
+            return;
+        }
+        if (feedback) feedback.textContent = `${file.name} selected for preview. Add the uploaded image URL in Profile Photo URL to save it.`;
+        showToast('Image validated. Upload storage is not configured in this project, so save the uploaded URL.', 'info');
+    }
+
+    function renderApprovedPasswordModal() {
+        const isPasswordUser = auth.currentUser?.providerData?.some((provider) => provider.providerId === 'password');
+        let modal = document.getElementById('approved-password-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'approved-password-modal';
+            modal.className = 'modal-overlay';
+            document.body.appendChild(modal);
+        }
+        modal.innerHTML = `
+            <div class="modal-card appointment-detail-modal">
+                <div class="modal-header">
+                    <h3>Change Password</h3>
+                    <button type="button" class="modal-close" aria-label="Close">&times;</button>
+                </div>
+                ${isPasswordUser ? `
+                    <form id="approved-password-form" class="modal-body">
+                        <div id="approved-password-errors" class="missing-fields"></div>
+                        <div class="form-group"><label>Current Password</label><input name="currentPassword" class="form-control" type="password" autocomplete="current-password" required></div>
+                        <div class="form-group"><label>New Password</label><input name="newPassword" class="form-control" type="password" autocomplete="new-password" required></div>
+                        <div class="form-group"><label>Confirm New Password</label><input name="confirmPassword" class="form-control" type="password" autocomplete="new-password" required></div>
+                        <div class="form-actions"><button class="btn btn-outline" type="button" data-modal-close>Cancel</button><button class="btn btn-primary" type="submit">Update Password</button></div>
+                    </form>` : `<p>Password changes are managed by your sign-in provider.</p>`}
+            </div>`;
+        modal.classList.remove('hidden');
+        modal.querySelector('.modal-close')?.addEventListener('click', () => modal.classList.add('hidden'));
+        modal.querySelector('[data-modal-close]')?.addEventListener('click', () => modal.classList.add('hidden'));
+    }
+
+    async function changeApprovedMentorPassword(form) {
+        const currentPassword = form.elements.currentPassword?.value || '';
+        const newPassword = form.elements.newPassword?.value || '';
+        const confirmPassword = form.elements.confirmPassword?.value || '';
+        const errors = [];
+        if (!currentPassword) errors.push('Current password is required.');
+        if (newPassword.length < 8 || !/[A-Z]/.test(newPassword) || !/[a-z]/.test(newPassword) || !/\d/.test(newPassword) || !/[^A-Za-z0-9]/.test(newPassword)) errors.push('New password must be at least 8 characters and include uppercase, lowercase, number, and special character.');
+        if (newPassword !== confirmPassword) errors.push('Confirm password must match.');
+        if (currentPassword && newPassword && currentPassword === newPassword) errors.push('New password must be different from current password.');
+        const errorBox = document.getElementById('approved-password-errors');
+        if (errors.length) {
+            if (errorBox) errorBox.innerHTML = `<div class="mentor-form-feedback error">${errors.map(escapeHtml).join('<br>')}</div>`;
+            return;
+        }
+        try {
+            const user = auth.currentUser;
+            const credential = EmailAuthProvider.credential(user.email, currentPassword);
+            await reauthenticateWithCredential(user, credential);
+            await updatePassword(user, newPassword);
+            await update(ref(database), {
+                [`users/${currentUid}/passwordUpdatedAt`]: serverTimestamp(),
+                [`mentors/${currentUid}/passwordUpdatedAt`]: serverTimestamp()
+            });
+            document.getElementById('approved-password-modal')?.classList.add('hidden');
+            showToast('Password updated successfully.', 'success');
+        } catch (error) {
+            console.error('Password update failed:', error);
+            if (errorBox) errorBox.innerHTML = `<div class="mentor-form-feedback error">${escapeHtml(friendlyFirebaseError(error))}</div>`;
+        }
+    }
+
     function setupSectionNavigation() {
         const navLinks = document.querySelectorAll('.sidebar-links a[data-section]');
         const sections = document.querySelectorAll('.dashboard-section');
 
         function showSection(sectionId) {
             if (!sectionId) return;
+            if (mentorAccessApproved && sectionId === 'complete-profile') {
+                sectionId = 'my-profile';
+                if (window.location.hash === '#complete-profile') {
+                    history.replaceState(null, '', '#my-profile');
+                }
+            }
             if (!canAccessMentorSection(sectionId)) {
                 showToast('This mentor function becomes available after admin approval.', 'warning');
-                sectionId = 'complete-profile';
+                sectionId = mentorAccessApproved ? 'my-profile' : 'complete-profile';
             }
 
             const target = document.getElementById(sectionId);
@@ -957,21 +1870,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         window.addEventListener('popstate', () => {
-            const sectionId = window.location.hash ? window.location.hash.replace('#', '') : 'overview-section';
-            showSection(document.getElementById(sectionId) ? sectionId : 'overview-section');
+            const sectionId = window.location.hash ? window.location.hash.replace('#', '') : 'dashboard-overview';
+            showSection(document.getElementById(sectionId) ? sectionId : 'dashboard-overview');
         });
 
         const urlSection = new URLSearchParams(window.location.search).get('section') || '';
         const hashSection = window.location.hash ? window.location.hash.replace('#', '') : urlSection;
         const savedSection = localStorage.getItem('mentorActiveSection');
-        const defaultSection = 'overview-section';
+        const defaultSection = 'dashboard-overview';
         const initialSection = document.getElementById(hashSection)
             ? hashSection
             : document.getElementById(savedSection)
                 ? savedSection
                 : defaultSection;
 
-        showSection(initialSection);
+        showSection(mentorAccessApproved && initialSection === 'complete-profile' ? 'my-profile' : initialSection);
     }
 
     function bindAppointmentControls() {
@@ -1139,6 +2052,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Computation
         const percentage = Math.round((completed / total) * 100);
+        currentMentorData = { ...currentMentorData, profileCompletion: percentage };
 
         // Save to Database
         update(ref(database, 'mentors/' + uid), { profileCompletion: percentage });
@@ -1147,17 +2061,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const progressBar = document.getElementById('dynamic-profile-progress-bar');
         const progressBadge = document.getElementById('profile-strength-badge');
         const statProfileCompletion = document.getElementById('stat-profile-completion');
-        const heroProfileCompletion = document.getElementById('mentor-hero-profile-completion');
         const progressMsg = document.getElementById('profile-strength-message');
 
         if (progressBar) progressBar.style.width = `${percentage}%`;
         if (statProfileCompletion) {
             statProfileCompletion.textContent = `${percentage}%`;
             statProfileCompletion.parentElement?.style.setProperty('--profile-progress', `${percentage * 3.6}deg`);
-        }
-        if (heroProfileCompletion) {
-            heroProfileCompletion.textContent = `${percentage}%`;
-            heroProfileCompletion.parentElement?.style.setProperty('--profile-progress', `${percentage * 3.6}deg`);
         }
         if (progressBadge) {
             progressBadge.textContent = `${percentage}% Strength`;
@@ -1179,6 +2088,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 progressMsg.style.color = '#10b981';
             }
         }
+        if (progressMsg) {
+            const status = mentorApprovalStatus(currentMentorData);
+            const completion = calculateMentorApplicationCompletion({
+                ...currentMentorData,
+                preferredLanguages: arrayValue(currentMentorData.preferredLanguages),
+                guidanceAreas: arrayValue(currentMentorData.guidanceAreas),
+                studentLevelsSupported: arrayValue(currentMentorData.studentLevelsSupported),
+                streamsSupported: arrayValue(currentMentorData.streamsSupported)
+            });
+            const copy = getProfileCompletionMessage(percentage, status, completion.missing.length);
+            progressMsg.textContent = `${copy.title}: ${copy.description}`;
+            progressMsg.style.color = percentage < 100 ? '#f59e0b' : ['submitted', 'under_review'].includes(status) ? '#2563eb' : '#10b981';
+        }
+        renderMentorHero();
     }
 
 
@@ -1269,6 +2192,7 @@ document.addEventListener('DOMContentLoaded', () => {
             connectedStudents = Object.fromEntries(enrichedEntries);
             syncConversationListeners(uid);
             renderConnectedStudentsTable();
+            renderMentorHero();
         });
     }
 
@@ -1278,6 +2202,389 @@ document.addEventListener('DOMContentLoaded', () => {
             mentorAppointments = snapshot.val() || {};
             renderMentorAppointments();
         });
+    }
+
+    function listenForRatings(uid) {
+        onValue(ref(database, `mentorRatings/${uid}`), (snapshot) => {
+            mentorRatings = snapshot.val() || {};
+            mentorRatingSummary = calculateMentorRatingSummary(getMergedMentorRatings());
+            renderMentorRatings();
+        });
+        onValue(ref(database, `publicMentorReviews/${uid}`), (snapshot) => {
+            mentorPublicReviews = snapshot.val() || {};
+            mentorRatingSummary = calculateMentorRatingSummary(getMergedMentorRatings());
+            renderMentorRatings();
+        });
+        onValue(ref(database, `mentorRatingSummaries/${uid}`), (snapshot) => {
+            mentorRatingSummary = snapshot.val() || mentorRatingSummary || {};
+            renderMentorRatings();
+        });
+    }
+
+    function getMergedMentorRatings() {
+        const merged = { ...(mentorRatings || {}) };
+        Object.entries(mentorPublicReviews || {}).forEach(([appointmentId, publicReview]) => {
+            const privateReview = merged[appointmentId] || {};
+            merged[appointmentId] = {
+                ...privateReview,
+                ...publicReview,
+                appointmentId: publicReview.appointmentId || privateReview.appointmentId || appointmentId,
+                ratingId: publicReview.ratingId || privateReview.ratingId || appointmentId,
+                reviewStatus: normalizeRatingStatus(publicReview.reviewStatus || privateReview.reviewStatus || "published"),
+                isVerified: Boolean(publicReview) || publicReview.isVerified === true || privateReview.isVerified === true
+            };
+        });
+        return merged;
+    }
+
+    function renderMentorRatingsLegacy() {
+        const averageEl = document.getElementById('mentor-rating-average');
+        if (!averageEl) return;
+        const summary = mentorRatingSummary?.totalRatings !== undefined ? mentorRatingSummary : calculateMentorRatingSummary(mentorRatings);
+        const total = Number(summary.totalRatings || 0);
+        averageEl.textContent = total ? `★ ${Number(summary.averageRating || 0).toFixed(1)}` : 'New Mentor';
+        setTextSafe('mentor-rating-total', total ? `${total} verified review${total === 1 ? '' : 's'}` : 'No verified ratings yet');
+        setTextSafe('mentor-rating-recommend', total ? `${Number(summary.recommendationPercentage || 0)}%` : '--');
+        setTextSafe('mentor-rating-top-category', topRatingCategory(summary.categoryAverages));
+        renderRatingBreakdownLegacy(summary);
+        renderMentorReviewList();
+    }
+
+    function renderRatingBreakdownLegacy(summary = {}) {
+        const container = document.getElementById('mentor-rating-breakdown');
+        if (!container) return;
+        const total = Number(summary.totalRatings || 0);
+        const dist = summary.ratingDistribution || {};
+        const categories = summary.categoryAverages || {};
+        container.innerHTML = `
+            <div class="rating-bars">
+                ${[5, 4, 3, 2, 1].map((star) => {
+                    const count = Number(dist[star] || 0);
+                    const width = total ? Math.round((count / total) * 100) : 0;
+                    return `<div class="rating-bar-row"><span>${star} ★</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:${width}%"></div></div><strong>${count}</strong></div>`;
+                }).join('')}
+            </div>
+            <div class="detail-grid recommendation-detail-grid mt-3">
+                <div><span>Communication</span><strong>${ratingAverageLabel(categories.communication)}</strong></div>
+                <div><span>Knowledge</span><strong>${ratingAverageLabel(categories.knowledge)}</strong></div>
+                <div><span>Helpfulness</span><strong>${ratingAverageLabel(categories.helpfulness)}</strong></div>
+                <div><span>Professionalism</span><strong>${ratingAverageLabel(categories.professionalism)}</strong></div>
+            </div>
+        `;
+    }
+
+    function renderMentorReviewListLegacy() {
+        const container = document.getElementById('mentor-reviews-list');
+        if (!container) return;
+        const reviews = publicReviewRows(mentorRatings).slice(0, 12);
+        if (!reviews.length) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-star"></i><p>No written reviews yet.</p></div>';
+            return;
+        }
+        container.innerHTML = reviews.map((review) => `
+            <article class="review-card">
+                <div class="review-card-head">
+                    <div>
+                        <strong>${escapeHtml(review.displayPreference === 'anonymous' ? 'Verified Student' : 'Student Review')}</strong>
+                        <button type="button" class="verified-review-badge review-detail-trigger" data-view-review-rating="${escapeHtml(review.appointmentId || '')}"><i class="fas fa-circle-check"></i> Verified Mentoring Session</button>
+                    </div>
+                    <span class="review-stars">${'★'.repeat(Number(review.overallRating || 0))}</span>
+                </div>
+                <p>${escapeHtml(review.review || '')}</p>
+                <small class="text-muted">${escapeHtml(formatDateTime(review.createdAt || review.updatedAt))}</small>
+                <div class="mt-3"><button type="button" class="btn btn-outline btn-sm" data-report-review="${escapeHtml(review.appointmentId || '')}">Report Review</button></div>
+            </article>
+        `).join('');
+        container.querySelectorAll('[data-report-review]').forEach((button) => {
+            button.addEventListener('click', () => reportReview(button.dataset.reportReview));
+        });
+        container.querySelectorAll('[data-view-review-rating]').forEach((button) => {
+            button.addEventListener('click', () => openReviewRatingDetail(button.dataset.viewReviewRating));
+        });
+    }
+
+    function openReviewRatingDetail(appointmentId) {
+        const review = getMergedMentorRatings()?.[appointmentId];
+        if (!review) return showToast('Rating details are unavailable. Please refresh and try again.', 'error');
+        let modal = document.getElementById('mentor-review-rating-detail-modal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'mentor-review-rating-detail-modal';
+            modal.className = 'modal-overlay hidden';
+            document.body.appendChild(modal);
+        }
+        modal.innerHTML = `
+            <div class="modal-card appointment-detail-modal">
+                <div class="modal-header">
+                    <div>
+                        <h3>Student Rating Details</h3>
+                        <p class="text-muted">${escapeHtml(review.studentDisplayName || 'Verified Student')} - ${escapeHtml(formatDateTime(review.createdAt || review.updatedAt))}</p>
+                    </div>
+                    <button type="button" class="modal-close" id="mentor-review-rating-detail-close" aria-label="Close">&times;</button>
+                </div>
+                <div class="detail-grid recommendation-detail-grid">
+                    <div><span>Overall</span><strong>${escapeHtml(review.overallRating || 'N/A')} / 5</strong></div>
+                    <div><span>Communication</span><strong>${escapeHtml(review.communicationRating || 'Not rated')}</strong></div>
+                    <div><span>Knowledge</span><strong>${escapeHtml(review.knowledgeRating || 'Not rated')}</strong></div>
+                    <div><span>Helpfulness</span><strong>${escapeHtml(review.helpfulnessRating || 'Not rated')}</strong></div>
+                    <div><span>Professionalism</span><strong>${escapeHtml(review.professionalismRating || 'Not rated')}</strong></div>
+                    <div><span>Would Recommend</span><strong>${review.wouldRecommend === true ? 'Yes' : 'No'}</strong></div>
+                    <div><span>Status</span><strong>${escapeHtml(review.reviewStatus || 'published')}</strong></div>
+                    <div><span>Verified</span><strong>${review.isVerified === true ? 'Yes' : 'No'}</strong></div>
+                    <div class="full-width"><span>Written Review</span><strong>${escapeHtml(review.review || 'No written review submitted.')}</strong></div>
+                </div>
+            </div>
+        `;
+        modal.classList.remove('hidden');
+        document.getElementById('mentor-review-rating-detail-close')?.addEventListener('click', () => modal.classList.add('hidden'));
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) modal.classList.add('hidden');
+        });
+    }
+
+    function renderMentorRatings() {
+        const averageEl = document.getElementById('mentor-rating-average');
+        if (!averageEl) return;
+        const mergedRatings = getMergedMentorRatings();
+        const summary = calculateMentorRatingSummary(mergedRatings);
+        mentorRatingSummary = summary;
+        const reviews = publicReviewRows(mergedRatings);
+        const total = Number(summary.totalRatings || 0);
+        const average = Number(summary.averageRating || 0);
+        averageEl.textContent = total ? average.toFixed(1) : 'New Mentor';
+        setTextSafe('mentor-rating-total', total ? `${total} verified review${total === 1 ? '' : 's'}` : 'No verified ratings yet');
+        setTextSafe('mentor-rating-recommend', total ? `${Number(summary.recommendationPercentage || 0)}%` : '--');
+        setTextSafe('mentor-rating-top-category', topRatingCategoryName(summary.categoryAverages));
+        setTextSafe('mentor-rating-count', total);
+        setTextSafe('mentor-rating-stars', total ? ratingStars(average) : '☆☆☆☆☆');
+        renderMentorReviewList(reviews);
+        renderRatingTrends(reviews);
+        renderCommonPraise(reviews);
+        renderImprovementPanel(summary);
+        const viewAllButton = document.getElementById('mentor-view-all-reviews');
+        if (viewAllButton) viewAllButton.onclick = () => renderMentorReviewList(reviews, Math.max(reviews.length, 4));
+    }
+
+    function renderRatingBreakdown(summary = {}) {
+        const container = document.getElementById('mentor-rating-breakdown');
+        if (!container) return;
+        const total = Number(summary.totalRatings || 0);
+        const dist = summary.ratingDistribution || {};
+        const categories = summary.categoryAverages || {};
+        const categoryRows = [
+            ['Communication', 'communication', 'fa-comments', '#2563eb'],
+            ['Knowledge', 'knowledge', 'fa-book-open', '#16a34a'],
+            ['Helpfulness', 'helpfulness', 'fa-heart', '#f59e0b'],
+            ['Professionalism', 'professionalism', 'fa-briefcase', '#7c3aed']
+        ];
+        container.innerHTML = `
+            <div class="modern-rating-breakdown">
+                <div class="rating-bars">
+                    ${[5, 4, 3, 2, 1].map((star) => {
+                        const count = Number(dist[star] || 0);
+                        const width = total ? Math.round((count / total) * 100) : 0;
+                        return `<div class="rating-bar-row"><span>${star} ★</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:${width}%"></div></div><strong>${count}</strong></div>`;
+                    }).join('')}
+                </div>
+                <div class="category-rating-list">
+                    <h4>Category Ratings</h4>
+                    ${categoryRows.map(([label, key, icon, color]) => {
+                        const value = Number(categories[key] || 0);
+                        const width = value ? (value / 5) * 100 : 0;
+                        return `<div class="category-rating-row">
+                            <span class="category-icon" style="--cat-color:${color}"><i class="fas ${icon}"></i></span>
+                            <div>
+                                <div class="category-rating-meta"><span>${escapeHtml(label)}</span><strong>${value ? `${value.toFixed(1)} / 5` : '--'}</strong></div>
+                                <div class="category-track"><span style="width:${width}%; background:${color};"></span></div>
+                            </div>
+                        </div>`;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    function renderMentorReviewList(reviews = publicReviewRows(getMergedMentorRatings()), limit = 4) {
+        const container = document.getElementById('mentor-reviews-list');
+        if (!container) return;
+        if (!reviews.length) {
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-star"></i><p>No written reviews yet.</p></div>';
+            return;
+        }
+        container.innerHTML = reviews.slice(0, limit).map((review, index) => {
+            const name = review.studentDisplayName || (review.displayPreference === 'anonymous' ? 'Verified Student' : 'Student Review');
+            const topic = review.topic || review.guidanceArea || review.sessionTopic || review.appointmentTopic || 'Mentoring Session';
+            return `
+                <article class="review-card modern-review-card">
+                    <span class="review-avatar tone-${(index % 4) + 1}">${escapeHtml(getInitials(name))}</span>
+                    <div class="review-student-meta">
+                        <strong>${escapeHtml(name)}</strong>
+                        <small>${escapeHtml(formatShortReviewDate(review.createdAt || review.updatedAt))}</small>
+                    </div>
+                    <div class="review-rating-meta">
+                        <span class="review-stars">${ratingStars(Number(review.overallRating || 0))}</span>
+                        <strong>${Number(review.overallRating || 0).toFixed(1)}</strong>
+                        <button type="button" class="verified-review-badge review-detail-trigger" data-view-review-rating="${escapeHtml(review.appointmentId || '')}">${escapeHtml(topic)}</button>
+                    </div>
+                    <p>${escapeHtml(review.review || 'No written review submitted.')}</p>
+                    <button type="button" class="btn btn-outline btn-sm review-report-btn" data-report-review="${escapeHtml(review.appointmentId || '')}">Report</button>
+                </article>
+            `;
+        }).join('');
+        container.querySelectorAll('[data-report-review]').forEach((button) => {
+            button.addEventListener('click', () => reportReview(button.dataset.reportReview));
+        });
+        container.querySelectorAll('[data-view-review-rating]').forEach((button) => {
+            button.addEventListener('click', () => openReviewRatingDetail(button.dataset.viewReviewRating));
+        });
+    }
+
+    function renderRatingTrends(reviews = []) {
+        const container = document.getElementById('mentor-rating-trends');
+        if (!container) return;
+        const months = lastMonthBuckets(6);
+        reviews.forEach((review) => {
+            const time = ratingTime(review.createdAt || review.updatedAt);
+            if (!time) return;
+            const bucket = months.find((item) => item.key === monthKey(new Date(time)));
+            if (!bucket) return;
+            bucket.sum += Number(review.overallRating || 0);
+            bucket.count += 1;
+        });
+        const values = months.map((item) => item.count ? Math.round((item.sum / item.count) * 10) / 10 : 0);
+        const points = values.map((value, index) => {
+            const x = 24 + index * (276 / Math.max(1, values.length - 1));
+            const normalized = value ? (value - 3) / 2 : 0;
+            const y = 120 - Math.max(0, Math.min(1, normalized)) * 78;
+            return [x, y, value];
+        });
+        const path = points.map(([x, y], index) => `${index ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ');
+        const area = `${path} L300 132 L24 132 Z`;
+        container.innerHTML = `
+            <svg viewBox="0 0 324 150" role="img" aria-label="Average rating trend">
+                <path d="${area}" fill="#bfdbfe" opacity="0.45"></path>
+                <path d="${path}" fill="none" stroke="#2563eb" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+                ${points.map(([x, y, value]) => `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5" fill="#2563eb"></circle><text x="${x.toFixed(1)}" y="${(y - 12).toFixed(1)}" text-anchor="middle">${value ? value.toFixed(1) : '-'}</text>`).join('')}
+                ${months.map((item, index) => `<text x="${(24 + index * (276 / Math.max(1, months.length - 1))).toFixed(1)}" y="146" text-anchor="middle">${escapeHtml(item.label)}</text>`).join('')}
+            </svg>
+        `;
+    }
+
+    function renderCommonPraise(reviews = []) {
+        const container = document.getElementById('mentor-common-praise');
+        if (!container) return;
+        const praise = [
+            ['Communication', 'fa-comments', /communicat|explain|clear|listen/i],
+            ['Friendly', 'fa-face-smile', /friend|kind|support|patient/i],
+            ['Helpful', 'fa-thumbs-up', /help|useful|practical|guid/i],
+            ['Clear Guidance', 'fa-lightbulb', /clarity|clear guidance|direction|path/i],
+            ['Knowledgeable', 'fa-graduation-cap', /knowledge|expert|understand|concept/i],
+            ['Patient', 'fa-heart', /patient|calm|encourag/i]
+        ].map(([label, icon, pattern]) => ({
+            label,
+            icon,
+            count: reviews.filter((review) => pattern.test(`${review.review || ''} ${review.topic || ''}`)).length
+        }));
+        const visible = praise.filter((item) => item.count > 0).sort((a, b) => b.count - a.count).slice(0, 6);
+        const rows = visible.length ? visible : praise.slice(0, 4).map((item) => ({ ...item, count: 0 }));
+        container.innerHTML = rows.map((item) => `
+            <div class="praise-chip">
+                <i class="fas ${item.icon}"></i>
+                <span>${escapeHtml(item.label)}</span>
+                <strong>${item.count}</strong>
+            </div>
+        `).join('');
+    }
+
+    function renderImprovementPanel(summary = {}) {
+        const container = document.getElementById('mentor-improvement-panel');
+        if (!container) return;
+        const categories = summary.categoryAverages || {};
+        const low = Object.entries(categories)
+            .filter(([, value]) => Number(value) > 0 && Number(value) < 4.5)
+            .sort(([, a], [, b]) => Number(a) - Number(b));
+        if (!Number(summary.totalRatings || 0)) {
+            container.innerHTML = `<div class="improvement-empty"><i class="fas fa-circle-info"></i><strong>No reviews yet</strong><p>Completed session reviews will appear here after admin approval.</p></div>`;
+            return;
+        }
+        if (!low.length) {
+            container.innerHTML = `<div class="improvement-empty success"><i class="fas fa-circle-info"></i><strong>Great job!</strong><p>You're doing excellent across all rated areas. Keep up the amazing work.</p><span class="trend-arrow"><i class="fas fa-arrow-trend-up"></i></span></div>`;
+            return;
+        }
+        container.innerHTML = low.map(([key, value]) => `<div class="improvement-item"><strong>${escapeHtml(formatCategoryLabel(key))}</strong><span>${Number(value).toFixed(1)} / 5</span><p>Review recent student feedback and focus this area in upcoming sessions.</p></div>`).join('');
+    }
+
+    async function reportReview(appointmentId) {
+        if (!appointmentId) return;
+        const reason = prompt('Why are you reporting this review? abusive language, false information, privacy concern, unrelated content, or other');
+        if (!reason?.trim()) return;
+        const updates = {};
+        updates[`reviewReports/${currentUid}/${appointmentId}`] = {
+            mentorUid: currentUid,
+            appointmentId,
+            reason: reason.trim(),
+            status: 'open',
+            createdAt: serverTimestamp()
+        };
+        await update(ref(database), updates);
+        showToast('Review report submitted for admin review.', 'success');
+    }
+
+    function topRatingCategory(categories = {}) {
+        const rows = Object.entries(categories || {}).filter(([, value]) => Number(value) > 0);
+        if (!rows.length) return '--';
+        rows.sort(([, a], [, b]) => Number(b) - Number(a));
+        return `${rows[0][0][0].toUpperCase()}${rows[0][0].slice(1)} ${Number(rows[0][1]).toFixed(1)}`;
+    }
+
+    function topRatingCategoryName(categories = {}) {
+        const rows = Object.entries(categories || {}).filter(([, value]) => Number(value) > 0);
+        if (!rows.length) return '--';
+        rows.sort(([, a], [, b]) => Number(b) - Number(a));
+        return formatCategoryLabel(rows[0][0]);
+    }
+
+    function formatCategoryLabel(value = '') {
+        return String(value || '').replace(/([A-Z])/g, ' $1').replace(/^./, (char) => char.toUpperCase());
+    }
+
+    function ratingStars(value = 0) {
+        const rounded = Math.round(Number(value || 0));
+        return `${'★'.repeat(Math.max(0, Math.min(5, rounded)))}${'☆'.repeat(Math.max(0, 5 - rounded))}`;
+    }
+
+    function ratingTime(value) {
+        if (!value) return 0;
+        if (typeof value === 'number') return value;
+        if (typeof value === 'object' && typeof value.seconds === 'number') return value.seconds * 1000;
+        const parsed = Date.parse(value);
+        return Number.isNaN(parsed) ? 0 : parsed;
+    }
+
+    function formatShortReviewDate(value) {
+        const time = ratingTime(value);
+        return time ? new Date(time).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Recent';
+    }
+
+    function monthKey(date) {
+        return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function lastMonthBuckets(count = 6) {
+        const now = new Date();
+        return Array.from({ length: count }, (_, index) => {
+            const date = new Date(now.getFullYear(), now.getMonth() - (count - 1 - index), 1);
+            return {
+                key: monthKey(date),
+                label: date.toLocaleDateString(undefined, { month: 'short' }),
+                sum: 0,
+                count: 0
+            };
+        });
+    }
+
+    function ratingAverageLabel(value) {
+        return Number(value || 0) ? `${Number(value).toFixed(1)} / 5` : '--';
     }
 
     function renderMentorAppointments() {
@@ -1302,8 +2609,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (completedStat) completedStat.textContent = completed.length;
         const upcomingStat = document.getElementById('stat-upcoming-sessions');
         if (upcomingStat) upcomingStat.textContent = upcoming.length;
-        const nextSession = document.getElementById('mentor-next-session');
-        if (nextSession) nextSession.textContent = upcoming[0] ? `${upcoming[0][1].date}, ${formatTimeLabel(upcoming[0][1].startTime)}` : 'No upcoming sessions';
+        updateHeroNextSessionMetric();
     }
 
     function renderAppointmentList(containerId, rows, mode) {
@@ -1580,11 +2886,20 @@ document.addEventListener('DOMContentLoaded', () => {
         updates[`mentorAppointments/${appointmentId}/updatedAt`] = serverTimestamp();
         updates[`notifications/${appointment.studentUid}/${notificationRef.key}`] = {
             notificationId: notificationRef.key,
+            targetUserUid: appointment.studentUid,
+            targetRole: 'student',
+            senderUid: currentUid,
+            senderRole: 'mentor',
             type: 'appointment_accepted',
             title: 'Your mentoring session was accepted',
             messagePreview: `${currentUserData.fullName || 'Your mentor'} accepted your session for ${appointment.date} at ${formatTimeLabel(appointment.startTime)}.`,
-            relatedAppointmentId: appointmentId,
+            relatedEntityType: 'mentorAppointment',
+            relatedEntityId: appointmentId,
+            appointmentId,
             mentorUid: currentUid,
+            targetPage: 'student-dashboard.html',
+            targetSection: 'mentor-sessions-section',
+            targetQuery: { appointmentId },
             read: false,
             status: 'unread',
             createdAt: serverTimestamp()
@@ -1605,11 +2920,20 @@ document.addEventListener('DOMContentLoaded', () => {
         updates[`mentorAppointments/${appointmentId}/updatedAt`] = serverTimestamp();
         updates[`notifications/${appointment.studentUid}/${notificationRef.key}`] = {
             notificationId: notificationRef.key,
+            targetUserUid: appointment.studentUid,
+            targetRole: 'student',
+            senderUid: currentUid,
+            senderRole: 'mentor',
             type: 'appointment_rejected',
             title: 'Your mentoring session request was rejected',
             messagePreview: reason || `${currentUserData.fullName || 'Your mentor'} rejected your session request.`,
-            relatedAppointmentId: appointmentId,
+            relatedEntityType: 'mentorAppointment',
+            relatedEntityId: appointmentId,
+            appointmentId,
             mentorUid: currentUid,
+            targetPage: 'student-dashboard.html',
+            targetSection: 'mentor-sessions-section',
+            targetQuery: { appointmentId },
             read: false,
             status: 'unread',
             createdAt: serverTimestamp()
@@ -1632,11 +2956,21 @@ document.addEventListener('DOMContentLoaded', () => {
         updates[`mentorAppointments/${appointmentId}/updatedAt`] = serverTimestamp();
         updates[`notifications/${appointment.studentUid}/${notificationRef.key}`] = {
             notificationId: notificationRef.key,
-            type: 'appointment_completed',
-            title: 'Mentoring session marked as completed',
-            messagePreview: completedNote || 'Your mentor marked the session as completed.',
-            relatedAppointmentId: appointmentId,
+            targetUserUid: appointment.studentUid,
+            targetRole: 'student',
+            senderUid: currentUid,
+            senderRole: 'mentor',
+            type: 'mentor_rating_required',
+            title: 'Rate Your Mentor',
+            message: 'Your mentoring session is complete. Share your experience.',
+            messagePreview: completedNote || 'Your mentoring session is complete. Share your experience.',
+            relatedEntityType: 'mentorAppointment',
+            relatedEntityId: appointmentId,
+            appointmentId,
             mentorUid: currentUid,
+            targetPage: 'student-dashboard.html',
+            targetSection: 'mentor-sessions-section',
+            targetQuery: { appointmentId },
             read: false,
             status: 'unread',
             createdAt: serverTimestamp()
@@ -2224,12 +3558,22 @@ document.addEventListener('DOMContentLoaded', () => {
             updates[`mentorConversations/${conversation}/unreadByStudent`] = 0;
             updates[`notifications/${studentUid}/${notificationRef.key}`] = {
                 notificationId: notificationRef.key,
-                type: 'mentor_request_accepted',
+                targetUserUid: studentUid,
+                targetRole: 'student',
+                senderUid: currentUid,
+                senderRole: 'mentor',
+                type: 'mentorship_request_accepted',
                 title: 'Your mentor request was accepted',
                 message: `${mentorName} accepted your mentor request.`,
                 messagePreview: `${mentorName} accepted your mentor request.`,
-                relatedRequestId: reqId,
+                relatedEntityType: 'mentorRequest',
+                relatedEntityId: reqId,
+                requestId: reqId,
+                conversationId: conversation,
                 mentorUid: currentUid,
+                targetPage: 'student-dashboard.html',
+                targetSection: 'mentor-requests-section',
+                targetQuery: { requestId: reqId, conversationId: conversation },
                 read: false,
                 status: 'unread',
                 createdAt: serverTimestamp()
@@ -2250,12 +3594,21 @@ document.addEventListener('DOMContentLoaded', () => {
             updates[`mentorRequests/${reqId}/rejectionReason`] = reason;
             updates[`notifications/${studentUid}/${notificationRef.key}`] = {
                 notificationId: notificationRef.key,
-                type: 'mentor_request_rejected',
+                targetUserUid: studentUid,
+                targetRole: 'student',
+                senderUid: currentUid,
+                senderRole: 'mentor',
+                type: 'mentorship_request_rejected',
                 title: 'Mentor request update',
                 message: reason || `${mentorName} could not accept your mentor request at this time.`,
                 messagePreview: reason || 'Your mentor request was rejected.',
-                relatedRequestId: reqId,
+                relatedEntityType: 'mentorRequest',
+                relatedEntityId: reqId,
+                requestId: reqId,
                 mentorUid: currentUid,
+                targetPage: 'student-dashboard.html',
+                targetSection: 'mentor-requests-section',
+                targetQuery: { requestId: reqId },
                 read: false,
                 status: 'unread',
                 createdAt: serverTimestamp()
@@ -2403,13 +3756,21 @@ document.addEventListener('DOMContentLoaded', () => {
         updates[`mentorConversations/${conversationIdValue}/updatedAt`] = serverTimestamp();
         updates[`notifications/${studentUid}/${notificationRef.key}`] = {
             notificationId: notificationRef.key,
-            type: 'mentor_message',
+            targetUserUid: studentUid,
+            targetRole: 'student',
+            senderUid: currentUid,
+            senderRole: 'mentor',
+            type: 'new_message',
             title: 'New message from your mentor',
             message: `${senderName}: ${message.slice(0, 80)}`,
             messagePreview: message.slice(0, 140),
             conversationId: conversationIdValue,
-            relatedConversationId: conversationIdValue,
+            relatedEntityType: 'mentorConversation',
+            relatedEntityId: conversationIdValue,
             mentorUid: currentUid,
+            targetPage: 'student-dashboard.html',
+            targetSection: 'mentor-messages-section',
+            targetQuery: { conversationId: conversationIdValue },
             read: false,
             status: 'unread',
             createdAt: serverTimestamp()

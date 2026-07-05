@@ -2,6 +2,7 @@ import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, push, set, serverTimestamp, onValue, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast } from "./auth-nav.js?v=20260614-brand";
+import { ratingLabel } from "./ratings.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Mobile Menu Toggle ---
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPathwayResult = null;
     let currentPathwayResultId = '';
     let currentMentorRequests = {};
+    let ratingSummaries = {};
 
     // Check Auth State
     onAuthStateChanged(auth, async (user) => {
@@ -60,8 +62,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function normalizeStatus(value) {
+        return String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, "*")
+            .replace(/-/g, "*");
+    }
+
+    function isPublicApprovedMentor(mentor, user = {}) {
+        return (
+            normalizeStatus(
+                mentor.approvalStatus ||
+                mentor.applicationStatus ||
+                mentor.status
+            ) === "approved" &&
+            mentor.publicVisibility === true &&
+            mentor.mentoringEnabled === true &&
+            normalizeStatus(
+                user.accountStatus ||
+                mentor.accountStatus ||
+                "active"
+            ) === "active"
+        );
+    }
+
     // Fetch mentors from Firebase Realtime DB
-    function fetchMentors() {
+    async function fetchMentors() {
         if (!grid) return;
         
         // Show loading state
@@ -70,52 +97,68 @@ document.addEventListener('DOMContentLoaded', () => {
             <p>Loading mentors...</p>
         </div>`;
 
-        const mentorsRef = query(ref(database, 'mentors'), orderByChild('status'), equalTo('approved'));
-        onValue(mentorsRef, (snapshot) => {
+        try {
+            const mentorsRef = query(ref(database, 'mentors'), orderByChild('status'), equalTo('approved'));
+            const mentorsSnapshot = await get(mentorsRef);
+
             allMentors = [];
-            if (snapshot.exists()) {
-                snapshot.forEach((childSnapshot) => {
+            if (mentorsSnapshot.exists()) {
+                const mentorPromises = [];
+                mentorsSnapshot.forEach((childSnapshot) => {
+                    const mentorUid = childSnapshot.key;
                     const mentor = childSnapshot.val();
-                    if (isApprovedActiveMentor(mentor)) {
-                        allMentors.push({
-                            id: mentor.uid || childSnapshot.key,
-                            name: mentor.fullName || 'Unnamed Mentor',
-                            category: (mentor.mentorType || mentor.field || 'General').toLowerCase(),
-                            designation: mentor.field || mentor.mentoringField || 'Mentor',
-                            company: mentor.universityOrCompany || mentor.organization || mentor.currentOrganization || 'Independent',
-                            avatar: mentor.photoURL || null,
-                            bio: mentor.bio || 'No bio available yet.',
-                            experience: mentor.experience || 'Not specified',
-                            availableTime: mentor.availableTime || mentor.availableDays || 'Flexible',
-                            mode: mentor.mentoringMode || mentor.mode || 'Online or hybrid',
-                            languages: mentor.languages || mentor.language || '',
-                            email: mentor.email || '',
-                            status: mentor.status || 'approved',
-                            accountStatus: mentor.accountStatus || 'active',
-                            approvalStatus: mentor.approvalStatus || mentor.status || '',
-                            publicVisibility: mentor.publicVisibility === true,
-                            mentoringEnabled: mentor.mentoringEnabled === true,
-                            userType: mentor.userType || mentor.role || 'mentor'
-                        });
-                    }
+
+                    // Query users/{mentorUid} individually, catching permission violations
+                    const userPromise = get(ref(database, `users/${mentorUid}`))
+                        .then(snap => snap.val() || {})
+                        .catch(() => ({}));
+
+                    mentorPromises.push(userPromise.then((user) => {
+                        if (isPublicApprovedMentor(mentor, user)) {
+                            allMentors.push({
+                                id: mentorUid,
+                                name: mentor.fullName || user.fullName || 'Unnamed Mentor',
+                                category: (mentor.mentorType || mentor.field || 'General').toLowerCase(),
+                                designation: mentor.field || mentor.mentoringField || 'Mentor',
+                                company: mentor.universityOrCompany || mentor.organization || mentor.currentOrganization || 'Independent',
+                                avatar: mentor.photoURL || user.photoURL || null,
+                                bio: mentor.bio || 'No bio available yet.',
+                                experience: mentor.experience || 'Not specified',
+                                availableTime: mentor.availableTime || mentor.availableDays || 'Flexible',
+                                mode: mentor.mentoringMode || mentor.mode || 'Online or hybrid',
+                                languages: mentor.languages || mentor.language || '',
+                                email: mentor.email || user.email || '',
+                                status: mentor.status || 'approved',
+                                accountStatus: user.accountStatus || mentor.accountStatus || 'active',
+                                approvalStatus: mentor.approvalStatus || mentor.status || '',
+                                publicVisibility: mentor.publicVisibility === true,
+                                mentoringEnabled: mentor.mentoringEnabled === true,
+                                userType: user.userType || user.role || 'mentor'
+                            });
+                        }
+                    }));
                 });
+                await Promise.all(mentorPromises);
             }
             renderMentors();
-        }, (error) => {
+        } catch (error) {
             console.error("Error fetching mentors:", error);
-            grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: red;">
+            grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--error-color);">
                 <p>Failed to load mentors. Please try again later.</p>
             </div>`;
-        });
+        }
     }
+
+    onValue(ref(database, 'mentorRatingSummaries'), (snapshot) => {
+        ratingSummaries = snapshot.val() || {};
+        renderMentors();
+    }, (error) => console.warn("Unable to load mentor rating summaries:", error));
 
     // --- Render Mentors ---
     function renderMentors() {
         if (!grid) return;
 
         let filtered = allMentors.filter(mentor => {
-            // Very simple category matching since DB might not have exact 'tech', 'vocational' mapping
-            // In a real app we'd map fields to these categories, here we'll just check if it includes the string
             const cat = activeCategory.toLowerCase();
             const matchesCategory = activeCategory === 'all' || 
                                     mentor.category.includes(cat) || 
@@ -139,50 +182,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         grid.innerHTML = filtered.map(mentor => {
-            const avatarHtml = mentor.avatar 
-                ? `<img src="${mentor.avatar}" alt="${mentor.name}" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`
-                : `<i class="fas fa-user-tie"></i>`;
-
+            const avatarUrl = mentor.avatar || "images/default-mentor-avatar.png";
             const requestState = getExistingRequestState(mentor.id);
             const action = getMentorActionMarkup(mentor, requestState);
+            const mentorRating = ratingLabel(ratingSummaries[mentor.id] || {});
 
             return `
             <div class="mentor-card glass">
                 <div>
                     <div class="mentor-header">
                         <div class="avatar-wrapper">
-                            ${avatarHtml}
+                            <img src="${avatarUrl}" alt="${mentor.name}" onerror="this.onerror=null; this.src='images/default-mentor-avatar.png';" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
                         </div>
                         <div class="mentor-meta">
-                            <h3>${mentor.name}</h3>
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <h3 style="margin: 0; font-size: 1.15rem; color: var(--text-heading);">${mentor.name}</h3>
+                                <span class="badge badge-purple" style="margin: 0; padding: 2px 8px; font-size: 10px; font-weight: 600;">Available</span>
+                            </div>
                             <div class="designation">${mentor.designation}</div>
                             <div class="company">${mentor.company}</div>
+                            <div class="mentor-rating-chip"><i class="fas fa-star"></i> ${escapeHtml(mentorRating)}</div>
                         </div>
                     </div>
                     <p class="mentor-bio">${mentor.bio}</p>
                     
-                    <div class="mentor-details" style="margin-top:1rem; font-size:0.9rem; color:var(--text-muted);">
-                        <div><i class="fas fa-clock"></i> ${mentor.availableTime}</div>
+                    <div class="mentor-details" style="margin-top:1rem; font-size:0.9rem; color:var(--text-muted); display:flex; flex-direction:column; gap:0.4rem;">
+                        <div><i class="fas fa-award"></i> ${mentor.experience}</div>
                         <div><i class="fas fa-video"></i> ${mentor.mode}</div>
+                        ${mentor.languages ? `<div><i class="fas fa-language"></i> ${mentor.languages}</div>` : ''}
                     </div>
                 </div>
                 
                 <div class="mentor-footer">
-                    <span class="exp-badge"><i class="fas fa-award"></i> ${mentor.experience}</span>
-                    <div class="mentor-actions">
-                        <button class="btn btn-outline btn-view-mentor" data-id="${mentor.id}">View Profile</button>
+                    <div class="mentor-actions" style="width: 100%; justify-content: space-between;">
+                        <button type="button" class="view-mentor-profile-btn btn btn-outline" data-mentor-uid="${mentor.id}">View Profile</button>
                         ${action}
                     </div>
                 </div>
             </div>
-        `}).join('');
+            `;
+        }).join('');
 
         // Attach event listeners to new buttons
         document.querySelectorAll('.btn-request').forEach(btn => {
             btn.addEventListener('click', handleRequestMentor);
         });
-        document.querySelectorAll('.btn-view-mentor').forEach(btn => {
-            btn.addEventListener('click', () => openMentorProfile(btn.dataset.id));
+        document.querySelectorAll('.view-mentor-profile-btn').forEach(btn => {
+            btn.addEventListener('click', () => openMentorProfile(btn.dataset.mentorUid));
         });
     }
 
@@ -302,14 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function isApprovedActiveMentor(mentor = {}) {
-        const status = String(mentor.approvalStatus || mentor.status || '').trim().toLowerCase();
-        const accountStatus = String(mentor.accountStatus || 'active').trim().toLowerCase();
-        const role = String(mentor.userType || mentor.role || 'mentor').trim().toLowerCase();
-        return status === 'approved'
-            && mentor.publicVisibility === true
-            && mentor.mentoringEnabled === true
-            && role === 'mentor'
-            && accountStatus === 'active';
+        return isPublicApprovedMentor(mentor, mentor);
     }
 
     function getExistingRequestState(mentorId) {
@@ -355,34 +394,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    function openMentorProfile(mentorId) {
-        const mentor = allMentors.find((item) => item.id === mentorId);
-        if (!mentor) return;
-        let modal = document.getElementById('mentor-profile-modal');
-        if (!modal) {
-            document.body.insertAdjacentHTML('beforeend', `
-                <div id="mentor-profile-modal" class="mentor-modal hidden" aria-hidden="true">
-                    <div class="mentor-modal-card">
-                        <button type="button" class="mentor-modal-close" aria-label="Close">&times;</button>
-                        <div id="mentor-profile-body"></div>
-                    </div>
-                </div>
-            `);
-            modal = document.getElementById('mentor-profile-modal');
-            modal.querySelector('.mentor-modal-close')?.addEventListener('click', () => modal.classList.add('hidden'));
+    function openMentorProfile(mentorUid) {
+        if (!mentorUid) {
+            showToast("Mentor profile could not be opened.", "error");
+            return;
         }
-        document.getElementById('mentor-profile-body').innerHTML = `
-            <h2>${mentor.name}</h2>
-            <p class="text-muted">${mentor.designation} at ${mentor.company}</p>
-            <p>${mentor.bio}</p>
-            <div class="mentor-details mentor-profile-details">
-                <div><i class="fas fa-clock"></i> ${mentor.availableTime}</div>
-                <div><i class="fas fa-video"></i> ${mentor.mode}</div>
-                <div><i class="fas fa-award"></i> ${mentor.experience}</div>
-                <div><i class="fas fa-language"></i> ${mentor.languages || 'Languages not specified'}</div>
-            </div>
-        `;
-        modal.classList.remove('hidden');
+        window.location.href = `mentor-profile.html?uid=${encodeURIComponent(mentorUid)}`;
     }
 
     // --- Filter Handlers ---
@@ -405,3 +422,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial fetch
     fetchMentors();
 });
+
+function escapeHtml(value) {
+    const div = document.createElement('div');
+    div.textContent = String(value ?? '');
+    return div.innerHTML;
+}

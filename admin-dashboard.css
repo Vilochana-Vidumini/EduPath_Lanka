@@ -632,6 +632,30 @@ body.admin-dashboard-page {
 .status-chip.rejected { background: #fee2e2; color: #dc2626; }
 .status-chip.logout { background: #f1f5f9; color: #475569; }
 
+.table-link-button {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.2rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.table-link-button small {
+    color: #64748b;
+}
+
+.table-link-button:hover strong,
+.table-link-button:focus-visible strong {
+    color: #2563eb;
+    text-decoration: underline;
+}
+
 .admin-dashboard-footer {
     display: flex;
     justify-content: space-between;

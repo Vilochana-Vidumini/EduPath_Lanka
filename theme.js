@@ -3,7 +3,8 @@
     const stored = localStorage.getItem('theme');
     const theme = stored === 'dark' || stored === 'light' ? stored : 'light';
     document.documentElement.setAttribute('data-theme', theme);
-    if (localStorage.getItem('sidebarCollapsed') === 'true' && window.innerWidth > 768) {
+    const collapsed = localStorage.getItem('edupathSidebarCollapsed') ?? localStorage.getItem('sidebarCollapsed');
+    if (collapsed === 'true' && window.innerWidth > 768) {
         document.documentElement.classList.add('sidebar-collapsed');
     }
 })();

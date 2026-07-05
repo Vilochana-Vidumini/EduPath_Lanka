@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);if(localStorage.getItem('sidebarCollapsed')==='true'&&window.innerWidth>768){document.documentElement.classList.add('sidebar-collapsed');}})();</script>
+    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);var c=localStorage.getItem('edupathSidebarCollapsed')||localStorage.getItem('sidebarCollapsed');if(c==='true'&&window.innerWidth>768){document.documentElement.classList.add('sidebar-collapsed');}})();</script>
     <title>Admin Dashboard | EduPath Lanka</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,6 +46,8 @@
             <li class="sidebar-section-label">Mentoring</li>
             <li><a href="#mentor-approvals" data-section="mentor-approvals"><i class="fas fa-user-check"></i><span class="sidebar-label">Mentor Approvals</span><span class="nav-badge" id="badge-mentor-approvals"></span></a></li>
             <li><a href="#mentor-requests" data-section="mentor-requests"><i class="fas fa-user-friends"></i><span class="sidebar-label">Mentor Requests</span><span class="nav-badge" id="badge-mentor-requests"></span></a></li>
+            <li><a href="#mentor-reviews" data-section="mentor-reviews"><i class="fas fa-star-half-stroke"></i><span class="sidebar-label">Mentor Reviews</span><span class="nav-badge" id="badge-mentor-reviews"></span></a></li>
+            <li><a href="#mentor-profile-updates" data-section="mentor-profile-updates"><i class="fas fa-id-card-clip"></i><span class="sidebar-label">Profile Updates</span><span class="nav-badge" id="badge-profile-updates"></span></a></li>
             <li class="sidebar-section-label">Communication</li>
             <li><a href="#support-inbox" data-section="support-inbox"><i class="fas fa-inbox"></i><span class="sidebar-label">Support Inbox</span><span class="nav-badge" id="badge-support"></span></a></li>
             <li><a href="#admin-messages" data-section="admin-messages"><i class="fas fa-comments"></i><span class="sidebar-label">Messages</span></a></li>
@@ -57,7 +59,7 @@
             <li><a href="#system-settings" data-section="system-settings"><i class="fas fa-sliders-h"></i><span class="sidebar-label">Settings</span></a></li>
             <li><a href="#system-status" data-section="system-status"><i class="fas fa-circle-nodes"></i><span class="sidebar-label">System Status</span></a></li>
             <li><a href="profile.html"><i class="fas fa-id-badge"></i><span class="sidebar-label">My Profile</span></a></li>
-            <li><a href="index.html"><i class="fas fa-home"></i><span class="sidebar-label">Home</span></a></li>
+            <li><a href="index.html"><i class="fas fa-home"></i><span class="sidebar-label">Public Home</span></a></li>
             <li><a href="#" id="logout-btn-sidebar" class="text-danger"><i class="fas fa-sign-out-alt"></i><span class="sidebar-label">Logout</span></a></li>
         </ul>
     </aside>
@@ -315,6 +317,35 @@
                 <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table requests-table"><thead><tr><th scope="col" class="col-person">Student</th><th scope="col" class="col-person">Mentor</th><th scope="col" class="col-medium">Request Date</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-medium">Updated Date</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-requests-tbody"><tr><td colspan="6" class="text-center py-4">Loading mentor requests...</td></tr></tbody></table></div></div>
             </section>
 
+            <section id="mentor-reviews" class="dashboard-section content-section">
+                <div class="section-header"><h2>Mentor Reviews</h2><p class="section-desc">Moderate written reviews without changing student ratings or review text.</p></div>
+                <div class="section-toolbar">
+                    <input type="search" id="review-search" class="form-control" placeholder="Search reviews or mentors">
+                    <select id="review-status-filter" class="form-control">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending Approval</option>
+                        <option value="published">Published</option>
+                        <option value="hidden">Hidden</option>
+                        <option value="reported">Reported</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <select id="review-star-filter" class="form-control">
+                        <option value="">All Stars</option>
+                        <option value="5">5 stars</option>
+                        <option value="4">4 stars</option>
+                        <option value="3">3 stars</option>
+                        <option value="2">2 stars</option>
+                        <option value="1">1 star</option>
+                    </select>
+                </div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table"><thead><tr><th>Mentor</th><th>Rating</th><th>Review</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="admin-reviews-tbody"><tr><td colspan="6" class="text-center py-4 data-loading">Loading reviews...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="mentor-profile-updates" class="dashboard-section content-section">
+                <div class="section-header"><h2>Mentor Profile Updates</h2><p class="section-desc">Review changes made by approved mentors while keeping their profile active.</p></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table"><thead><tr><th>Mentor</th><th>Fields</th><th>Review Flag</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="admin-profile-updates-tbody"><tr><td colspan="6" class="text-center py-4 data-loading">Loading profile updates...</td></tr></tbody></table></div></div>
+            </section>
+
             <section id="pathway-results" class="dashboard-section content-section">
                 <div class="section-header"><h2>Pathway Results</h2></div>
                 <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table pathway-results-table"><thead><tr><th scope="col" class="col-person">Student</th><th scope="col" class="col-medium">Education</th><th scope="col" class="col-medium">Interest</th><th scope="col" class="col-long">Recommended Pathway</th><th scope="col" class="col-short">Match Score</th><th scope="col" class="col-medium">Date</th><th scope="col" class="col-status">Result Status</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-pathway-tbody"><tr><td colspan="8" class="text-center py-4 data-loading">Loading pathway results...</td></tr></tbody></table></div></div>
@@ -420,6 +451,6 @@
     <script type="module" src="theme.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="admin-dashboard.js?v=20260624-mentor-application"></script>
+    <script type="module" src="admin-dashboard.js?v=20260705-mentor-profile-updates"></script>
 </body>
 </html>

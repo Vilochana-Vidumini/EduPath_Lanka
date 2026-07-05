@@ -2,6 +2,13 @@ import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, push, set, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { themeToggleButtonHTML, wireThemeToggle } from "./theme.js";
+import {
+    getDashboardDestination,
+    getProfileDestination,
+    getPublicHomeDestination,
+    normalizeRole,
+    SIDEBAR_STORAGE_KEY
+} from "./shared-navigation.js";
 
 async function handleLogout(e) {
     e.preventDefault();
@@ -48,32 +55,32 @@ async function recordLogout() {
 
 export function preserveThemeOnClear() {
     const savedTheme = localStorage.getItem('theme');
-    const sidebarCollapsed = localStorage.getItem('sidebarCollapsed');
+    const sidebarCollapsed = localStorage.getItem(SIDEBAR_STORAGE_KEY) ?? localStorage.getItem('sidebarCollapsed');
     localStorage.clear();
     if (savedTheme) localStorage.setItem('theme', savedTheme);
-    if (sidebarCollapsed) localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+    if (sidebarCollapsed) localStorage.setItem(SIDEBAR_STORAGE_KEY, sidebarCollapsed);
 }
 
 
 
 const AUTH_PANEL_LINKS = {
     student: [
-        { href: 'student-dashboard.html', icon: 'fa-tachometer-alt', label: 'Dashboard' },
-        { href: 'profile.html', icon: 'fa-user', label: 'My Profile' },
+        { href: getDashboardDestination('student'), icon: 'fa-tachometer-alt', label: 'My Dashboard' },
+        { href: getProfileDestination('student'), icon: 'fa-user', label: 'My Profile' },
         { href: 'pathway.html', icon: 'fa-route', label: 'Pathway Finder' },
         { href: 'student-dashboard.html#pathway-history', icon: 'fa-poll-h', label: 'My Results' },
         { href: 'courses.html', icon: 'fa-book-open', label: 'Courses' },
         { href: 'scholarships.html', icon: 'fa-hand-holding-usd', label: 'Scholarships' },
         { href: 'mentors.html', icon: 'fa-chalkboard-teacher', label: 'Mentors' },
-        { href: 'index.html', icon: 'fa-home', label: 'Home' },
+        { href: getPublicHomeDestination(), icon: 'fa-home', label: 'Public Home' },
     ],
     mentor: [
-        { href: 'mentor-dashboard.html', icon: 'fa-tachometer-alt', label: 'Dashboard' },
-        { href: 'profile.html', icon: 'fa-user-tie', label: 'My Profile' },
+        { href: getDashboardDestination('mentor'), icon: 'fa-tachometer-alt', label: 'My Dashboard' },
+        { href: getProfileDestination('mentor'), icon: 'fa-user-tie', label: 'My Profile' },
         { href: 'mentor-dashboard.html#requests', icon: 'fa-user-plus', label: 'Student Requests' },
         { href: 'mentor-dashboard.html#availability', icon: 'fa-calendar-check', label: 'Availability' },
         { href: 'mentor-dashboard.html#resources', icon: 'fa-book-reader', label: 'Guidance Resources' },
-        { href: 'index.html', icon: 'fa-home', label: 'Home' },
+        { href: getPublicHomeDestination(), icon: 'fa-home', label: 'Public Home' },
     ],
     institute: [
         { href: 'institute-dashboard.html', icon: 'fa-tachometer-alt', label: 'Dashboard' },
@@ -84,14 +91,14 @@ const AUTH_PANEL_LINKS = {
         { href: 'index.html', icon: 'fa-home', label: 'Home' },
     ],
     admin: [
-        { href: 'admin-dashboard.html', icon: 'fa-tachometer-alt', label: 'Dashboard' },
-        { href: 'profile.html', icon: 'fa-user-shield', label: 'My Profile' },
+        { href: getDashboardDestination('admin'), icon: 'fa-tachometer-alt', label: 'My Dashboard' },
+        { href: getProfileDestination('admin'), icon: 'fa-user-shield', label: 'My Profile' },
         { href: 'admin-dashboard.html#students', icon: 'fa-user-graduate', label: 'Manage Students' },
         { href: 'admin-dashboard.html#mentors', icon: 'fa-chalkboard-teacher', label: 'Manage Mentors' },
         { href: 'admin-dashboard.html#courses', icon: 'fa-book', label: 'Manage Courses' },
         { href: 'admin-dashboard.html#scholarships', icon: 'fa-hand-holding-usd', label: 'Manage Scholarships' },
         { href: 'admin-dashboard.html#reports', icon: 'fa-chart-bar', label: 'Reports' },
-        { href: 'index.html', icon: 'fa-home', label: 'Home' },
+        { href: getPublicHomeDestination(), icon: 'fa-home', label: 'Public Home' },
     ],
 };
 
@@ -669,6 +676,10 @@ function escapeToastHtml(value) {
         .replace(/'/g, '&#039;');
 }
 
+function escapeAttr(value) {
+    return escapeToastHtml(value).replace(/`/g, '&#096;');
+}
+
 // Activity and Session Timeout Manager
 const setupSessionTimeout = (user) => {
     if (!user) return;
@@ -837,7 +848,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Fetch extra details from Realtime Database
             get(ref(database, 'users/' + user.uid)).then((snapshot) => {
-                let dashboardUrl = 'student-dashboard.html';
+                let dashboardUrl = getDashboardDestination('student');
+                let profileUrl = getProfileDestination('student');
                 let role = 'student';
                 let fullName = user.displayName || 'EduPath User';
                 let photoURL = user.photoURL || '';
@@ -845,21 +857,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (snapshot.exists()) {
                     const data = snapshot.val();
                     const rawType = data.userType || data.role || 'student';
-                    role = rawType.toLowerCase();
+                    role = normalizeRole(rawType) || 'student';
                     currentUserType = role;
                     fullName = data.fullName || fullName;
                     photoURL = data.photoURL || photoURL;
-                    
-                    if (role === 'student') {
-                        dashboardUrl = 'student-dashboard.html';
-                    } else if (role === 'mentor') {
-                        dashboardUrl = 'mentor-dashboard.html';
-                    } else if (role === 'institute') {
-                        dashboardUrl = 'institute-dashboard.html';
-                    } else if (role === 'admin') {
-                        dashboardUrl = 'admin-dashboard.html';
-                    }
                 }
+
+                dashboardUrl = getDashboardDestination(role);
+                profileUrl = getProfileDestination(role);
                 
                 // Perform route protection
                 validateRoute(role);
@@ -874,21 +879,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Init initials and display details
                 const initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2);
                 const firstName = fullName.split(' ')[0];
+                const safeFullName = escapeToastHtml(fullName);
+                const safeFirstName = escapeToastHtml(firstName);
+                const safeInitials = escapeToastHtml(initials);
+                const safePhotoURL = escapeAttr(photoURL);
 
                 const dropdownHtml = `
                     <div class="ep-avatar-container" id="ep-user-dropdown-trigger">
-                        ${photoURL ? `<img src="${photoURL}" class="ep-avatar-img" alt="${fullName}">` : `<div class="ep-avatar-img">${initials}</div>`}
-                        <span class="ep-avatar-name">${firstName}</span>
+                        ${photoURL ? `<img src="${safePhotoURL}" class="ep-avatar-img" alt="${safeFullName}">` : `<div class="ep-avatar-img">${safeInitials}</div>`}
+                        <span class="ep-avatar-name">${safeFirstName}</span>
                         <i class="fas fa-chevron-down ep-avatar-chevron"></i>
                         
                         <div class="ep-dropdown-menu" id="ep-user-dropdown-menu">
                             <div class="ep-dropdown-header">
-                                <div class="ep-dropdown-username">${fullName}</div>
+                                <div class="ep-dropdown-username">${safeFullName}</div>
                                 <span class="ep-dropdown-role role-${role}">${role}</span>
                             </div>
                             <a href="${dashboardUrl}" class="ep-dropdown-item"><i class="fas fa-tachometer-alt"></i> My Dashboard</a>
-                            <a href="profile.html" class="ep-dropdown-item"><i class="fas fa-user"></i> My Profile</a>
+                            <a href="${profileUrl}" class="ep-dropdown-item"><i class="fas fa-user"></i> My Profile</a>
                             <a href="profile.html#security" class="ep-dropdown-item"><i class="fas fa-key"></i> Change Password</a>
+                            <a href="${getPublicHomeDestination()}" class="ep-dropdown-item"><i class="fas fa-house"></i> Public Home</a>
                             <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 4px 0;">
                             <a href="#" class="ep-dropdown-item text-danger" id="ep-dropdown-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
                         </div>
@@ -936,14 +946,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const mobileCardHtml = `
                         <div class="mobile-user-card">
                             <div class="mobile-user-info">
-                                ${photoURL ? `<img src="${photoURL}" class="avatar-sm" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" alt="${fullName}">` : `<div class="ep-avatar-img" style="width:40px;height:40px;font-size:12px;">${initials}</div>`}
+                                ${photoURL ? `<img src="${safePhotoURL}" class="avatar-sm" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" alt="${safeFullName}">` : `<div class="ep-avatar-img" style="width:40px;height:40px;font-size:12px;">${safeInitials}</div>`}
                                 <div class="mobile-user-details">
-                                    <h4>${fullName}</h4>
+                                    <h4>${safeFullName}</h4>
                                     <span class="ep-dropdown-role role-${role}" style="margin:0;">${role}</span>
                                 </div>
                             </div>
-                            <a href="${dashboardUrl}" class="ep-dropdown-item" style="padding: 6px 8px;"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                            <a href="profile.html" class="ep-dropdown-item" style="padding: 6px 8px;"><i class="fas fa-user"></i> My Profile</a>
+                            <a href="${dashboardUrl}" class="ep-dropdown-item" style="padding: 6px 8px;"><i class="fas fa-tachometer-alt"></i> My Dashboard</a>
+                            <a href="${profileUrl}" class="ep-dropdown-item" style="padding: 6px 8px;"><i class="fas fa-user"></i> My Profile</a>
+                            <a href="${getPublicHomeDestination()}" class="ep-dropdown-item" style="padding: 6px 8px;"><i class="fas fa-house"></i> Public Home</a>
                             <a href="#" id="mobile-logout-btn" class="ep-dropdown-item text-danger" style="padding: 6px 8px;"><i class="fas fa-sign-out-alt"></i> Logout</a>
                         </div>
                     `;

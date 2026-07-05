@@ -1,13 +1,13 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, set, push, onValue, update, remove, serverTimestamp, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { SIDEBAR_STORAGE_KEY } from "./shared-navigation.js";
 
 const normalize = (value) => String(value || "").trim().toLowerCase();
 const state = { uid: "", user: {}, institute: {}, courses: {}, inquiries: {}, supportConversation: {}, courseSearch: "", courseStatus: "all", inquiryStatus: "all" };
 let clockTimer = null;
 let greetingName = "Institute";
 const MOBILE_BP = 860;
-const SIDEBAR_STORAGE_KEY = "sidebarCollapsed";
 
 document.addEventListener("DOMContentLoaded", () => {
     syncSidebarState();

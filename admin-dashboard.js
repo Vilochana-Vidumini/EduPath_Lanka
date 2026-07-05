@@ -4,6 +4,7 @@ import { ref, get, set, update, push, remove, onValue, onDisconnect, serverTimes
 import { showToast, preserveThemeOnClear } from "./auth-nav.js?v=20260614-brand";
 import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
 import { ensureDashboardTopbarLayout, initDashboardNotifications, updateDashboardGreetingName } from "./dashboard-topbar.js";
+import { calculateMentorRatingSummary, normalizeRatingStatus } from "./ratings.js";
 
 const adminState = {
     users: {},
@@ -14,6 +15,10 @@ const adminState = {
     scholarships: {},
     pathwayResults: {},
     mentorRequests: {},
+    mentorRatings: {},
+    publicMentorReviews: {},
+    reviewReports: {},
+    mentorProfileChanges: {},
     mentorStudents: {},
     guestMessages: {},
     contactMessages: {},
@@ -37,6 +42,9 @@ const adminState = {
         studentStatus: "",
         mentorSearch: "",
         instituteSearch: "",
+        reviewSearch: "",
+        reviewStatus: "",
+        reviewStar: "",
         requestStatus: "all",
         activityRole: "",
         activityType: "",
@@ -50,6 +58,7 @@ const adminState = {
         institutes: { page: 1, pageSize: 10 },
         admins: { page: 1, pageSize: 10 },
         mentorApprovals: { page: 1, pageSize: 10 },
+        mentorReviews: { page: 1, pageSize: 10 },
         courses: { page: 1, pageSize: 10 },
         scholarships: { page: 1, pageSize: 10 },
         mentorRequests: { page: 1, pageSize: 10 },
@@ -83,7 +92,9 @@ const adminSections = {
     "manage-scholarships": { title: "Manage Scholarships" },
     "pathway-results": { title: "Pathway Results" },
     "mentor-approvals": { title: "Mentor Approvals" },
+    "mentor-profile-updates": { title: "Mentor Profile Updates" },
     "mentor-requests": { title: "Mentor Requests" },
+    "mentor-reviews": { title: "Mentor Reviews" },
     "support-inbox": { title: "Support Inbox" },
     "admin-messages": { title: "Messages" },
     "admin-notifications": { title: "Notifications" },
@@ -212,6 +223,7 @@ function bindAdminCommandSearch() {
         ["Scholarships", "manage-scholarships"],
         ["Mentor Approvals", "mentor-approvals"],
         ["Mentor Requests", "mentor-requests"],
+        ["Mentor Reviews", "mentor-reviews"],
         ["Pathway Results", "pathway-results"],
         ["Support Inbox", "support-inbox"],
         ["Messages", "admin-messages"],
@@ -248,6 +260,8 @@ function runSectionRender(sectionId) {
     }
     if (sectionId === "admin-notifications") renderAdminNotifications();
     if (sectionId === "manage-admins") renderAdmins();
+    if (sectionId === "mentor-reviews") renderMentorReviews();
+    if (sectionId === "mentor-profile-updates") renderMentorProfileUpdates();
     if (sectionId === "system-status") renderSystemStatus();
 }
 
@@ -280,6 +294,9 @@ function bindFormsAndFilters() {
         ["student-filter-status", "studentStatus", "change", renderStudents, "students"],
         ["mentor-search", "mentorSearch", "input", renderMentors, "mentors"],
         ["institute-search", "instituteSearch", "input", renderInstitutes, "institutes"],
+        ["review-search", "reviewSearch", "input", renderMentorReviews, "mentorReviews"],
+        ["review-status-filter", "reviewStatus", "change", renderMentorReviews, "mentorReviews"],
+        ["review-star-filter", "reviewStar", "change", renderMentorReviews, "mentorReviews"],
         ["activity-role-filter", "activityRole", "change", renderActivity, "loginHistory"],
         ["activity-type-filter", "activityType", "change", renderActivity, "loginHistory"],
         ["activity-search", "activitySearch", "input", renderActivity, "loginHistory"]
@@ -320,8 +337,37 @@ function bindFormsAndFilters() {
     document.getElementById("admin-mark-all-notifications-read")?.addEventListener("click", markAllAdminNotificationsRead);
     bindSupportInboxControls();
     bindTablePaginationControls();
+    bindReviewTableActions();
     bindImagePreview("course-image-url", "course-image-preview", "images/course-placeholder.png", "Course image preview", "images");
     bindImagePreview("schol-image-url", "scholarship-image-preview", "images/scholarship-placeholder.png", "Scholarship image preview", "images");
+}
+
+function bindReviewTableActions() {
+    if (document.body.dataset.reviewActionsBound === "true") return;
+    document.body.dataset.reviewActionsBound = "true";
+    document.addEventListener("click", (event) => {
+        const detailButton = event.target.closest("[data-review-detail]");
+        if (detailButton) {
+            event.preventDefault();
+            const [mentorUid, appointmentId] = detailButton.dataset.reviewDetail.split(":");
+            openReviewDetail(mentorUid, appointmentId);
+            return;
+        }
+
+        const mentorButton = event.target.closest("[data-review-mentor-detail]");
+        if (mentorButton) {
+            event.preventDefault();
+            openDetailDrawer("Mentor Details", mentorDetails(mentorButton.dataset.reviewMentorDetail));
+            return;
+        }
+
+        const statusButton = event.target.closest("[data-review-status]");
+        if (statusButton) {
+            event.preventDefault();
+            const [mentorUid, appointmentId] = statusButton.dataset.reviewStatus.split(":");
+            moderateMentorReview(mentorUid, appointmentId, statusButton.dataset.status);
+        }
+    });
 }
 
 function bindTablePaginationControls() {
@@ -390,6 +436,10 @@ function initRealtimeListeners() {
         ["scholarships", "scholarships", () => { renderOverview(); renderScholarships(); renderReports(); renderSystemStatus(); }],
         ["pathwayResults", "pathwayResults", () => { renderOverview(); renderStudents(); renderPathwayResults(); renderReports(); }],
         ["mentorRequests", "mentorRequests", () => { renderOverview(); renderStudents(); renderMentorRequests(); renderReports(); updateSidebarBadges(); }],
+        ["mentorRatings", "mentorRatings", () => { renderOverview(); renderMentorReviews(); renderReports(); updateSidebarBadges(); }],
+        ["publicMentorReviews", "publicMentorReviews", () => { renderMentorReviews(); updateSidebarBadges(); }],
+        ["reviewReports", "reviewReports", () => { renderMentorReviews(); }],
+        ["mentorProfileChanges", "mentorProfileChanges", () => { renderMentorProfileUpdates(); updateSidebarBadges(); }],
         ["mentorStudents", "mentorStudents", () => { renderOverview(); renderMentorRequests(); renderReports(); }],
         ["guestMessages", "guestMessages", () => { renderOverview(); renderSupportInbox(); updateSupportCounts(); updateSidebarBadges(); renderSystemStatus(); }],
         ["contactMessages", "contactMessages", () => { renderOverview(); renderSupportInbox(); updateSidebarBadges(); renderSystemStatus(); }],
@@ -578,6 +628,7 @@ function rerenderPaginatedTable(tableKey) {
         institutes: renderInstitutes,
         admins: renderAdmins,
         mentorApprovals: renderMentorApprovals,
+        mentorReviews: renderMentorReviews,
         courses: renderCourses,
         scholarships: renderScholarships,
         mentorRequests: renderMentorRequests,
@@ -1222,6 +1273,157 @@ function renderMentorRequests() {
     bindRowActions(tbody);
 }
 
+function renderMentorReviews() {
+    const tbody = document.getElementById("admin-reviews-tbody");
+    if (!tbody) return;
+    let rows = flattenMentorReviews();
+    const filters = adminState.filters;
+    const queryText = normalize(filters.reviewSearch);
+    if (queryText) {
+        rows = rows.filter((row) => normalize(`${row.mentorName} ${row.studentName} ${row.review}`).includes(queryText));
+    }
+    if (filters.reviewStatus) {
+        rows = rows.filter((row) => normalizeRatingStatus(row.reviewStatus) === normalizeRatingStatus(filters.reviewStatus));
+    }
+    if (filters.reviewStar) {
+        rows = rows.filter((row) => Number(row.overallRating) === Number(filters.reviewStar));
+    }
+    rows.sort((a, b) => getTime(b.createdAt || b.updatedAt, b.appointmentId) - getTime(a.createdAt || a.updatedAt, a.appointmentId));
+    const result = paginateRows(rows, "mentorReviews");
+    renderTablePagination("mentorReviews", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 6, "No mentor reviews found.");
+
+    tbody.innerHTML = result.rows.map((row) => {
+        const status = normalizeRatingStatus(row.reviewStatus || "pending");
+        const isPublished = status === "published";
+        const isHidden = status === "hidden";
+        const statusLabel = isPublished ? "Approved" : status.replace(/_/g, " ");
+        return `
+            <tr>
+                <td>${avatarCell({ fullName: row.mentorName, email: row.mentorEmail || row.mentorUid, photoURL: adminState.users[row.mentorUid]?.photoURL || adminState.mentors[row.mentorUid]?.photoURL || "" }, "Mentor")}</td>
+                <td><button type="button" class="table-link-button" data-review-detail="${escapeAttr(row.mentorUid)}:${escapeAttr(row.appointmentId)}"><strong>${escapeHtml(display(row.overallRating))}/5</strong><small>${row.isVerified ? "Verified session" : "Unverified"}</small></button></td>
+                <td>${ellipsisCell(row.review || "No written review", 300)}<br><small class="text-muted">By ${escapeHtml(display(row.studentName))}</small></td>
+                <td><span class="badge ${statusBadgeClass(status)}">${escapeHtml(statusLabel)}</span></td>
+                <td>${formatDate(row.createdAt || row.updatedAt)}</td>
+                <td class="action-btns">
+                    <button class="btn btn-sm btn-info" data-review-mentor-detail="${escapeAttr(row.mentorUid)}">Mentor</button>
+                    ${isPublished ? "" : `<button class="btn btn-sm btn-primary" data-review-status="${escapeAttr(row.mentorUid)}:${escapeAttr(row.appointmentId)}" data-status="published">Approve</button>`}
+                    <button class="btn btn-sm btn-warning" data-review-status="${escapeAttr(row.mentorUid)}:${escapeAttr(row.appointmentId)}" data-status="hidden" ${isHidden ? "disabled" : ""}>Hide</button>
+                    <button class="btn btn-sm btn-danger" data-review-status="${escapeAttr(row.mentorUid)}:${escapeAttr(row.appointmentId)}" data-status="rejected">Reject</button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+    bindRowActions(tbody);
+}
+
+function flattenMentorReviews() {
+    return Object.entries(adminState.mentorRatings || {}).flatMap(([mentorUid, ratings]) =>
+        Object.entries(ratings || {}).map(([appointmentId, rating]) => {
+            const mentor = adminState.users[mentorUid] || adminState.mentors[mentorUid] || {};
+            const student = adminState.users[rating.studentUid] || adminState.students[rating.studentUid] || {};
+            const report = adminState.reviewReports?.[mentorUid]?.[appointmentId] || adminState.reviewReports?.[rating.studentUid]?.[appointmentId] || null;
+            return {
+                mentorUid,
+                appointmentId,
+                ...rating,
+                reviewStatus: report && normalizeRatingStatus(rating.reviewStatus) === "published" ? "reported" : (rating.reviewStatus || "pending"),
+                mentorName: rating.mentorName || mentor.fullName || "Mentor",
+                mentorEmail: mentor.email || "",
+                studentName: rating.studentName || student.fullName || "Student"
+            };
+        })
+    );
+}
+
+function getReviewRow(mentorUid, appointmentId) {
+    return flattenMentorReviews().find((row) => row.mentorUid === mentorUid && row.appointmentId === appointmentId) || null;
+}
+
+function flattenMentorProfileUpdates() {
+    return Object.entries(adminState.mentorProfileChanges || {}).flatMap(([mentorUid, changes]) =>
+        Object.entries(changes || {}).map(([changeId, change]) => {
+            const mentor = adminState.users[mentorUid] || adminState.mentors[mentorUid] || {};
+            return { mentorUid, changeId, mentorName: mentor.fullName || change.mentorName || "Mentor", mentorEmail: mentor.email || "", mentorPhoto: mentor.photoURL || adminState.mentors[mentorUid]?.photoURL || "", ...change };
+        })
+    ).sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt));
+}
+
+function renderMentorProfileUpdates() {
+    const tbody = document.getElementById("admin-profile-updates-tbody");
+    if (!tbody) return;
+    const rows = flattenMentorProfileUpdates();
+    if (!rows.length) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-4">No mentor profile updates recorded.</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = rows.map((row) => {
+        const changedCount = Object.keys(row.changedFields || {}).length;
+        return `<tr>
+            <td>${avatarCell({ fullName: row.mentorName, email: row.mentorEmail || row.mentorUid, photoURL: row.mentorPhoto }, "Mentor")}</td>
+            <td><strong>${changedCount}</strong><small>${Object.keys(row.changedFields || {}).slice(0, 3).map(display).join(", ")}</small></td>
+            <td><span class="badge ${row.requiresAdminReview ? "badge-warning" : "badge-success"}">${row.requiresAdminReview ? "Critical" : "Normal"}</span></td>
+            <td>${escapeHtml(formatDate(row.createdAt))}</td>
+            <td><span class="badge badge-info">${escapeHtml(display(row.status || "recorded"))}</span></td>
+            <td><div class="action-btns">
+                <button class="btn btn-sm btn-primary" data-view-profile-update="${escapeAttr(row.mentorUid)}:${escapeAttr(row.changeId)}">View Changes</button>
+                <button class="btn btn-sm btn-success" data-profile-update-reviewed="${escapeAttr(row.mentorUid)}:${escapeAttr(row.changeId)}">Mark Reviewed</button>
+                <button class="btn btn-sm btn-outline" data-view-mentor="${escapeAttr(row.mentorUid)}">Mentor</button>
+                <button class="btn btn-sm btn-outline" data-message-user="${escapeAttr(row.mentorUid)}">Contact</button>
+            </div></td>
+        </tr>`;
+    }).join("");
+    bindRowActions(tbody);
+}
+
+function viewMentorProfileUpdate(value = "") {
+    const [mentorUid, changeId] = value.split(":");
+    const change = adminState.mentorProfileChanges?.[mentorUid]?.[changeId];
+    if (!change) return showToast("Profile update record not found.", "error");
+    const fieldRows = Object.keys(change.changedFields || {}).map((field) => ({
+        Field: display(field),
+        Previous: displayVal(change.previousValues?.[field] || "Not provided"),
+        New: displayVal(change.newValues?.[field] || "Not provided")
+    }));
+    openDetailDrawer("Mentor Profile Update", objectDetails({
+        mentorName: change.mentorName || adminState.users[mentorUid]?.fullName || "Mentor",
+        mentorUid,
+        changeId,
+        requiresAdminReview: change.requiresAdminReview === true ? "Yes" : "No",
+        status: change.status || "recorded",
+        createdAt: formatDate(change.createdAt),
+        changedFields: fieldRows
+    }));
+}
+
+async function markMentorProfileUpdateReviewed(value = "") {
+    const [mentorUid, changeId] = value.split(":");
+    if (!mentorUid || !changeId) return;
+    await update(ref(database), {
+        [`mentorProfileChanges/${mentorUid}/${changeId}/status`]: "reviewed",
+        [`mentorProfileChanges/${mentorUid}/${changeId}/reviewedAt`]: serverTimestamp(),
+        [`mentorProfileChanges/${mentorUid}/${changeId}/reviewedBy`]: adminState.adminUid
+    });
+    showToast("Mentor profile update marked reviewed.", "success");
+}
+
+function openReviewDetail(mentorUid, appointmentId) {
+    const review = getReviewRow(mentorUid, appointmentId);
+    if (!review) return showToast("Review details are unavailable. Please refresh and try again.", "error");
+    const status = normalizeRatingStatus(review.reviewStatus || "pending").replace(/_/g, " ");
+    openDetailDrawer("Mentor Review Details", `
+        ${groupedDetails({
+            Session: ["mentorName", "studentName", "appointmentId", "reviewStatus", "createdAt", "updatedAt"],
+            Ratings: ["overallRating", "communicationRating", "knowledgeRating", "helpfulnessRating", "professionalismRating", "wouldRecommend"],
+            Moderation: ["isVerified", "displayPreference", "studentDisplayName", "moderatedAt", "moderatedBy"]
+        }, { ...review, reviewStatus: status })}
+        <section class="drawer-group">
+            <h3>Written Review</h3>
+            <p>${escapeHtml(review.review || "No written review was submitted.")}</p>
+        </section>
+    `);
+}
+
 function renderSupportInbox() {
     updateSupportCounts();
     document.querySelectorAll("[data-support-folder]").forEach((button) => {
@@ -1299,11 +1501,19 @@ async function sendAdminMessage(event) {
     const notificationRef = push(ref(database, `notifications/${receiverUid}`));
     updates[`notifications/${receiverUid}/${notificationRef.key}`] = {
         notificationId: notificationRef.key,
-        type: "admin_message",
+        targetUserUid: receiverUid,
+        targetRole: normalize(receiver.userType || "student") || "student",
+        senderUid: adminState.adminUid,
+        senderRole: "admin",
+        type: "admin_support_reply",
         title: "New message from EduPath Admin",
         message: subject,
         messagePreview: message.slice(0, 140),
-        relatedConversationId: conversationId,
+        relatedEntityType: "conversation",
+        relatedEntityId: conversationId,
+        conversationId,
+        targetPage: `${normalize(receiver.userType || "student") || "student"}-dashboard.html`,
+        targetSection: normalize(receiver.userType || "student") === "mentor" ? "support" : "support-section",
         read: false,
         status: "unread",
         createdAt: serverTimestamp()
@@ -1846,6 +2056,8 @@ function bindRowActions(root) {
     root.querySelectorAll("[data-toggle-account]").forEach((btn) => btn.addEventListener("click", () => toggleAccount(btn.dataset.toggleAccount)));
     root.querySelectorAll("[data-approve-mentor]").forEach((btn) => btn.addEventListener("click", () => approveMentor(btn.dataset.approveMentor)));
     root.querySelectorAll("[data-review-mentor]").forEach((btn) => btn.addEventListener("click", () => startMentorReview(btn.dataset.reviewMentor)));
+    root.querySelectorAll("[data-view-profile-update]").forEach((btn) => btn.addEventListener("click", () => viewMentorProfileUpdate(btn.dataset.viewProfileUpdate)));
+    root.querySelectorAll("[data-profile-update-reviewed]").forEach((btn) => btn.addEventListener("click", () => markMentorProfileUpdateReviewed(btn.dataset.profileUpdateReviewed)));
     root.querySelectorAll("[data-changes-mentor]").forEach((btn) => btn.addEventListener("click", () => requestMentorChanges(btn.dataset.changesMentor)));
     root.querySelectorAll("[data-reject-mentor]").forEach((btn) => btn.addEventListener("click", () => rejectMentor(btn.dataset.rejectMentor)));
     root.querySelectorAll("[data-edit-course]").forEach((btn) => btn.addEventListener("click", () => editCourse(btn.dataset.editCourse)));
@@ -1858,6 +2070,58 @@ function bindRowActions(root) {
     root.querySelectorAll("[data-view-guest]").forEach((btn) => btn.addEventListener("click", () => viewGuestInquiry(btn.dataset.viewGuest)));
     root.querySelectorAll("[data-guest-status]").forEach((btn) => btn.addEventListener("click", () => updateGuestStatus(btn.dataset.guestStatus, btn.dataset.status)));
     root.querySelectorAll("[data-guest-reply]").forEach((btn) => btn.addEventListener("click", () => addGuestReply(btn.dataset.guestReply)));
+}
+
+async function moderateMentorReview(mentorUid, appointmentId, status) {
+    const rating = adminState.mentorRatings?.[mentorUid]?.[appointmentId];
+    if (!rating) return showToast("Review not found.", "error");
+    const nextStatus = normalizeRatingStatus(status);
+    if (!["published", "hidden", "rejected"].includes(nextStatus)) return showToast("Unsupported review status.", "error");
+    const studentUid = rating.studentUid;
+    const nextRatings = {
+        ...(adminState.mentorRatings?.[mentorUid] || {}),
+        [appointmentId]: {
+            ...rating,
+            reviewStatus: nextStatus
+        }
+    };
+    const summary = calculateMentorRatingSummary(nextRatings);
+    const publicReview = nextStatus === "published"
+        ? {
+            appointmentId,
+            mentorUid,
+            ratingId: rating.ratingId || appointmentId,
+            overallRating: rating.overallRating,
+            communicationRating: rating.communicationRating || 0,
+            knowledgeRating: rating.knowledgeRating || 0,
+            helpfulnessRating: rating.helpfulnessRating || 0,
+            professionalismRating: rating.professionalismRating || 0,
+            wouldRecommend: rating.wouldRecommend === true,
+            review: rating.review || "",
+            studentDisplayName: rating.studentDisplayName || "Verified Student",
+            reviewStatus: "published",
+            isVerified: rating.isVerified === true,
+            createdAt: rating.createdAt || rating.updatedAt || serverTimestamp(),
+            updatedAt: serverTimestamp()
+        }
+        : null;
+
+    const updates = {
+        [`mentorRatings/${mentorUid}/${appointmentId}/reviewStatus`]: nextStatus,
+        [`mentorRatings/${mentorUid}/${appointmentId}/moderatedAt`]: serverTimestamp(),
+        [`mentorRatings/${mentorUid}/${appointmentId}/moderatedBy`]: adminState.adminUid,
+        [`mentorRatings/${mentorUid}/${appointmentId}/updatedAt`]: serverTimestamp(),
+        [`mentorRatingSummaries/${mentorUid}`]: { ...summary, mentorUid, updatedAt: serverTimestamp() },
+        [`publicMentorReviews/${mentorUid}/${appointmentId}`]: publicReview
+    };
+    if (studentUid) {
+        updates[`studentRatings/${studentUid}/${appointmentId}/reviewStatus`] = nextStatus;
+        updates[`studentRatings/${studentUid}/${appointmentId}/moderatedAt`] = serverTimestamp();
+        updates[`studentRatings/${studentUid}/${appointmentId}/moderatedBy`] = adminState.adminUid;
+    }
+    await update(ref(database), updates);
+    await logActivity("mentor_review_moderated", `Marked mentor review ${appointmentId} as ${nextStatus}`, "mentor", mentorUid);
+    showToast(`Review marked ${nextStatus}.`, "success");
 }
 
 async function approveMentor(uid) {
@@ -2122,11 +2386,19 @@ async function sendSupportMessageToUser(receiverUid, subject, message, priority 
     };
     updates[`notifications/${receiverUid}/${notificationRef.key}`] = {
         notificationId: notificationRef.key,
-        type: "admin_message",
+        targetUserUid: receiverUid,
+        targetRole: normalize(receiver.userType || "student") || "student",
+        senderUid: adminState.adminUid,
+        senderRole: "admin",
+        type: "admin_support_reply",
         title: "New message from EduPath Support",
         message: subject,
         messagePreview: message.slice(0, 140),
-        relatedConversationId: conversationId,
+        relatedEntityType: "conversation",
+        relatedEntityId: conversationId,
+        conversationId,
+        targetPage: `${normalize(receiver.userType || "student") || "student"}-dashboard.html`,
+        targetSection: normalize(receiver.userType || "student") === "mentor" ? "support" : "support-section",
         read: false,
         status: "unread",
         createdAt: serverTimestamp()
@@ -2426,10 +2698,12 @@ function renderSystemStatus() {
 function renderPendingActions() {
     const container = document.getElementById("pending-actions-list");
     if (!container) return;
+    const pendingReviews = flattenMentorReviews().filter((review) => normalizeRatingStatus(review.reviewStatus || "pending") === "pending").length;
     const actions = [
         { title: "Pending Mentor Approvals", desc: "Mentors waiting for approval", count: countWhere(adminState.mentors, (m) => normalize(m.status || "pending") === "pending"), section: "mentor-approvals", icon: "fa-user-check", tone: "orange" },
         { title: "Unread Support Messages", desc: "Messages waiting for response", count: getUnreadSupportCount(), section: "support-inbox", icon: "fa-envelope", tone: "red" },
         { title: "Pending Mentor Requests", desc: "Student mentoring requests", count: countWhere(adminState.mentorRequests, (r) => normalize(r.status || "pending") === "pending"), section: "mentor-requests", icon: "fa-user-clock", tone: "blue" },
+        { title: "Pending Mentor Reviews", desc: "Student reviews awaiting approval", count: pendingReviews, section: "mentor-reviews", icon: "fa-star-half-stroke", tone: "purple" },
         { title: "Scholarships Near Deadline", desc: "Scholarships requiring attention", count: nearDeadlineScholarships().length, section: "manage-scholarships", icon: "fa-graduation-cap", tone: "green" },
         { title: "Draft Courses", desc: "Courses waiting for admin review", count: countWhere(adminState.courses, (c) => normalize(c.status) === "draft"), section: "manage-courses", icon: "fa-book", tone: "purple" }
     ];
@@ -2592,6 +2866,8 @@ function updateSidebarBadges() {
     setText("badge-mentor-approvals", countWhere(adminState.mentors, (m) => normalize(m.status || "pending") === "pending") || "");
     setText("badge-support", getUnreadSupportCount() || "");
     setText("badge-mentor-requests", countWhere(adminState.mentorRequests, (r) => normalize(r.status || "pending") === "pending") || "");
+    setText("badge-mentor-reviews", flattenMentorReviews().filter((review) => normalizeRatingStatus(review.reviewStatus || "pending") === "pending").length || "");
+    setText("badge-profile-updates", flattenMentorProfileUpdates().filter((change) => normalize(change.status || "recorded") === "recorded").length || "");
 }
 
 function getUnreadSupportCount() {
@@ -2619,7 +2895,39 @@ function flattenMentorConnections() {
 }
 
 function notification(title, message) {
-    return { title, message, status: "unread", createdAt: serverTimestamp() };
+    const lower = `${title} ${message}`.toLowerCase();
+    let type = "admin_support_reply";
+    let targetPage = "student-dashboard.html";
+    let targetSection = "support-section";
+
+    if (lower.includes("mentor approved")) {
+        type = "mentor_application_approved";
+        targetPage = "mentor-dashboard.html";
+        targetSection = "dashboard-overview";
+    } else if (lower.includes("under review") || lower.includes("changes requested")) {
+        type = lower.includes("changes requested") ? "mentor_changes_requested" : "mentor_application_submitted";
+        targetPage = "mentor-dashboard.html";
+        targetSection = "complete-profile";
+    } else if (lower.includes("rejected")) {
+        type = "mentor_application_rejected";
+        targetPage = "mentor-dashboard.html";
+        targetSection = "complete-profile";
+    } else if (lower.includes("institute")) {
+        targetPage = "institute-dashboard.html";
+        targetSection = "profile";
+    }
+
+    return {
+        title,
+        message,
+        type,
+        targetPage,
+        targetSection,
+        targetRole: targetPage.includes("mentor") ? "mentor" : targetPage.includes("admin") ? "admin" : targetPage.includes("institute") ? "institute" : "student",
+        status: "unread",
+        read: false,
+        createdAt: serverTimestamp()
+    };
 }
 
 function countWhere(obj, predicate) {
@@ -2768,8 +3076,8 @@ function accountBadgeClass(status) {
 function statusBadgeClass(status) {
     const s = normalize(status || "draft");
     if (["approved", "accepted", "active", "completed", "read", "replied", "closed"].includes(s)) return "badge-success";
-    if (["pending", "new", "unread", "draft", "in-progress"].includes(s)) return "badge-warning";
-    if (["rejected", "inactive", "archived", "cancelled", "disabled", "suspended"].includes(s)) return "badge-danger";
+    if (["pending", "new", "unread", "draft", "in-progress", "reported"].includes(s)) return "badge-warning";
+    if (["rejected", "hidden", "inactive", "archived", "cancelled", "disabled", "suspended"].includes(s)) return "badge-danger";
     return "badge-info";
 }
 
@@ -2843,6 +3151,10 @@ function display(value) {
     if (Array.isArray(value)) return value.join(", ");
     if (typeof value === "object") return JSON.stringify(value);
     return String(value);
+}
+
+function displayVal(value) {
+    return display(value);
 }
 
 function truncate(value, max = 120) {

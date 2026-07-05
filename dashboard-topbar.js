@@ -2,10 +2,12 @@
 import { database } from "./firebase-config.js";
 import { ref, onValue, serverTimestamp, update } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { wireThemeToggle } from "./theme.js";
+import { handleNotificationClick, isUnreadNotification } from "./notifications.js";
 
 let dashboardClockTimer = null;
 let dashboardGreetingName = 'User';
 let activeNotificationUid = '';
+let activeNotificationRole = '';
 
 export function ensureDashboardTopbarLayout() {
     const topbar = document.querySelector('.topbar');
@@ -14,23 +16,26 @@ export function ensureDashboardTopbarLayout() {
 
     topbarRight.classList.add('dashboard-topbar-actions');
 
-    let clock = document.querySelector('.dashboard-clock-card');
-    if (!clock) {
-        clock = document.createElement('div');
-        clock.className = 'dashboard-clock-card';
-        clock.innerHTML = `
-            <span class="dashboard-greeting" id="dashboard-greeting">Good Day, User</span>
-            <span class="dashboard-date" id="dashboard-date">Today</span>
-            <time class="dashboard-live-clock" id="dashboard-live-clock" datetime="">--:--:--</time>
-        `;
+    const existingDateTime = document.querySelector(".mentor-date-time");
+    if (!existingDateTime) {
+        let clock = document.querySelector('.dashboard-clock-card');
+        if (!clock) {
+            clock = document.createElement('div');
+            clock.className = 'dashboard-clock-card';
+            clock.innerHTML = `
+                <span class="dashboard-greeting" id="dashboard-greeting">Good Day, User</span>
+                <span class="dashboard-date" id="dashboard-date">Today</span>
+                <time class="dashboard-live-clock" id="dashboard-live-clock" datetime="">--:--:--</time>
+            `;
+        }
+        clock.classList.add('topbar-clock-card');
+        const profileSlot = topbarRight.querySelector('.user-profile, .ep-avatar-container');
+        const firstAction = topbarRight.querySelector('.live-sync, .theme-toggle, .topbar-theme-wrap, .notification-wrap') || profileSlot || topbarRight.firstElementChild;
+        if (clock.parentElement !== topbarRight || clock.nextElementSibling !== firstAction) {
+            topbarRight.insertBefore(clock, firstAction);
+        }
+        if (topbar) topbar.classList.add('has-topbar-clock');
     }
-    clock.classList.add('topbar-clock-card');
-    const profileSlot = topbarRight.querySelector('.user-profile, .ep-avatar-container');
-    const firstAction = topbarRight.querySelector('.live-sync, .theme-toggle, .topbar-theme-wrap, .notification-wrap') || profileSlot || topbarRight.firstElementChild;
-    if (clock.parentElement !== topbarRight || clock.nextElementSibling !== firstAction) {
-        topbarRight.insertBefore(clock, firstAction);
-    }
-    if (topbar) topbar.classList.add('has-topbar-clock');
 
     if (!topbarRight.querySelector('.notification-wrap')) {
         const profileSlot = topbarRight.querySelector('.user-profile, .ep-avatar-container');
@@ -63,9 +68,10 @@ export function ensureDashboardTopbarLayout() {
     startDashboardClock();
 }
 
-export function initDashboardNotifications(uid) {
+export function initDashboardNotifications(uid, role = '') {
     if (!uid) return;
     activeNotificationUid = uid;
+    activeNotificationRole = role || inferDashboardRole();
 
     ensureDashboardTopbarLayout();
 
@@ -114,11 +120,15 @@ export function initDashboardNotifications(uid) {
         }
 
         entries.forEach((n) => {
-            if (isUnreadNotification(n)) unread++;
+            if (isUnreadNotification(n, activeNotificationUid)) unread++;
             const li = document.createElement('li');
-            li.className = `notification-item ${isUnreadNotification(n) ? 'unread' : 'read'}`;
+            li.className = `notification-item ${isUnreadNotification(n, activeNotificationUid) ? 'unread' : 'read'}`;
             li.tabIndex = 0;
             li.setAttribute('role', 'menuitem');
+            li.dataset.notificationId = n.notificationId || n.id || '';
+            li.dataset.targetPage = n.targetPage || '';
+            li.dataset.targetSection = n.targetSection || '';
+            li.dataset.relatedId = n.relatedEntityId || n.relatedId || '';
             li.innerHTML = `
                 <strong>${escapeHtml(n.title || 'Notification')}</strong>
                 <p>${escapeHtml(n.message || n.body || '')}</p>
@@ -237,13 +247,6 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
-function isUnreadNotification(notification = {}) {
-    if (notification.source === 'admin' && activeNotificationUid) {
-        return notification.readBy?.[activeNotificationUid] !== true;
-    }
-    return notification.isRead === false || notification.read === false || notification.status === 'unread' || (notification.isRead === undefined && notification.read === undefined && notification.status === undefined);
-}
-
 function getNotificationTime(ts) {
     if (!ts) return 0;
     if (typeof ts === 'number') return ts;
@@ -253,21 +256,6 @@ function getNotificationTime(ts) {
 }
 
 async function openNotification(notification = {}) {
-    if (notification.path && isUnreadNotification(notification)) {
-        const updates = notification.source === 'admin' && activeNotificationUid
-            ? {
-                [`readBy/${activeNotificationUid}`]: true,
-                [`readAtBy/${activeNotificationUid}`]: serverTimestamp()
-            }
-            : {
-                isRead: true,
-                read: true,
-                status: 'read',
-                readAt: serverTimestamp()
-            };
-        await update(ref(database, notification.path), updates).catch((error) => console.error('Notification read update failed:', error));
-    }
-
     if (notification.source === 'guestMessage' && notification.relatedId) {
         await update(ref(database, `guestMessages/${notification.relatedId}`), {
             status: 'read',
@@ -276,24 +264,11 @@ async function openNotification(notification = {}) {
         }).catch((error) => console.error('Guest message read update failed:', error));
     }
 
-    if (notification.type === 'ASK_EDUPATH_MESSAGE' || notification.category === 'ASK_EDUPATH_MESSAGE') {
-        if (location.pathname.toLowerCase().endsWith('/admin-dashboard.html') || document.getElementById('support-inbox')) {
-            location.hash = 'support-inbox';
-            window.dispatchEvent(new HashChangeEvent('hashchange'));
-        } else {
-            window.location.href = 'admin-dashboard.html#support-inbox';
-        }
-    } else if (String(notification.type || '').startsWith('appointment_')) {
-        if (location.pathname.toLowerCase().endsWith('/mentor-dashboard.html') || document.getElementById('appointments')) {
-            location.hash = 'appointments';
-            window.dispatchEvent(new HashChangeEvent('hashchange'));
-            window.dispatchEvent(new PopStateEvent('popstate'));
-        } else if (location.pathname.toLowerCase().endsWith('/student-dashboard.html') || document.getElementById('mentor-sessions-section')) {
-            location.hash = 'mentor-sessions';
-            window.dispatchEvent(new HashChangeEvent('hashchange'));
-            window.dispatchEvent(new PopStateEvent('popstate'));
-        }
-    }
+    await handleNotificationClick(notification, {
+        uid: activeNotificationUid,
+        role: activeNotificationRole,
+        showToast: window.EduPathToast?.show
+    });
 }
 
 function formatNotifTime(ts) {
@@ -301,4 +276,12 @@ function formatNotifTime(ts) {
     const d = new Date(getNotificationTime(ts));
     if (Number.isNaN(d.getTime())) return '';
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function inferDashboardRole() {
+    if (document.body.classList.contains('student-dashboard-page')) return 'student';
+    if (document.body.classList.contains('mentor-dashboard-page')) return 'mentor';
+    if (document.body.classList.contains('admin-dashboard-page')) return 'admin';
+    if (document.body.classList.contains('institute-dashboard-page')) return 'institute';
+    return '';
 }
