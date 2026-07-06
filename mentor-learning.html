@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);var c=localStorage.getItem('edupathSidebarCollapsed')||localStorage.getItem('sidebarCollapsed');if(c==='true'&&window.innerWidth>768){document.documentElement.classList.add('sidebar-collapsed');}})();</script>
+    <title>My Learning | EduPath Lanka</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="theme.css?v=20260624-mentor-toggle-fix">
+    <link rel="stylesheet" href="mentor-dashboard.css?v=20260705-approved-profile-workflow">
+    <link rel="stylesheet" href="mentor-learning.css?v=20260705-mentor-learning-redesign">
+</head>
+<body class="mentor-dashboard-page mentor-learning-page">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <aside class="sidebar learning-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="dashboard-brand-logo">
+                <img src="images/edupath-logo-transparent.png" alt="EduPath Lanka logo">
+                <span>EduPath <strong>Lanka</strong></span>
+            </a>
+            <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
+        </div>
+        
+        <div class="learning-user-card" id="sidebar-user">
+            <img src="images/avatar-placeholder.png" id="sidebar-user-avatar-img" alt="Profile" onerror="this.onerror=null;this.src='images/avatar-placeholder.png';">
+            <div>
+                <strong id="sidebar-user-name">Loading...</strong>
+                <span>My Learning</span>
+            </div>
+        </div>
+
+        <nav class="learning-sidebar-nav">
+            <div class="learning-nav-group">
+                <div class="learning-nav-group-title">My Learning</div>
+                <button type="button" class="learning-nav-item active" data-learning-nav="overview">
+                    <i class="fas fa-table-cells-large" aria-hidden="true"></i> <span>Overview</span>
+                </button>
+                <button type="button" class="learning-nav-item" data-learning-nav="learning-profile">
+                    <i class="fas fa-user-graduate" aria-hidden="true"></i> <span>Learning Profile</span>
+                </button>
+            </div>
+
+            <div class="learning-nav-group">
+                <div class="learning-nav-group-title">Explore</div>
+                <button type="button" class="learning-nav-item" data-learning-nav="courses">
+                    <i class="fas fa-book-open" aria-hidden="true"></i> <span>Courses</span>
+                </button>
+                <button type="button" class="learning-nav-item" data-learning-nav="scholarships">
+                    <i class="fas fa-award" aria-hidden="true"></i> <span>Scholarships</span>
+                </button>
+                <button type="button" class="learning-nav-item" data-learning-nav="institutes">
+                    <i class="fas fa-university" aria-hidden="true"></i> <span>Institutes</span>
+                </button>
+                <button type="button" class="learning-nav-item" data-learning-nav="find-mentor">
+                    <i class="fas fa-user-tie" aria-hidden="true"></i> <span>Find a Mentor</span>
+                </button>
+            </div>
+
+            <div class="learning-nav-group">
+                <div class="learning-nav-group-title">Mentorship</div>
+                <button type="button" class="learning-nav-item" data-learning-nav="my-requests">
+                    <i class="fas fa-paper-plane" aria-hidden="true"></i> <span>My Requests</span>
+                </button>
+                <button type="button" class="learning-nav-item" data-learning-nav="connected-mentors">
+                    <i class="fas fa-user-check" aria-hidden="true"></i> <span>Connected Mentors</span>
+                </button>
+                <button type="button" class="learning-nav-item" data-learning-nav="learning-sessions">
+                    <i class="fas fa-calendar-days" aria-hidden="true"></i> <span>Learning Sessions</span>
+                </button>
+                <button type="button" class="learning-nav-item" data-learning-nav="messages">
+                    <i class="fas fa-comments" aria-hidden="true"></i> <span>Messages</span>
+                </button>
+            </div>
+
+            <div class="learning-nav-group">
+                <div class="learning-nav-group-title">My Progress</div>
+                <button type="button" class="learning-nav-item" data-learning-nav="saved-opportunities">
+                    <i class="fas fa-bookmark" aria-hidden="true"></i> <span>Saved Opportunities</span>
+                </button>
+                <button type="button" class="learning-nav-item" data-learning-nav="applications">
+                    <i class="fas fa-file-alt" aria-hidden="true"></i> <span>Applications</span>
+                </button>
+                <button type="button" class="learning-nav-item" data-learning-nav="learning-goals">
+                    <i class="fas fa-bullseye" aria-hidden="true"></i> <span>Learning Goals</span>
+                </button>
+                <button type="button" class="learning-nav-item" data-learning-nav="reviews-submitted">
+                    <i class="fas fa-star" aria-hidden="true"></i> <span>Reviews Submitted</span>
+                </button>
+            </div>
+
+            <div class="learning-nav-group">
+                <div class="learning-nav-group-title">General</div>
+                <a class="learning-nav-item" href="mentor-profile.html">
+                    <i class="fas fa-user-circle" aria-hidden="true"></i> <span>My Profile</span>
+                </a>
+                <a class="learning-nav-item" href="mentor-dashboard.html">
+                    <i class="fas fa-chalkboard-user" aria-hidden="true"></i> <span>Switch to Mentor Mode</span>
+                </a>
+                <a class="learning-nav-item" href="index.html">
+                    <i class="fas fa-globe" aria-hidden="true"></i> <span>Public Home</span>
+                </a>
+                <button type="button" class="learning-nav-item" id="logout-btn-sidebar" style="color: #dc2626;">
+                    <i class="fas fa-sign-out-alt" aria-hidden="true" style="color: #ef4444;"></i> <span>Logout</span>
+                </button>
+            </div>
+        </nav>
+    </aside>
+
+    <main class="main-content learning-main-content">
+        <header class="topbar mentor-topbar">
+            <div class="topbar-left">
+                <button type="button" class="sidebar-toggle topbar-sidebar-toggle" id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+                <div>
+                    <h2 class="page-title mentor-topbar-title">My Learning</h2>
+                </div>
+            </div>
+            <div class="topbar-right dashboard-topbar-actions">
+                <div class="user-profile">
+                    <div class="avatar"><i class="fas fa-user-graduate"></i></div>
+                    <span class="user-name" id="top-user-name">Loading...</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="learning-content-container">
+            <!-- OVERVIEW -->
+            <section id="section-overview" class="learning-section active" data-learning-section="overview">
+                <div class="learning-overview-hero">
+                    <div>
+                        <h1>Build Your Next Step</h1>
+                        <p style="margin-top: 8px; color: #536783; font-size: 1.1rem; max-width: 600px;">Explore courses, scholarships, institutes, and mentors based on your Learning Profile.</p>
+                        <div style="display: flex; gap: 12px; margin-top: 24px;">
+                            <button class="btn btn-primary" type="button" data-section-jump="courses">Explore Courses</button>
+                            <button class="btn btn-outline" type="button" data-section-jump="find-mentor">Find a Mentor</button>
+                            <button class="btn btn-outline" type="button" data-section-jump="learning-profile">Update Profile</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="learning-summary-grid">
+                    <div class="learning-summary-card">
+                        <span>Course Matches</span>
+                        <strong id="stat-course-matches">0</strong>
+                    </div>
+                    <div class="learning-summary-card">
+                        <span>Scholarship Matches</span>
+                        <strong id="stat-scholarship-matches">0</strong>
+                    </div>
+                    <div class="learning-summary-card">
+                        <span>Saved Opportunities</span>
+                        <strong id="stat-saved-opportunities">0</strong>
+                    </div>
+                    <div class="learning-summary-card">
+                        <span>Connected Mentors</span>
+                        <strong id="stat-connected-mentors">0</strong>
+                    </div>
+                    <div class="learning-summary-card">
+                        <span>Upcoming Sessions</span>
+                        <strong id="stat-upcoming-sessions">0</strong>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-top: 18px;">
+                    <div class="overview-panel">
+                        <div class="overview-panel-header">
+                            <h3 style="margin:0; font-size: 1.1rem; color: #0f1b3d;">Top Course Match</h3>
+                            <button class="btn btn-sm btn-outline" data-section-jump="courses">View All</button>
+                        </div>
+                        <div id="overview-top-course"></div>
+                    </div>
+                    <div class="overview-panel">
+                        <div class="overview-panel-header">
+                            <h3 style="margin:0; font-size: 1.1rem; color: #0f1b3d;">Top Scholarship</h3>
+                            <button class="btn btn-sm btn-outline" data-section-jump="scholarships">View All</button>
+                        </div>
+                        <div id="overview-top-scholarship"></div>
+                    </div>
+                    <div class="overview-panel">
+                        <div class="overview-panel-header">
+                            <h3 style="margin:0; font-size: 1.1rem; color: #0f1b3d;">Recommended Mentor</h3>
+                            <button class="btn btn-sm btn-outline" data-section-jump="find-mentor">Find Mentors</button>
+                        </div>
+                        <div id="overview-top-mentor"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- LEARNING PROFILE -->
+            <section id="section-learning-profile" class="learning-section" data-learning-section="learning-profile">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Learning Profile</h1>
+                        <p>Update your learning preferences to get accurate recommendations.</p>
+                    </div>
+                </div>
+                <form id="learning-profile-form" class="glass overview-panel learning-form">
+                    <fieldset style="border:none; margin-bottom: 24px;">
+                        <legend style="font-weight: 700; color: #0f1b3d; margin-bottom: 12px; font-size: 1.2rem;">Current Status & Goals</legend>
+                        <div class="form-grid">
+                            <label>Current Education Level<input class="form-control" name="currentEducationLevel" id="lp-currentEducationLevel"></label>
+                            <label>Preferred Fields (comma separated)<input class="form-control" name="preferredFields" id="lp-preferredFields"></label>
+                            <label>Career Goals (comma separated)<input class="form-control" name="careerGoals" id="lp-careerGoals"></label>
+                            <label>Skills to Improve (comma separated)<input class="form-control" name="skillsToImprove" id="lp-skillsToImprove"></label>
+                        </div>
+                    </fieldset>
+                    <fieldset style="border:none; margin-bottom: 24px;">
+                        <legend style="font-weight: 700; color: #0f1b3d; margin-bottom: 12px; font-size: 1.2rem;">Preferences</legend>
+                        <div class="form-grid">
+                            <label>Study Modes<input class="form-control" name="preferredStudyModes" id="lp-preferredStudyModes" placeholder="Online, Physical"></label>
+                            <label>Preferred Locations<input class="form-control" name="preferredLocations" id="lp-preferredLocations"></label>
+                            <label>Max Budget (LKR)<input class="form-control" type="number" name="budgetMax" id="lp-budgetMax"></label>
+                            <label style="display:flex; align-items:center; flex-direction:row;"><input type="checkbox" name="financialSupportNeeded" id="lp-financialSupportNeeded" style="width:auto; margin-right:8px;"> Needs Financial Support / Scholarships</label>
+                        </div>
+                    </fieldset>
+                    <div>
+                        <button type="submit" class="btn btn-primary" id="save-learning-profile-btn">Save Profile</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- COURSES -->
+            <section id="section-courses" class="learning-section" data-learning-section="courses">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Recommended Courses</h1>
+                        <p>Courses matched using your education, interests, skills, budget, location, and study preferences.</p>
+                    </div>
+                </div>
+                <div class="learning-filter-toolbar" id="courses-filter-bar">
+                    <!-- Filters injected via JS -->
+                </div>
+                <div id="courses-grid" class="learning-card-grid"></div>
+            </section>
+
+            <!-- SCHOLARSHIPS -->
+            <section id="section-scholarships" class="learning-section" data-learning-section="scholarships">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Scholarship Matches</h1>
+                        <p>Financial support opportunities matching your profile.</p>
+                    </div>
+                </div>
+                <div class="learning-filter-toolbar" id="scholarships-filter-bar"></div>
+                <div id="scholarships-grid" class="learning-card-grid"></div>
+            </section>
+
+            <!-- INSTITUTES -->
+            <section id="section-institutes" class="learning-section" data-learning-section="institutes">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Institutes</h1>
+                        <p>Institutes offering programs in your fields of interest.</p>
+                    </div>
+                </div>
+                <div class="learning-filter-toolbar" id="institutes-filter-bar"></div>
+                <div id="institutes-grid" class="learning-card-grid"></div>
+            </section>
+
+            <!-- FIND A MENTOR -->
+            <section id="section-find-mentor" class="learning-section" data-learning-section="find-mentor">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Find a Mentor</h1>
+                        <p>Request mentorship from another approved EduPath mentor.</p>
+                    </div>
+                </div>
+                <div class="learning-filter-toolbar" id="mentors-filter-bar"></div>
+                <div id="available-mentors-grid" class="learning-list stacked"></div>
+            </section>
+
+            <!-- MY REQUESTS -->
+            <section id="section-my-requests" class="learning-section" data-learning-section="my-requests">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>My Requests</h1>
+                        <p>Track requests you sent while acting as a mentee.</p>
+                    </div>
+                </div>
+                <div class="learning-tabs" data-request-tabs>
+                    <button type="button" class="active" data-request-filter="all">All</button>
+                    <button type="button" data-request-filter="pending">Pending</button>
+                    <button type="button" data-request-filter="accepted">Accepted</button>
+                    <button type="button" data-request-filter="rejected">Rejected</button>
+                    <button type="button" data-request-filter="cancelled">Cancelled</button>
+                </div>
+                <div id="learning-requests-list" class="learning-list stacked"></div>
+            </section>
+
+            <!-- CONNECTED MENTORS -->
+            <section id="section-connected-mentors" class="learning-section" data-learning-section="connected-mentors">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Connected Mentors</h1>
+                        <p>Active mentorship connections where you are the mentee.</p>
+                    </div>
+                </div>
+                <div id="connected-mentors-list" class="learning-card-grid"></div>
+            </section>
+
+            <!-- LEARNING SESSIONS -->
+            <section id="section-learning-sessions" class="learning-section" data-learning-section="learning-sessions">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Learning Sessions</h1>
+                        <p>Sessions where you receive mentorship.</p>
+                    </div>
+                </div>
+                <div class="learning-tabs" data-session-tabs>
+                    <button type="button" class="active" data-session-filter="upcoming">Upcoming</button>
+                    <button type="button" data-session-filter="completed">Completed</button>
+                    <button type="button" data-session-filter="cancelled">Cancelled</button>
+                </div>
+                <div id="learning-sessions-list" class="learning-list stacked"></div>
+            </section>
+
+            <!-- MESSAGES -->
+            <section id="section-messages" class="learning-section" data-learning-section="messages">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Messages</h1>
+                        <p>Conversations with your connected mentors.</p>
+                    </div>
+                </div>
+                <div class="learning-messages-layout">
+                    <div class="messages-list-col">
+                        <div style="padding: 14px; border-bottom: 1px solid #dfe7f3; font-weight: 700; color: #0f1b3d;">Conversations</div>
+                        <div id="learning-messages-list" style="overflow-y:auto; flex: 1;"></div>
+                    </div>
+                    <div class="messages-chat-col">
+                        <div class="modal-header" style="border-bottom: 1px solid #dfe7f3; padding: 14px;">
+                            <div>
+                                <h3 id="learning-chat-title" style="margin:0; font-size:1.1rem;">Select a conversation</h3>
+                                <p id="learning-chat-subtitle" class="text-muted" style="margin:0; font-size:0.85rem;"></p>
+                            </div>
+                        </div>
+                        <div id="learning-chat-thread" style="flex:1; overflow-y:auto; padding: 16px; display:flex; flex-direction:column; gap:12px; background: #f8fafc;">
+                            <div class="learning-empty-state" style="border:none; background:transparent; min-height:100%;">
+                                <div class="empty-state-icon"><i class="fas fa-comments"></i></div>
+                                <h3>No conversation selected</h3>
+                                <p>Select a mentor from the list to start messaging.</p>
+                            </div>
+                        </div>
+                        <form id="learning-chat-form" style="padding: 14px; border-top: 1px solid #dfe7f3; display: flex; gap: 10px;">
+                            <input id="learning-chat-input" class="form-control" style="flex:1;" required placeholder="Write your message..." disabled>
+                            <button class="btn btn-primary" type="submit" disabled><i class="fas fa-paper-plane"></i> Send</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SAVED OPPORTUNITIES -->
+            <section id="section-saved-opportunities" class="learning-section" data-learning-section="saved-opportunities">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Saved Opportunities</h1>
+                        <p>Courses, scholarships, and institutes you have saved.</p>
+                    </div>
+                </div>
+                <div class="learning-tabs" data-saved-tabs>
+                    <button type="button" class="active" data-saved-filter="courses">Courses</button>
+                    <button type="button" data-saved-filter="scholarships">Scholarships</button>
+                    <button type="button" data-saved-filter="institutes">Institutes</button>
+                    <button type="button" data-saved-filter="mentors">Mentors</button>
+                </div>
+                <div id="saved-opportunities-grid" class="learning-card-grid"></div>
+            </section>
+
+            <!-- APPLICATIONS -->
+            <section id="section-applications" class="learning-section" data-learning-section="applications">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Applications</h1>
+                        <p>Track the status of your applications.</p>
+                    </div>
+                </div>
+                <div class="learning-tabs" data-application-tabs>
+                    <button type="button" class="active" data-app-filter="all">All</button>
+                    <button type="button" data-app-filter="interested">Interested</button>
+                    <button type="button" data-app-filter="applied">Applied</button>
+                    <button type="button" data-app-filter="shortlisted">Shortlisted</button>
+                </div>
+                <div id="applications-list" class="learning-list stacked"></div>
+            </section>
+
+            <!-- LEARNING GOALS -->
+            <section id="section-learning-goals" class="learning-section" data-learning-section="learning-goals">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Learning Goals</h1>
+                        <p>Track your progress and link goals to a connected mentor.</p>
+                    </div>
+                    <button class="btn btn-primary" id="add-learning-goal-btn"><i class="fas fa-plus"></i> Add Goal</button>
+                </div>
+                <div id="learning-goals-list" class="learning-card-grid"></div>
+            </section>
+
+            <!-- REVIEWS SUBMITTED -->
+            <section id="section-reviews-submitted" class="learning-section" data-learning-section="reviews-submitted">
+                <div class="learning-section-header">
+                    <div>
+                        <h1>Reviews Submitted</h1>
+                        <p>Ratings you submitted after verified learning sessions.</p>
+                    </div>
+                </div>
+                <div id="reviews-submitted-list" class="learning-list stacked"></div>
+            </section>
+        </div>
+    </main>
+
+    <div id="request-mentorship-modal" class="modal-overlay hidden" aria-hidden="true">
+        <div class="modal-card learning-request-modal">
+            <div class="modal-header"><div><h3>Request Mentorship</h3><p id="request-modal-subtitle" class="text-muted"></p></div><button type="button" class="modal-close" data-close-request-modal aria-label="Close">&times;</button></div>
+            <form id="learning-request-form" class="learning-form" novalidate>
+                <input type="hidden" id="request-target-mentor-uid">
+                <div class="form-grid">
+                    <label>Mentorship Topic<input id="request-topic" class="form-control" required maxlength="150" placeholder="Academic research, final-year project..."><small id="request-topic-error" class="field-error"></small></label>
+                    <label>Guidance Category<select id="request-category" class="form-control" required><option value="">Select category</option><option>Academic Research</option><option>Research Methodology</option><option>Academic Writing</option><option>Final Year Project</option><option>Postgraduate Study</option><option>Technical Skill Development</option><option>Career Planning</option><option>Industry Knowledge</option><option>Scholarship Guidance</option><option>Entrepreneurship</option><option>Interview Preparation</option></select><small id="request-category-error" class="field-error"></small></label>
+                    <label class="full-width">Learning Goal<textarea id="request-goal" class="form-control" rows="3" required placeholder="Describe what you want to achieve..."></textarea><small id="request-goal-error" class="field-error"></small></label>
+                    <label class="full-width">Request Message<textarea id="request-message" class="form-control" rows="4" required placeholder="Introduce yourself and explain the support you need..."></textarea><small id="request-message-error" class="field-error"></small></label>
+                    <label>Preferred Mode<select id="request-mode" class="form-control" required><option value="">Select mode</option><option>Online</option><option>Physical</option><option>Hybrid</option></select><small id="request-mode-error" class="field-error"></small></label>
+                    <label>Session Duration<input id="request-duration" class="form-control" type="number" min="15" max="240" step="15" value="60"><small id="request-duration-error" class="field-error"></small></label>
+                    <label>Preferred Days<input id="request-days" class="form-control" placeholder="Weekends, weekday evenings"></label>
+                    <label>Urgency<select id="request-urgency" class="form-control"><option value="normal">Normal</option><option value="soon">Soon</option><option value="urgent">Urgent</option></select></label>
+                </div>
+                <div class="modal-actions"><button class="btn btn-outline" type="button" data-close-request-modal>Cancel</button><button class="btn btn-primary" id="submit-learning-request-btn" type="submit">Send Request</button></div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="theme.js"></script>
+    <script type="module" src="auth-nav.js?v=20260614-brand"></script>
+    <script type="module" src="dashboard-topbar.js"></script>
+    <script type="module" src="mentor-learning.js?v=20260705-mentor-learning-redesign"></script>
+</body>
+</html>

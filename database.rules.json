@@ -203,13 +203,21 @@
         ".write": "auth != null && $uid == auth.uid"
       }
     },
-    "mentorRequests": {
-      ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (query.orderByChild == 'mentorUid' && (query.equalTo == auth.uid || root.child('studentMentors').child(auth.uid).child(query.equalTo).child('status').val() == 'connected')) || (query.orderByChild == 'studentUid' && query.equalTo == auth.uid))",
+    "mentorshipRequests": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (query.orderByChild == 'requesterUid' && query.equalTo == auth.uid) || (query.orderByChild == 'targetMentorUid' && query.equalTo == auth.uid))",
       ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
-      ".indexOn": ["studentUid", "mentorUid", "status"],
+      ".indexOn": ["requesterUid", "targetMentorUid", "status"],
       "$requestId": {
-        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('studentUid').val() == auth.uid || data.child('mentorUid').val() == auth.uid)",
-        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (!data.exists() && newData.child('studentUid').val() == auth.uid) || data.child('studentUid').val() == auth.uid || data.child('mentorUid').val() == auth.uid)"
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('requesterUid').val() == auth.uid || data.child('targetMentorUid').val() == auth.uid)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (!data.exists() && newData.child('requesterUid').val() == auth.uid && newData.child('requesterUid').val() != newData.child('targetMentorUid').val()) || (data.exists() && data.child('requesterUid').val() == auth.uid && data.child('status').val() == 'pending' && newData.child('status').val() == 'cancelled') || (data.exists() && data.child('targetMentorUid').val() == auth.uid))"
+      }
+    },    "mentorRequests": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (query.orderByChild == 'mentorUid' && (query.equalTo == auth.uid || root.child('studentMentors').child(auth.uid).child(query.equalTo).child('status').val() == 'connected')) || (query.orderByChild == 'targetMentorUid' && query.equalTo == auth.uid) || (query.orderByChild == 'studentUid' && query.equalTo == auth.uid) || (query.orderByChild == 'requesterUid' && query.equalTo == auth.uid))",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".indexOn": ["studentUid", "mentorUid", "requesterUid", "targetMentorUid", "status"],
+      "$requestId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('studentUid').val() == auth.uid || data.child('requesterUid').val() == auth.uid || data.child('mentorUid').val() == auth.uid || data.child('targetMentorUid').val() == auth.uid)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (!data.exists() && (newData.child('requesterUid').val() == auth.uid || newData.child('studentUid').val() == auth.uid) && newData.child('requesterUid').val() != newData.child('targetMentorUid').val()) || data.child('studentUid').val() == auth.uid || data.child('requesterUid').val() == auth.uid || data.child('mentorUid').val() == auth.uid || data.child('targetMentorUid').val() == auth.uid)"
       }
     },
     "studentMentors": {
@@ -232,6 +240,13 @@
         }
       }
     },
+    "mentorshipConnections": {
+      ".indexOn": ["mentorUid", "menteeUid", "status"],
+      "$connectionId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('mentorUid').val() == auth.uid || data.child('menteeUid').val() == auth.uid)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (!data.exists() && (newData.child('mentorUid').val() == auth.uid || newData.child('menteeUid').val() == auth.uid)) || data.child('mentorUid').val() == auth.uid || data.child('menteeUid').val() == auth.uid)"
+      }
+    },
     "mentorConversations": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
       "$conversationId": {
@@ -246,7 +261,14 @@
         ".write": "auth != null && ($mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
       }
     },
-    "mentorAppointments": {
+    "appointments": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (query.orderByChild == 'mentorUid' && query.equalTo == auth.uid) || (query.orderByChild == 'menteeUid' && query.equalTo == auth.uid))",
+      ".indexOn": ["mentorUid", "menteeUid", "connectionId", "status", "startDateTime"],
+      "$appointmentId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('mentorUid').val() == auth.uid || data.child('menteeUid').val() == auth.uid)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (!data.exists() && (newData.child('mentorUid').val() == auth.uid || newData.child('menteeUid').val() == auth.uid)) || (data.exists() && (data.child('mentorUid').val() == auth.uid || data.child('menteeUid').val() == auth.uid) && newData.child('mentorUid').val() == data.child('mentorUid').val() && newData.child('menteeUid').val() == data.child('menteeUid').val()))"
+      }
+    },    "mentorAppointments": {
       ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (query.orderByChild == 'mentorUid' && (query.equalTo == auth.uid || root.child('studentMentors').child(auth.uid).child(query.equalTo).child('status').val() == 'connected')) || (query.orderByChild == 'studentUid' && query.equalTo == auth.uid))",
       ".indexOn": ["mentorUid", "studentUid", "status", "date"],
       "$appointmentId": {
@@ -318,8 +340,8 @@
     "conversations": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
       "$conversationId": {
-        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('participantIds').child(auth.uid).val() == true || $conversationId == 'admin_' + auth.uid)",
-        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (newData.exists() && (data.child('participantIds').child(auth.uid).val() == true || newData.child('participantIds').child(auth.uid).val() == true || $conversationId == 'admin_' + auth.uid)))"
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('participantIds').child(auth.uid).val() == true || data.child('participantUids').child(auth.uid).val() == true || $conversationId == 'admin_' + auth.uid)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (newData.exists() && (data.child('participantIds').child(auth.uid).val() == true || data.child('participantUids').child(auth.uid).val() == true || newData.child('participantIds').child(auth.uid).val() == true || newData.child('participantUids').child(auth.uid).val() == true || $conversationId == 'admin_' + auth.uid)))"
       }
     },
     "notifications": {
@@ -381,6 +403,50 @@
       ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
     },
     "userMessages": {
+    "activityLogs": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".write": "auth != null"
+    },
+    "presence": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && $uid == auth.uid"
+      }
+    },
+    "loginHistory": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "savedCourses": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && $uid == auth.uid"
+      }
+    },
+    "savedScholarships": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && $uid == auth.uid"
+      }
+    },
+    "studentProgress": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "careerGuides": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "userMessages": {
       "$uid": {
         ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
         ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
@@ -389,6 +455,34 @@
     "adminNotes": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
       ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "learningProfiles": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "savedOpportunities": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "opportunityApplications": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "userReminders": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
     }
   }
 }

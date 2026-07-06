@@ -1,10 +1,11 @@
-import { auth, database } from "./firebase-config.js";
+﻿import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, push, set, update, serverTimestamp, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast } from "./auth-nav.js?v=20260614-brand";
 import { requiredText, validateForm } from "./validation.js";
 import { getDashboardDestination, getProfileDestination } from "./shared-navigation.js";
 import { publicReviewRows, ratingLabel } from "./ratings.js";
+import { accountRole, activeRequestFor, buildMentorshipRequestPayload, normalizeUserRoles } from "./mentorship-utils.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     // URL Parameter Extraction
@@ -65,6 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUserData = null;
     let currentStudentData = null;
     let currentUserType = null;
+    let currentUserRoles = normalizeUserRoles({});
     let mentorProfile = null;
     let existingRequest = null;
     let mentorRatingSummary = {};
@@ -200,17 +202,19 @@ document.addEventListener('DOMContentLoaded', () => {
             mentorRatingSummary = ratingSummaryData || {};
             mentorPublicReviews = publicReviewsData || {};
 
-            // Check existing request
-            if (currentUser && currentUserType === 'student') {
+            // Check existing request for any account acting as mentee. Legacy studentUid records remain readable.
+            if (currentUser) {
                 const requestSnap = await get(
-                    query(ref(database, 'mentorRequests'), orderByChild('studentUid'), equalTo(currentUser.uid))
-                );
-                if (requestSnap.exists()) {
-                    const requests = requestSnap.val();
-                    existingRequest = Object.values(requests).find(
-                        r => r.mentorUid === mentorUid && ['pending', 'accepted', 'connected'].includes(String(r.status || '').toLowerCase())
-                    );
+                    query(ref(database, 'mentorRequests'), orderByChild('requesterUid'), equalTo(currentUser.uid))
+                ).catch(() => null);
+                let requests = requestSnap?.exists() ? requestSnap.val() : {};
+                if (!Object.keys(requests).length) {
+                    const legacySnap = await get(
+                        query(ref(database, 'mentorRequests'), orderByChild('studentUid'), equalTo(currentUser.uid))
+                    ).catch(() => null);
+                    requests = legacySnap?.exists() ? legacySnap.val() : {};
                 }
+                existingRequest = activeRequestFor(requests, currentUser.uid, mentorUid) || null;
             }
 
             renderProfile();
@@ -395,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Why I Mentor
         const whyMentorText = document.getElementById('why-mentor-text');
         if (mentorProfile.whyMentor || mentorProfile.purpose) {
-            whyMentorText.textContent = `“ ${mentorProfile.whyMentor || mentorProfile.purpose} ”`;
+            whyMentorText.textContent = `â€œ ${mentorProfile.whyMentor || mentorProfile.purpose} â€`;
             document.getElementById('section-why-mentor').classList.remove('hidden');
         } else {
             document.getElementById('section-why-mentor').classList.add('hidden');
@@ -557,12 +561,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // Guest User State
             const btns = `
                 <a href="login.html?redirect=mentor-profile.html?uid=${encodeURIComponent(mentorUid)}&msg=login_required" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login to Request Mentorship</a>
-                <a href="signup.html" class="btn btn-outline"><i class="fas fa-user-plus"></i> Create Student Account</a>
+                <a href="signup.html" class="btn btn-outline"><i class="fas fa-user-plus"></i> Create Account</a>
             `;
             heroActions.innerHTML = btns;
             connectionActions.innerHTML = btns;
             if (connectCardDesc) {
-                connectCardDesc.textContent = "Log in or sign up as a student to connect with this mentor and schedule sessions.";
+                connectCardDesc.textContent = "Log in or sign up to request mentorship and schedule sessions.";
             }
         } else if (currentUser.uid === mentorUid) {
             // Self Profile State
@@ -585,16 +589,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (connectCardDesc) {
                 connectCardDesc.textContent = "You are viewing this profile as an administrator. You can view their registration details or manage approval status from the admin dashboard.";
             }
-        } else if (currentUserType === 'mentor') {
-            // Logged in Mentor (other) State
-            const btns = `<button type="button" class="btn btn-primary" disabled><i class="fas fa-user-tie"></i> View Public Profile</button>`;
-            heroActions.innerHTML = btns;
-            connectionActions.innerHTML = btns;
-            if (connectCardDesc) {
-                connectCardDesc.textContent = "Only students can connect with this mentor. You are logged in as a mentor.";
-            }
-        } else if (currentUserType === 'student') {
-            // Logged in Student State
+        } else {
+            // Logged in user acting as a mentee. Account role may be student, mentor, graduate or another active role.
             if (existingRequest) {
                 const reqStatus = String(existingRequest.status || '').toLowerCase();
                 if (reqStatus === 'pending') {
@@ -621,11 +617,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 // Unconnected Student
                 const heroBtns = `
-                    <button type="button" class="btn btn-primary" id="action-request-mentor-hero"><i class="fas fa-paper-plane"></i> Request This Mentor</button>
+                    <button type="button" class="btn btn-primary" id="action-request-mentor-hero"><i class="fas fa-paper-plane"></i> Request Mentorship</button>
                     <button type="button" class="btn btn-outline" id="action-send-message-hero"><i class="fas fa-comment-dots"></i> Send Message</button>
                 `;
                 const sidebarBtns = `
-                    <button type="button" class="btn btn-primary" id="action-request-mentor-sidebar"><i class="fas fa-paper-plane"></i> Request This Mentor</button>
+                    <button type="button" class="btn btn-primary" id="action-request-mentor-sidebar"><i class="fas fa-paper-plane"></i> Request Mentorship</button>
                     <button type="button" class="btn btn-outline" id="action-send-message-sidebar"><i class="fas fa-comment-dots"></i> Send Message</button>
                 `;
                 heroActions.innerHTML = heroBtns;
@@ -724,8 +720,8 @@ document.addEventListener('DOMContentLoaded', () => {
         requestForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (!currentUser || currentUserType !== 'student') {
-                showToast("Only logged in students can submit requests.", "error");
+            if (!currentUser || !currentUserRoles.roles.mentee) {
+                showToast("Please log in to submit mentorship requests.", "error");
                 return;
             }
 
@@ -759,6 +755,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const latestMentor = mentorSnap.val() || {};
                 const latestUser = userSnap?.val?.() || {};
 
+                if (currentUser.uid === mentorUid) {
+                    showToast("You cannot send a mentorship request to yourself.", "warning");
+                    closeModal();
+                    return;
+                }
+
                 if (!isPublicApprovedMentor(latestMentor, latestUser)) {
                     showToast("This mentor is no longer available for new requests.", "error");
                     closeModal();
@@ -766,16 +768,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
+                const requestRoot = currentUserRoles.roles.mentor ? 'mentorshipRequests' : 'mentorRequests';
+
                 // Check duplicate check
                 const checkRequestsSnap = await get(
-                    query(ref(database, 'mentorRequests'), orderByChild('studentUid'), equalTo(currentUser.uid))
+                    query(ref(database, requestRoot), orderByChild('requesterUid'), equalTo(currentUser.uid))
                 );
                 let doubleSubmit = false;
                 if (checkRequestsSnap.exists()) {
                     const requests = checkRequestsSnap.val();
-                    doubleSubmit = Object.values(requests).some(
-                        r => r.mentorUid === mentorUid && ['pending', 'accepted', 'connected'].includes(String(r.status || '').toLowerCase())
-                    );
+                    doubleSubmit = Boolean(activeRequestFor(requests, currentUser.uid, mentorUid, guidanceArea));
+                }
+                if (!doubleSubmit) {
+                    const legacyRequestsSnap = await get(query(ref(database, 'mentorRequests'), orderByChild('studentUid'), equalTo(currentUser.uid))).catch(() => null);
+                    doubleSubmit = Boolean(activeRequestFor(legacyRequestsSnap?.val?.() || {}, currentUser.uid, mentorUid, guidanceArea));
                 }
 
                 if (doubleSubmit) {
@@ -785,48 +791,46 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
 
-                const requestRef = push(ref(database, 'mentorRequests'));
+                const requestRef = push(ref(database, requestRoot));
                 const requestId = requestRef.key;
 
-                const payload = {
-                    requestId: requestId,
-                    studentUid: currentUser.uid,
-                    studentName: currentStudentData?.fullName || currentUserData?.fullName || currentUser.displayName || 'Student',
-                    studentEmail: currentUserData?.email || currentUser.email || '',
-                    studentPhone: currentStudentData?.phone || currentUserData?.phone || '',
-                    educationLevel: currentStudentData?.educationLevel || currentStudentData?.education || '',
-                    interestArea: currentStudentData?.interestArea || currentStudentData?.interest || '',
-                    futureGoal: goal,
-                    mentorUid: mentorUid,
-                    mentorName: mentorProfile.fullName || 'Mentor',
-                    mentorPhotoURL: mentorProfile.photoURL || '',
-                    mentorEmail: mentorProfile.email || '',
-                    mentorOrganization: mentorProfile.universityOrCompany || mentorProfile.organization || '',
+                const payload = buildMentorshipRequestPayload({
+                    requestId,
+                    requesterUid: currentUser.uid,
+                    requester: { ...currentUserData, displayName: currentUser.displayName },
+                    requesterProfile: currentStudentData || {},
+                    targetMentorUid: mentorUid,
+                    targetMentor: mentorProfile,
+                    topic: guidanceArea,
+                    category: guidanceArea,
+                    goal,
                     message: introduction,
-                    guidanceArea: guidanceArea,
-                    preferredMode: preferredMode,
-                    status: "pending",
-                    createdAt: serverTimestamp(),
-                    updatedAt: serverTimestamp()
-                };
+                    preferredMode,
+                    preferredSessionDuration: Number(mentorProfile.preferredSessionDuration || mentorProfile.sessionDuration || 60)
+                });
+                payload.createdAt = serverTimestamp();
+                payload.updatedAt = serverTimestamp();
+                payload.educationLevel = currentStudentData?.educationLevel || currentStudentData?.education || '';
+                payload.interestArea = currentStudentData?.interestArea || currentStudentData?.interest || '';
 
                 const notificationRef = push(ref(database, `notifications/${mentorUid}`));
                 const updates = {};
-                updates[`mentorRequests/${requestId}`] = payload;
+                updates[`${requestRoot}/${requestId}`] = payload;
                 updates[`notifications/${mentorUid}/${notificationRef.key}`] = {
                     notificationId: notificationRef.key,
                     targetUserUid: mentorUid,
                     targetRole: 'mentor',
                     senderUid: currentUser.uid,
-                    senderRole: 'student',
+                    senderRole: accountRole(currentUserData),
                     type: 'mentorship_request_received',
-                    title: 'New student mentor request',
-                    message: `${payload.studentName} requested your mentorship.`,
-                    messagePreview: `New request from ${payload.studentName}`,
-                    relatedEntityType: 'mentorRequest',
+                    title: 'New Mentorship Request',
+                    message: `${payload.requesterName} requested your guidance in ${payload.topic}.`,
+                    messagePreview: `New request from ${payload.requesterName}`,
+                    relatedEntityType: requestRoot === 'mentorshipRequests' ? 'mentorship_request' : 'mentorRequest',
                     relatedEntityId: requestId,
                     requestId,
                     studentUid: currentUser.uid,
+                    requesterUid: currentUser.uid,
                     targetPage: 'mentor-dashboard.html',
                     targetSection: 'requests',
                     targetQuery: { requestId },
@@ -852,3 +856,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
+
