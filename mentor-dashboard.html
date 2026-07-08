@@ -40,9 +40,8 @@
             <li><a href="#dashboard-overview" data-section="dashboard-overview" class="active" title="Dashboard"><i class="fas fa-table-cells-large"></i><span class="sidebar-label">Dashboard</span></a></li>
             <li class="mentor-complete-profile-nav"><a href="#complete-profile" data-section="complete-profile" title="Complete Mentor Profile"><i class="fas fa-clipboard-check"></i><span class="sidebar-label">Complete Profile</span></a></li>
             <li><a href="#my-profile" data-section="my-profile" title="My Profile"><i class="fas fa-user-tie"></i><span class="sidebar-label">My Profile</span></a></li>
-            <li><a href="#requests" data-section="requests" title="Mentorship Requests"><i class="fas fa-user-plus"></i><span class="sidebar-label">Mentorship Requests</span> <span class="badge badge-warning" id="req-count">0</span></a></li>
+            <li><a href="#requests" data-section="requests" title="Student Requests"><i class="fas fa-user-plus"></i><span class="sidebar-label">Student Requests</span> <span class="badge badge-warning" id="req-count">0</span></a></li>
             <li><a href="#accepted" data-section="accepted" title="My Mentees"><i class="fas fa-user-check"></i><span class="sidebar-label">My Mentees</span></a></li>
-            <li><a href="mentor-learning.html" title="Switch to My Learning"><i class="fas fa-user-graduate"></i><span class="sidebar-label">My Learning</span></a></li>
             <li><a href="#messages" data-section="messages" title="Messages"><i class="fas fa-comments"></i><span class="sidebar-label">Messages</span></a></li>
             <li><a href="#rejected" data-section="rejected" title="Closed Requests"><i class="fas fa-user-times"></i><span class="sidebar-label">Closed Requests</span></a></li>
             <li><a href="#availability" data-section="availability" title="Availability"><i class="fas fa-calendar-check"></i><span class="sidebar-label">Availability</span></a></li>
@@ -64,7 +63,6 @@
                 <h2 class="page-title mentor-topbar-title">Mentor Dashboard</h2>
             </div>
             <div class="topbar-right dashboard-topbar-actions">
-                <a class="btn btn-outline btn-sm" href="mentor-learning.html"><i class="fas fa-user-graduate"></i> Switch to My Learning</a>
                 <div class="mentor-date-time" aria-label="Current date and time">
                     <span class="date-time-item"><i class="fas fa-calendar-days" aria-hidden="true"></i><span id="mentor-dashboard-date">Today</span></span>
                     <span class="date-time-divider" aria-hidden="true"></span>
@@ -105,13 +103,13 @@
                             </div>
                             <div class="mentor-home-actions" id="mentor-home-actions">
                                 <button class="btn btn-primary" type="button" id="mentor-home-primary-action" data-section-jump="requests">
-                                    <i class="fas fa-user-plus" aria-hidden="true"></i> View Mentorship Requests
+                                    <i class="fas fa-user-plus" aria-hidden="true"></i> View Student Requests
                                 </button>
                                 <button class="btn btn-outline" type="button" id="mentor-home-secondary-action" data-section-jump="appointments">
                                     <i class="fas fa-calendar-days" aria-hidden="true"></i> View Appointments
                                 </button>
                                 <button class="btn btn-outline" type="button" id="mentor-home-tertiary-action" data-section-jump="availability">
-                                    <i class="fas fa-user-graduate" aria-hidden="true"></i> Switch to My Learning
+                                    <i class="fas fa-calendar-plus" aria-hidden="true"></i> Update Availability
                                 </button>
                             </div>
                         </section>
@@ -172,11 +170,6 @@
                                 <span class="mentor-home-link-copy"><strong>My Profile</strong><small>View and update your profile</small></span>
                                 <i class="fas fa-arrow-right"></i>
                             </button>
-                            <button class="mentor-home-link" type="button" data-action-url="mentor-learning.html">
-                                <span class="quick-link-icon green"><i class="fas fa-user-graduate"></i></span>
-                                <span class="mentor-home-link-copy"><strong>My Learning</strong><small>Request advice from another expert</small></span>
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
                             <button class="mentor-home-link mentor-application-status-link" type="button" data-section-jump="complete-profile">
                                 <span class="quick-link-icon purple"><i class="fas fa-clipboard-check"></i></span>
                                 <span class="mentor-home-link-copy"><strong>Application Status</strong><small>Check your application progress</small></span>
@@ -201,7 +194,7 @@
                     <div class="mentor-overview-grid">
                         <article class="overview-panel glass">
                             <div class="overview-panel-header">
-                                <h3>Pending Mentorship Requests <span class="badge badge-warning" id="overview-requests-count">0</span></h3>
+                                <h3>Pending Student Requests <span class="badge badge-warning" id="overview-requests-count">0</span></h3>
                                 <button class="panel-link" type="button" data-section-jump="requests">View all</button>
                             </div>
                             <div id="overview-requests-list" class="overview-list">
@@ -446,11 +439,11 @@
 
             </section>
 
-            <!-- 4. Mentorship Requests -->
+            <!-- 4. Student Requests -->
             <section id="requests" class="dashboard-section content-section">
                 <div class="section-header">
-                    <h2>Mentorship Requests</h2>
-                    <p class="section-desc">Review mentorship requests from students or mentors acting as mentees, then accept or reject them from one place.</p>
+                    <h2>Student Requests</h2>
+                    <p class="section-desc">Review student mentorship requests, view matching student profiles, and accept or reject requests from one place.</p>
                 </div>
                 <div id="requests-grid" class="cards-grid">
                     <div class="text-muted p-4">Loading requests...</div>

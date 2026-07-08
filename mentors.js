@@ -1,15 +1,8 @@
 import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { ref, get, push, update, serverTimestamp, onValue, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { ref, get, push, set, serverTimestamp, onValue, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast } from "./auth-nav.js?v=20260614-brand";
 import { ratingLabel } from "./ratings.js";
-import {
-    accountRole,
-    activeRequestFor,
-    buildMentorshipRequestPayload,
-    isApprovedMentorProfile,
-    normalizeUserRoles
-} from "./mentorship-utils.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- Mobile Menu Toggle ---
@@ -37,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUserType = null;
     let currentStudentData = null;
     let currentUserData = null;
-    let currentUserRoles = normalizeUserRoles({});
     let currentPathwayResult = null;
     let currentPathwayResultId = '';
     let currentMentorRequests = {};
@@ -53,15 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const snapshot = await get(userRef);
                 if (snapshot.exists()) {
                     currentUserData = snapshot.val();
-                    currentUserRoles = normalizeUserRoles(currentUserData);
                     currentUserType = currentUserData.userType || currentUserData.role || '';
                     if(currentUserType.toLowerCase() === 'student') {
                         const studentSnap = await get(ref(database, 'students/' + user.uid));
                         if(studentSnap.exists()) {
                             currentStudentData = studentSnap.val();
                         }
+                        await loadStudentMentorContext(user.uid);
                     }
-                    await loadRequesterMentorContext(user.uid);
                 }
             } catch (error) {
                 console.error("Error fetching user data:", error);
@@ -250,6 +241,11 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        if (!currentUserType || currentUserType.toLowerCase() !== 'student') {
+            showToast('Only students can request mentors.', 'warning');
+            return;
+        }
+
         const btn = e.currentTarget;
         const mentorId = btn.getAttribute('data-id');
         const mentorName = btn.getAttribute('data-name');
@@ -284,66 +280,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderMentors();
                 return;
             }
-            if (currentUser.uid === mentorId) {
-                showToast('You cannot send a mentorship request to yourself.', 'warning');
-                renderMentors();
-                return;
-            }
             const requestRef = push(ref(database, 'mentorRequests'));
             const requestId = requestRef.key;
-            const requesterName = currentStudentData?.fullName || currentUserData?.fullName || currentUser.displayName || 'Mentee';
-            const requestMessage = 'I would like to request your mentorship. Please review my profile.';
-            const payload = buildMentorshipRequestPayload({
-                requestId,
-                requesterUid: currentUser.uid,
-                requester: { ...currentUserData, displayName: currentUser.displayName },
-                requesterProfile: currentStudentData || {},
-                targetMentorUid: mentorId,
-                targetMentor: { ...mentor, ...latestMentor },
-                topic: mentorField || 'General Mentorship',
-                category: mentorField || 'General Guidance',
-                goal: currentStudentData?.futureGoal || currentPathwayResult?.futureGoal || currentPathwayResult?.goals?.dreamCareer || 'Receive mentorship guidance.',
-                message: requestMessage,
-                preferredMode: currentStudentData?.learningMode || currentPathwayResult?.learningMode || currentPathwayResult?.learningPreferences?.learningMode || mentor.mode || 'Online',
-                preferredSessionDuration: Number(latestMentor.preferredSessionDuration || latestMentor.sessionDuration || 60),
+
+            await set(requestRef, {
+                requestId: requestId,
+                studentUid: currentUser.uid,
+                studentName: currentStudentData?.fullName || currentUserData?.fullName || currentUser.displayName || 'Student',
+                studentEmail: currentUserData?.email || currentUser.email || '',
+                studentPhone: currentStudentData?.phone || currentUserData?.phone || '',
+                educationLevel: currentStudentData?.educationLevel || currentStudentData?.education || currentPathwayResult?.educationLevel || currentPathwayResult?.basicProfile?.currentEducationLevel || '',
+                interestArea: currentStudentData?.interestArea || currentStudentData?.interest || currentPathwayResult?.interestArea || currentPathwayResult?.interests?.interestAreas?.[0] || '',
+                futureGoal: currentStudentData?.futureGoal || currentStudentData?.goal || currentPathwayResult?.futureGoal || currentPathwayResult?.goals?.dreamCareer || '',
+                skills: currentStudentData?.skills || currentPathwayResult?.skills || currentPathwayResult?.skillsAndStrengths?.skills || [],
+                mentorUid: mentorId,
+                mentorName: mentorName,
+                mentorField: mentorField,
+                mentorEmail: mentor.email || '',
+                mentorOrganization: mentor.company || '',
                 pathwayResultId: currentPathwayResultId || '',
-                pathwaySnapshot: buildPathwaySnapshot(currentPathwayResult)
+                pathwaySnapshot: buildPathwaySnapshot(currentPathwayResult),
+                message: "I would like to request you as my mentor. Please review my profile.",
+                status: "pending",
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+                acceptedAt: null,
+                rejectedAt: null,
+                rejectionReason: ''
             });
-            payload.createdAt = serverTimestamp();
-            payload.updatedAt = serverTimestamp();
-            payload.educationLevel = currentStudentData?.educationLevel || currentStudentData?.education || currentPathwayResult?.educationLevel || currentPathwayResult?.basicProfile?.currentEducationLevel || '';
-            payload.interestArea = currentStudentData?.interestArea || currentStudentData?.interest || currentPathwayResult?.interestArea || currentPathwayResult?.interests?.interestAreas?.[0] || '';
-            payload.skills = currentStudentData?.skills || currentPathwayResult?.skills || currentPathwayResult?.skillsAndStrengths?.skills || [];
 
             const notificationRef = push(ref(database, `notifications/${mentorId}`));
-            const updates = {};
-            updates[`mentorRequests/${requestId}`] = payload;
-            updates[`notifications/${mentorId}/${notificationRef.key}`] = {
+            await set(notificationRef, {
                 notificationId: notificationRef.key,
-                targetUserUid: mentorId,
-                targetRole: 'mentor',
-                senderUid: currentUser.uid,
-                senderRole: accountRole(currentUserData),
-                type: 'mentorship_request_received',
-                title: 'New Mentorship Request',
-                message: `${requesterName} requested your guidance in ${payload.topic}.`,
-                messagePreview: `New request from ${requesterName}`,
-                relatedEntityType: 'mentorRequest',
-                relatedEntityId: requestId,
+                type: 'mentor_request_received',
+                title: 'New student mentor request',
+                message: `${currentStudentData?.fullName || currentUserData?.fullName || 'A student'} requested your mentorship.`,
+                messagePreview: `New request from ${currentStudentData?.fullName || currentUserData?.fullName || 'a student'}`,
                 relatedRequestId: requestId,
-                requestId,
                 studentUid: currentUser.uid,
-                requesterUid: currentUser.uid,
-                targetPage: 'mentor-dashboard.html',
-                targetSection: 'requests',
-                targetQuery: { requestId },
                 read: false,
                 status: 'unread',
                 createdAt: serverTimestamp()
-            };
-            await update(ref(database), updates);
+            });
 
-            currentMentorRequests[requestId] = payload;
+            currentMentorRequests[requestId] = { mentorUid: mentorId, status: 'pending' };
             showToast(`Mentorship request sent successfully to ${mentorName}!`, 'success');
             renderMentors();
 
@@ -355,16 +335,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function loadRequesterMentorContext(uid) {
+    async function loadStudentMentorContext(uid) {
         const [requestsSnap, pathwaySnap] = await Promise.all([
-            get(query(ref(database, 'mentorRequests'), orderByChild('requesterUid'), equalTo(uid))).catch(() => null),
+            get(query(ref(database, 'mentorRequests'), orderByChild('studentUid'), equalTo(uid))).catch(() => null),
             get(ref(database, `pathwayResults/${uid}`)).catch(() => null)
         ]);
         currentMentorRequests = requestsSnap?.exists() ? requestsSnap.val() : {};
-        if (!requestsSnap?.exists()) {
-            const legacyRequestsSnap = await get(query(ref(database, 'mentorRequests'), orderByChild('studentUid'), equalTo(uid))).catch(() => null);
-            currentMentorRequests = legacyRequestsSnap?.exists() ? legacyRequestsSnap.val() : {};
-        }
         const latest = getLatestPathwayResult(pathwaySnap?.exists() ? pathwaySnap.val() : null);
         currentPathwayResult = latest.result;
         currentPathwayResultId = latest.id;
@@ -372,22 +348,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function isApprovedActiveMentor(mentor = {}) {
-        return isApprovedMentorProfile(mentor, mentor);
+        return isPublicApprovedMentor(mentor, mentor);
     }
 
     function getExistingRequestState(mentorId) {
-        const request = activeRequestFor(currentMentorRequests, currentUser?.uid || "", mentorId);
+        const request = Object.values(currentMentorRequests || {}).find((item) => item?.mentorUid === mentorId && ['pending', 'accepted', 'connected'].includes(String(item.status || '').toLowerCase()));
         return String(request?.status || '').toLowerCase();
     }
 
     function getMentorActionMarkup(mentor, requestState) {
         if (!currentUser) return `<button class="btn btn-primary btn-request" data-id="${mentor.id}" data-name="${mentor.name}" data-field="${mentor.designation}">Login to Request</button>`;
-        if (currentUser.uid === mentor.id) return `<button class="btn btn-primary btn-request" disabled>Own Profile</button>`;
-        if (!currentUserRoles.roles.mentee) return `<button class="btn btn-primary btn-request" disabled>Request Unavailable</button>`;
+        if (String(currentUserType || '').toLowerCase() !== 'student') return `<button class="btn btn-primary btn-request" disabled>Students Only</button>`;
         if (requestState === 'pending') return `<button class="btn btn-primary btn-request" disabled>Request Sent</button>`;
         if (requestState === 'accepted' || requestState === 'connected') return `<button class="btn btn-primary btn-request" disabled>Connected</button>`;
-        const label = currentUserRoles.roles.mentor ? "Request Mentorship" : "Request Mentor";
-        return `<button class="btn btn-primary btn-request" data-id="${mentor.id}" data-name="${mentor.name}" data-field="${mentor.designation}">${label}</button>`;
+        return `<button class="btn btn-primary btn-request" data-id="${mentor.id}" data-name="${mentor.name}" data-field="${mentor.designation}">Request Mentor</button>`;
     }
 
     function getLatestPathwayResult(data) {

@@ -80,9 +80,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (snapshot.exists()) {
                 const data = snapshot.val();
                 Object.entries(data).forEach(([id, scholarship]) => {
-                    // Only show active scholarships
+                    // Only show active/approved scholarships
                     const status = String(scholarship.status || 'active').trim().toLowerCase();
-                    if (status === 'active') {
+                    if (status === 'approved' || status === 'active') {
                         allScholarships.push({
                             id,
                             ...scholarship

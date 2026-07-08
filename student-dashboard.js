@@ -6,7 +6,6 @@ import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
 import { ensureDashboardTopbarLayout, initDashboardNotifications, updateDashboardGreetingName } from "./dashboard-topbar.js";
 import { calculateMentorRatingSummary, toRatingInt } from "./ratings.js";
 import { requiredText, validateNumberRange, showFieldError, clearFieldError, escapeHtml as escapeSharedHtml } from "./validation.js";
-import { getLearnerRecommendationProfile, recommendCourses, recommendScholarships, recommendMentors } from "./recommendation-engine.js";
 
 const state = {
     uid: null,
@@ -787,19 +786,18 @@ function renderCourses() {
         return;
     }
 
-    const profile = getLearnerRecommendationProfile({ userRole: "student", result: state.currentResult, studentData: state.student });
-    const recommended = recommendCourses(profile, state.courses);
-    
-    const source = recommended;
+    const allMatches = active.map(([id, course]) => ({ ...courseMatch(id, course), raw: course }));
+    const strong = allMatches.filter((course) => course.matchScore >= 40);
+    const source = strong.length >= 3 ? strong : allMatches.map((course) => ({ ...course, matchLevel: course.matchScore >= 40 ? course.matchLevel : "Alternative Option" }));
     const visible = applyCourseFilters(source);
-    const best = source.length ? Math.max(0, ...source.map((course) => course.matchScore)) : 0;
+    const best = Math.max(0, ...source.map((course) => course.matchScore));
 
     container.innerHTML = `
         ${recommendationSummary("Courses", `${source.length} courses found based on your pathway. Best match: ${best}%.`)}
         ${courseFilterBar(source)}
         ${filterChips("courses")}
         <div class="cards-grid recommendation-results">
-            ${visible.length ? visible.map(courseCard).join("") : emptyBlock("No courses match the selected filters.")}
+            ${visible.length ? visible.map(courseCard).join("") : emptyBlock(strong.length ? "No courses match the selected filters." : "No strong matches found. Showing alternative options when filters are cleared.")}
         </div>
     `;
 
@@ -909,16 +907,14 @@ function renderScholarships() {
         return;
     }
 
-    const profile = getLearnerRecommendationProfile({ userRole: "student", result: state.currentResult, studentData: state.student });
-    const recommended = recommendScholarships(profile, state.scholarships);
-
-    const source = recommended;
-    const visible = applyScholarshipFilters(source);
-    const best = source.length ? Math.max(0, ...source.map((item) => item.matchScore)) : 0;
+    const allMatches = active.map(([id, item]) => ({ ...scholarshipMatch(id, item), raw: item }));
+    const source = allMatches.filter((item) => item.matchScore >= 40);
+    const visible = applyScholarshipFilters(source.length ? source : allMatches);
+    const best = Math.max(0, ...allMatches.map((item) => item.matchScore));
 
     container.innerHTML = `
-        ${recommendationSummary("Scholarships", `${source.length} scholarships may support your needs. Best match: ${best}%.`)}
-        ${scholarshipFilterBar(source)}
+        ${recommendationSummary("Scholarships", `${source.length || allMatches.length} scholarships may support your needs. Best match: ${best}%.`)}
+        ${scholarshipFilterBar(allMatches)}
         ${filterChips("scholarships")}
         <div class="recommendation-results list-card-inner">
             ${visible.length ? visible.map(scholarshipCard).join("") : emptyBlock("No scholarships match the selected filters.")}
@@ -1003,22 +999,20 @@ function renderMentors() {
         container.innerHTML = emptyState("fa-route", "Complete Pathway Finder first to see suitable mentors.", "Start Pathway Finder", "pathway.html?mode=first-time");
         return;
     }
-
-    const profile = getLearnerRecommendationProfile({ userRole: "student", result: state.currentResult, studentData: state.student });
-    const recommended = recommendMentors(profile, state.mentors);
-
-    if (!recommended.length) {
+    const approved = Object.entries(state.mentors || {}).filter(([, mentor]) => isApprovedActiveMentor(mentor));
+    if (!approved.length) {
         container.innerHTML = emptyBlock("No approved mentors available yet.");
         return;
     }
 
-    const source = recommended;
-    const visible = applyMentorFilters(source);
-    const best = source.length ? Math.max(0, ...source.map((mentor) => mentor.matchScore)) : 0;
+    const allMatches = approved.map(([id, mentor]) => ({ ...mentorMatch(id, mentor), raw: mentor }));
+    const source = allMatches.filter((mentor) => mentor.matchScore >= 40);
+    const visible = applyMentorFilters(source.length ? source : allMatches);
+    const best = Math.max(0, ...allMatches.map((mentor) => mentor.matchScore));
 
     container.innerHTML = `
-        ${recommendationSummary("Mentors", `${source.length} approved mentors match your pathway. Best match: ${best}%.`)}
-        ${mentorFilterBar(source)}
+        ${recommendationSummary("Mentors", `${source.length || allMatches.length} approved mentors match your pathway. Best match: ${best}%.`)}
+        ${mentorFilterBar(allMatches)}
         ${filterChips("mentors")}
         <div class="cards-grid recommendation-results">
             ${visible.length ? visible.map(mentorCard).join("") : emptyBlock("No mentors match the selected filters.")}
@@ -1033,6 +1027,181 @@ function renderMentors() {
         button.addEventListener("click", () => openRecommendationDetail("Mentor Profile", mentorDetailHtml(button.dataset.viewMentorDetail)));
     });
     bindRecommendationFilters(container, "mentors");
+}
+
+function recommendationProfile() {
+    const result = state.currentResult || {};
+    return {
+        currentEducationLevel: result.basicProfile?.currentEducationLevel || result.educationLevel || state.student.educationLevel,
+        educationLevel: result.educationLevel || result.basicProfile?.currentEducationLevel || state.student.educationLevel,
+        alStream: result.academicBackground?.alStream || result.examStream,
+        olStatus: result.academicBackground?.olStatus,
+        alStatus: result.academicBackground?.alStatus,
+        interestAreas: result.interests?.interestAreas || arrayValue(result.interestArea || state.student.interestArea),
+        enjoyableWorkTypes: result.interests?.enjoyableWorkTypes || [],
+        skills: result.skillsAndStrengths?.skills || arrayValue(result.skills || state.student.skills),
+        strengths: result.skillsAndStrengths?.strengths || [],
+        futurePreference: result.goals?.futurePreference || [],
+        dreamCareer: result.goals?.dreamCareer || result.futureGoal || state.student.futureGoal,
+        learningMode: result.learningPreferences?.learningMode || result.learningMode || state.student.learningMode,
+        courseDuration: result.learningPreferences?.courseDuration,
+        timeAvailability: result.learningPreferences?.timeAvailability || [],
+        preferredDistricts: result.learningPreferences?.preferredDistricts || arrayValue(result.preferredDistrict || state.student.preferredDistrict || state.student.district),
+        preferredLanguage: result.basicProfile?.preferredLanguage || result.learningPreferences?.preferredLanguage,
+        district: result.basicProfile?.district || result.district || state.student.district,
+        financialSupport: result.supportNeeds?.financialSupport || result.financialSupport || state.student.financialSupport,
+        budgetRange: result.supportNeeds?.budgetRange || result.budgetRange,
+        biggestChallenge: result.supportNeeds?.biggestChallenge || [],
+        supportNeeded: result.supportNeeds?.supportNeeded || [],
+        recommendedPathway: result.recommendedPathway || ""
+    };
+}
+
+function courseMatch(id, course) {
+    const profile = recommendationProfile();
+    const reasons = [];
+    const missing = [];
+    const fields = [];
+    let score = 0;
+    addScore(includesAny([course.category, course.subcategory, course.description, course.skillsCovered, course.careerOpportunities], [...profile.interestAreas, profile.recommendedPathway]), 25, "Matches your interest/pathway", "category");
+    addScore(educationMatches(profile.currentEducationLevel, course), 20, `Suitable for ${profile.currentEducationLevel || "your education level"}`, "education");
+    addScore(includesAny([course.careerOpportunities, course.description, course.category], [profile.dreamCareer, ...profile.futurePreference]), 15, "Aligns with your future goal", "career");
+    addScore(includesAny([course.skillsCovered, course.description], [...profile.skills, ...profile.strengths]), 10, "Covers your selected skills", "skills");
+    addScore(modeMatches(profile.learningMode, course.mode || course.learningMode), 10, "Matches your learning mode", "mode");
+    addScore(locationMatches([profile.district, ...profile.preferredDistricts], course.district || course.location || course.mode), 10, "Fits your location preference", "district");
+    addScore(budgetMatches(profile, course), 10, "Fits your budget preference", "budget");
+    if (!hasValue(course.qualificationLevel) && !hasValue(course.eligibility)) missing.push("Check entry requirements with institute");
+    if (!hasValue(course.applicationDeadline)) missing.push("Verify application deadline");
+    const matchScore = Math.min(score, 100);
+    return {
+        courseId: id,
+        courseName: course.courseName || course.name || "Untitled Course",
+        instituteName: course.instituteName || course.institute || "Institute not specified",
+        category: course.category || "N/A",
+        subcategory: course.subcategory || "",
+        duration: course.duration || "N/A",
+        mode: course.mode || course.learningMode || "N/A",
+        feeType: course.feeType || "N/A",
+        feeAmount: course.feeAmount || "",
+        district: course.district || "N/A",
+        qualificationLevel: course.qualificationLevel || course.educationLevel || "N/A",
+        eligibility: course.eligibility || "N/A",
+        applicationDeadline: course.applicationDeadline || course.deadline || "",
+        applyLink: course.applyLink || "",
+        imageURL: course.imageURL || "",
+        description: course.description || "",
+        matchScore,
+        matchLevel: getMatchLevel(matchScore),
+        matchReasons: reasons.length ? reasons : ["Useful alternative based on your pathway."],
+        missingRequirements: missing,
+        matchedFields: fields,
+        isBestMatch: false,
+        createdAt: course.createdAt || course.updatedAt || ""
+    };
+
+    function addScore(condition, points, reason, field) {
+        if (condition) {
+            score += points;
+            reasons.push(reason);
+            fields.push(field);
+        }
+    }
+}
+
+function scholarshipMatch(id, item) {
+    const profile = recommendationProfile();
+    const reasons = [];
+    const warnings = [];
+    let score = 0;
+    addScore(needsFinancialHelp() || textIncludesAny(`${item.supportType} ${item.description} ${item.eligibility}`, ["bursary", "financial aid", "scholarship", "free", "monthly support", "tuition support"]), 30, "Matches your financial support need");
+    addScore(includesAny([item.educationLevel, item.qualificationLevel, item.eligibility], [profile.currentEducationLevel]), 25, "Suitable for your education level");
+    addScore(locationMatches([profile.district, ...profile.preferredDistricts], item.district || item.coverage), 15, "Available in your district or islandwide");
+    addScore(includesAny([item.qualificationLevel, item.eligibility], [profile.currentEducationLevel, profile.alStream, profile.olStatus, profile.alStatus, "O/L", "A/L", "Diploma", "Undergraduate", "Vocational"]), 15, "Eligibility matches your background");
+    addScore(includesAny([item.category, item.description], [...profile.interestAreas, profile.recommendedPathway]), 10, "Category matches your pathway");
+    const deadlineState = deadlineStatus(item.deadline);
+    addScore(deadlineState.active, 5, "Deadline appears active");
+    if (deadlineState.warning) warnings.push(deadlineState.warning);
+    if (!hasValue(item.amountBenefit || item.amount || item.benefit)) warnings.push("Amount may change by official notice.");
+    const matchScore = Math.min(score, 100);
+    return {
+        scholarshipId: id,
+        scholarshipName: item.scholarshipName || item.name || "Scholarship",
+        provider: item.provider || "Provider not specified",
+        providerType: item.providerType || "",
+        category: item.category || "N/A",
+        supportType: item.supportType || "N/A",
+        amountBenefit: item.amountBenefit || item.amount || item.benefit || "N/A",
+        district: item.district || item.coverage || "Islandwide / Check notice",
+        qualificationLevel: item.qualificationLevel || item.educationLevel || "N/A",
+        eligibility: item.eligibility || "Confirm from provider",
+        deadline: item.deadline || "",
+        applyLink: item.applyLink || "",
+        imageURL: item.imageURL || "",
+        description: item.description || "",
+        matchScore,
+        matchLevel: getMatchLevel(matchScore),
+        matchReasons: reasons.length ? reasons : ["Review eligibility and provider details."],
+        warningNotes: warnings.length ? warnings : ["Eligibility must be confirmed from provider."]
+    };
+
+    function addScore(condition, points, reason) {
+        if (condition) {
+            score += points;
+            reasons.push(reason);
+        }
+    }
+}
+
+function mentorMatch(uid, mentor) {
+    const profile = recommendationProfile();
+    const reasons = [];
+    let score = 0;
+    addScore(includesAny([mentor.field, mentor.expertise, mentor.mentoringField, mentor.shortBio, mentor.bio], [...profile.interestAreas, profile.recommendedPathway, profile.dreamCareer]), 30, "Mentor expertise matches your pathway");
+    addScore(includesAny(mentor.guidanceAreas, [...profile.supportNeeded, ...profile.biggestChallenge, ...profile.futurePreference]), 20, "Guidance area fits your current need");
+    addScore(includesAny(mentor.supportedStudentLevels || mentor.studentLevelsSupported, [profile.currentEducationLevel]), 15, "Supports your education level");
+    addScore(includesAny(mentor.languages || mentor.language || mentor.preferredLanguage || mentor.preferredLanguages, [profile.preferredLanguage]), 10, "Language preference match");
+    addScore(availabilityMatches(profile.timeAvailability, mentor), 10, "Availability matches your schedule");
+    addScore(modeMatches(profile.learningMode, mentor.mentoringMode || mentor.availability), 10, "Mentoring mode match");
+    addScore(hasValue(mentor.yearsOfExperience || mentor.experience) || hasValue(mentor.organization || mentor.universityOrCompany) || hasValue(mentor.highestQualification) || hasValue(mentor.shortBio || mentor.bio) || hasValue(mentor.photoURL), 5, "Strong mentor profile");
+    const matchScore = Math.min(score, 100);
+    return {
+        mentorUid: uid,
+        mentorName: mentor.fullName || "Mentor",
+        mentorField: mentor.field || mentor.expertise || mentor.mentoringField || "N/A",
+        mentorType: mentor.mentorType || "Mentor",
+        currentRole: mentor.currentRole || "",
+        organization: mentor.organization || mentor.universityOrCompany || "",
+        yearsOfExperience: mentor.yearsOfExperience || mentor.experience || "",
+        languages: mentor.languages || mentor.language || mentor.preferredLanguage || "",
+        guidanceAreas: mentor.guidanceAreas || "",
+        mentoringMode: mentor.mentoringMode || "N/A",
+        availabilityStatus: mentor.availabilityStatus || mentor.availability || "N/A",
+        availableDays: mentor.availableDays || "",
+        availableTime: mentor.availableTime || "",
+        shortBio: mentor.shortBio || mentor.bio || "",
+        photoURL: mentor.photoURL || "",
+        matchScore,
+        matchLevel: mentorAvailabilityLevel(matchScore, mentor),
+        matchReasons: reasons.length ? reasons : ["Approved mentor available for guidance."],
+        availabilityNote: mentor.availableTime || mentor.availableDays || mentor.availabilityStatus || "Check availability"
+    };
+
+    function addScore(condition, points, reason) {
+        if (condition) {
+            score += points;
+            reasons.push(reason);
+        }
+    }
+}
+
+function isApprovedActiveMentor(mentor = {}) {
+    const userType = normalize(mentor.userType || mentor.role || "mentor");
+    const accountStatus = normalize(mentor.accountStatus || "active");
+    return normalize(mentor.approvalStatus || mentor.status) === "approved"
+        && mentor.publicVisibility === true
+        && mentor.mentoringEnabled === true
+        && userType === "mentor"
+        && accountStatus === "active";
 }
 
 function isAccountActive(user = {}) {

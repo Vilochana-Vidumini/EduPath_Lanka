@@ -84,9 +84,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (snapshot.exists()) {
                 const data = snapshot.val();
                 Object.entries(data).forEach(([id, course]) => {
-                    // Only show active courses
+                    // Only show active/approved courses
                     const status = String(course.status || 'active').trim().toLowerCase();
-                    if (status === 'active') {
+                    if (status === 'approved' || status === 'active') {
                         allCourses.push({
                             id,
                             ...course
