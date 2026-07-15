@@ -3507,6 +3507,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <h4 style="margin-bottom: 0.5rem; color: var(--primary);">Learning Needs</h4>
                     <div class="modal-row"><strong>Learning Mode:</strong> <span>${escapeHtml(menteeProfile.learningMode || userData.learningMode || latestResult.learningMode || latestResult.learningPreferences?.learningMode || 'N/A')}</span></div>
                     <div class="modal-row"><strong>Skills:</strong> <span>${escapeHtml(displayVal(normalizedReq.skills || menteeProfile.skills || userData.skills || latestResult.skills || latestResult.skillsAndStrengths?.skills || 'N/A'))}</span></div>
+                    <div class="modal-row"><strong>Pathway Preference:</strong> <span><span style="text-transform: capitalize;">${escapeHtml(req.pathwayPreference || 'N/A')}</span></span></div>
+                    ${req.enjoyedActivities ? `<div class="modal-row full-width"><strong>Enjoyed Activities:</strong> <div style="margin-top:0.25rem;">${escapeHtml(req.enjoyedActivities)}</div></div>` : ''}
+                    ${req.talentsList ? `<div class="modal-row full-width"><strong>Talents:</strong> <div style="margin-top:0.25rem;">${escapeHtml(req.talentsList)}</div></div>` : ''}
                     <div class="modal-row full-width"><strong>Latest Pathway Match:</strong> <span>${escapeHtml(Object.keys(latestResult || {}).length ? `${latestResult.pathway || latestResult.recommendedPathway || 'Recommended pathway unavailable'} (${displayVal(latestResult.pathwayScore || latestResult.score || 'N/A')})` : 'No pathway result available yet.')}</span></div>
                 </div>
             `;

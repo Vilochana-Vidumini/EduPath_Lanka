@@ -77,11 +77,58 @@ export function normalizeStudentProfile(result = {}, student = {}) {
     };
 }
 
-export function getLearnerRecommendationProfile({ userRole, studentProfile, learningProfile, pathwayResult }) {
+export function getLearnerRecommendationProfile({ userRole, studentProfile, learningProfile, pathwayResult, talentProfile, discoveryProfile }) {
     if (userRole === "mentor" && learningProfile) {
         return normalizeLearningProfile(learningProfile);
     }
-    return normalizeStudentProfile(pathwayResult, studentProfile);
+    return buildStudentRecommendationProfile({
+        studentProfile: { ...studentProfile, ...pathwayResult },
+        learningProfile,
+        talentProfile,
+        discoveryProfile
+    });
+}
+
+export function normalizeTalentProfile(profile = {}) {
+    return {
+        talents: profile.talents || [],
+        achievements: profile.achievements || [],
+        preferredOpportunities: profile.preferredOpportunities || [],
+        preferredLocations: profile.preferredLocations || [],
+        preferredModes: profile.preferredModes || [],
+        availability: profile.availability || []
+    };
+}
+
+export function normalizeDiscoveryProfile(profile = {}) {
+    return {
+        enjoyedActivities: profile.enjoyedActivities || [],
+        preferredWorkStyle: profile.preferredWorkStyle || "",
+        practicalPreference: profile.practicalPreference || "",
+        favoriteSubjects: profile.favoriteSubjects || [],
+        interests: profile.interests || [],
+        workEnvironment: profile.workEnvironment || "",
+        confidenceAreas: profile.confidenceAreas || [],
+        skillsToExplore: profile.skillsToExplore || []
+    };
+}
+
+export function buildStudentRecommendationProfile({ studentProfile = {}, learningProfile = {}, talentProfile = {}, discoveryProfile = {} }) {
+    const mode = studentProfile.pathwayPreference || "undecided";
+    
+    return {
+        mode,
+        useAcademicProfile: mode === "academic" || mode === "combined",
+        useTalentProfile: mode === "talent" || mode === "combined",
+        useDiscoveryProfile: mode === "undecided",
+        
+        academic: normalizeStudentProfile({}, learningProfile && Object.keys(learningProfile).length > 0 ? learningProfile : studentProfile),
+        talent: normalizeTalentProfile(talentProfile),
+        discovery: normalizeDiscoveryProfile(discoveryProfile),
+        
+        // Include flat properties for backward compatibility with existing recommendation functions
+        ...normalizeStudentProfile({}, studentProfile)
+    };
 }
 
 // ----------------------------------------------------------------------
@@ -393,4 +440,101 @@ export function recommendMentors(profile, mentorsObj, currentUid) {
     });
 
     return recommendations.filter(r => r.eligibilityStatus === "eligible").sort((a, b) => b.matchScore - a.matchScore);
+}
+
+// TALENT OPPORTUNITY RECOMMENDATIONS
+export function recommendTalentOpportunities(profile, opportunitiesObj) {
+    const opportunities = Object.entries(opportunitiesObj || {}).map(([id, data]) => ({ opportunityId: id, ...data }));
+    
+    // Stage 1: Visibility
+    const visible = opportunities.filter(o => isActiveVisibility(o.status, o.publicVisibility) && (!o.deadline || new Date(o.deadline) >= new Date()));
+    
+    // Stage 2, 3, 4: Eligibility, Scoring, Reason generation
+    const recommendations = visible.map(opp => {
+        let score = 0;
+        const reasons = [];
+        const missing = [];
+        let eligible = "eligible"; // 'eligible', 'ineligible', 'unknown'
+
+        // Check age eligibility
+        if (opp.eligibleAgeMin && profile.age && profile.age < opp.eligibleAgeMin) {
+            eligible = "ineligible";
+            missing.push("Does not meet minimum age.");
+        }
+        if (opp.eligibleAgeMax && profile.age && profile.age > opp.eligibleAgeMax) {
+            eligible = "ineligible";
+            missing.push("Exceeds maximum age.");
+        }
+
+        if (eligible !== "ineligible") {
+            const talents = profile.talent?.talents || [];
+            const talentCategories = talents.map(t => t.category);
+            const talentSkills = talents.map(t => t.skill);
+
+            // Talent Match: 30
+            if (includesAny([opp.category, opp.subCategory], talentCategories) || includesAny(opp.title, talentSkills)) {
+                score += 30;
+                reasons.push("Matches your talent category");
+            }
+
+            // Skill Level Match: 20
+            if (opp.eligibleSkillLevels && opp.eligibleSkillLevels.length > 0) {
+                const userSkillLevels = talents.map(t => t.skillLevel);
+                if (includesAny(opp.eligibleSkillLevels, userSkillLevels)) {
+                    score += 20;
+                    reasons.push("Matches your skill level");
+                }
+            } else {
+                score += 20; // Default if not specified
+            }
+
+            // Achievement Match: 15
+            score += 15; // approximation
+
+            // Opportunity Preference: 10
+            if (includesAny(opp.opportunityType, profile.talent?.preferredOpportunities)) {
+                score += 10;
+                reasons.push("Matches preferred opportunity type");
+            }
+
+            // Location Match: 10
+            if (includesAny(opp.location, profile.talent?.preferredLocations)) {
+                score += 10;
+                reasons.push("Available in your preferred location");
+            }
+
+            // Age Eligibility: 5
+            score += 5;
+            
+            // Availability Match: 5
+            score += 5;
+
+            // Mode Match: 5
+            if (includesAny(opp.mode, profile.talent?.preferredModes)) {
+                score += 5;
+                reasons.push("Matches preferred mode");
+            }
+        }
+
+        const matchScore = Math.min(100, Math.round(score));
+        let matchLevel = "";
+        if (matchScore >= 85) matchLevel = "Excellent Match";
+        else if (matchScore >= 70) matchLevel = "Strong Match";
+        else if (matchScore >= 55) matchLevel = "Good Match";
+        else if (matchScore >= 40) matchLevel = "Possible Match";
+        else matchLevel = "Explore Option";
+
+        return {
+            ...opp,
+            opportunityName: opp.title || "Untitled Opportunity",
+            matchScore,
+            matchLevel,
+            matchReasons: reasons.length ? reasons : ["Explore this talent opportunity."],
+            missingRequirements: missing,
+            eligibilityStatus: eligible
+        };
+    });
+
+    // Sort: score desc
+    return recommendations.filter(r => r.eligibilityStatus !== "ineligible").sort((a, b) => b.matchScore - a.matchScore);
 }

@@ -324,6 +324,7 @@ function setupRealtime(uid) {
 
     onValue(ref(database, `students/${uid}`), (snap) => {
         state.student = snap.val() || {};
+        checkPathwayPreference();
         renderAll();
     }, renderError("overview-status", "Unable to load your student profile."));
 
@@ -446,6 +447,30 @@ function setupRealtime(uid) {
         if (document.getElementById("support-section")?.classList.contains("active")) markStudentSupportRead();
     }, renderError("support-replies-list", "Unable to load support messages."));
 }
+
+function checkPathwayPreference() {
+    if (!state.student.pathwayPreference) {
+        document.getElementById("pathway-selection-modal")?.classList.remove("hidden");
+    }
+}
+
+document.getElementById("pathway-selection-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const preference = document.querySelector('input[name="pathwayPreference"]:checked')?.value;
+    if (preference && state.uid) {
+        try {
+            await update(ref(database, `students/${state.uid}`), { pathwayPreference: preference });
+            document.getElementById("pathway-selection-modal")?.classList.add("hidden");
+            showToast("Pathway preference updated successfully.", "success");
+        } catch (error) {
+            showToast("Failed to update pathway preference.", "error");
+        }
+    }
+});
+
+document.getElementById("skip-pathway-btn")?.addEventListener("click", () => {
+    document.getElementById("pathway-selection-modal")?.classList.add("hidden");
+});
 
 async function recordStudentLogout() {
     const user = auth.currentUser;

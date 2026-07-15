@@ -314,6 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
             payload.educationLevel = currentStudentData?.educationLevel || currentStudentData?.education || currentPathwayResult?.educationLevel || currentPathwayResult?.basicProfile?.currentEducationLevel || '';
             payload.interestArea = currentStudentData?.interestArea || currentStudentData?.interest || currentPathwayResult?.interestArea || currentPathwayResult?.interests?.interestAreas?.[0] || '';
             payload.skills = currentStudentData?.skills || currentPathwayResult?.skills || currentPathwayResult?.skillsAndStrengths?.skills || [];
+            payload.pathwayPreference = currentStudentData?.pathwayPreference || 'undecided';
+            payload.enjoyedActivities = currentStudentData?.enjoyedActivities || '';
+            payload.talentsList = currentStudentData?.talentsList || '';
 
             const notificationRef = push(ref(database, `notifications/${mentorId}`));
             const updates = {};

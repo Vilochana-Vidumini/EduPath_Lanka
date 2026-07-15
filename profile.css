@@ -468,14 +468,16 @@ textarea.form-input {
     background: rgba(239, 68, 68, 0.06);
 }
 
-.mentor-profile-tabs {
+.mentor-profile-tabs,
+.student-profile-tabs {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 22px;
 }
 
-.mentor-tab {
+.mentor-tab,
+.student-tab {
     border: 1px solid rgba(203, 213, 225, 0.75);
     background: rgba(255, 255, 255, 0.75);
     color: #475569;
@@ -489,17 +491,21 @@ textarea.form-input {
 }
 
 .mentor-tab.active,
-.mentor-tab:hover {
+.mentor-tab:hover,
+.student-tab.active,
+.student-tab:hover {
     border-color: rgba(79, 70, 229, 0.35);
     background: rgba(79, 70, 229, 0.09);
     color: var(--primary);
 }
 
-.mentor-tab-panel {
+.mentor-tab-panel,
+.student-tab-panel {
     display: none;
 }
 
-.mentor-tab-panel.active {
+.mentor-tab-panel.active,
+.student-tab-panel.active {
     display: block;
 }
 

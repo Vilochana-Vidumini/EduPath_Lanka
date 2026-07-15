@@ -71,6 +71,7 @@ const AUTH_PANEL_LINKS = {
         { href: 'student-dashboard.html#pathway-history', icon: 'fa-poll-h', label: 'My Results' },
         { href: 'courses.html', icon: 'fa-book-open', label: 'Courses' },
         { href: 'scholarships.html', icon: 'fa-hand-holding-usd', label: 'Scholarships' },
+        { href: 'talent-opportunities.html', icon: 'fa-star', label: 'Talent Opportunities' },
         { href: 'mentors.html', icon: 'fa-chalkboard-teacher', label: 'Mentors' },
         { href: getPublicHomeDestination(), icon: 'fa-home', label: 'Public Home' },
     ],

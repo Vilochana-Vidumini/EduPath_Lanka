@@ -470,6 +470,42 @@
         ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
       }
     },
+    "talentProfiles": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "discoveryProfiles": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "talentOpportunities": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "talentCategories": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "talentAchievements": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "talentPortfolios": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
     "opportunityApplications": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
       "$uid": {

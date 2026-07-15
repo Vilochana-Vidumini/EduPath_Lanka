@@ -102,6 +102,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    document.querySelectorAll('[data-student-tab]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const tab = button.dataset.studentTab;
+            document.querySelectorAll('[data-student-tab]').forEach((btn) => btn.classList.toggle('active', btn === button));
+            document.querySelectorAll('[data-student-panel]').forEach((panel) => panel.classList.toggle('active', panel.dataset.studentPanel === tab));
+        });
+    });
+
     function toggleEditingMode(isEditing) {
         const inputs = profileDetailsForm.querySelectorAll('.form-input');
         inputs.forEach(input => {
@@ -116,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        profileDetailsForm.querySelectorAll('[data-profile-checkbox-group] input, .mentor-declarations input[type="checkbox"]').forEach(input => {
+        profileDetailsForm.querySelectorAll('[data-profile-checkbox-group] input, .mentor-declarations input[type="checkbox"], input[name="field-pathwayPreference"], input[name="field-talentOpportunities"]').forEach(input => {
             input.disabled = !isEditing;
         });
 
@@ -302,6 +310,19 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('field-financialSupport').value = cachedRoleData.financialSupport || '';
             document.getElementById('field-learningMode').value = cachedRoleData.learningMode || '';
             document.getElementById('field-skills').value = cachedRoleData.skills || '';
+            
+            // New fields
+            const pathwayPref = cachedRoleData.pathwayPreference || 'undecided';
+            document.querySelectorAll('input[name="field-pathwayPreference"]').forEach(r => r.checked = r.value === pathwayPref);
+            
+            document.getElementById('field-enjoyedActivities').value = cachedRoleData.enjoyedActivities || '';
+            document.getElementById('field-workStyle').value = cachedRoleData.workStyle || '';
+            document.getElementById('field-talentsList').value = cachedRoleData.talentsList || '';
+            
+            const selectedOpportunities = new Set(normalizeList(cachedRoleData.talentOpportunities || []));
+            document.querySelectorAll('input[name="field-talentOpportunities"]').forEach(cb => {
+                cb.checked = selectedOpportunities.has(cb.value);
+            });
 
         } else if (userRole === 'mentor' && cachedRoleData) {
             const mentor = mergedMentorProfile || cachedRoleData;
@@ -739,6 +760,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 financialSupport: document.getElementById('field-financialSupport').value,
                 learningMode: document.getElementById('field-learningMode').value,
                 skills: normalizeList(document.getElementById('field-skills').value).join(', '),
+                pathwayPreference: document.querySelector('input[name="field-pathwayPreference"]:checked')?.value || 'undecided',
+                enjoyedActivities: document.getElementById('field-enjoyedActivities').value,
+                workStyle: document.getElementById('field-workStyle').value,
+                talentsList: document.getElementById('field-talentsList').value,
+                talentOpportunities: [...document.querySelectorAll('input[name="field-talentOpportunities"]:checked')].map(cb => cb.value),
                 updatedAt: now
             };
             const recommendationDataChanged = recommendationFields.some((field) => {

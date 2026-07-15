@@ -91,6 +91,9 @@ const adminSections = {
     "manage-courses": { title: "Manage Courses" },
     "manage-scholarships": { title: "Manage Scholarships" },
     "pathway-results": { title: "Pathway Results" },
+    "manage-talent-categories": { title: "Talent Categories" },
+    "manage-talent-opportunities": { title: "Talent Opportunities" },
+    "achievement-verifications": { title: "Achievement Verifications" },
     "mentor-approvals": { title: "Mentor Approvals" },
     "mentor-profile-updates": { title: "Mentor Profile Updates" },
     "mentor-requests": { title: "Mentor Requests" },
@@ -263,6 +266,9 @@ function runSectionRender(sectionId) {
     if (sectionId === "mentor-reviews") renderMentorReviews();
     if (sectionId === "mentor-profile-updates") renderMentorProfileUpdates();
     if (sectionId === "system-status") renderSystemStatus();
+    if (sectionId === "manage-talent-categories") renderTalentCategories();
+    if (sectionId === "manage-talent-opportunities") renderTalentOpportunities();
+    if (sectionId === "achievement-verifications") renderAchievementVerifications();
 }
 
 function startAdminClock() {
@@ -3207,4 +3213,62 @@ function escapeHtml(value) {
 
 function escapeAttr(value) {
     return escapeHtml(value).replace(/`/g, "&#096;");
+}
+
+// --- Talent & Opportunities System ---
+async function renderTalentCategories() {
+    const tbody = document.getElementById('admin-talent-categories-tbody');
+    if (!tbody) return;
+    try {
+        const snap = await get(ref(database, 'talentCategories'));
+        if (!snap.exists()) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-4">No talent categories found.</td></tr>';
+            return;
+        }
+        const data = snap.val();
+        tbody.innerHTML = Object.keys(data).map(key => {
+            const cat = data[key];
+            return `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(cat.title || cat.name || key)}</td><td>${escapeHtml(cat.description || '')}</td><td><button class="btn btn-secondary btn-sm" disabled>Edit</button></td></tr>`;
+        }).join('');
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading categories.</td></tr>';
+    }
+}
+
+async function renderTalentOpportunities() {
+    const tbody = document.getElementById('admin-talent-opportunities-tbody');
+    if (!tbody) return;
+    try {
+        const snap = await get(ref(database, 'talentOpportunities'));
+        if (!snap.exists()) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted p-4">No talent opportunities found.</td></tr>';
+            return;
+        }
+        const data = snap.val();
+        tbody.innerHTML = Object.keys(data).map(key => {
+            const opp = data[key];
+            return `<tr><td>${escapeHtml(opp.title || 'Untitled')}</td><td>${escapeHtml(opp.provider || opp.organization || 'Unknown')}</td><td>${escapeHtml(opp.type || opp.category || 'General')}</td><td><span class="badge ${opp.status === 'active' ? 'badge-active' : 'badge-pending'}">${escapeHtml((opp.status || 'pending').toUpperCase())}</span></td><td><button class="btn btn-secondary btn-sm" disabled>Manage</button></td></tr>`;
+        }).join('');
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading opportunities.</td></tr>';
+    }
+}
+
+async function renderAchievementVerifications() {
+    const tbody = document.getElementById('admin-achievement-verifications-tbody');
+    if (!tbody) return;
+    try {
+        const snap = await get(ref(database, 'achievementVerifications'));
+        if (!snap.exists()) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted p-4">No verifications pending.</td></tr>';
+            return;
+        }
+        const data = snap.val();
+        tbody.innerHTML = Object.keys(data).map(key => {
+            const ver = data[key];
+            return `<tr><td>${escapeHtml(ver.studentName || ver.studentUid || 'Unknown')}</td><td>${escapeHtml(ver.achievementTitle || ver.title || 'Unknown')}</td><td><a href="#" class="text-primary">View Proof</a></td><td><span class="badge ${ver.status === 'verified' ? 'badge-active' : 'badge-pending'}">${escapeHtml((ver.status || 'pending').toUpperCase())}</span></td><td><button class="btn btn-success btn-sm" disabled>Verify</button> <button class="btn btn-danger btn-sm" disabled>Reject</button></td></tr>`;
+        }).join('');
+    } catch(e) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading verifications.</td></tr>';
+    }
 }

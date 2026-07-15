@@ -43,6 +43,10 @@
             <li><a href="#manage-courses" data-section="manage-courses"><i class="fas fa-book"></i><span class="sidebar-label">Courses</span></a></li>
             <li><a href="#manage-scholarships" data-section="manage-scholarships"><i class="fas fa-hand-holding-usd"></i><span class="sidebar-label">Scholarships</span></a></li>
             <li><a href="#pathway-results" data-section="pathway-results"><i class="fas fa-route"></i><span class="sidebar-label">Pathways</span></a></li>
+            <li class="sidebar-section-label">Talent & Discoveries</li>
+            <li><a href="#manage-talent-categories" data-section="manage-talent-categories"><i class="fas fa-tags"></i><span class="sidebar-label">Talent Categories</span></a></li>
+            <li><a href="#manage-talent-opportunities" data-section="manage-talent-opportunities"><i class="fas fa-star"></i><span class="sidebar-label">Talent Opportunities</span></a></li>
+            <li><a href="#achievement-verifications" data-section="achievement-verifications"><i class="fas fa-certificate"></i><span class="sidebar-label">Achievement Verifications</span></a></li>
             <li class="sidebar-section-label">Mentoring</li>
             <li><a href="#mentor-approvals" data-section="mentor-approvals"><i class="fas fa-user-check"></i><span class="sidebar-label">Mentor Approvals</span><span class="nav-badge" id="badge-mentor-approvals"></span></a></li>
             <li><a href="#mentor-requests" data-section="mentor-requests"><i class="fas fa-user-friends"></i><span class="sidebar-label">Mentor Requests</span><span class="nav-badge" id="badge-mentor-requests"></span></a></li>
@@ -307,6 +311,78 @@
                             <div class="form-group"><label>Status</label><select id="schol-status" class="form-control"><option value="draft">Draft</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="archived">Archived</option></select></div>
                             <div class="form-group full-width form-actions"><button type="submit" class="btn btn-primary"><span id="scholarship-submit-label">Add Scholarship</span></button><button type="button" id="scholarship-cancel-edit" class="btn btn-danger hidden">Cancel Edit</button></div>
                         </form>
+                    </div>
+                </div>
+            </section>
+            <section id="manage-talent-categories" class="dashboard-section content-section">
+                <div class="section-header"><h2>Talent Categories</h2></div>
+                <div class="table-card glass">
+                    <div class="p-3 border-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>Categories</h3>
+                        <button class="btn btn-primary btn-sm" id="btn-add-talent-category"><i class="fas fa-plus"></i> Add Category</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Category ID</th>
+                                    <th>Title</th>
+                                    <th>Description</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-talent-categories-tbody">
+                                <tr><td colspan="4" class="text-center py-4 data-loading">Loading talent categories...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="manage-talent-opportunities" class="dashboard-section content-section">
+                <div class="section-header"><h2>Talent Opportunities</h2></div>
+                <div class="table-card glass">
+                    <div class="p-3 border-bottom" style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>Opportunities</h3>
+                        <button class="btn btn-primary btn-sm" id="btn-add-talent-opportunity"><i class="fas fa-plus"></i> Add Opportunity</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Provider</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-talent-opportunities-tbody">
+                                <tr><td colspan="5" class="text-center py-4 data-loading">Loading talent opportunities...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="achievement-verifications" class="dashboard-section content-section">
+                <div class="section-header"><h2>Achievement Verifications</h2></div>
+                <div class="table-card glass">
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Achievement</th>
+                                    <th>Proof Document</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-achievement-verifications-tbody">
+                                <tr><td colspan="5" class="text-center py-4 data-loading">Loading achievement verifications...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
