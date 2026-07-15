@@ -5,7 +5,6 @@ import { showToast, preserveThemeOnClear } from "./auth-nav.js?v=20260614-brand"
 import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
 import { ensureDashboardTopbarLayout, initDashboardNotifications, updateDashboardGreetingName } from "./dashboard-topbar.js";
 import { calculateMentorRatingSummary, normalizeRatingStatus, publicReviewRows } from "./ratings.js?v=20260705-rating-breakdown-fix";
-import { accountRole, normalizeMentorshipRequest } from "./mentorship-utils.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     initDashboardSidebar();
@@ -873,8 +872,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 heroMessage: 'Your guidance can shape a student\'s future.',
                 notice: 'Students can now discover your mentor profile.',
                 bannerTitle: 'Your mentoring access is active.',
-                bannerText: 'Review mentorship requests and keep your availability up to date.',
-                primary: { label: 'View Mentorship Requests', icon: 'fa-user-clock', section: 'requests' }
+                bannerText: 'Review new student requests and keep your availability up to date.',
+                primary: { label: 'View Student Requests', icon: 'fa-user-clock', section: 'requests' }
             },
             rejected: {
                 title: 'Application requires attention',
@@ -920,13 +919,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const button = document.getElementById(id);
         if (!button) return;
         button.classList.toggle('hidden', config.hidden === true);
-        if (config.url) {
-            button.removeAttribute('data-section-jump');
-            button.dataset.actionUrl = config.url;
-        } else {
-            button.removeAttribute('data-action-url');
-            button.dataset.sectionJump = config.section || 'dashboard-overview';
-        }
+        button.dataset.sectionJump = config.section || 'dashboard-overview';
         button.innerHTML = `<i class="fas ${config.icon || 'fa-arrow-right'}"></i> ${escapeHtml(config.label || 'Open')}`;
     }
 
@@ -953,7 +946,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { label: 'View Admin Feedback', icon: 'fa-comment-dots', section: 'complete-profile' }
             ],
             approved: [
-                { label: 'View Mentorship Requests', icon: 'fa-user-plus', section: 'requests' },
+                { label: 'View Student Requests', icon: 'fa-user-plus', section: 'requests' },
                 { label: 'View Appointments', icon: 'fa-calendar-days', section: 'appointments' },
                 { label: 'Update Availability', icon: 'fa-calendar-plus', section: 'availability' }
             ],
@@ -1866,13 +1859,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        document.addEventListener('click', (event) => {
-            const action = event.target.closest('[data-action-url]');
-            if (!action) return;
-            event.preventDefault();
-            window.location.href = action.dataset.actionUrl;
-        });
-
         document.querySelectorAll('[data-section-jump]').forEach((button) => {
             button.addEventListener('click', () => {
                 const sectionId = button.dataset.sectionJump;
@@ -2095,10 +2081,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (progressMsg) {
             if (percentage < 80) {
-                progressMsg.textContent = "âš ï¸ Please complete your profile to at least 80% strength to ensure your application gets approved quickly by our admins!";
+                progressMsg.textContent = "⚠️ Please complete your profile to at least 80% strength to ensure your application gets approved quickly by our admins!";
                 progressMsg.style.color = '#f59e0b';
             } else {
-                progressMsg.textContent = "ðŸŽ‰ Excellent! Your profile strength is optimized for immediate admin approval and student matching.";
+                progressMsg.textContent = "🎉 Excellent! Your profile strength is optimized for immediate admin approval and student matching.";
                 progressMsg.style.color = '#10b981';
             }
         }
@@ -2121,12 +2107,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function listenForRequests(uid, mentorName) {
-        let legacyIncoming = {};
-        let standardIncoming = {};
-        const legacyRef = query(ref(database, 'mentorRequests'), orderByChild('mentorUid'), equalTo(uid));
-        const standardRef = query(ref(database, 'mentorshipRequests'), orderByChild('targetMentorUid'), equalTo(uid));
-
-        const rebuildIncomingRequests = async () => {
+        const reqRef = query(ref(database, 'mentorRequests'), orderByChild('mentorUid'), equalTo(uid));
+        onValue(reqRef, async (snapshot) => {
             const requestsGrid = document.getElementById('requests-grid');
             const rejectedGrid = document.getElementById('rejected-grid');
             if (requestsGrid) requestsGrid.innerHTML = '';
@@ -2139,72 +2121,64 @@ document.addEventListener('DOMContentLoaded', () => {
             currentRequestRows = [];
             requestDetailCache = {};
 
-            const combined = [
-                ...Object.entries(legacyIncoming || {}).map(([reqId, req]) => [reqId, req, 'mentorRequests']),
-                ...Object.entries(standardIncoming || {}).map(([reqId, req]) => [reqId, req, 'mentorshipRequests'])
-            ].filter(([, req]) => normalizeMentorshipRequest(req).targetMentorUid === uid);
+            if (snapshot.exists()) {
+                const data = snapshot.val();
+                const filtered = Object.entries(data || {}).filter(([, req]) => req && req.mentorUid === uid);
 
-            const rows = await Promise.all(combined.map(async ([reqId, req, requestPath]) => {
-                const normalizedReq = normalizeMentorshipRequest(req);
-                const requesterUid = normalizedReq.requesterUid || '';
-                const [userSnap, mentorSnap, menteeProfileSnap, applicationSnap, pathwaySnap] = await Promise.all([
-                    requesterUid ? safeGet(ref(database, `users/${requesterUid}`)) : Promise.resolve(null),
-                    requesterUid ? safeGet(ref(database, `mentors/${requesterUid}`)) : Promise.resolve(null),
-                    requesterUid ? safeGet(ref(database, `menteeProfiles/${requesterUid}`)) : Promise.resolve(null),
-                    requesterUid ? safeGet(ref(database, `mentorApplications/${requesterUid}`)) : Promise.resolve(null),
-                    requesterUid ? safeGet(ref(database, `pathwayResults/${requesterUid}`)) : Promise.resolve(null)
-                ]);
+                const rows = await Promise.all(filtered.map(async ([reqId, req]) => {
+                    const studentUid = req.studentUid || '';
+                    const [studentSnap, userSnap, pathwaySnap] = await Promise.all([
+                        studentUid ? safeGet(ref(database, `students/${studentUid}`)) : Promise.resolve(null),
+                        studentUid ? safeGet(ref(database, `users/${studentUid}`)) : Promise.resolve(null),
+                        studentUid ? safeGet(ref(database, `pathwayResults/${studentUid}`)) : Promise.resolve(null),
+                    ]);
 
-                const userData = userSnap?.exists() ? userSnap.val() : {};
-                const mentorData = mentorSnap?.exists() ? mentorSnap.val() : (applicationSnap?.exists() ? applicationSnap.val() : {});
-                const menteeProfile = menteeProfileSnap?.exists() ? menteeProfileSnap.val() : {};
-                const pathwayData = pathwaySnap?.exists() ? pathwaySnap.val() : null;
-                const latestResult = req.pathwaySnapshot || getLatestPathwayResult(pathwayData);
-                return { reqId, req, normalizedReq, requestPath, userData, mentorData, menteeProfile, latestResult };
-            }));
+                    const studentData = studentSnap?.exists() ? studentSnap.val() : {};
+                    const userData = userSnap?.exists() ? userSnap.val() : {};
+                    const pathwayData = pathwaySnap?.exists() ? pathwaySnap.val() : null;
+                    const latestResult = req.pathwaySnapshot || getLatestPathwayResult(pathwayData);
 
-            rows.forEach((row) => {
-                const cardData = {
-                    reqId: row.reqId,
-                    requestPath: row.requestPath,
-                    request: row.req,
-                    normalizedReq: row.normalizedReq,
-                    userData: row.userData,
-                    mentorData: row.mentorData,
-                    menteeProfile: row.menteeProfile,
-                    latestResult: row.latestResult,
-                };
-                requestDetailCache[row.reqId] = cardData;
-                currentRequestRows.push(cardData);
+                    return { reqId, req, studentData, userData, latestResult };
+                }));
 
-                const status = String(row.req.status || 'pending').toLowerCase();
-                if (status === 'pending') {
-                    pendingCount++;
-                    pendingRows.push(cardData);
-                } else if (['rejected', 'closed', 'cancelled'].includes(status)) {
-                    rejectedCount++;
-                    rejectedRows.push(cardData);
-                }
-            });
+                rows.forEach((row) => {
+                    const req = row.req;
+                    const cardData = {
+                        reqId: row.reqId,
+                        request: req,
+                        studentData: row.studentData,
+                        userData: row.userData,
+                        latestResult: row.latestResult,
+                    };
+                    requestDetailCache[row.reqId] = cardData;
+                    currentRequestRows.push(cardData);
+
+                    const status = String(req.status || 'pending').toLowerCase();
+                    if (status === 'pending') {
+                        pendingCount++;
+                        pendingRows.push(cardData);
+                    } else if (['rejected', 'closed', 'cancelled'].includes(status)) {
+                        rejectedCount++;
+                        rejectedRows.push(cardData);
+                    }
+                });
+            }
 
             renderRequestTable(requestsGrid, pendingRows, 'pending');
             renderRequestTable(rejectedGrid, rejectedRows, 'closed');
-            setTextSafe('stat-requests', pendingCount);
-            setTextSafe('req-count', pendingCount);
-            setTextSafe('overview-requests-count', pendingCount);
-            renderOverviewRequests();
-            attachRequestListeners();
-        };
+            const statRequests = document.getElementById('stat-requests');
+            const reqCount = document.getElementById('req-count');
 
-        onValue(legacyRef, (snapshot) => {
-            legacyIncoming = snapshot.val() || {};
-            rebuildIncomingRequests();
-        });
-        onValue(standardRef, (snapshot) => {
-            standardIncoming = snapshot.val() || {};
-            rebuildIncomingRequests();
+            if (statRequests) statRequests.textContent = pendingCount;
+            if (reqCount) reqCount.textContent = pendingCount;
+            const overviewCount = document.getElementById('overview-requests-count');
+            if (overviewCount) overviewCount.textContent = pendingCount;
+            renderOverviewRequests();
+
+            attachRequestListeners();
         });
     }
+
     function listenForConnectedStudents(uid) {
         onValue(ref(database, `mentorStudents/${uid}`), async (snapshot) => {
             const rawConnections = snapshot.val() || {};
@@ -2268,7 +2242,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!averageEl) return;
         const summary = mentorRatingSummary?.totalRatings !== undefined ? mentorRatingSummary : calculateMentorRatingSummary(mentorRatings);
         const total = Number(summary.totalRatings || 0);
-        averageEl.textContent = total ? `â˜… ${Number(summary.averageRating || 0).toFixed(1)}` : 'New Mentor';
+        averageEl.textContent = total ? `★ ${Number(summary.averageRating || 0).toFixed(1)}` : 'New Mentor';
         setTextSafe('mentor-rating-total', total ? `${total} verified review${total === 1 ? '' : 's'}` : 'No verified ratings yet');
         setTextSafe('mentor-rating-recommend', total ? `${Number(summary.recommendationPercentage || 0)}%` : '--');
         setTextSafe('mentor-rating-top-category', topRatingCategory(summary.categoryAverages));
@@ -2287,7 +2261,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${[5, 4, 3, 2, 1].map((star) => {
                     const count = Number(dist[star] || 0);
                     const width = total ? Math.round((count / total) * 100) : 0;
-                    return `<div class="rating-bar-row"><span>${star} â˜…</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:${width}%"></div></div><strong>${count}</strong></div>`;
+                    return `<div class="rating-bar-row"><span>${star} ★</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:${width}%"></div></div><strong>${count}</strong></div>`;
                 }).join('')}
             </div>
             <div class="detail-grid recommendation-detail-grid mt-3">
@@ -2314,7 +2288,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <strong>${escapeHtml(review.displayPreference === 'anonymous' ? 'Verified Student' : 'Student Review')}</strong>
                         <button type="button" class="verified-review-badge review-detail-trigger" data-view-review-rating="${escapeHtml(review.appointmentId || '')}"><i class="fas fa-circle-check"></i> Verified Mentoring Session</button>
                     </div>
-                    <span class="review-stars">${'â˜…'.repeat(Number(review.overallRating || 0))}</span>
+                    <span class="review-stars">${'★'.repeat(Number(review.overallRating || 0))}</span>
                 </div>
                 <p>${escapeHtml(review.review || '')}</p>
                 <small class="text-muted">${escapeHtml(formatDateTime(review.createdAt || review.updatedAt))}</small>
@@ -2382,7 +2356,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTextSafe('mentor-rating-recommend', total ? `${Number(summary.recommendationPercentage || 0)}%` : '--');
         setTextSafe('mentor-rating-top-category', topRatingCategoryName(summary.categoryAverages));
         setTextSafe('mentor-rating-count', total);
-        setTextSafe('mentor-rating-stars', total ? ratingStars(average) : 'â˜†â˜†â˜†â˜†â˜†');
+        setTextSafe('mentor-rating-stars', total ? ratingStars(average) : '☆☆☆☆☆');
         renderMentorReviewList(reviews);
         renderRatingTrends(reviews);
         renderCommonPraise(reviews);
@@ -2409,7 +2383,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${[5, 4, 3, 2, 1].map((star) => {
                         const count = Number(dist[star] || 0);
                         const width = total ? Math.round((count / total) * 100) : 0;
-                        return `<div class="rating-bar-row"><span>${star} â˜…</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:${width}%"></div></div><strong>${count}</strong></div>`;
+                        return `<div class="rating-bar-row"><span>${star} ★</span><div class="rating-bar-track"><div class="rating-bar-fill" style="width:${width}%"></div></div><strong>${count}</strong></div>`;
                     }).join('')}
                 </div>
                 <div class="category-rating-list">
@@ -2576,7 +2550,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function ratingStars(value = 0) {
         const rounded = Math.round(Number(value || 0));
-        return `${'â˜…'.repeat(Math.max(0, Math.min(5, rounded)))}${'â˜†'.repeat(Math.max(0, 5 - rounded))}`;
+        return `${'★'.repeat(Math.max(0, Math.min(5, rounded)))}${'☆'.repeat(Math.max(0, 5 - rounded))}`;
     }
 
     function ratingTime(value) {
@@ -3092,7 +3066,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return `
                 <div class="student-card glass">
                     <h4><i class="fas fa-user-graduate text-primary"></i> ${escapeHtml(item.studentName || 'Student')}</h4>
-                    <p class="text-muted" style="margin:0 0 0.75rem; font-size:0.95rem;">${escapeHtml(item.studentEmail || 'No email')} â€¢ Connected ${formatSupportDate(item.connectedAt)}</p>
+                    <p class="text-muted" style="margin:0 0 0.75rem; font-size:0.95rem;">${escapeHtml(item.studentEmail || 'No email')} • Connected ${formatSupportDate(item.connectedAt)}</p>
                     <div class="request-card-meta">
                         <span>${escapeHtml(item.educationLevel || 'Education unavailable')}</span>
                         <span>${escapeHtml(item.interestArea || 'Interest unavailable')}</span>
@@ -3203,14 +3177,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     <tbody>
                         ${rows.map((data) => {
                             const req = data.request || {};
-                            const normalizedReq = data.normalizedReq || normalizeMentorshipRequest(req);
                             const latest = data.latestResult || req.pathwaySnapshot || {};
                             const status = String(req.status || 'pending').toLowerCase();
                             const badge = status === 'pending' ? 'badge-warning' : status === 'accepted' ? 'badge-approved' : 'badge-rejected';
-                            const studentName = normalizedReq.requesterName || data.userData?.fullName || 'Mentee';
-                            const studentEmail = req.requesterEmail || req.studentEmail || data.userData?.email || 'No email';
-                            const education = req.educationLevel || data.menteeProfile?.educationLevel || data.mentorData?.educationLevel || data.mentorData?.highestQualification || data.userData?.educationLevel || latest.educationLevel || latest.basicProfile?.currentEducationLevel || 'N/A';
-                            const interest = req.interestArea || data.menteeProfile?.interestArea || data.mentorData?.mentoringField || data.mentorData?.field || data.userData?.interestArea || latest.interestArea || latest.interests?.interestAreas?.[0] || 'N/A';
+                            const studentName = req.studentName || data.userData?.fullName || 'Student';
+                            const studentEmail = req.studentEmail || data.userData?.email || 'No email';
+                            const education = req.educationLevel || data.studentData?.educationLevel || data.studentData?.education || data.userData?.educationLevel || latest.educationLevel || latest.basicProfile?.currentEducationLevel || 'N/A';
+                            const interest = req.interestArea || data.studentData?.interestArea || data.studentData?.interest || data.userData?.interestArea || latest.interestArea || latest.interests?.interestAreas?.[0] || 'N/A';
                             return `
                                 <tr>
                                     <td>
@@ -3254,7 +3227,7 @@ document.addEventListener('DOMContentLoaded', () => {
             })
             .sort((a, b) => b.lastTime - a.lastTime);
         if (!rows.length) {
-            container.innerHTML = '<div class="text-muted p-4 full-width text-center">No active conversations yet. Accept a mentorship request to start messaging.</div>';
+            container.innerHTML = '<div class="text-muted p-4 full-width text-center">No active conversations yet. Accept a student request to start messaging.</div>';
             updateUnreadMessageCount(rows);
             return;
         }
@@ -3300,7 +3273,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return `
                 <div class="overview-row">
                     <span class="mini-avatar">${escapeHtml(initials)}</span>
-                    <div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(item.request.interestArea || item.latestResult?.interestArea || 'Mentorship request')} - ${escapeHtml(formatSupportDate(item.request.createdAt))}</span></div>
+                    <div><strong>${escapeHtml(name)}</strong><span>${escapeHtml(item.request.interestArea || item.latestResult?.interestArea || 'Student request')} - ${escapeHtml(formatSupportDate(item.request.createdAt))}</span></div>
                     <button class="mini-action view-request-btn" data-id="${escapeHtml(item.reqId)}">View Profile</button>
                 </div>
             `;
@@ -3469,60 +3442,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function openRequestModal(data) {
         const req = data.request;
-        const normalizedReq = data.normalizedReq || normalizeMentorshipRequest(req);
+        const studentData = data.studentData || {};
         const userData = data.userData || {};
-        const mentorData = data.mentorData || {};
-        const menteeProfile = data.menteeProfile || {};
         const latestResult = data.latestResult || req.pathwaySnapshot || {};
-        
-        const requesterName = normalizedReq.requesterName || userData.fullName || 'Mentee';
-        const roleStr = normalizedReq.requesterAccountRole === 'mentor' ? 'Mentor Requesting Mentorship' : 'Student Request';
-
         const body = document.getElementById('modal-request-body');
-        if (body) {
+        if (body && !document.getElementById('modal-status')) {
             body.innerHTML = `
-                <div class="modal-requester-contact text-sm text-muted" style="margin-bottom: 1rem;">
-                    <span><i class="fas fa-envelope"></i> ${escapeHtml(req.requesterEmail || req.studentEmail || userData.email || 'No email')}</span>
-                    <span style="margin-left: 1rem;"><i class="fas fa-phone"></i> ${escapeHtml(req.requesterPhone || req.studentPhone || menteeProfile.phone || userData.phone || 'No phone')}</span>
-                </div>
+                <div class="modal-row"><strong>Status:</strong> <span id="modal-status"></span></div>
+                <div class="modal-row"><strong>Student:</strong> <span id="modal-student-name"></span></div>
+                <div class="modal-row"><strong>Email:</strong> <span id="modal-student-email"></span></div>
+                <div class="modal-row"><strong>Phone:</strong> <span id="modal-student-phone"></span></div>
+                <div class="modal-row"><strong>Education Level:</strong> <span id="modal-education"></span></div>
+                <div class="modal-row"><strong>Interest Area:</strong> <span id="modal-interest"></span></div>
+                <div class="modal-row"><strong>Future Goal:</strong> <span id="modal-goal"></span></div>
+                <div class="modal-row"><strong>Learning Mode:</strong> <span id="modal-learning-mode"></span></div>
+                <div class="modal-row"><strong>Skills:</strong> <span id="modal-skills"></span></div>
+                <div class="modal-row"><strong>Request Message:</strong> <span id="modal-message"></span></div>
+                <div class="modal-row"><strong>Latest Pathway Match:</strong> <span id="modal-pathway-result"></span></div>
+                <div class="modal-row"><strong>Requested On:</strong> <span id="modal-requested-at"></span></div>
+            `;
+        }
 
-                <div class="request-modal-section" style="margin-bottom: 1.5rem;">
-                    <h4 style="margin-bottom: 0.5rem; color: var(--primary);">Request Info</h4>
-                    <div class="modal-row"><strong>Status:</strong> <span>${escapeHtml((req.status || 'pending').toUpperCase())}</span></div>
-                    <div class="modal-row"><strong>Goal:</strong> <span>${escapeHtml(normalizedReq.goal || menteeProfile.futureGoal || userData.futureGoal || latestResult.futureGoal || latestResult.goals?.dreamCareer || 'N/A')}</span></div>
-                    <div class="modal-row"><strong>Requested On:</strong> <span>${escapeHtml(formatSupportDate(req.createdAt))}</span></div>
-                    <div class="modal-row full-width"><strong>Request Message:</strong> <div style="margin-top:0.25rem; padding:0.5rem; background:var(--surface-mixed); border-radius:4px;">${escapeHtml(req.message || 'No message provided.')}</div></div>
-                </div>
-
-                <div class="request-modal-section" style="margin-bottom: 1.5rem;">
-                    <h4 style="margin-bottom: 0.5rem; color: var(--primary);">Professional Background</h4>
-                    <div class="modal-row"><strong>Current Role/Field:</strong> <span>${escapeHtml(mentorData.jobTitle || mentorData.field || mentorData.mentoringField || 'N/A')}</span></div>
-                    <div class="modal-row"><strong>Organization:</strong> <span>${escapeHtml(mentorData.currentOrganization || mentorData.organization || mentorData.universityOrCompany || 'N/A')}</span></div>
-                    <div class="modal-row"><strong>Highest Qualification:</strong> <span>${escapeHtml(mentorData.highestQualification || mentorData.educationLevel || 'N/A')}</span></div>
-                    <div class="modal-row"><strong>Years of Experience:</strong> <span>${escapeHtml(mentorData.yearsOfExperience || 'N/A')}</span></div>
-                    ${mentorData.bio ? `<div class="modal-row full-width"><strong>Bio:</strong> <div style="margin-top:0.25rem;">${escapeHtml(mentorData.bio)}</div></div>` : ''}
-                </div>
-
-                <div class="request-modal-section">
-                    <h4 style="margin-bottom: 0.5rem; color: var(--primary);">Learning Needs</h4>
-                    <div class="modal-row"><strong>Learning Mode:</strong> <span>${escapeHtml(menteeProfile.learningMode || userData.learningMode || latestResult.learningMode || latestResult.learningPreferences?.learningMode || 'N/A')}</span></div>
-                    <div class="modal-row"><strong>Skills:</strong> <span>${escapeHtml(displayVal(normalizedReq.skills || menteeProfile.skills || userData.skills || latestResult.skills || latestResult.skillsAndStrengths?.skills || 'N/A'))}</span></div>
+        document.getElementById('modal-request-title').textContent = `${escapeHtml(req.studentName || userData.fullName || 'Student')} Request Details`;
+        document.getElementById('modal-status').textContent = (req.status || 'pending').toUpperCase();
+        document.getElementById('modal-student-name').textContent = req.studentName || userData.fullName || 'N/A';
+        document.getElementById('modal-student-email').textContent = req.studentEmail || userData.email || 'N/A';
+        document.getElementById('modal-student-phone').textContent = req.studentPhone || studentData.phone || userData.phone || 'N/A';
+        document.getElementById('modal-education').textContent = req.educationLevel || studentData.educationLevel || studentData.education || userData.educationLevel || latestResult.educationLevel || latestResult.basicProfile?.currentEducationLevel || 'N/A';
+        document.getElementById('modal-interest').textContent = req.interestArea || studentData.interestArea || studentData.interest || userData.interestArea || latestResult.interestArea || latestResult.interests?.interestAreas?.[0] || 'N/A';
+        document.getElementById('modal-goal').textContent = req.futureGoal || studentData.futureGoal || studentData.goal || userData.futureGoal || latestResult.futureGoal || latestResult.goals?.dreamCareer || 'N/A';
+        document.getElementById('modal-learning-mode').textContent = studentData.learningMode || userData.learningMode || latestResult.learningMode || latestResult.learningPreferences?.learningMode || 'N/A';
+        document.getElementById('modal-skills').textContent = displayVal(req.skills || studentData.skills || userData.skills || latestResult.skills || latestResult.skillsAndStrengths?.skills || 'N/A');
                     <div class="modal-row"><strong>Pathway Preference:</strong> <span><span style="text-transform: capitalize;">${escapeHtml(req.pathwayPreference || 'N/A')}</span></span></div>
                     ${req.enjoyedActivities ? `<div class="modal-row full-width"><strong>Enjoyed Activities:</strong> <div style="margin-top:0.25rem;">${escapeHtml(req.enjoyedActivities)}</div></div>` : ''}
                     ${req.talentsList ? `<div class="modal-row full-width"><strong>Talents:</strong> <div style="margin-top:0.25rem;">${escapeHtml(req.talentsList)}</div></div>` : ''}
-                    <div class="modal-row full-width"><strong>Latest Pathway Match:</strong> <span>${escapeHtml(Object.keys(latestResult || {}).length ? `${latestResult.pathway || latestResult.recommendedPathway || 'Recommended pathway unavailable'} (${displayVal(latestResult.pathwayScore || latestResult.score || 'N/A')})` : 'No pathway result available yet.')}</span></div>
-                </div>
-            `;
-        }
+        document.getElementById('modal-message').textContent = req.message || 'N/A';
+        document.getElementById('modal-pathway-result').textContent = Object.keys(latestResult || {}).length ? `${latestResult.pathway || latestResult.recommendedPathway || 'Recommended pathway unavailable'} (${displayVal(latestResult.pathwayScore || latestResult.score || 'N/A')})` : 'No pathway result available yet.';
+        document.getElementById('modal-requested-at').textContent = formatSupportDate(req.createdAt);
 
-        const titleEl = document.getElementById('modal-request-title');
-        if (titleEl) {
-            titleEl.innerHTML = `
-                <div>${escapeHtml(requesterName)}</div>
-                <div style="font-size: 0.85rem; font-weight: normal; color: var(--text-muted);">${escapeHtml(roleStr)}</div>
-            `;
-        }
-        
         const overlay = document.getElementById('student-request-modal');
         if (overlay) overlay.classList.remove('hidden');
     }
@@ -3535,13 +3492,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const cached = requestDetailCache[reqId];
         if (!cached) return showToast('Request details are still loading. Try again.', 'error');
         const req = cached.request || {};
-        const requestPath = cached.requestPath || 'mentorRequests';
-        const normalizedReq = normalizeMentorshipRequest(req);
-        const studentUid = normalizedReq.requesterUid;
-        const requesterAccountRole = normalizedReq.requesterAccountRole || accountRole(cached.userData || {});
-        const requesterDashboardPage = requesterAccountRole === 'mentor' ? 'mentor-learning.html' : 'student-dashboard.html';
-        const requesterRequestsSection = requesterAccountRole === 'mentor' ? 'mentor-requests' : 'mentor-requests-section';
-        if (!studentUid || normalizedReq.targetMentorUid !== currentUid) return showToast('This request is not assigned to you.', 'error');
+        const studentUid = req.studentUid;
+        if (!studentUid || req.mentorUid !== currentUid) return showToast('This request is not assigned to you.', 'error');
 
         const reason = newStatus === 'rejected' ? (window.prompt('Optional rejection reason:', '') || '') : '';
         const conversation = conversationId(currentUid, studentUid);
@@ -3553,29 +3505,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const mentorUserSnap = await get(ref(database, `users/${currentUid}`));
         const mentorUser = mentorUserSnap.val() || {};
         const latest = req.pathwaySnapshot || cached.latestResult || {};
-        const studentName = normalizedReq.requesterName || cached.userData?.fullName || 'Mentee';
+        const studentName = req.studentName || cached.userData?.fullName || 'Student';
         const mentorName = mentor.fullName || mentorUser.fullName || req.mentorName || 'Mentor';
         const updates = {};
 
-        updates[`${requestPath}/${reqId}/status`] = newStatus;
-        updates[`${requestPath}/${reqId}/updatedAt`] = serverTimestamp();
-        updates[`${requestPath}/${reqId}/requesterUid`] = studentUid;
-        updates[`${requestPath}/${reqId}/requesterName`] = studentName;
-        updates[`${requestPath}/${reqId}/requesterAccountRole`] = requesterAccountRole;
-        updates[`${requestPath}/${reqId}/requesterRelationshipRole`] = 'mentee';
-        updates[`${requestPath}/${reqId}/targetMentorUid`] = currentUid;
-        updates[`${requestPath}/${reqId}/targetMentorName`] = mentorName || req.mentorName || 'Mentor';
-        updates[`${requestPath}/${reqId}/respondedAt`] = serverTimestamp();
+        updates[`mentorRequests/${reqId}/status`] = newStatus;
+        updates[`mentorRequests/${reqId}/updatedAt`] = serverTimestamp();
 
         if (newStatus === 'accepted') {
-            updates[`${requestPath}/${reqId}/acceptedAt`] = serverTimestamp();
+            updates[`mentorRequests/${reqId}/acceptedAt`] = serverTimestamp();
             updates[`studentMentors/${studentUid}/${currentUid}`] = {
                 studentUid,
-                menteeUid: studentUid,
-                menteeName: studentName,
-                menteeAccountRole: requesterAccountRole,
-                mentorRelationshipRole: 'mentor',
-                menteeRelationshipRole: 'mentee',
                 mentorUid: currentUid,
                 requestId: reqId,
                 status: 'connected',
@@ -3587,36 +3527,28 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             updates[`mentorStudents/${currentUid}/${studentUid}`] = {
                 studentUid,
-                menteeUid: studentUid,
-                menteeName: studentName,
-                menteeAccountRole: requesterAccountRole,
-                mentorRelationshipRole: 'mentor',
-                menteeRelationshipRole: 'mentee',
                 mentorUid: currentUid,
                 requestId: reqId,
                 status: 'connected',
                 connectedAt: serverTimestamp(),
                 studentName,
-                studentEmail: req.requesterEmail || req.studentEmail || cached.userData?.email || '',
-                studentPhone: req.requesterPhone || req.studentPhone || cached.menteeProfile?.phone || cached.userData?.phone || '',
-                educationLevel: latest.educationLevel || cached.menteeProfile?.educationLevel || cached.mentorData?.educationLevel || cached.mentorData?.highestQualification || '',
-                interestArea: latest.interestArea || cached.menteeProfile?.interestArea || cached.mentorData?.mentoringField || cached.mentorData?.field || '',
-                futureGoal: latest.futureGoal || cached.menteeProfile?.futureGoal || cached.userData?.futureGoal || '',
-                skills: latest.skills || cached.menteeProfile?.skills || cached.userData?.skills || [],
+                studentEmail: req.studentEmail || cached.userData?.email || '',
+                studentPhone: req.studentPhone || cached.studentData?.phone || cached.userData?.phone || '',
+                educationLevel: latest.educationLevel || cached.studentData?.educationLevel || '',
+                interestArea: latest.interestArea || cached.studentData?.interestArea || '',
+                futureGoal: latest.futureGoal || cached.studentData?.futureGoal || '',
+                skills: latest.skills || cached.studentData?.skills || [],
                 pathwayResultId: req.pathwayResultId || latest.resultId || '',
                 pathwaySummary: latest.recommendationSummary || latest.futureGoal || 'Pathway details available'
             };
             updates[`mentorConversations/${conversation}/conversationId`] = conversation;
-            updates[`mentorConversations/${conversation}/type`] = requesterAccountRole === 'mentor' ? 'mentor-to-mentor' : 'mentor-student';
+            updates[`mentorConversations/${conversation}/type`] = 'mentor-student';
             updates[`mentorConversations/${conversation}/mentorUid`] = currentUid;
             updates[`mentorConversations/${conversation}/studentUid`] = studentUid;
-            updates[`mentorConversations/${conversation}/menteeUid`] = studentUid;
             updates[`mentorConversations/${conversation}/participantIds/${currentUid}`] = true;
             updates[`mentorConversations/${conversation}/participantIds/${studentUid}`] = true;
             updates[`mentorConversations/${conversation}/participantRoles/${currentUid}`] = 'mentor';
-            updates[`mentorConversations/${conversation}/participantRoles/${studentUid}`] = requesterAccountRole || 'mentee';
-            updates[`mentorConversations/${conversation}/relationshipRoles/${currentUid}`] = 'mentor';
-            updates[`mentorConversations/${conversation}/relationshipRoles/${studentUid}`] = 'mentee';
+            updates[`mentorConversations/${conversation}/participantRoles/${studentUid}`] = 'student';
             updates[`mentorConversations/${conversation}/participantNames/${currentUid}`] = mentorName;
             updates[`mentorConversations/${conversation}/participantNames/${studentUid}`] = studentName;
             updates[`mentorConversations/${conversation}/status`] = 'active';
@@ -3627,57 +3559,23 @@ document.addEventListener('DOMContentLoaded', () => {
             updates[`mentorConversations/${conversation}/lastMessageAt`] = serverTimestamp();
             updates[`mentorConversations/${conversation}/unreadByMentor`] = 0;
             updates[`mentorConversations/${conversation}/unreadByStudent`] = 0;
-            updates[`mentorshipConnections/${reqId}`] = {
-                connectionId: reqId,
-                requestId: reqId,
-                mentorUid: currentUid,
-                mentorName,
-                mentorPhotoURL: mentor.photoURL || mentorUser.photoURL || '',
-                menteeUid: studentUid,
-                menteeName: studentName,
-                menteePhotoURL: cached.userData?.photoURL || '',
-                menteeAccountRole: requesterAccountRole,
-                mentorRelationshipRole: 'mentor',
-                menteeRelationshipRole: 'mentee',
-                topic: normalizedReq.topic || req.mentorField || '',
-                category: normalizedReq.category || req.guidanceArea || '',
-                goal: normalizedReq.goal || req.futureGoal || '',
-                status: 'active',
-                createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                endedAt: null
-            };
-            updates[`conversations/${conversation}/conversationId`] = conversation;
-            updates[`conversations/${conversation}/participantUids/${currentUid}`] = true;
-            updates[`conversations/${conversation}/participantUids/${studentUid}`] = true;
-            updates[`conversations/${conversation}/participantIds/${currentUid}`] = true;
-            updates[`conversations/${conversation}/participantIds/${studentUid}`] = true;
-            updates[`conversations/${conversation}/mentorUid`] = currentUid;
-            updates[`conversations/${conversation}/menteeUid`] = studentUid;
-            updates[`conversations/${conversation}/connectionId`] = reqId;
-            updates[`conversations/${conversation}/requestId`] = reqId;
-            updates[`conversations/${conversation}/topic`] = normalizedReq.topic || req.mentorField || '';
-            updates[`conversations/${conversation}/status`] = 'active';
-            updates[`conversations/${conversation}/createdAt`] = serverTimestamp();
-            updates[`conversations/${conversation}/updatedAt`] = serverTimestamp();
-            updates[`conversations/${conversation}/lastMessageAt`] = serverTimestamp();
             updates[`notifications/${studentUid}/${notificationRef.key}`] = {
                 notificationId: notificationRef.key,
                 targetUserUid: studentUid,
-                targetRole: requesterAccountRole || 'mentee',
+                targetRole: 'student',
                 senderUid: currentUid,
                 senderRole: 'mentor',
                 type: 'mentorship_request_accepted',
-                title: 'Mentorship Request Accepted',
-                message: `${mentorName} accepted your mentorship request.`,
-                messagePreview: `${mentorName} accepted your mentorship request.`,
-                relatedEntityType: requestPath === 'mentorshipRequests' ? 'mentorship_request' : 'mentorRequest',
+                title: 'Your mentor request was accepted',
+                message: `${mentorName} accepted your mentor request.`,
+                messagePreview: `${mentorName} accepted your mentor request.`,
+                relatedEntityType: 'mentorRequest',
                 relatedEntityId: reqId,
                 requestId: reqId,
                 conversationId: conversation,
                 mentorUid: currentUid,
-                targetPage: requesterDashboardPage,
-                targetSection: requesterAccountRole === 'mentor' ? 'connected-mentors' : requesterRequestsSection,
+                targetPage: 'student-dashboard.html',
+                targetSection: 'mentor-requests-section',
                 targetQuery: { requestId: reqId, conversationId: conversation },
                 read: false,
                 status: 'unread',
@@ -3689,30 +3587,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 userName: mentorName,
                 userRole: 'mentor',
                 actionType: 'mentor_connection_created',
-                description: `${mentorName} connected with ${studentName} as a mentee`,
+                description: `${mentorName} connected with ${studentName}`,
                 relatedEntityType: 'mentorConversation',
                 relatedEntityId: conversation,
                 createdAt: serverTimestamp()
             };
         } else {
-            updates[`${requestPath}/${reqId}/rejectedAt`] = serverTimestamp();
-            updates[`${requestPath}/${reqId}/rejectionReason`] = reason;
+            updates[`mentorRequests/${reqId}/rejectedAt`] = serverTimestamp();
+            updates[`mentorRequests/${reqId}/rejectionReason`] = reason;
             updates[`notifications/${studentUid}/${notificationRef.key}`] = {
                 notificationId: notificationRef.key,
                 targetUserUid: studentUid,
-                targetRole: requesterAccountRole || 'mentee',
+                targetRole: 'student',
                 senderUid: currentUid,
                 senderRole: 'mentor',
                 type: 'mentorship_request_rejected',
-                title: 'Mentorship Request Update',
+                title: 'Mentor request update',
                 message: reason || `${mentorName} could not accept your mentor request at this time.`,
-                messagePreview: reason || 'Your mentorship request was not accepted.',
-                relatedEntityType: requestPath === 'mentorshipRequests' ? 'mentorship_request' : 'mentorRequest',
+                messagePreview: reason || 'Your mentor request was rejected.',
+                relatedEntityType: 'mentorRequest',
                 relatedEntityId: reqId,
                 requestId: reqId,
                 mentorUid: currentUid,
-                targetPage: requesterDashboardPage,
-                targetSection: requesterRequestsSection,
+                targetPage: 'student-dashboard.html',
+                targetSection: 'mentor-requests-section',
                 targetQuery: { requestId: reqId },
                 read: false,
                 status: 'unread',
@@ -3726,8 +3624,8 @@ document.addEventListener('DOMContentLoaded', () => {
             userName: mentorName,
             userRole: 'mentor',
             actionType: newStatus === 'accepted' ? 'mentor_request_accepted' : 'mentor_request_rejected',
-            description: `${mentorName} ${newStatus} ${studentName}'s mentorship request`,
-            relatedEntityType: requestPath === 'mentorshipRequests' ? 'mentorship_request' : 'mentorRequest',
+            description: `${mentorName} ${newStatus} ${studentName}'s mentor request`,
+            relatedEntityType: 'mentorRequest',
             relatedEntityId: reqId,
             createdAt: serverTimestamp()
         };
@@ -3810,7 +3708,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const studentUid = conversation.studentUid || activeConversationId.replace(`mentor_${currentUid}_`, '');
         const student = connectedStudents[studentUid] || {};
         document.getElementById('mentor-student-chat-title').textContent = student.studentName || 'Student Messages';
-        document.getElementById('mentor-student-chat-subtitle').textContent = [student.educationLevel, student.interestArea].filter(Boolean).join(' â€¢ ');
+        document.getElementById('mentor-student-chat-subtitle').textContent = [student.educationLevel, student.interestArea].filter(Boolean).join(' • ');
         const thread = document.getElementById('mentor-student-chat-thread');
         if (!thread) return;
         const messages = Object.values(conversation.messages || {}).sort((a, b) => getTimeValue(a.createdAt) - getTimeValue(b.createdAt));
@@ -3834,10 +3732,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const input = document.getElementById('mentor-student-chat-input');
         const message = input?.value.trim();
         if (!conversation || !message) return;
-        const studentUid = conversation.menteeUid || conversation.studentUid;
-        const receiverAccountRole = connectedStudents[studentUid]?.menteeAccountRole || connectedStudents[studentUid]?.requesterAccountRole || conversation.participantRoles?.[studentUid] || 'student';
-        const receiverDashboardPage = receiverAccountRole === 'mentor' ? 'mentor-dashboard.html' : 'student-dashboard.html';
-        const receiverMessageSection = receiverAccountRole === 'mentor' ? 'learning-messages' : 'mentor-messages-section';
+        const studentUid = conversation.studentUid;
         const userSnap = await get(ref(database, `users/${currentUid}`));
         const senderName = userSnap.val()?.fullName || 'Mentor';
         const messageRef = push(ref(database, `mentorConversations/${conversationIdValue}/messages`));
@@ -3851,7 +3746,7 @@ document.addEventListener('DOMContentLoaded', () => {
             senderName,
             senderRole: 'mentor',
             receiverUid: studentUid,
-            receiverRole: receiverAccountRole || 'mentee',
+            receiverRole: 'student',
             message,
             status: 'sent',
             createdAt: serverTimestamp(),
@@ -3865,7 +3760,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updates[`notifications/${studentUid}/${notificationRef.key}`] = {
             notificationId: notificationRef.key,
             targetUserUid: studentUid,
-            targetRole: receiverAccountRole || 'mentee',
+            targetRole: 'student',
             senderUid: currentUid,
             senderRole: 'mentor',
             type: 'new_message',
@@ -3876,8 +3771,8 @@ document.addEventListener('DOMContentLoaded', () => {
             relatedEntityType: 'mentorConversation',
             relatedEntityId: conversationIdValue,
             mentorUid: currentUid,
-            targetPage: receiverDashboardPage,
-            targetSection: receiverMessageSection,
+            targetPage: 'student-dashboard.html',
+            targetSection: 'mentor-messages-section',
             targetQuery: { conversationId: conversationIdValue },
             read: false,
             status: 'unread',
@@ -3968,5 +3863,3 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     });
 });
-
-
