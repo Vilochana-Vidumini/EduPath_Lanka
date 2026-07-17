@@ -1,0 +1,6 @@
+Created At: 2026-06-25T09:23:48Z
+Completed At: 2026-06-25T09:31:03Z
+Browser subagent encountered an error: model output error: invalid tool call error (invalid_args) failed to read file: read C:/Users/amvvi/.gemini/antigravity-ide/brain/c50ac7a7-3dbe-4e2e-9b20-87e9e5439d25/browser: Incorrect function.
+
+Here is what the subagent accomplished before the error:
+Browser subagent did not provide a result.The browser subagent's ID is: 

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <title>Mentor Profile | EduPath Lanka</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="mentor-profile.css">
+    <link rel="stylesheet" href="theme.css?v=20260614-softglass">
+    <link rel="stylesheet" href="guest-help.css?v=20260614-2">
+</head>
+<body>
+    <!-- Navbar (Will be dynamically hydrated by auth-nav.js) -->
+    <header class="public-site-header">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <img src="images/edupath-logo-transparent.png" alt="" class="logo-mark">
+                <span class="logo-text">EduPath <strong>Lanka</strong></span>
+            </a>
+            <nav class="nav-links">
+                <!-- Hydrated dynamically -->
+            </nav>
+            <div class="nav-buttons">
+                <!-- Hydrated dynamically -->
+            </div>
+            <div class="hamburger">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div class="mobile-menu">
+            <div class="close-btn"><i class="fas fa-times"></i></div>
+            <nav class="mobile-links">
+                <!-- Hydrated dynamically -->
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="mentor-profile-page">
+        <div class="mentor-profile-container">
+            <!-- Back Navigation Link -->
+            <a href="mentors.html" class="mentor-back-link">
+                <i class="fas fa-arrow-left"></i> Back to Mentors
+            </a>
+
+            <!-- SKELETON LOADER -->
+            <div id="skeleton-loader" class="skeleton-container">
+                <div class="skeleton-hero">
+                    <div class="skeleton-avatar"></div>
+                    <div class="skeleton-hero-text">
+                        <div class="skeleton-line title"></div>
+                        <div class="skeleton-line subtitle"></div>
+                        <div class="skeleton-line text"></div>
+                        <div class="skeleton-chips">
+                            <div class="skeleton-chip"></div>
+                            <div class="skeleton-chip"></div>
+                            <div class="skeleton-chip"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="skeleton-body-layout">
+                    <div class="skeleton-main">
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                    </div>
+                    <div class="skeleton-sidebar">
+                        <div class="skeleton-card"></div>
+                        <div class="skeleton-card"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ERROR OR EMPTY STATE SCREEN -->
+            <div id="error-screen" class="error-screen hidden">
+                <i class="fas fa-exclamation-circle error-icon"></i>
+                <h2 id="error-title">Profile Unavailable</h2>
+                <p id="error-desc">This mentor profile is currently unavailable.</p>
+                <a href="mentors.html" class="btn btn-primary"><i class="fas fa-users"></i> Return to Mentors</a>
+            </div>
+
+            <!-- PROFILE CONTENT (Hydrated dynamically) -->
+            <div id="profile-content" class="profile-content-wrapper hidden">
+                
+                <!-- Admin Context Banner -->
+                <div id="admin-banner" class="admin-banner hidden" aria-live="polite">
+                    <i class="fas fa-user-shield"></i> You are viewing this public mentor profile as an administrator.
+                </div>
+
+                <!-- Mentor Hero Section -->
+                <section class="mentor-profile-hero">
+                    <div class="mentor-profile-identity">
+                        <div class="mentor-profile-photo-wrap">
+                            <img id="public-mentor-photo" alt="Mentor profile">
+                        </div>
+                        <div class="mentor-profile-info">
+                            <div class="mentor-profile-badges">
+                                <span class="mentor-badge approved"><i class="fas fa-shield-check"></i> Approved Mentor</span>
+                                <span id="mentor-availability-badge" class="mentor-badge available"><i class="fas fa-circle-check"></i> Available</span>
+                            </div>
+                            <h1 id="public-mentor-name">Mentor Name</h1>
+                            <h2 id="public-mentor-field">Mentor Field</h2>
+                            <p id="public-mentor-position">Position at Organization</p>
+                            <div class="mentor-profile-meta" id="public-mentor-meta">
+                                <!-- Hydrated quick details chips -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mentor-profile-actions" id="public-mentor-actions">
+                        <!-- Role-aware hero actions -->
+                    </div>
+                </section>
+
+                <!-- Profile Info Layout -->
+                <div class="mentor-profile-layout">
+                    <!-- Main Body -->
+                    <main class="mentor-profile-main">
+                        <!-- About Section -->
+                        <div class="mentor-profile-card" id="section-about">
+                            <h2><i class="fas fa-user-tie"></i> About the Mentor</h2>
+                            <p id="mentor-bio-text"></p>
+                        </div>
+
+                        <!-- Professional Background Details -->
+                        <div class="mentor-profile-card" id="section-background">
+                            <h2><i class="fas fa-briefcase"></i> Professional Background</h2>
+                            <div class="mentor-detail-grid" id="mentor-detail-grid">
+                                <!-- Hydrated detail items -->
+                            </div>
+                        </div>
+
+                        <!-- Expertise & Skills -->
+                        <div class="mentor-profile-card" id="section-expertise">
+                            <h2><i class="fas fa-brain"></i> Expertise and Skills</h2>
+                            <div class="mentor-tag-list" id="mentor-skills-list"></div>
+                        </div>
+
+                        <!-- Mentoring Guidance Areas -->
+                        <div class="mentor-profile-card" id="section-guidance">
+                            <h2><i class="fas fa-handshake"></i> Mentoring Guidance Areas</h2>
+                            <div class="mentor-tag-list" id="mentor-guidance-list"></div>
+                        </div>
+
+                        <!-- Student Reviews -->
+                        <div class="mentor-profile-card" id="section-reviews">
+                            <h2><i class="fas fa-star"></i> Student Reviews</h2>
+                            <div id="mentor-rating-summary" class="ratings-overview-grid"></div>
+                            <div id="mentor-review-list" class="review-list"></div>
+                        </div>
+
+                        <!-- Supported Students and Streams -->
+                        <div class="mentor-profile-card" id="section-students-streams">
+                            <h2><i class="fas fa-graduation-cap"></i> Supported Students and Streams</h2>
+                            <div class="levels-streams-group">
+                                <div class="levels-subgroup" id="group-student-levels">
+                                    <h3>Supported Student Levels</h3>
+                                    <div class="mentor-tag-list" id="student-levels-list"></div>
+                                </div>
+                                <div class="streams-subgroup" id="group-student-streams" style="margin-top: 1.5rem;">
+                                    <h3>Supported Streams</h3>
+                                    <div class="mentor-tag-list" id="student-streams-list"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Why I Mentor Section -->
+                        <div class="mentor-purpose-card" id="section-why-mentor">
+                            <h2><i class="fas fa-quote-left"></i> Why I Mentor</h2>
+                            <blockquote id="why-mentor-text"></blockquote>
+                        </div>
+
+                        <!-- Student Expectations -->
+                        <div class="mentor-profile-card" id="section-expectations">
+                            <h2><i class="fas fa-clipboard-list"></i> What I Expect from Students</h2>
+                            <p id="student-expectations-text"></p>
+                        </div>
+                    </main>
+
+                    <!-- Sidebar Body -->
+                    <aside class="mentor-profile-sidebar">
+                        <!-- Connection Actions Card -->
+                        <div class="mentor-connect-card" id="sidebar-actions-card">
+                            <h2><i class="fas fa-link"></i> Connect with Mentor</h2>
+                            <p id="connect-card-desc"></p>
+                            <div class="connection-actions-container" id="connection-actions">
+                                <!-- Hydrated connection actions if non-admin -->
+                            </div>
+                        </div>
+
+                        <!-- Availability Card -->
+                        <div class="mentor-profile-card" id="sidebar-availability-card">
+                            <h2><i class="fas fa-calendar-alt"></i> Availability</h2>
+                            <div class="mentor-sidebar-detail" id="availability-content">
+                                <!-- Hydrated details -->
+                            </div>
+                        </div>
+
+                        <!-- Qualifications Card -->
+                        <div class="mentor-profile-card" id="sidebar-qualifications-card">
+                            <h2><i class="fas fa-award"></i> Qualifications</h2>
+                            <div class="mentor-sidebar-detail" id="qualifications-content">
+                                <!-- Hydrated details -->
+                            </div>
+                        </div>
+
+                        <!-- Languages Card -->
+                        <div class="mentor-profile-card" id="sidebar-languages-card">
+                            <h2><i class="fas fa-language"></i> Languages</h2>
+                            <div class="mentor-tag-list" id="languages-content">
+                                <!-- Hydrated tags -->
+                            </div>
+                        </div>
+
+                        <!-- Public Links Card -->
+                        <div class="mentor-profile-card" id="sidebar-links-card">
+                            <h2><i class="fas fa-external-link-alt"></i> Public Links</h2>
+                            <div class="public-links-container" id="public-links-content">
+                                <!-- Hydrated links -->
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MENTOR REQUEST MODAL -->
+    <div id="mentor-request-modal" class="mentor-modal hidden" aria-hidden="true" role="dialog" aria-labelledby="modal-title">
+        <div class="mentor-modal-card">
+            <button type="button" class="mentor-modal-close" id="close-request-modal" aria-label="Close modal">&times;</button>
+            <h2 id="modal-title">Request Mentorship</h2>
+            <p class="modal-subtitle">Send a request to <strong id="modal-mentor-name">Mentor Name</strong></p>
+
+            <form id="mentor-request-form" style="margin-top: 20px;">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="request-guidance-area" style="display: block; font-weight: 500; margin-bottom: 6px; font-size: 14px;">Guidance Area Needed <span class="required" style="color:red;">*</span></label>
+                    <select id="request-guidance-area" required style="width:100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: transparent; font-family: inherit;">
+                        <option value="">Select an advice area...</option>
+                        <option value="Course Selection">Course Selection</option>
+                        <option value="Career Planning">Career Planning</option>
+                        <option value="Skill Development">Skill Development</option>
+                        <option value="Interview Preparation">Interview Preparation</option>
+                        <option value="Scholarship Guidance">Scholarship Guidance</option>
+                        <option value="General Guidance">General Guidance</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="request-student-goal" style="display: block; font-weight: 500; margin-bottom: 6px; font-size: 14px;">Your Core Goal / Target Career <span class="required" style="color:red;">*</span></label>
+                    <input type="text" id="request-student-goal" placeholder="e.g., Become a software developer, study overseas" required style="width:100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: transparent; font-family: inherit;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label for="request-mode" style="display: block; font-weight: 500; margin-bottom: 6px; font-size: 14px;">Preferred Mentoring Mode <span class="required" style="color:red;">*</span></label>
+                    <select id="request-mode" required style="width:100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: transparent; font-family: inherit;">
+                        <option value="">Select mentoring mode...</option>
+                        <option value="Online">Online / Video Call</option>
+                        <option value="Physical">Physical Meeting</option>
+                        <option value="Hybrid">Hybrid / Either</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="request-message" style="display: block; font-weight: 500; margin-bottom: 6px; font-size: 14px;">Introduction & Message to Mentor <span class="required" style="color:red;">*</span></label>
+                    <textarea id="request-message" rows="4" placeholder="Briefly introduce yourself, your current educational status, and what guidance you are seeking from them." required style="width:100%; padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); background: transparent; font-family: inherit; resize: vertical;"></textarea>
+                </div>
+
+                <div class="modal-actions" style="display: flex; gap: 12px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-outline" id="btn-cancel-request">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-request">Send Request</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-top">
+                <div class="footer-brand">
+                    <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+                    <p>Guiding Every Student Towards a Brighter Future</p>
+                    <div class="social-icons">
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+                <div class="footer-links">
+                    <h4>For Students</h4>
+                    <ul>
+                        <li><a href="pathway.html" class="restricted-link">Pathway Finder</a></li>
+                        <li><a href="courses.html">Courses</a></li>
+                        <li><a href="scholarships.html">Scholarships</a></li>
+                        <li><a href="mentors.html">Mentors</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-links">
+                    <h4>For Institutes</h4>
+                    <ul>
+                        <li><a href="institutes.html">Partner with EduPath</a></li>
+                        <li><a href="signup.html">Institute Registration</a></li>
+                        <li><a href="login.html">Institute Login</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-contact">
+                    <h4>Support</h4>
+                    <ul>
+                        <li><a href="about.html">About Us</a></li>
+                        <li><a href="index.html#contact">Ask EduPath</a></li>
+                        <li><i class="fas fa-map-marker-alt"></i> Colombo, Sri Lanka</li>
+                        <li><i class="fas fa-envelope"></i> hello@edupathlanka.lk</li>
+                        <li><i class="fas fa-phone-alt"></i> +94 11 234 5678</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 EduPath Lanka. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK Config & App Logic -->
+    <script type="module" src="theme.js"></script>
+    <script type="module" src="mentor-profile.js"></script>
+    <script type="module" src="auth-nav.js?v=20260614-brand"></script>
+    <script type="module" src="guest-help.js?v=20260614-2"></script>
+</body>
+</html>

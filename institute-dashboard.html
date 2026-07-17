@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);var c=localStorage.getItem('edupathSidebarCollapsed')||localStorage.getItem('sidebarCollapsed');if(c==='true'&&window.innerWidth>768){document.documentElement.classList.add('sidebar-collapsed');}})();</script>
+    <title>Institute Dashboard | EduPath Lanka</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="theme.css?v=20260615-topbar-clock">
+    <link rel="stylesheet" href="institute-dashboard.css">
+</head>
+<body class="institute-dashboard-page">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="dashboard-brand-logo">
+                <img src="images/edupath-logo-transparent.png" alt="EduPath Lanka logo">
+                <span>EduPath <strong>Lanka</strong></span>
+            </a>
+            <button type="button" class="sidebar-toggle sidebar-toggle-brand" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
+        </div>
+        <div class="sidebar-user" id="sidebar-user">
+            <div class="sidebar-user-avatar" id="sidebar-user-avatar">
+                <span class="sidebar-initials" id="mini-logo">IN</span>
+                <span class="online-dot" aria-hidden="true"></span>
+            </div>
+            <div class="sidebar-user-info">
+                <span class="sidebar-user-name" id="sidebar-user-name">Loading...</span>
+                <span class="sidebar-user-role role-institute" id="sidebar-user-role">Institute</span>
+            </div>
+        </div>
+        <ul class="sidebar-links">
+            <li class="sidebar-section-label"><span>MAIN</span></li>
+            <li><a href="#overview" data-section="dashboard-section" class="active" title="Dashboard"><i class="fas fa-house"></i><span class="sidebar-label">Dashboard</span></a></li>
+
+            <li class="sidebar-section-label"><span>INSTITUTION</span></li>
+            <li><a href="#profile" data-section="profile-section" title="Institute Profile"><i class="fas fa-building"></i><span class="sidebar-label">Institute Profile</span></a></li>
+            <li><a href="#courses" data-section="courses-section" title="Courses"><i class="fas fa-book-open"></i><span class="sidebar-label">Courses</span></a></li>
+            <li><a href="#scholarships" data-section="scholarships-section" title="Scholarships"><i class="fas fa-graduation-cap"></i><span class="sidebar-label">Scholarships</span></a></li>
+            <li><a href="#events" data-section="events-section" title="Events"><i class="fas fa-calendar-alt"></i><span class="sidebar-label">Events</span></a></li>
+
+            <li class="sidebar-section-label"><span>STUDENT DATA</span></li>
+            <li><a href="#applications" data-section="applications-section" title="Student Applications"><i class="fas fa-user-graduate"></i><span class="sidebar-label">Student Applications</span></a></li>
+            <li><a href="#inquiries" data-section="inquiries-section" title="Student Inquiries"><i class="fas fa-envelope-open-text"></i><span class="sidebar-label">Student Inquiries</span></a></li>
+
+            <li class="sidebar-section-label"><span>REPORTS & ANALYTICS</span></li>
+            <li><a href="#analytics" data-section="analytics-section" title="Analytics"><i class="fas fa-chart-line"></i><span class="sidebar-label">Analytics</span></a></li>
+            <li><a href="#reports" data-section="reports-section" title="Reports"><i class="fas fa-file-invoice"></i><span class="sidebar-label">Reports</span></a></li>
+
+            <li class="sidebar-section-label"><span>COMMUNICATION</span></li>
+            <li><a href="#notifications" data-section="notifications-section" title="Notifications"><i class="fas fa-bell"></i><span class="sidebar-label">Notifications</span><span class="nav-badge hidden" id="sidebar-notification-count"></span></a></li>
+            <li><a href="#chat-admin" data-section="support-section" title="Chat with Admin"><i class="fas fa-headset"></i><span class="sidebar-label">Chat with Admin</span></a></li>
+
+            <li class="sidebar-section-label"><span>ACCOUNT</span></li>
+            <li><a href="#settings" data-section="settings-section" title="Settings"><i class="fas fa-gear"></i><span class="sidebar-label">Settings</span></a></li>
+            <li><a href="index.html" title="Public Home"><i class="fas fa-house-user"></i><span class="sidebar-label">Home</span></a></li>
+            <li><a href="#" id="logout-btn-sidebar" class="text-danger" title="Logout"><i class="fas fa-right-from-bracket"></i><span class="sidebar-label">Logout</span></a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button type="button" class="sidebar-toggle topbar-sidebar-toggle" id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+                <div>
+                    <h2 class="page-title" id="page-title">Dashboard</h2>
+                    <p class="page-subtitle" id="page-subtitle">Manage your courses and student inquiries.</p>
+                </div>
+            </div>
+
+            <div class="topbar-center search-bar-container">
+                <div class="topbar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="search" id="global-dashboard-search" placeholder="Search courses, scholarships, inquiries...">
+                </div>
+            </div>
+
+            <div class="topbar-right dashboard-topbar-actions">
+                <button type="button" class="topbar-icon-btn message-btn" id="topbar-messages-btn" title="Admin Chat" data-section-jump="support-section">
+                    <i class="fas fa-message"></i>
+                    <span class="notification-badge hidden" id="topbar-message-badge">0</span>
+                </button>
+                
+                <div class="user-profile" data-section-jump="profile-section">
+                    <div class="avatar" id="topbar-avatar"><i class="fas fa-user"></i></div>
+                    <span class="user-name" id="top-user-name">Loading...</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-container">
+            <!-- SECTION 1: OVERVIEW -->
+            <section id="dashboard-section" class="dashboard-section active">
+                <div class="student-hero glass reveal-card welcome-panel-institute">
+                    <div class="student-hero-main">
+                        <div class="welcome-badge-row">
+                            <span id="approval-badge" class="badge badge-warning">Awaiting Approval</span>
+                            <span id="completion-badge" class="badge badge-primary">0% Profile Completed</span>
+                        </div>
+                        <p class="student-hero-greeting">Welcome Back! <i class="fas fa-hand-sparkles"></i></p>
+                        <h1 id="welcome-name">Welcome</h1>
+                        <p class="motivational-text" id="welcome-subtitle">Universities, Private Institutes & Education Centers Workspace.</p>
+                        
+                        <div class="welcome-buttons">
+                            <button class="btn btn-primary" id="quick-add-course-btn"><i class="fas fa-plus"></i>Add Course</button>
+                            <button class="btn btn-primary" id="quick-add-schol-btn"><i class="fas fa-graduation-cap"></i>Publish Scholarship</button>
+                            <button class="btn btn-primary" id="quick-add-event-btn"><i class="fas fa-calendar-alt"></i>Create Event</button>
+                            <button class="btn btn-outline" data-section-jump="profile-section"><i class="fas fa-edit"></i>Edit Profile</button>
+                        </div>
+                    </div>
+                    <div class="student-hero-art">
+                        <div class="hero-orbit hero-orbit-one"></div>
+                        <div class="hero-orbit hero-orbit-two"></div>
+                        <div class="welcome-logo-container">
+                            <div class="welcome-logo-circle" id="welcome-logo-circle">IN</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="approval-notice" class="panel warning-panel hidden">
+                    <i class="fas fa-circle-exclamation text-warning font-large"></i>
+                    <div>
+                        <h3>Waiting for Admin Approval</h3>
+                        <p class="muted">Your institute profile is currently under review by EduPath Lanka administrators. You can build your profile and use the support chat to contact admin. Full features will unlock once approved.</p>
+                    </div>
+                    <button class="btn btn-primary" data-section-jump="support-section"><i class="fas fa-headset"></i> Chat with Admin</button>
+                </div>
+
+                <!-- Statistics Grid -->
+                <div class="student-kpi-grid stats-grid-institute">
+                    <article class="student-kpi-card reveal-card">
+                        <div class="stat-icon bg-blue"><i class="fas fa-book"></i></div>
+                        <div class="stat-info">
+                            <h4>Total Courses</h4>
+                            <h2 id="stat-total-courses">0</h2>
+                            <p>Courses on catalog</p>
+                        </div>
+                    </article>
+                    <article class="student-kpi-card reveal-card">
+                        <div class="stat-icon bg-green"><i class="fas fa-circle-check"></i></div>
+                        <div class="stat-info">
+                            <h4>Published Courses</h4>
+                            <h2 id="stat-active-courses">0</h2>
+                            <p>Live on public search</p>
+                        </div>
+                    </article>
+                    <article class="student-kpi-card reveal-card">
+                        <div class="stat-icon bg-orange"><i class="fas fa-clock"></i></div>
+                        <div class="stat-info">
+                            <h4>Pending Approval</h4>
+                            <h2 id="stat-pending-courses">0</h2>
+                            <p>Courses under review</p>
+                        </div>
+                    </article>
+                    <article class="student-kpi-card reveal-card">
+                        <div class="stat-icon bg-purple"><i class="fas fa-user-graduate"></i></div>
+                        <div class="stat-info">
+                            <h4>Total Applications</h4>
+                            <h2 id="stat-total-applications">0</h2>
+                            <p>Course application forms</p>
+                        </div>
+                    </article>
+                    <article class="student-kpi-card reveal-card">
+                        <div class="stat-icon bg-pink"><i class="fas fa-user-check"></i></div>
+                        <div class="stat-info">
+                            <h4>Accepted Students</h4>
+                            <h2 id="stat-accepted-students">0</h2>
+                            <p>Successfully enrolled</p>
+                        </div>
+                    </article>
+                    <article class="student-kpi-card reveal-card">
+                        <div class="stat-icon bg-cyan"><i class="fas fa-graduation-cap"></i></div>
+                        <div class="stat-info">
+                            <h4>Scholarships</h4>
+                            <h2 id="stat-scholarships">0</h2>
+                            <p>Funding opportunities</p>
+                        </div>
+                    </article>
+                    <article class="student-kpi-card reveal-card">
+                        <div class="stat-icon bg-blue"><i class="fas fa-calendar-check"></i></div>
+                        <div class="stat-info">
+                            <h4>Upcoming Events</h4>
+                            <h2 id="stat-events">0</h2>
+                            <p>Open Days & webinars</p>
+                        </div>
+                    </article>
+                    <article class="student-kpi-card reveal-card">
+                        <div class="stat-icon bg-orange"><i class="fas fa-envelope"></i></div>
+                        <div class="stat-info">
+                            <h4>Unread Messages</h4>
+                            <h2 id="stat-inquiries">0</h2>
+                            <p>Student questions</p>
+                        </div>
+                    </article>
+                    <article class="student-kpi-card reveal-card">
+                        <div class="stat-icon bg-green"><i class="fas fa-eye"></i></div>
+                        <div class="stat-info">
+                            <h4>Monthly Views</h4>
+                            <h2 id="stat-profile-views">0</h2>
+                            <p>Institute profile views</p>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- Quick Actions Grid -->
+                <div class="glass-panel-grid">
+                    <article class="journey-card glass reveal-card">
+                        <div class="card-heading">
+                            <div>
+                                <h3><i class="fas fa-bolt text-primary"></i> Quick Actions</h3>
+                                <p>Execute core workspace functions quickly</p>
+                            </div>
+                        </div>
+                        <div class="quick-actions-list-institute">
+                            <button class="btn btn-outline" id="action-create-course"><i class="fas fa-plus"></i> Create Course</button>
+                            <button class="btn btn-outline" id="action-create-schol"><i class="fas fa-graduation-cap"></i> Create Scholarship</button>
+                            <button class="btn btn-outline" id="action-create-event"><i class="fas fa-calendar-plus"></i> Create Event</button>
+                            <button class="btn btn-outline" data-section-jump="applications-section"><i class="fas fa-user-graduate"></i> View Applications</button>
+                            <button class="btn btn-outline" data-section-jump="profile-section"><i class="fas fa-building"></i> Update Institute Profile</button>
+                            <button class="btn btn-outline" data-section-jump="reports-section"><i class="fas fa-file-pdf"></i> Download Reports</button>
+                        </div>
+                    </article>
+
+                    <!-- Profile Completion Progress Widget -->
+                    <article class="focus-card glass reveal-card profile-strength-widget">
+                        <div class="card-heading">
+                            <div>
+                                <h3><i class="fas fa-circle-check text-primary"></i> Profile Progress</h3>
+                                <p>Add missing info to improve student search discoverability</p>
+                            </div>
+                        </div>
+                        <div class="profile-strength-body">
+                            <div class="progress-ring-container">
+                                <svg class="progress-ring-svg" width="120" height="120">
+                                    <circle class="progress-ring-circle-bg" stroke="#e2e8f0" stroke-width="10" fill="transparent" r="50" cx="60" cy="60"/>
+                                    <circle class="progress-ring-circle-fill" id="dashboard-progress-fill" stroke="var(--primary)" stroke-width="10" fill="transparent" r="50" cx="60" cy="60" stroke-dasharray="314.15" stroke-dashoffset="314.15"/>
+                                </svg>
+                                <span class="progress-ring-percent" id="dashboard-progress-percent">0%</span>
+                            </div>
+                            <div class="missing-items-box">
+                                <strong>Missing Info Checklist:</strong>
+                                <ul id="missing-info-list" class="checklist-items">
+                                    <!-- Populated in JS -->
+                                </ul>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- Recent Activities Panels (Applications + Inquiries) -->
+                <div class="double-panel-grid">
+                    <article class="panel glass">
+                        <div class="panel-head">
+                            <h3><i class="fas fa-user-graduate text-primary"></i> Recent Applications</h3>
+                            <button class="btn btn-light btn-sm" data-section-jump="applications-section">View All</button>
+                        </div>
+                        <div class="responsive-table">
+                            <table class="compact-table">
+                                <thead>
+                                    <tr>
+                                        <th>Student</th>
+                                        <th>Course</th>
+                                        <th>Applied Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-applications-table-body">
+                                    <!-- Populated in JS -->
+                                    <tr><td colspan="5" class="text-center muted">Loading applications...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </article>
+
+                    <article class="panel glass">
+                        <div class="panel-head">
+                            <h3><i class="fas fa-envelope-open-text text-primary"></i> Recent Student Inquiries</h3>
+                            <button class="btn btn-light btn-sm" data-section-jump="inquiries-section">View All</button>
+                        </div>
+                        <div id="recent-inquiries-list" class="list-stack">
+                            <!-- Populated in JS -->
+                            <div class="list-item text-center muted">Loading inquiries...</div>
+                        </div>
+                    </article>
+                </div>
+
+                <!-- Course Performance Section -->
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3><i class="fas fa-chart-simple text-primary"></i> Course Performance & Status</h3>
+                    </div>
+                    <div class="performance-tabs-row">
+                        <button class="perf-tab-btn active" data-tab="views">Most Viewed Courses</button>
+                        <button class="perf-tab-btn" data-tab="applications">Most Applied Courses</button>
+                        <button class="perf-tab-btn" data-tab="recent">Recently Published</button>
+                    </div>
+                    <div class="performance-tab-content active" id="perf-tab-views-content">
+                        <!-- Populated in JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: INSTITUTE PROFILE -->
+            <section id="profile-section" class="dashboard-section">
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3><i class="fas fa-building text-primary"></i> Complete Institute Profile</h3>
+                        <span id="profile-completion-header" class="badge badge-primary">0% Complete</span>
+                    </div>
+                    <form id="profile-form" class="dash-form">
+                        <div class="form-section-title">General Information</div>
+                        <div class="form-grid">
+                            <label>Institute Name<input id="profileInstituteName" required placeholder="Sri Lanka University of Tech"></label>
+                            <label>Institute Type
+                                <select id="profileType" required>
+                                    <option value="">Select Type</option>
+                                    <option>University</option>
+                                    <option>Private Institute</option>
+                                    <option>TVET Institute</option>
+                                    <option>Professional Training Center</option>
+                                    <option>Educational Organization</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="form-grid">
+                            <label>Government Registration Number<input id="profileRegNumber" required placeholder="HEI/2026/001"></label>
+                            <label>Established Year<input id="profileEstablished" type="number" min="1800" max="2026" placeholder="2010"></label>
+                        </div>
+                        <label>Institute Logo URL<input id="profileLogo" placeholder="https://example.com/logo.png"></label>
+                        <label>Institute Description<textarea id="profileDescription" rows="4" required placeholder="Describe your institute, values, degree paths, and history..."></textarea></label>
+                        
+                        <div class="form-section-title">Contact & Location Details</div>
+                        <div class="form-grid">
+                            <label>Official Email Address<input id="profileEmail" type="email" required placeholder="info@sltech.lk" readonly></label>
+                            <label>Contact Phone Number<input id="profilePhone" required placeholder="+94 11 234 5678"></label>
+                        </div>
+                        <div class="form-grid">
+                            <label>Street Address<input id="profileAddress" required placeholder="52, Galle Road, Colombo 03"></label>
+                            <label>Website URL<input id="profileWebsite" type="url" placeholder="https://sltech.lk"></label>
+                        </div>
+                        <div class="form-grid">
+                            <label>District<input id="profileDistrict" required placeholder="Colombo"></label>
+                            <label>Province
+                                <select id="profileProvince" required>
+                                    <option value="">Select Province</option>
+                                    <option>Western</option>
+                                    <option>Central</option>
+                                    <option>Southern</option>
+                                    <option>Northern</option>
+                                    <option>Eastern</option>
+                                    <option>North Western</option>
+                                    <option>North Central</option>
+                                    <option>Uva</option>
+                                    <option>Sabaragamuwa</option>
+                                </select>
+                            </label>
+                        </div>
+
+                        <div class="form-section-title">Social Links & Accreditation</div>
+                        <div class="form-grid">
+                            <label>Facebook Page<input id="profileFacebook" type="url" placeholder="https://facebook.com/sltech"></label>
+                            <label>LinkedIn Page<input id="profileLinkedIn" type="url" placeholder="https://linkedin.com/company/sltech"></label>
+                        </div>
+                        <div class="form-grid">
+                            <label>Accreditation details (e.g. UGC, TVEC)<input id="profileAccreditation" placeholder="Recognized by UGC Sri Lanka, ISO 9001"></label>
+                            <label>Facilities Available (Comma separated)<input id="profileFacilities" placeholder="High-speed Wi-Fi, Computing Lab, Library, Cafeteria, Sports Grounds"></label>
+                        </div>
+
+                        <div class="form-submit-row">
+                            <button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> Save Profile Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- SECTION 3: COURSES -->
+            <section id="courses-section" class="dashboard-section">
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3><i class="fas fa-book-open text-primary"></i> Course Administration</h3>
+                        <button class="btn btn-primary" id="open-add-course-btn"><i class="fas fa-plus"></i> Add New Course</button>
+                    </div>
+                    <div class="toolbar-box">
+                        <div class="search-input-wrap">
+                            <i class="fas fa-search"></i>
+                            <input id="course-search" placeholder="Search courses by title, category...">
+                        </div>
+                        <div class="filter-inputs-wrap">
+                            <select id="course-status-filter">
+                                <option value="all">All Statuses</option>
+                                <option value="active">Active (Published)</option>
+                                <option value="pending">Pending Approval</option>
+                                <option value="inactive">Draft/Inactive</option>
+                            </select>
+                            <select id="course-level-filter">
+                                <option value="all">All Levels</option>
+                                <option>Diploma</option>
+                                <option>Higher Diploma</option>
+                                <option>Bachelor</option>
+                                <option>Master</option>
+                                <option>PhD</option>
+                                <option>Certificate</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="responsive-table">
+                        <table id="courses-data-table">
+                            <thead>
+                                <tr>
+                                    <th>Course Title</th>
+                                    <th>Level & Category</th>
+                                    <th>Mode</th>
+                                    <th>Fee</th>
+                                    <th>Status</th>
+                                    <th>Created Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="courses-table-body">
+                                <!-- Populated in JS -->
+                                <tr><td colspan="7" class="text-center muted">Loading courses...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 4: ADD/EDIT COURSE FORM (Collapsible/Hidden by default, shown by routing) -->
+            <section id="add-course-section" class="dashboard-section">
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3 id="course-form-title">Create New Course</h3>
+                        <button class="btn btn-light" id="cancel-edit-btn">Back to Courses</button>
+                    </div>
+                    <form id="course-form" class="dash-form">
+                        <input type="hidden" id="editing-course-id">
+                        <div class="form-grid">
+                            <label>Course Title / Degree Name*<input id="courseTitle" required placeholder="BSc (Hons) in Software Engineering"></label>
+                            <label>Category (Field of Study)*<input id="courseCategory" required placeholder="Information Technology"></label>
+                        </div>
+                        <div class="form-grid">
+                            <label>Qualification Level*<input id="courseLevel" required placeholder="Bachelor (Hons)"></label>
+                            <label>Course Duration*<input id="courseDuration" required placeholder="4 Years (Full Time)"></label>
+                        </div>
+                        <div class="form-grid">
+                            <label>Course Fee Amount (LKR)*<input id="courseFee" required placeholder="Rs. 1,200,000 total"></label>
+                            <label>Learning Mode*
+                                <select id="courseType" required>
+                                    <option value="">Select Mode</option>
+                                    <option>Physical</option>
+                                    <option>Online</option>
+                                    <option>Hybrid</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="form-grid">
+                            <label>Campus Location*<input id="location" required placeholder="Malabe Campus"></label>
+                            <label>District*<input id="district" required placeholder="Colombo"></label>
+                        </div>
+                        <div class="form-grid">
+                            <label>Intake Start Date<input id="startDate" type="date"></label>
+                            <label>Inquiry Contact Number*<input id="contactNumber" required placeholder="+94 77 123 4567"></label>
+                        </div>
+                        <label>Course Display Image URL (optional)<input id="courseImage" placeholder="https://images.unsplash.com/photo-1541339907198-e08756dedf3f"></label>
+                        <label>Detailed Course Description*<textarea id="courseDescription" rows="5" required placeholder="Outline key subjects covered, opportunities, credit structures, and objectives..."></textarea></label>
+                        <label>Minimum Entry Requirements*<textarea id="entryRequirements" rows="3" required placeholder="E.g., 3 passes in GCE A/L Physical Science stream with C or above, or recognized Edexcel diploma..."></textarea></label>
+                        
+                        <div class="form-submit-row">
+                            <button class="btn btn-primary" type="submit"><i class="fas fa-save"></i> Save Course Spec</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- SECTION 5: SCHOLARSHIPS -->
+            <section id="scholarships-section" class="dashboard-section">
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3><i class="fas fa-graduation-cap text-primary"></i> Scholarships Management</h3>
+                        <button class="btn btn-primary" id="open-add-schol-btn"><i class="fas fa-plus"></i> Create Scholarship</button>
+                    </div>
+                    <div class="toolbar-box">
+                        <div class="search-input-wrap">
+                            <i class="fas fa-search"></i>
+                            <input id="schol-search" placeholder="Search scholarships by title, criteria...">
+                        </div>
+                        <div class="filter-inputs-wrap">
+                            <select id="schol-status-filter">
+                                <option value="all">All Statuses</option>
+                                <option value="active">Active</option>
+                                <option value="pending">Pending Approval</option>
+                                <option value="expired">Expired</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="responsive-table">
+                        <table id="scholarships-data-table">
+                            <thead>
+                                <tr>
+                                    <th>Scholarship Name</th>
+                                    <th>Category</th>
+                                    <th>Funding</th>
+                                    <th>Deadline</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scholarships-table-body">
+                                <!-- Populated in JS -->
+                                <tr><td colspan="6" class="text-center muted">Loading scholarships...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 6: EVENTS -->
+            <section id="events-section" class="dashboard-section">
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3><i class="fas fa-calendar-alt text-primary"></i> Upcoming Educational Events</h3>
+                        <button class="btn btn-primary" id="open-add-event-btn"><i class="fas fa-calendar-plus"></i> Publish Event</button>
+                    </div>
+                    <div class="responsive-table">
+                        <table id="events-data-table">
+                            <thead>
+                                <tr>
+                                    <th>Event Name</th>
+                                    <th>Date</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="events-table-body">
+                                <!-- Populated in JS -->
+                                <tr><td colspan="5" class="text-center muted">Loading events...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 7: STUDENT APPLICATIONS -->
+            <section id="applications-section" class="dashboard-section">
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3><i class="fas fa-user-graduate text-primary"></i> Student Enrolled Applications</h3>
+                    </div>
+                    <div class="toolbar-box">
+                        <div class="search-input-wrap">
+                            <i class="fas fa-search"></i>
+                            <input id="app-search" placeholder="Search applicants, courses, qualifications...">
+                        </div>
+                        <div class="filter-inputs-wrap">
+                            <select id="app-status-filter">
+                                <option value="all">All Applications</option>
+                                <option value="pending">Pending Review</option>
+                                <option value="shortlisted">Shortlisted</option>
+                                <option value="accepted">Accepted</option>
+                                <option value="rejected">Rejected</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="responsive-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Applicant Name</th>
+                                    <th>Applied Course</th>
+                                    <th>Qualification</th>
+                                    <th>Applied Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="applications-table-body">
+                                <!-- Populated in JS -->
+                                <tr><td colspan="6" class="text-center muted">Loading applications list...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 8: STUDENT INQUIRIES -->
+            <section id="inquiries-section" class="dashboard-section">
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3><i class="fas fa-envelope-open-text text-primary"></i> Course Inquiries Inbox</h3>
+                        <select id="inquiry-status-filter-main">
+                            <option value="all">All Inquiries</option>
+                            <option value="New">New / Unanswered</option>
+                            <option value="Contacted">Contacted</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                    </div>
+                    <div class="responsive-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Student Details</th>
+                                    <th>Course</th>
+                                    <th>Message</th>
+                                    <th>Date</th>
+                                    <th>Status / Reply</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inquiries-table-body">
+                                <!-- Populated in JS -->
+                                <tr><td colspan="5" class="text-center muted">Loading inquiries list...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 9: ANALYTICS -->
+            <section id="analytics-section" class="dashboard-section">
+                <div class="charts-container-institute">
+                    <article class="chart-card-institute glass reveal-card">
+                        <div class="chart-card-header">
+                            <div>
+                                <h3>Applications Volume Trend</h3>
+                                <p>Monthly incoming registrations</p>
+                            </div>
+                        </div>
+                        <div id="chart-applications-trend" class="institute-svg-chart"></div>
+                    </article>
+
+                    <article class="chart-card-institute glass reveal-card">
+                        <div class="chart-card-header">
+                            <div>
+                                <h3>Course Popularity Chart</h3>
+                                <p>Applications per course catalog</p>
+                            </div>
+                        </div>
+                        <div id="chart-course-popularity" class="institute-svg-chart"></div>
+                    </article>
+
+                    <article class="chart-card-institute glass reveal-card">
+                        <div class="chart-card-header">
+                            <div>
+                                <h3>Student Interest Distribution</h3>
+                                <p>Popular subject categories</p>
+                            </div>
+                        </div>
+                        <div id="chart-student-interests" class="institute-svg-chart"></div>
+                    </article>
+
+                    <article class="chart-card-institute glass reveal-card">
+                        <div class="chart-card-header">
+                            <div>
+                                <h3>Monthly Profile Engagement</h3>
+                                <p>Direct visitors & views</p>
+                            </div>
+                        </div>
+                        <div id="chart-visitors-trend" class="institute-svg-chart"></div>
+                    </article>
+
+                    <article class="chart-card-institute glass reveal-card">
+                        <div class="chart-card-header">
+                            <div>
+                                <h3>Province Distribution</h3>
+                                <p>Applicant geographic origins</p>
+                            </div>
+                        </div>
+                        <div id="chart-province-distribution" class="institute-svg-chart"></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- SECTION 10: REPORTS -->
+            <section id="reports-section" class="dashboard-section">
+                <div class="panel glass report-setup-panel">
+                    <div class="panel-head">
+                        <h3><i class="fas fa-file-invoice text-primary"></i> Data Reports Center</h3>
+                    </div>
+                    <div class="report-controls-grid">
+                        <label>Report Subject Type
+                            <select id="report-subject">
+                                <option value="applications">Applications Report</option>
+                                <option value="courses">Course Catalogue Report</option>
+                                <option value="scholarships">Scholarship Report</option>
+                                <option value="students">Student Registrations List</option>
+                                <option value="monthly">Monthly Summary Report</option>
+                            </select>
+                        </label>
+                        <label>Start Date<input id="report-start-date" type="date"></label>
+                        <label>End Date<input id="report-end-date" type="date"></label>
+                        <button class="btn btn-primary" id="generate-report-btn"><i class="fas fa-arrows-rotate"></i> Compile Report</button>
+                    </div>
+                </div>
+
+                <div class="panel glass hidden" id="report-preview-panel">
+                    <div class="panel-head">
+                        <h3 id="report-preview-title">Report Title</h3>
+                        <div class="report-download-buttons">
+                            <button class="btn btn-light" id="download-excel-btn"><i class="fas fa-file-excel text-success"></i> Export CSV (Excel)</button>
+                            <button class="btn btn-light" id="download-pdf-btn"><i class="fas fa-print text-danger"></i> Print Report / Save PDF</button>
+                        </div>
+                    </div>
+                    <div class="report-content-window" id="report-data-window">
+                        <!-- Rendered Report Content -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 11: NOTIFICATIONS -->
+            <section id="notifications-section" class="dashboard-section">
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3><i class="fas fa-bell text-primary"></i> Notification Center</h3>
+                        <button class="btn btn-light btn-sm" id="clear-notifications-btn"><i class="fas fa-trash"></i> Dismiss All</button>
+                    </div>
+                    <div id="notifications-detailed-list" class="list-stack">
+                        <!-- Populated in JS -->
+                        <div class="list-item text-center muted">No notifications found.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 12: CHAT WITH ADMIN -->
+            <section id="support-section" class="dashboard-section">
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3><i class="fas fa-comments text-primary"></i> Direct Messenger to Platform Admin</h3>
+                    </div>
+                    <div class="support-grid">
+                        <form id="institute-support-form" class="dash-form support-card">
+                            <label>Subject Topic*<input id="institute-support-subject" placeholder="What requires administrative support?" required></label>
+                            <label>Message Content*<textarea id="institute-support-message" rows="6" placeholder="State your inquiries, support requests, or general approval followups..." required></textarea></label>
+                            <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i> Send Ticket Message</button>
+                        </form>
+                        <div class="support-card chat-log-card">
+                            <h4>Administrative Conversation Log</h4>
+                            <div id="institute-support-replies" class="support-replies">
+                                <div class="list-item text-center muted">Loading messages...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 13: SETTINGS -->
+            <section id="settings-section" class="dashboard-section">
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3><i class="fas fa-gear text-primary"></i> Workspace Preferences</h3>
+                    </div>
+                    <div class="settings-body-box">
+                        <div class="settings-item">
+                            <div>
+                                <strong>System Dark / Light Color Theme</strong>
+                                <p class="muted">Toggle color palette between classic light mode and premium sleek dark mode.</p>
+                            </div>
+                            <button class="btn btn-light theme-toggle" type="button"><i class="fas fa-moon"></i> Toggle Theme</button>
+                        </div>
+                        <hr class="divider">
+                        <div class="settings-item">
+                            <div>
+                                <strong>Profile Management</strong>
+                                <p class="muted">Changes in account authentication credentials (email, password) are handled in firebase auth. You can manage course visibility settings or edit your branding details.</p>
+                            </div>
+                            <button class="btn btn-outline" data-section-jump="profile-section"><i class="fas fa-edit"></i> Edit Profile</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- POPUP EDIT SCHOLARSHIP MODAL -->
+    <div id="schol-modal" class="modal-overlay hidden">
+        <div class="modal-card glass">
+            <div class="modal-header">
+                <h3 id="schol-modal-title">Publish Scholarship Scheme</h3>
+                <button type="button" class="close-modal-btn" id="close-schol-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="schol-form" class="dash-form">
+                <input type="hidden" id="editing-schol-id">
+                <div class="form-grid">
+                    <label>Scholarship Name*<input id="schol-name" required placeholder="SLIIT Merit-Based Scholarship 2026"></label>
+                    <label>Provider (Authority)*<input id="schol-provider" required placeholder="Sri Lanka Institute of IT"></label>
+                </div>
+                <div class="form-grid">
+                    <label>Category (Field)*<input id="schol-category" required placeholder="Computer Science & Engineering"></label>
+                    <label>Provider Type*
+                        <select id="schol-provider-type" required>
+                            <option>University</option>
+                            <option>Government</option>
+                            <option>Corporate</option>
+                            <option>Foundation</option>
+                            <option>Foreign Embassy</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="form-grid">
+                    <label>Funding Cover Type*
+                        <select id="schol-support-type" required>
+                            <option>Full Tuition</option>
+                            <option>Partial Tuition</option>
+                            <option>Monthly Allowance</option>
+                            <option>One-time Grant</option>
+                        </select>
+                    </label>
+                    <label>Scholarship Value / Amount*<input id="schol-amount" required placeholder="Rs. 500,000 / 100% Free"></label>
+                </div>
+                <div class="form-grid">
+                    <label>Application Deadline*<input id="schol-deadline" type="date" required></label>
+                    <label>District Preference*<input id="schol-district" required placeholder="All Island / Colombo"></label>
+                </div>
+                <div class="form-grid">
+                    <label>Minimum Qualification Level*<input id="schol-qualification" required placeholder="GCE A/L 3 Passes in English / Edexcel"></label>
+                    <label>External Apply Link<input id="schol-apply-link" type="url" placeholder="https://example.com/apply"></label>
+                </div>
+                <div class="form-grid">
+                    <label>Contact Email<input id="schol-contact-email" type="email" placeholder="scholarship@sliit.lk"></label>
+                    <label>Contact Phone<input id="schol-contact-phone" placeholder="+94 11 234 5678"></label>
+                </div>
+                <label>Display Banner Image URL (optional)<input id="schol-image-url" placeholder="https://example.com/scholarship-banner.png"></label>
+                <label>Scholarship Description*<textarea id="schol-description" rows="3" required placeholder="Provide program structure, target audiences, key courses eligible..."></textarea></label>
+                <label>Eligibility & Selection Criteria*<textarea id="schol-eligibility" rows="3" required placeholder="List minimum GPA, family financial background thresholds, research portfolios..."></textarea></label>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" id="btn-cancel-schol">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Scholarship</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- POPUP EDIT EVENT MODAL -->
+    <div id="event-modal" class="modal-overlay hidden">
+        <div class="modal-card glass">
+            <div class="modal-header">
+                <h3 id="event-modal-title">Schedule Educational Event</h3>
+                <button type="button" class="close-modal-btn" id="close-event-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="event-form" class="dash-form">
+                <input type="hidden" id="editing-event-id">
+                <div class="form-grid">
+                    <label>Event Name / Title*<input id="event-title" required placeholder="SLIIT Open Day 2026"></label>
+                    <label>Event Category*
+                        <select id="event-type" required>
+                            <option>Open Day</option>
+                            <option>Seminar</option>
+                            <option>Career Guidance Program</option>
+                            <option>Workshop</option>
+                            <option>Webinar</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="form-grid">
+                    <label>Date*<input id="event-date" type="date" required></label>
+                    <label>Starting Time*<input id="event-time" type="time" required></label>
+                </div>
+                <div class="form-grid">
+                    <label>Venue Location / Stream URL*<input id="event-location" required placeholder="Main Auditorium, Malabe / Zoom Meeting"></label>
+                    <label>Registration URL Link<input id="event-registration-link" type="url" placeholder="https://zoom.us/webinar/register/..."></label>
+                </div>
+                <label>Banner Poster Image URL (optional)<input id="event-image-url" placeholder="https://example.com/event-flyer.png"></label>
+                <label>Event Overview & Key Outcomes*<textarea id="event-description" rows="4" required placeholder="Outline program agendas, special speakers, campus tour details..."></textarea></label>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" id="btn-cancel-event">Cancel</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-calendar-check"></i> Schedule Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- POPUP VIEW APPLICATION DETAILS DRAWER -->
+    <div id="details-drawer" class="modal-overlay hidden">
+        <div class="modal-card glass drawer-card">
+            <div class="modal-header">
+                <h3>Student Enrolment Details</h3>
+                <button type="button" class="close-modal-btn" id="close-details-drawer"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="drawer-body" id="details-drawer-content">
+                <!-- Populated dynamically in JS -->
+            </div>
+            <div class="modal-footer" id="details-drawer-footer">
+                <!-- Action buttons -->
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script type="module" src="theme.js"></script>
+    <script type="module" src="institute-dashboard.js"></script>
+</body>
+</html>

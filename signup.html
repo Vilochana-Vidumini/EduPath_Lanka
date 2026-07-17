@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
+    <title>Sign Up | EduPath Lanka</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="theme.css?v=20260614-softglass">
+    <link rel="stylesheet" href="signup.css">
+</head>
+<body class="auth-page signup-page">
+    <a href="index.html" class="back-home"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back to Home</a>
+
+    <main class="auth-shell" aria-label="Create account">
+        <section class="auth-card signup-card">
+            <div class="brand-mark" aria-label="EduPath Lanka">
+                <img src="images/edupath-logo-transparent.png" alt="" class="brand-logo">
+                <span>EduPath <strong>Lanka</strong></span>
+            </div>
+
+            <div class="form-header">
+                <h1>Create Your Account</h1>
+                <p>Start your journey toward the right education and career pathway.</p>
+            </div>
+
+            <form id="signup-form" class="auth-form" novalidate>
+                <div id="alert-message" class="alert hidden" role="alert"></div>
+
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="fullname">Full Name</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-user input-icon" aria-hidden="true"></i>
+                            <input class="auth-input" type="text" id="fullname" placeholder="Enter your full name" autocomplete="name" required>
+                        </div>
+                        <span class="error-msg" id="fullname-error"></span>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="phone">Phone Number</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-phone input-icon" aria-hidden="true"></i>
+                            <input class="auth-input" type="tel" id="phone" placeholder="07XXXXXXXX" autocomplete="tel" required>
+                        </div>
+                        <span class="error-msg" id="phone-error"></span>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="email">Email Address</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope input-icon" aria-hidden="true"></i>
+                        <input class="auth-input" type="email" id="email" placeholder="you@example.com" autocomplete="email" required>
+                    </div>
+                    <span class="error-msg" id="email-error"></span>
+                </div>
+
+                <div class="form-grid">
+                    <div class="input-group">
+                        <label for="password">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon" aria-hidden="true"></i>
+                            <input class="auth-input" type="password" id="password" placeholder="At least 8 characters" autocomplete="new-password" required>
+                            <button type="button" class="toggle-password" id="toggle-pwd" aria-label="Show password">
+                                <i class="fas fa-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <span class="error-msg" id="password-error"></span>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="confirm-password">Confirm Password</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-lock input-icon" aria-hidden="true"></i>
+                            <input class="auth-input" type="password" id="confirm-password" placeholder="Re-enter password" autocomplete="new-password" required>
+                            <button type="button" class="toggle-password" id="toggle-confirm-pwd" aria-label="Show confirm password">
+                                <i class="fas fa-eye" aria-hidden="true"></i>
+                            </button>
+                        </div>
+                        <span class="error-msg" id="confirm-password-error"></span>
+                    </div>
+                </div>
+
+                <fieldset class="role-group">
+                    <legend>I'm a</legend>
+                    <input type="hidden" id="usertype" name="usertype" required>
+                    <div class="role-options" role="radiogroup" aria-label="Choose account role">
+                        <button type="button" class="role-card" data-role="student" role="radio" aria-checked="false">
+                            <span class="role-icon"><i class="fas fa-graduation-cap" aria-hidden="true"></i></span>
+                            <span class="role-check"><i class="fas fa-check" aria-hidden="true"></i></span>
+                            <strong>Student</strong>
+                            <span>Find courses, scholarships, mentors, and career pathways.</span>
+                        </button>
+                        <button type="button" class="role-card" data-role="mentor" role="radio" aria-checked="false">
+                            <span class="role-icon"><i class="fas fa-chalkboard-user" aria-hidden="true"></i></span>
+                            <span class="role-check"><i class="fas fa-check" aria-hidden="true"></i></span>
+                            <strong>Mentor</strong>
+                            <span>Guide students with your education and professional experience.</span>
+                        </button>
+                        <button type="button" class="role-card" data-role="institute" role="radio" aria-checked="false">
+                            <span class="role-icon"><i class="fas fa-building-columns" aria-hidden="true"></i></span>
+                            <span class="role-check"><i class="fas fa-check" aria-hidden="true"></i></span>
+                            <strong>Institute</strong>
+                            <span>Add courses, manage student inquiries, and publish learning opportunities.</span>
+                        </button>
+                    </div>
+                    <span class="error-msg" id="usertype-error"></span>
+                </fieldset>
+
+                <div id="institute-fields" class="institute-fields hidden">
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="institute-name">Institute Name</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-building input-icon" aria-hidden="true"></i>
+                                <input class="auth-input" type="text" id="institute-name" placeholder="Institute or course provider">
+                            </div>
+                            <span class="error-msg" id="institute-name-error"></span>
+                        </div>
+                        <div class="input-group">
+                            <label for="district">District</label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-location-dot input-icon" aria-hidden="true"></i>
+                                <input class="auth-input" type="text" id="district" placeholder="Colombo">
+                            </div>
+                            <span class="error-msg" id="district-error"></span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="address">Address</label>
+                        <div class="input-wrapper">
+                            <i class="fas fa-map input-icon" aria-hidden="true"></i>
+                            <input class="auth-input" type="text" id="address" placeholder="Institute address">
+                        </div>
+                        <span class="error-msg" id="address-error"></span>
+                    </div>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="website">Website / Facebook Page <span class="optional-text">optional</span></label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-globe input-icon" aria-hidden="true"></i>
+                                <input class="auth-input" type="url" id="website" placeholder="https://">
+                            </div>
+                            <span class="error-msg" id="website-error"></span>
+                        </div>
+                        <div class="input-group">
+                            <label for="logo-url">Logo URL <span class="optional-text">optional</span></label>
+                            <div class="input-wrapper">
+                                <i class="fas fa-image input-icon" aria-hidden="true"></i>
+                                <input class="auth-input" type="url" id="logo-url" placeholder="https://">
+                            </div>
+                            <span class="error-msg" id="logo-url-error"></span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="institute-description">Institute Description</label>
+                        <textarea id="institute-description" class="auth-textarea" rows="4" placeholder="Briefly describe your institute, courses, and services."></textarea>
+                        <span class="error-msg" id="institute-description-error"></span>
+                    </div>
+                </div>
+
+                <label class="terms-line">
+                    <input type="checkbox" id="terms" required>
+                    <span>I agree to the <a href="#">Terms & Conditions</a> and <a href="#">Privacy Policy</a></span>
+                </label>
+                <span class="error-msg" id="terms-error"></span>
+
+                <button type="submit" class="auth-submit-btn">
+                    <span>Create Account</span>
+                    <i class="fas fa-arrow-right" aria-hidden="true"></i>
+                </button>
+
+                <p class="auth-link">Already have an account? <a href="login.html">Login</a></p>
+            </form>
+        </section>
+    </main>
+
+    <script type="module" src="theme.js"></script>
+    <script type="module" src="signup.js"></script>
+</body>
+</html>

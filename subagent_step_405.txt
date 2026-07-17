@@ -1,0 +1,6 @@
+Created At: 2026-06-25T10:31:53Z
+Completed At: 2026-06-25T10:57:12Z
+Browser subagent encountered an error: RESOURCE_EXHAUSTED (code 429): Individual quota reached. Please upgrade your subscription to increase your limits. Resets in 3h9m50s.
+
+Here is what the subagent accomplished before the error:
+Browser subagent did not provide a result.The browser subagent's ID is: 

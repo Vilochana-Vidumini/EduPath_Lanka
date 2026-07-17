@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);var c=localStorage.getItem('edupathSidebarCollapsed')||localStorage.getItem('sidebarCollapsed');if(c==='true'&&window.innerWidth>768){document.documentElement.classList.add('sidebar-collapsed');}})();</script>
+    <title>Admin Dashboard | EduPath Lanka</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="theme.css?v=20260615-topbar-clock">
+    <link rel="stylesheet" href="admin-dashboard.css?v=20260624-image-path-fix">
+</head>
+<body class="admin-dashboard-page">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="dashboard-brand-logo">
+                <img src="images/edupath-logo-transparent.png" alt="EduPath Lanka logo">
+                <span>EduPath <strong>Lanka</strong></span>
+            </a>
+            <button type="button" class="sidebar-toggle sidebar-toggle-brand" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
+        </div>
+        <div class="sidebar-user" id="sidebar-user">
+            <div class="sidebar-user-avatar" id="sidebar-user-avatar"><span class="sidebar-initials">AD</span><span class="online-dot" aria-hidden="true"></span></div>
+            <div class="sidebar-user-info">
+                <span class="sidebar-user-name" id="sidebar-user-name">Loading...</span>
+                <span class="sidebar-user-role role-admin" id="sidebar-user-role">Admin</span>
+            </div>
+        </div>
+        <ul class="sidebar-links">
+            <li class="sidebar-section-label">Main</li>
+            <li><a href="#overview" data-section="overview" class="active"><i class="fas fa-table-cells-large"></i><span class="sidebar-label">Dashboard</span></a></li>
+            <li class="sidebar-section-label">User Management</li>
+            <li><a href="#manage-students" data-section="manage-students"><i class="fas fa-user-graduate"></i><span class="sidebar-label">Students</span></a></li>
+            <li><a href="#manage-mentors" data-section="manage-mentors"><i class="fas fa-chalkboard-teacher"></i><span class="sidebar-label">Mentors</span></a></li>
+            <li><a href="#manage-institutes" data-section="manage-institutes"><i class="fas fa-building-columns"></i><span class="sidebar-label">Institutes</span></a></li>
+            <li><a href="#manage-admins" data-section="manage-admins"><i class="fas fa-user-shield"></i><span class="sidebar-label">Admins</span></a></li>
+            <li class="sidebar-section-label">Content Management</li>
+            <li><a href="#manage-courses" data-section="manage-courses"><i class="fas fa-book"></i><span class="sidebar-label">Courses</span></a></li>
+            <li><a href="#manage-scholarships" data-section="manage-scholarships"><i class="fas fa-hand-holding-usd"></i><span class="sidebar-label">Scholarships</span></a></li>
+            <li><a href="#pathway-results" data-section="pathway-results"><i class="fas fa-route"></i><span class="sidebar-label">Pathways</span></a></li>
+            <li class="sidebar-section-label">Mentoring</li>
+            <li><a href="#mentor-approvals" data-section="mentor-approvals"><i class="fas fa-user-check"></i><span class="sidebar-label">Mentor Approvals</span><span class="nav-badge" id="badge-mentor-approvals"></span></a></li>
+            <li><a href="#mentor-requests" data-section="mentor-requests"><i class="fas fa-user-friends"></i><span class="sidebar-label">Mentor Requests</span><span class="nav-badge" id="badge-mentor-requests"></span></a></li>
+            <li><a href="#mentor-reviews" data-section="mentor-reviews"><i class="fas fa-star-half-stroke"></i><span class="sidebar-label">Mentor Reviews</span><span class="nav-badge" id="badge-mentor-reviews"></span></a></li>
+            <li><a href="#mentor-profile-updates" data-section="mentor-profile-updates"><i class="fas fa-id-card-clip"></i><span class="sidebar-label">Profile Updates</span><span class="nav-badge" id="badge-profile-updates"></span></a></li>
+            <li class="sidebar-section-label">Communication</li>
+            <li><a href="#support-inbox" data-section="support-inbox"><i class="fas fa-inbox"></i><span class="sidebar-label">Support Inbox</span><span class="nav-badge" id="badge-support"></span></a></li>
+            <li><a href="#admin-messages" data-section="admin-messages"><i class="fas fa-comments"></i><span class="sidebar-label">Messages</span></a></li>
+            <li><a href="#admin-notifications" data-section="admin-notifications"><i class="fas fa-bell"></i><span class="sidebar-label">Notifications</span></a></li>
+            <li class="sidebar-section-label">Reports & Analytics</li>
+            <li><a href="#reports" data-section="reports"><i class="fas fa-chart-line"></i><span class="sidebar-label">Analytics / Reports</span></a></li>
+            <li><a href="#user-activity" data-section="user-activity"><i class="fas fa-wave-square"></i><span class="sidebar-label">Activity Logs</span></a></li>
+            <li class="sidebar-section-label">System</li>
+            <li><a href="#system-settings" data-section="system-settings"><i class="fas fa-sliders-h"></i><span class="sidebar-label">Settings</span></a></li>
+            <li><a href="#system-status" data-section="system-status"><i class="fas fa-circle-nodes"></i><span class="sidebar-label">System Status</span></a></li>
+            <li><a href="profile.html"><i class="fas fa-id-badge"></i><span class="sidebar-label">My Profile</span></a></li>
+            <li><a href="index.html"><i class="fas fa-home"></i><span class="sidebar-label">Public Home</span></a></li>
+            <li><a href="#" id="logout-btn-sidebar" class="text-danger"><i class="fas fa-sign-out-alt"></i><span class="sidebar-label">Logout</span></a></li>
+        </ul>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button type="button" class="sidebar-toggle topbar-sidebar-toggle" id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+                <h2 class="page-title">Admin Dashboard</h2>
+            </div>
+            <div class="admin-topbar-search">
+                <i class="fas fa-search"></i>
+                <input type="search" id="admin-command-search" list="admin-command-list" placeholder="Search anything..." autocomplete="off">
+                <datalist id="admin-command-list"></datalist>
+            </div>
+            <div class="topbar-right dashboard-topbar-actions">
+                <div class="live-sync"><span class="live-dot"></span> Live</div>
+                <button type="button" class="topbar-icon-btn theme-toggle" id="theme-toggle" aria-label="Toggle theme"><i class="fas fa-sun"></i></button>
+                <div class="user-profile">
+                    <div class="avatar bg-primary text-white"><i class="fas fa-user-shield"></i></div>
+                    <span class="user-name" id="top-user-name">Loading...</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-container">
+            <section id="overview" class="dashboard-section active">
+                <div class="admin-overview">
+                    <div class="admin-hidden-kpis" aria-hidden="true">
+                        <span id="kpi-active-content-summary">0</span>
+                        <span id="kpi-pending-mentors">0</span>
+                        <span id="kpi-approved-mentors">0</span>
+                        <span id="profile-strength-badge">0%</span>
+                        <span id="dynamic-profile-progress-bar"></span>
+                        <span id="last-synced-time"></span>
+                    </div>
+                    <section class="admin-hero-card admin-hero admin-card">
+                        <div class="admin-hero-main">
+                            <span class="admin-hero-eyebrow">Platform Overview</span>
+                            <h1><span id="admin-greeting">Good Morning</span>, <span id="admin-first-name">Admin</span>! <span aria-hidden="true">👋</span></h1>
+                            <p>Here's what's happening on EduPath Lanka today.</p>
+                            <div class="admin-hero-meta">
+                                <div class="admin-hero-meta-item"><i class="fas fa-calendar-day"></i><span id="admin-dashboard-date">Today</span></div>
+                                <div class="admin-hero-meta-item"><i class="fas fa-clock"></i><span id="admin-dashboard-time">--:--</span></div>
+                                <div class="admin-hero-meta-item admin-live-status"><span class="live-status-dot"></span><span>Live platform status</span></div>
+                            </div>
+                            <span id="welcome-name" class="admin-hero-hidden-title">Good Morning, Admin!</span>
+                        </div>
+                        <div class="admin-hero-stats">
+                            <button type="button" class="admin-hero-stat-card" data-kpi-section="user-activity">
+                                <span class="admin-hero-stat-icon tone-blue"><i class="fas fa-user-check"></i></span>
+                                <span class="admin-hero-stat-copy"><strong id="kpi-online-users">0</strong><span>Active Users</span><small>Currently online</small></span>
+                                <i class="fas fa-chevron-right stat-arrow"></i>
+                            </button>
+                            <button type="button" class="admin-hero-stat-card" data-kpi-section="mentor-approvals">
+                                <span class="admin-hero-stat-icon tone-purple"><i class="fas fa-clipboard-check"></i></span>
+                                <span class="admin-hero-stat-copy"><strong id="admin-hero-pending-approvals">0</strong><span>Pending Approvals</span><small>Awaiting review</small></span>
+                                <i class="fas fa-chevron-right stat-arrow"></i>
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="admin-primary-kpis" aria-label="Primary dashboard metrics">
+                        <button class="kpi-card tone-blue" type="button" data-kpi-section="manage-students"><span class="kpi-icon"><i class="fas fa-user"></i></span><span>Total Users</span><strong id="kpi-total-users-summary">0</strong><small>Registered accounts</small></button>
+                        <button class="kpi-card tone-green" type="button" data-kpi-section="user-activity"><span class="kpi-icon"><i class="fas fa-signal"></i></span><span>Active Sessions</span><strong id="kpi-online-users-card">0</strong><small>Currently online</small></button>
+                        <button class="kpi-card tone-orange" type="button" data-kpi-section="mentor-approvals"><span class="kpi-icon"><i class="fas fa-hourglass-half"></i></span><span>Pending Requests</span><strong id="kpi-pending-actions-summary">0</strong><small>Awaiting review</small></button>
+                        <button class="kpi-card tone-purple" type="button" data-kpi-section="manage-courses"><span class="kpi-icon"><i class="fas fa-book-open"></i></span><span>Total Courses</span><strong id="kpi-total-courses">0</strong><small>Published and draft</small></button>
+                        <button class="kpi-card tone-cyan" type="button" data-kpi-section="manage-scholarships"><span class="kpi-icon"><i class="fas fa-graduation-cap"></i></span><span>Scholarships</span><strong id="kpi-total-scholarships">0</strong><small>Available records</small></button>
+                        <button class="kpi-card tone-red" type="button" data-kpi-section="support-inbox"><span class="kpi-icon"><i class="fas fa-message"></i></span><span>Support Messages</span><strong id="kpi-unread-support">0</strong><small>Needs attention</small></button>
+                    </section>
+
+                    <section class="admin-overview-groups">
+                        <article class="overview-card"><div class="overview-card-header"><h3>User Overview</h3><button data-section="manage-students">View all</button></div><div class="overview-card-body"><span class="overview-big-icon tone-blue"><i class="fas fa-users"></i></span><div class="overview-rows">
+                            <button data-section="manage-students"><span><i class="fas fa-user-graduate"></i> Students</span><strong id="kpi-students">0</strong></button>
+                            <button data-section="manage-mentors"><span><i class="fas fa-chalkboard-teacher"></i> Mentors</span><strong id="kpi-mentors">0</strong></button>
+                            <button data-section="manage-institutes"><span><i class="fas fa-building-columns"></i> Institutes</span><strong id="kpi-institutes">0</strong></button>
+                            <button data-section="manage-admins"><span><i class="fas fa-user-shield"></i> Admins</span><strong id="kpi-admins">0</strong></button>
+                        </div></div></article>
+                        <article class="overview-card"><div class="overview-card-header"><h3>Content Overview</h3><button data-section="manage-courses">View all</button></div><div class="overview-card-body"><span class="overview-big-icon tone-purple"><i class="fas fa-book-open"></i></span><div class="overview-rows">
+                            <button data-section="manage-courses"><span><i class="fas fa-book"></i> Total Courses</span><strong id="kpi-total-courses-group">0</strong></button>
+                            <button data-section="manage-courses"><span><i class="fas fa-check"></i> Active Courses</span><strong id="kpi-active-courses">0</strong></button>
+                            <button data-section="manage-scholarships"><span><i class="fas fa-bullhorn"></i> Active Scholarships</span><strong id="kpi-active-scholarships">0</strong></button>
+                            <button data-section="manage-scholarships"><span><i class="fas fa-graduation-cap"></i> Total Scholarships</span><strong id="kpi-total-scholarships-group">0</strong></button>
+                        </div></div></article>
+                        <article class="overview-card"><div class="overview-card-header"><h3>Pathway & Mentoring</h3><button data-section="mentor-requests">View all</button></div><div class="overview-card-body"><span class="overview-big-icon tone-green"><i class="fas fa-route"></i></span><div class="overview-rows">
+                            <button data-section="pathway-results"><span><i class="fas fa-poll"></i> Pathway Results</span><strong id="kpi-pathway-results">0</strong></button>
+                            <button data-section="mentor-requests"><span><i class="fas fa-user-friends"></i> Mentor Requests</span><strong id="kpi-mentor-requests">0</strong></button>
+                            <button data-section="mentor-requests"><span><i class="fas fa-link"></i> Accepted Connections</span><strong id="kpi-accepted-mentor-connections">0</strong></button>
+                            <button data-section="mentor-requests"><span><i class="fas fa-clock"></i> Pending Requests</span><strong id="kpi-pending-mentor-requests">0</strong></button>
+                        </div></div></article>
+                        <article class="overview-card"><div class="overview-card-header"><h3>Support & Communication</h3><button data-section="support-inbox">View all</button></div><div class="overview-card-body"><span class="overview-big-icon tone-red"><i class="fas fa-headset"></i></span><div class="overview-rows">
+                            <button data-section="support-inbox"><span><i class="fas fa-envelope"></i> Unread Messages</span><strong id="kpi-unread-support-group">0</strong></button>
+                            <button data-section="support-inbox"><span><i class="fas fa-question-circle"></i> Guest Inquiries</span><strong id="kpi-guest-inquiries">0</strong></button>
+                            <button data-section="support-inbox"><span><i class="fas fa-comments"></i> Open Conversations</span><strong id="admin-open-conversations">0</strong></button>
+                            <button data-section="support-inbox"><span><i class="fas fa-life-ring"></i> Support Items</span><strong id="kpi-support-summary">0</strong></button>
+                        </div></div></article>
+                    </section>
+
+                    <section class="admin-work-grid">
+                        <article class="pending-card admin-card"><div class="admin-card-header"><h3>Pending Actions</h3><button data-section="mentor-approvals">View all</button></div><div id="pending-actions-list" class="pending-actions"></div></article>
+                        <article class="quick-actions-card admin-card"><div class="admin-card-header"><h3>Quick Actions</h3></div><div id="quick-actions-list" class="quick-actions"></div></article>
+                    </section>
+
+                    <section class="admin-chart-grid">
+                        <article class="chart-card admin-card"><div class="admin-card-header"><div><h3>User Registrations</h3><span>This week</span></div><button data-section="reports">View report</button></div><strong id="chart-users-total">0</strong><div id="chart-users" class="admin-mini-chart"></div></article>
+                        <article class="chart-card admin-card"><div class="admin-card-header"><div><h3>Course Engagement</h3><span>This week</span></div><button data-section="reports">View report</button></div><strong id="chart-courses-total">0</strong><div id="chart-courses" class="admin-mini-chart"></div></article>
+                        <article class="chart-card admin-card"><div class="admin-card-header"><div><h3>Support Messages</h3><span>This week</span></div><button data-section="reports">View report</button></div><strong id="chart-support-total">0</strong><div id="chart-support" class="admin-mini-chart"></div></article>
+                    </section>
+
+                    <article class="recent-activity-card admin-card">
+                        <div class="admin-card-header"><h3>Recent Activity</h3><button data-section="user-activity">View All Activity</button></div>
+                        <div class="activity-filter-tabs" id="overview-activity-tabs"><button class="active" data-activity-preview-filter="all">All</button><button data-activity-preview-filter="login">Logins</button><button data-activity-preview-filter="signup">Signups</button><button data-activity-preview-filter="request">Requests</button><button data-activity-preview-filter="message">Messages</button><button data-activity-preview-filter="approval">Approvals</button></div>
+                        <div class="table-responsive"><table class="data-table compact-activity-table activity-table"><thead><tr><th scope="col" class="col-medium">Activity</th><th scope="col" class="col-person">User</th><th scope="col" class="col-short">Role</th><th scope="col" class="col-long">Details</th><th scope="col" class="col-medium">Time</th><th scope="col" class="col-status">Status</th></tr></thead><tbody id="recent-activity-list"></tbody></table></div>
+                    </article>
+
+                    <footer class="admin-dashboard-footer"><span>&copy; 2026 EduPath Lanka. All rights reserved.</span><span id="admin-last-synced">Live sync active</span></footer>
+                </div>
+            </section>
+
+            <section id="manage-students" class="dashboard-section content-section">
+                <div class="section-header"><h2>Manage Students</h2><p class="section-desc">All registered Student accounts, including users without completed student profiles.</p></div>
+                <div class="section-toolbar">
+                    <input type="search" id="student-search" class="form-control" placeholder="Search name, email, phone">
+                    <select id="student-filter-district" class="form-control"><option value="">All Districts</option></select>
+                    <select id="student-filter-interest" class="form-control"><option value="">All Interest Areas</option></select>
+                    <select id="student-filter-education" class="form-control"><option value="">All Education Levels</option></select>
+                    <select id="student-filter-profile" class="form-control"><option value="">Any Profile %</option><option value="low">Below 50%</option><option value="medium">50-79%</option><option value="high">80%+</option></select>
+                    <select id="student-filter-online" class="form-control"><option value="">Any Presence</option><option value="online">Online</option><option value="offline">Offline</option></select>
+                    <select id="student-filter-status" class="form-control"><option value="">Any Account Status</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="disabled">Disabled</option></select>
+                </div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table students-table"><thead><tr><th scope="col" class="col-person">Student</th><th scope="col" class="col-contact">Contact</th><th scope="col" class="col-medium">Education</th><th scope="col" class="col-medium">Interest</th><th scope="col" class="col-progress">Profile</th><th scope="col" class="col-status">Pathway</th><th scope="col" class="col-short">Presence</th><th scope="col" class="col-status">Account Status</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-students-tbody"><tr><td colspan="9" class="text-center py-4 data-loading">Loading students...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="manage-mentors" class="dashboard-section content-section">
+                <div class="section-header"><h2>Manage Mentors</h2></div>
+                <div class="section-toolbar"><input type="search" id="mentor-search" class="form-control" placeholder="Search mentors..."></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table mentors-table"><thead><tr><th scope="col" class="col-person">Mentor</th><th scope="col" class="col-medium">Field</th><th scope="col" class="col-long">Organization</th><th scope="col" class="col-status">Approval</th><th scope="col" class="col-medium">Availability</th><th scope="col" class="col-progress">Profile</th><th scope="col" class="col-short">Presence</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-mentors-tbody"><tr><td colspan="8" class="text-center py-4 data-loading">Loading mentors...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="manage-institutes" class="dashboard-section content-section">
+                <div class="section-header"><h2>Manage Institutes</h2><p class="section-desc">All registered Institute accounts and their public profile status.</p></div>
+                <div class="section-toolbar"><input type="search" id="institute-search" class="form-control" placeholder="Search institutes..."></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table institutes-table"><thead><tr><th scope="col" class="col-person">Institute</th><th scope="col" class="col-contact">Contact</th><th scope="col" class="col-medium">District</th><th scope="col" class="col-status">Verification</th><th scope="col" class="col-short">Courses</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-institutes-tbody"><tr><td colspan="7" class="text-center py-4 data-loading">Loading institutes...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="manage-admins" class="dashboard-section content-section" hidden aria-hidden="true">
+                <div class="section-header"><h2>Manage Admins</h2><p class="section-desc">Read-only directory of platform administrator accounts.</p></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table admins-table"><thead><tr><th scope="col" class="col-person">Admin</th><th scope="col" class="col-contact">Contact</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-short">Presence</th><th scope="col" class="col-medium">Created</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-admins-tbody"><tr><td colspan="6" class="text-center py-4 data-loading">Loading admins...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="mentor-approvals" class="dashboard-section content-section">
+                <div class="section-header"><h2>Mentor Approvals</h2></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table approvals-table"><thead><tr><th scope="col" class="col-person">Mentor</th><th scope="col" class="col-medium">Field</th><th scope="col" class="col-long">Organization</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-medium">Availability</th><th scope="col" class="col-progress">Profile</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-approvals-tbody"><tr><td colspan="7" class="text-center py-4 data-loading">Loading pending mentors...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="manage-courses" class="dashboard-section content-section">
+                <div class="section-header"><h2>Manage Courses</h2></div>
+                <div class="course-management-stack">
+                    <div class="table-card glass">
+                        <div class="p-3 border-bottom"><h3>Courses</h3></div>
+                        <div class="table-responsive"><table class="data-table courses-table"><thead><tr><th scope="col" class="col-long">Course</th><th scope="col" class="col-long">Institute</th><th scope="col" class="col-medium">Category</th><th scope="col" class="col-short">Mode</th><th scope="col" class="col-short">Fee</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-courses-tbody"><tr><td colspan="7" class="text-center py-4 data-loading">Loading courses...</td></tr></tbody></table></div>
+                        <div class="course-list-actions"><button type="button" id="show-course-form" class="btn btn-primary"><i class="fas fa-plus"></i><span>Add Course</span></button></div>
+                    </div>
+                    <div id="course-form-card" class="form-card glass hidden">
+                        <h3 id="course-form-title">Add Course</h3>
+                        <form id="course-form" class="grid-form mt-3">
+                            <div class="form-group full-width"><label>Course Name *</label><input type="text" id="course-name" class="form-control" required></div>
+                            <div class="form-group"><label>Institute Name *</label><input type="text" id="course-institute" class="form-control" required></div>
+                            <div class="form-group"><label>Institute Type</label><input type="text" id="course-institute-type" class="form-control"></div>
+                            <div class="form-group"><label>Category *</label><input type="text" id="course-category" class="form-control" required></div>
+                            <div class="form-group full-width"><label>Description</label><textarea id="course-description" class="form-control" rows="3"></textarea></div>
+                            <div class="form-group"><label>Duration *</label><input type="text" id="course-duration" class="form-control" required></div>
+                            <div class="form-group"><label>Mode *</label><select id="course-mode" class="form-control" required><option>Online</option><option>Physical</option><option>Hybrid</option></select></div>
+                            <div class="form-group"><label>Fee Type *</label><select id="course-fee" class="form-control" required><option>Free</option><option>Paid</option><option>Low Cost</option><option>Scholarship Available</option></select></div>
+                            <div class="form-group"><label>Fee Amount</label><input type="number" id="course-fee-amount" class="form-control"></div>
+                            <div class="form-group"><label>District</label><input type="text" id="course-district" class="form-control"></div>
+                            <div class="form-group"><label>Qualification Level</label><input type="text" id="course-qualification" class="form-control"></div>
+                            <div class="form-group full-width"><label>Eligibility</label><textarea id="course-eligibility" class="form-control" rows="2"></textarea></div>
+                            <div class="form-group"><label>Skills Covered</label><input type="text" id="course-skills" class="form-control"></div>
+                            <div class="form-group"><label>Career Opportunities</label><input type="text" id="course-careers" class="form-control"></div>
+                            <div class="form-group"><label>Application Deadline</label><input type="date" id="course-deadline" class="form-control"></div>
+                            <div class="form-group"><label>Apply Link</label><input type="url" id="course-apply-link" class="form-control"></div>
+                            <div class="form-group"><label>Contact Email</label><input type="email" id="course-contact-email" class="form-control"></div>
+                            <div class="form-group"><label>Contact Phone</label><input type="tel" id="course-contact-phone" class="form-control"></div>
+                            <div class="form-group full-width image-url-group">
+                                <label for="course-image-url">Image URL</label>
+                                <input type="text" id="course-image-url" class="form-control" list="course-image-options" placeholder="images/courses-mobiledeveloper.png">
+                                <datalist id="course-image-options">
+                                    <option value="images/courses-mobiledeveloper.png"></option>
+                                    <option value="images/course-placeholder.png"></option>
+                                </datalist>
+                                <small class="form-helper-text">Use a project image path such as images/courses-mobiledeveloper.png, or type only the filename such as courses-mobiledeveloper.png.</small>
+                                <div id="course-image-preview" class="admin-image-preview empty" aria-live="polite"><span class="admin-image-preview-placeholder">Course image preview</span></div>
+                                <div class="image-url-help">
+                                    <strong>How to use a GitHub image</strong>
+                                    <span>Add the image to the project images folder, then paste the local path here. Example: images/courses-mobiledeveloper.png. GitHub Raw links also work, but normal GitHub /blob/ links should not be used.</span>
+                                </div>
+                            </div>
+                            <div class="form-group"><label>Status</label><select id="course-status" class="form-control"><option value="draft">Draft</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="archived">Archived</option></select></div>
+                            <div class="form-group full-width form-actions"><button type="submit" class="btn btn-primary"><span id="course-submit-label">Add Course</span></button><button type="button" id="course-cancel-edit" class="btn btn-danger hidden">Cancel Edit</button></div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <section id="manage-scholarships" class="dashboard-section content-section">
+                <div class="section-header"><h2>Manage Scholarships</h2></div>
+                <div class="course-management-stack">
+                    <div class="table-card glass">
+                        <div class="p-3 border-bottom"><h3>Scholarships</h3></div>
+                        <div class="table-responsive"><table class="data-table scholarships-table"><thead><tr><th scope="col" class="col-long">Scholarship</th><th scope="col" class="col-long">Provider</th><th scope="col" class="col-medium">Category</th><th scope="col" class="col-medium">Deadline</th><th scope="col" class="col-medium">Support</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-schol-tbody"><tr><td colspan="7" class="text-center py-4 data-loading">Loading scholarships...</td></tr></tbody></table></div>
+                        <div class="course-list-actions"><button type="button" id="show-scholarship-form" class="btn btn-primary"><i class="fas fa-plus"></i><span>Add Scholarship</span></button></div>
+                    </div>
+                    <div id="scholarship-form-card" class="form-card glass hidden">
+                        <h3 id="scholarship-form-title">Add Scholarship</h3>
+                        <form id="scholarship-form" class="grid-form mt-3">
+                            <div class="form-group full-width"><label>Scholarship Name *</label><input type="text" id="schol-name" class="form-control" required></div>
+                            <div class="form-group"><label>Provider *</label><input type="text" id="schol-provider" class="form-control" required></div>
+                            <div class="form-group"><label>Provider Type</label><input type="text" id="schol-provider-type" class="form-control"></div>
+                            <div class="form-group"><label>Category</label><input type="text" id="schol-category" class="form-control"></div>
+                            <div class="form-group full-width"><label>Description</label><textarea id="schol-description" class="form-control" rows="3"></textarea></div>
+                            <div class="form-group full-width"><label>Eligibility</label><textarea id="schol-eligibility" class="form-control" rows="2"></textarea></div>
+                            <div class="form-group"><label>Support Type</label><input type="text" id="schol-support-type" class="form-control"></div>
+                            <div class="form-group"><label>Amount / Benefit</label><input type="text" id="schol-amount" class="form-control"></div>
+                            <div class="form-group"><label>Deadline</label><input type="date" id="schol-deadline" class="form-control"></div>
+                            <div class="form-group"><label>District / Islandwide</label><input type="text" id="schol-district" class="form-control"></div>
+                            <div class="form-group"><label>Qualification Level</label><input type="text" id="schol-qualification" class="form-control"></div>
+                            <div class="form-group"><label>Apply Link</label><input type="url" id="schol-apply-link" class="form-control"></div>
+                            <div class="form-group"><label>Contact Email</label><input type="email" id="schol-contact-email" class="form-control"></div>
+                            <div class="form-group"><label>Contact Phone</label><input type="tel" id="schol-contact-phone" class="form-control"></div>
+                            <div class="form-group full-width image-url-group">
+                                <label for="schol-image-url">Image URL</label>
+                                <input type="text" id="schol-image-url" class="form-control" list="scholarship-image-options" placeholder="images/scholarship-placeholder.png">
+                                <datalist id="scholarship-image-options">
+                                    <option value="images/scholarship-placeholder.png"></option>
+                                </datalist>
+                                <small class="form-helper-text">Use a project image path such as images/scholarship-name.png, or type only the filename such as scholarship-name.png.</small>
+                                <div id="scholarship-image-preview" class="admin-image-preview empty" aria-live="polite"><span class="admin-image-preview-placeholder">Scholarship image preview</span></div>
+                                <div class="image-url-help">
+                                    <strong>How to use a GitHub image</strong>
+                                    <span>Add the image to the project images folder, then paste the local path here. Example: images/scholarship-placeholder.png. GitHub Raw links also work, but normal GitHub /blob/ links should not be used.</span>
+                                </div>
+                            </div>
+                            <div class="form-group"><label>Status</label><select id="schol-status" class="form-control"><option value="draft">Draft</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="archived">Archived</option></select></div>
+                            <div class="form-group full-width form-actions"><button type="submit" class="btn btn-primary"><span id="scholarship-submit-label">Add Scholarship</span></button><button type="button" id="scholarship-cancel-edit" class="btn btn-danger hidden">Cancel Edit</button></div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <section id="mentor-requests" class="dashboard-section content-section">
+                <div class="section-header"><h2>Mentor Requests</h2></div>
+                <div class="filter-tabs" id="request-filter-tabs"><button class="btn-filter active" data-filter="all">All</button><button class="btn-filter" data-filter="pending">Pending</button><button class="btn-filter" data-filter="accepted">Accepted</button><button class="btn-filter" data-filter="rejected">Rejected</button><button class="btn-filter" data-filter="completed">Completed</button><button class="btn-filter" data-filter="cancelled">Cancelled</button></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table requests-table"><thead><tr><th scope="col" class="col-person">Student</th><th scope="col" class="col-person">Mentor</th><th scope="col" class="col-medium">Request Date</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-medium">Updated Date</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-requests-tbody"><tr><td colspan="6" class="text-center py-4">Loading mentor requests...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="mentor-reviews" class="dashboard-section content-section">
+                <div class="section-header"><h2>Mentor Reviews</h2><p class="section-desc">Moderate written reviews without changing student ratings or review text.</p></div>
+                <div class="section-toolbar">
+                    <input type="search" id="review-search" class="form-control" placeholder="Search reviews or mentors">
+                    <select id="review-status-filter" class="form-control">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending Approval</option>
+                        <option value="published">Published</option>
+                        <option value="hidden">Hidden</option>
+                        <option value="reported">Reported</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                    <select id="review-star-filter" class="form-control">
+                        <option value="">All Stars</option>
+                        <option value="5">5 stars</option>
+                        <option value="4">4 stars</option>
+                        <option value="3">3 stars</option>
+                        <option value="2">2 stars</option>
+                        <option value="1">1 star</option>
+                    </select>
+                </div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table"><thead><tr><th>Mentor</th><th>Rating</th><th>Review</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="admin-reviews-tbody"><tr><td colspan="6" class="text-center py-4 data-loading">Loading reviews...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="mentor-profile-updates" class="dashboard-section content-section">
+                <div class="section-header"><h2>Mentor Profile Updates</h2><p class="section-desc">Review changes made by approved mentors while keeping their profile active.</p></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table"><thead><tr><th>Mentor</th><th>Fields</th><th>Review Flag</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="admin-profile-updates-tbody"><tr><td colspan="6" class="text-center py-4 data-loading">Loading profile updates...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="pathway-results" class="dashboard-section content-section">
+                <div class="section-header"><h2>Pathway Results</h2></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table pathway-results-table"><thead><tr><th scope="col" class="col-person">Student</th><th scope="col" class="col-medium">Education</th><th scope="col" class="col-medium">Interest</th><th scope="col" class="col-long">Recommended Pathway</th><th scope="col" class="col-short">Match Score</th><th scope="col" class="col-medium">Date</th><th scope="col" class="col-status">Result Status</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-pathway-tbody"><tr><td colspan="8" class="text-center py-4 data-loading">Loading pathway results...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="support-inbox" class="dashboard-section content-section">
+                <div class="section-header"><h2>EduPath Support Inbox</h2></div>
+                <div class="support-inbox-shell glass" id="support-inbox-app">
+                    <aside class="support-folders" id="support-folders">
+                        <button type="button" class="btn btn-primary support-compose-btn" id="support-compose-open"><i class="fas fa-pen"></i> Compose Message</button>
+                        <button type="button" class="support-folder active" data-support-folder="guest"><i class="fas fa-user-circle"></i><span>Guest Inquiries</span><b id="support-count-guest">0</b></button>
+                        <button type="button" class="support-folder" data-support-folder="conversations"><i class="fas fa-comments"></i><span>User Conversations</span><b id="support-count-conversations">0</b></button>
+                        <button type="button" class="support-folder" data-support-folder="sent"><i class="fas fa-paper-plane"></i><span>Sent Messages</span><b id="support-count-sent">0</b></button>
+                        <button type="button" class="support-folder" data-support-folder="archived"><i class="fas fa-box-archive"></i><span>Archived</span><b id="support-count-archived">0</b></button>
+                        <button type="button" class="support-folder" data-support-folder="trash"><i class="fas fa-trash"></i><span>Trash</span><b id="support-count-trash">0</b></button>
+                    </aside>
+                    <section class="support-message-list-panel" id="support-list-panel">
+                        <div class="support-list-toolbar">
+                            <div>
+                                <h3 id="support-list-title">Guest Inquiries</h3>
+                                <p id="support-list-subtitle">Loading messages...</p>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-info support-back-list" id="support-back-list"><i class="fas fa-arrow-left"></i> Inbox</button>
+                        </div>
+                        <div class="support-controls">
+                            <input type="search" class="form-control" id="support-search" placeholder="Search inbox">
+                            <select class="form-control" id="support-filter"><option value="all">All</option><option value="unread">Unread</option><option value="read">Read</option><option value="replied">Replied</option><option value="in-progress">In Progress</option><option value="closed">Closed</option><option value="important">Important</option></select>
+                            <select class="form-control" id="support-sort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="sender">Sender A-Z</option><option value="unread">Unread first</option></select>
+                        </div>
+                        <div class="support-message-list" id="support-message-list"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading messages...</p></div></div>
+                    </section>
+                </div>
+                <aside class="support-detail-drawer" id="support-detail-panel" aria-hidden="true"></aside>
+                <div class="support-modal" id="support-compose-modal" aria-hidden="true">
+                    <form id="compose-message-form" class="support-modal-card">
+                        <div class="drawer-header"><h2>Compose Message</h2><button type="button" class="btn btn-sm btn-danger" id="support-compose-close">Close</button></div>
+                        <div class="support-modal-body">
+                            <select id="message-recipient" class="form-control" required><option value="">Loading users...</option></select>
+                            <input type="text" id="message-subject" class="form-control" placeholder="Subject">
+                            <select id="message-priority" class="form-control"><option value="normal">Normal</option><option value="important">Important</option></select>
+                            <textarea id="message-body" class="form-control" rows="6" placeholder="Write message..." required></textarea>
+                            <button class="btn btn-primary" type="submit"><i class="fas fa-paper-plane"></i> Send Message</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="support-modal" id="support-confirm-modal" aria-hidden="true">
+                    <div class="support-modal-card compact">
+                        <div class="drawer-header"><h2>Permanent Delete</h2></div>
+                        <div class="support-modal-body">
+                            <p>This action cannot be undone. Permanently delete this item?</p>
+                            <div class="form-actions"><button type="button" class="btn btn-danger" id="support-confirm-delete">Permanently Delete</button><button type="button" class="btn btn-info" id="support-confirm-cancel">Cancel</button></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="admin-messages" class="dashboard-section content-section" hidden aria-hidden="true">
+                <div class="section-header"><h2>Messages</h2><p class="section-desc">Authenticated user conversations and admin support threads.</p></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table messages-table"><thead><tr><th scope="col" class="col-person">User</th><th scope="col" class="col-short">Role</th><th scope="col" class="col-long">Last Message</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-short">Unread</th><th scope="col" class="col-medium">Updated</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-messages-tbody"><tr><td colspan="7" class="text-center py-4 data-loading">Loading conversations...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="admin-notifications" class="dashboard-section content-section" hidden aria-hidden="true">
+                <div class="section-header"><h2>Notifications</h2><p class="section-desc">Full list of admin notifications and platform alerts.</p></div>
+                <div class="section-toolbar"><button type="button" class="btn btn-primary" id="admin-mark-all-notifications-read"><i class="fas fa-check-double"></i> Mark All as Read</button></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table notifications-table"><thead><tr><th scope="col" class="col-long">Title</th><th scope="col" class="col-long">Message</th><th scope="col" class="col-short">Type</th><th scope="col" class="col-medium">Date</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-notifications-tbody"><tr><td colspan="6" class="text-center py-4 data-loading">Loading notifications...</td></tr></tbody></table></div></div>
+            </section>
+
+            <section id="user-activity" class="dashboard-section content-section">
+                <div class="section-header"><h2>User Activity</h2></div>
+                <div class="section-toolbar"><input type="search" id="activity-search" class="form-control" placeholder="Search activity"><select id="activity-role-filter" class="form-control"><option value="">All Roles</option><option value="student">Student</option><option value="mentor">Mentor</option><option value="institute">Institute</option><option value="admin">Admin</option></select><select id="activity-type-filter" class="form-control"><option value="">All Actions</option></select></div>
+                <div class="activity-grid">
+                    <article class="panel-card glass"><h3>Recent Activity</h3><div id="full-activity-list" class="list-stack"></div></article>
+                    <article class="panel-card glass"><h3>Admin Actions</h3><div id="admin-actions-list" class="list-stack"></div></article>
+                    <article class="table-card glass full-width"><div class="p-3 border-bottom"><h3>Login History</h3></div><div class="table-responsive"><table class="data-table activity-table"><thead><tr><th scope="col" class="col-person">User</th><th scope="col" class="col-short">Role</th><th scope="col" class="col-medium">Login</th><th scope="col" class="col-medium">Logout</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-long">Device / Browser</th></tr></thead><tbody id="login-history-tbody"></tbody></table></div></article>
+                    <article class="table-card glass full-width"><div class="p-3 border-bottom"><h3>Online Users</h3></div><div class="table-responsive"><table class="data-table activity-table"><thead><tr><th scope="col" class="col-person">User</th><th scope="col" class="col-short">Role</th><th scope="col" class="col-medium">Online Since</th><th scope="col" class="col-medium">Last Active</th></tr></thead><tbody id="online-users-tbody"></tbody></table></div></article>
+                </div>
+            </section>
+
+            <section id="reports" class="dashboard-section content-section">
+                <div class="section-header"><h2>Reports & Insights</h2></div>
+                <div id="reports-grid" class="cards-grid"></div>
+            </section>
+
+            <section id="system-settings" class="dashboard-section content-section">
+                <div class="section-header"><h2>System Settings</h2></div>
+                <div class="panel-card glass">
+                    <h3>Security Notes</h3>
+                    <p>Admin access is controlled only by <strong>users/{uid}/userType = admin</strong>. Browser code cannot delete Firebase Authentication users; use a secure backend with Firebase Admin SDK for account deletion.</p>
+                </div>
+                <div class="panel-card glass">
+                    <h3>Recommendation Data Quality</h3>
+                    <p>For better student recommendations, fill category, district, mode, fee type, eligibility, skills covered, career opportunities, and status correctly for courses, scholarships, and mentors. Missing fields reduce match quality.</p>
+                </div>
+            </section>
+
+            <section id="system-status" class="dashboard-section content-section" hidden aria-hidden="true">
+                <div class="section-header"><h2>System Status</h2><p class="section-desc">Available realtime health indicators for the admin dashboard.</p></div>
+                <div id="system-status-grid" class="cards-grid"></div>
+            </section>
+        </div>
+    </main>
+
+    <script type="module" src="theme.js"></script>
+    <script type="module" src="auth-nav.js?v=20260614-brand"></script>
+    <script type="module" src="dashboard-topbar.js"></script>
+    <script type="module" src="admin-dashboard.js?v=20260705-mentor-profile-updates"></script>
+</body>
+</html>

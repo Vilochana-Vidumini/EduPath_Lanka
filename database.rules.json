@@ -1,0 +1,414 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".indexOn": ["userType", "role", "accountStatus", "email"],
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "students": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "mentors": {
+      ".read": "(query.orderByChild == 'status' && query.equalTo == 'approved') || (auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+      ".indexOn": ["status", "approvalStatus"],
+      "$uid": {
+        ".read": "data.child('status').val() == 'approved' || (auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin'))",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.child('approvalStatus').val() == data.child('approvalStatus').val() || newData.child('approvalStatus').val() == 'draft' || newData.child('approvalStatus').val() == 'submitted' || (newData.child('approvalStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('applicationStatus').val() == data.child('applicationStatus').val() || newData.child('applicationStatus').val() == 'draft' || newData.child('applicationStatus').val() == 'submitted' || (newData.child('applicationStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('status').val() == data.child('status').val() || newData.child('status').val() == 'draft' || newData.child('status').val() == 'pending' || (newData.child('status').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('publicVisibility').val() == false || newData.child('publicVisibility').val() == data.child('publicVisibility').val() || (newData.child('publicVisibility').val() == true && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('mentoringEnabled').val() == false || newData.child('mentoringEnabled').val() == data.child('mentoringEnabled').val() || (newData.child('mentoringEnabled').val() == true && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && newData.child('approvedAt').val() == data.child('approvedAt').val() && newData.child('approvedBy').val() == data.child('approvedBy').val() && newData.child('rejectedAt').val() == data.child('rejectedAt').val() && newData.child('rejectedBy').val() == data.child('rejectedBy').val() && newData.child('rejectionReason').val() == data.child('rejectionReason').val()))",
+        "status": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == 'draft' || newData.val() == 'pending' || (newData.val() == 'approved' && (data.parent().child('approvalStatus').val() == 'approved' || data.parent().child('status').val() == 'approved')))))"
+        },
+        "approvalStatus": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == 'draft' || newData.val() == 'submitted' || (newData.val() == 'approved' && (data.parent().child('approvalStatus').val() == 'approved' || data.parent().child('status').val() == 'approved')))))"
+        },
+        "applicationStatus": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == 'draft' || newData.val() == 'submitted' || (newData.val() == 'approved' && (data.parent().child('approvalStatus').val() == 'approved' || data.parent().child('status').val() == 'approved')))))"
+        },
+        "publicVisibility": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == false || (newData.val() == true && (data.parent().child('approvalStatus').val() == 'approved' || data.parent().child('status').val() == 'approved')))))"
+        },
+        "mentoringEnabled": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == false || (newData.val() == true && (data.parent().child('approvalStatus').val() == 'approved' || data.parent().child('status').val() == 'approved')))))"
+        },
+        "approvedAt": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "approvedBy": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "rejectionReason": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "rejectedAt": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "rejectedBy": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        }
+      }
+    },
+    "mentorApplications": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".indexOn": ["approvalStatus", "applicationStatus", "mentorUid"],
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.child('approvalStatus').val() == data.child('approvalStatus').val() || newData.child('approvalStatus').val() == 'draft' || newData.child('approvalStatus').val() == 'submitted' || (newData.child('approvalStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('status').val() == 'approved'))) && (newData.child('applicationStatus').val() == data.child('applicationStatus').val() || newData.child('applicationStatus').val() == 'draft' || newData.child('applicationStatus').val() == 'submitted' || (newData.child('applicationStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('status').val() == 'approved'))) && newData.child('approvedAt').val() == data.child('approvedAt').val() && newData.child('approvedBy').val() == data.child('approvedBy').val() && newData.child('rejectedAt').val() == data.child('rejectedAt').val() && newData.child('rejectedBy').val() == data.child('rejectedBy').val() && newData.child('rejectionReason').val() == data.child('rejectionReason').val()))",
+        "approvalStatus": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == 'draft' || newData.val() == 'submitted' || (newData.val() == 'approved' && (data.parent().child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('status').val() == 'approved')))))"
+        },
+        "applicationStatus": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.val() == 'draft' || newData.val() == 'submitted' || (newData.val() == 'approved' && (data.parent().child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('status').val() == 'approved')))))"
+        },
+        "approvedAt": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "approvedBy": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "rejectionReason": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "rejectedAt": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "rejectedBy": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        }
+      }
+    },
+    "mentorPrivate": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "mentorApplicationHistory": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        "$historyId": {
+          ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+        }
+      }
+    },
+    "mentorProfileChanges": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        "$changeId": {
+          ".write": "auth != null && ((root.child('users').child(auth.uid).child('userType').val() == 'admin') || ($uid == auth.uid && !data.exists() && newData.child('mentorUid').val() == auth.uid && newData.child('changeId').val() == $changeId && newData.child('status').val() == 'recorded'))"
+        }
+      }
+    },
+    "institutes": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        "verificationStatus": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "status": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "approvedAt": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "approvedBy": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "rejectionReason": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        },
+        "reviewNotes": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        }
+      }
+    },
+    "studentProfileInvitations": {
+      "$invitationId": {
+        ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+      }
+    },
+    "courses": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".indexOn": ["instituteUid", "instituteId", "status", "category", "district"],
+      "$courseId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (root.child('users').child(auth.uid).child('userType').val() == 'institute' && newData.child('instituteUid').val() == auth.uid && newData.child('status').val() != 'active' && (!data.exists() || data.child('instituteUid').val() == auth.uid)))"
+      }
+    },
+    "scholarships": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".indexOn": ["instituteUid", "instituteId", "status"],
+      "$scholarshipId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (root.child('users').child(auth.uid).child('userType').val() == 'institute' && newData.child('instituteUid').val() == auth.uid && newData.child('status').val() != 'active' && (!data.exists() || data.child('instituteUid').val() == auth.uid)))"
+      }
+    },
+    "events": {
+      ".read": true,
+      ".indexOn": ["instituteUid", "instituteId", "status"],
+      "$eventId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (root.child('users').child(auth.uid).child('userType').val() == 'institute' && newData.child('instituteUid').val() == auth.uid && (!data.exists() || data.child('instituteUid').val() == auth.uid)))"
+      }
+    },
+    "courseApplications": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || root.child('users').child(auth.uid).child('userType').val() == 'institute')",
+      "$studentUid": {
+        ".read": "auth != null && ($studentUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        "$courseId": {
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || $studentUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'institute')"
+        }
+      }
+    },
+    "courseSubmissions": {
+      ".read": "auth != null",
+      ".indexOn": ["instituteUid", "adminReviewStatus", "submissionStatus"],
+      "$submissionId": {
+        ".read": "auth != null && (data.child('instituteUid').val() == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && (newData.child('instituteUid').val() == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "courseRevisions": {
+      "$revisionId": {
+        ".read": "auth != null && (data.child('instituteUid').val() == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && (newData.child('instituteUid').val() == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "scholarshipSubmissions": {
+      "$submissionId": {
+        ".read": "auth != null && (data.child('instituteUid').val() == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && (newData.child('instituteUid').val() == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "courseAnalytics": {
+      "$courseId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || root.child('users').child(auth.uid).child('userType').val() == 'institute')",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+      }
+    },
+    "courseInquiries": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (query.orderByChild == 'instituteUid' && query.equalTo == auth.uid))",
+      ".indexOn": ["instituteUid", "courseId", "status"],
+      "$inquiryId": {
+        ".write": "(!data.exists() && newData.exists()) || (auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('instituteUid').val() == auth.uid))",
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('instituteUid').val() == auth.uid)"
+      }
+    },
+    "pathwayRules": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "pathwayResults": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin' || root.child('mentorStudents').child(auth.uid).child($uid).exists())",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "pathwayDrafts": {
+      "$uid": {
+        ".read": "auth != null && $uid == auth.uid",
+        ".write": "auth != null && $uid == auth.uid"
+      }
+    },
+    "mentorRequests": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (query.orderByChild == 'mentorUid' && (query.equalTo == auth.uid || root.child('studentMentors').child(auth.uid).child(query.equalTo).child('status').val() == 'connected')) || (query.orderByChild == 'studentUid' && query.equalTo == auth.uid))",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".indexOn": ["studentUid", "mentorUid", "status"],
+      "$requestId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('studentUid').val() == auth.uid || data.child('mentorUid').val() == auth.uid)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (!data.exists() && newData.child('studentUid').val() == auth.uid) || data.child('studentUid').val() == auth.uid || data.child('mentorUid').val() == auth.uid)"
+      }
+    },
+    "studentMentors": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$studentUid": {
+        ".read": "auth != null && ($studentUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        "$mentorUid": {
+          ".read": "auth != null && ($studentUid == auth.uid || $mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+          ".write": "auth != null && ($mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+        }
+      }
+    },
+    "mentorStudents": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$mentorUid": {
+        ".read": "auth != null && ($mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        "$studentUid": {
+          ".read": "auth != null && ($studentUid == auth.uid || $mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+          ".write": "auth != null && ($mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+        }
+      }
+    },
+    "mentorConversations": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$conversationId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('participantIds').child(auth.uid).val() == true)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('participantIds').child(auth.uid).val() == true || newData.child('participantIds').child(auth.uid).val() == true)"
+      }
+    },
+    "mentorAvailability": {
+      ".indexOn": ["mentorUid"],
+      "$mentorUid": {
+        ".read": "auth != null && ($mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin' || root.child('studentMentors').child(auth.uid).child($mentorUid).child('status').val() == 'connected')",
+        ".write": "auth != null && ($mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "mentorAppointments": {
+      ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (query.orderByChild == 'mentorUid' && (query.equalTo == auth.uid || root.child('studentMentors').child(auth.uid).child(query.equalTo).child('status').val() == 'connected')) || (query.orderByChild == 'studentUid' && query.equalTo == auth.uid))",
+      ".indexOn": ["mentorUid", "studentUid", "status", "date"],
+      "$appointmentId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('mentorUid').val() == auth.uid || data.child('studentUid').val() == auth.uid)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (!data.exists() && newData.child('appointmentId').val() == $appointmentId && newData.child('studentUid').val() == auth.uid && newData.child('status').val() == 'pending' && root.child('studentMentors').child(auth.uid).child(newData.child('mentorUid').val()).child('status').val() == 'connected') || (data.exists() && data.child('studentUid').val() == auth.uid && data.child('status').val() == 'pending' && newData.child('status').val() == 'cancelled') || (data.exists() && data.child('studentUid').val() == auth.uid && data.child('status').val() == 'completed' && newData.child('status').val() == 'completed' && newData.child('studentUid').val() == auth.uid && newData.child('mentorUid').val() == data.child('mentorUid').val() && newData.child('ratingSubmitted').val() == true) || (data.exists() && data.child('mentorUid').val() == auth.uid && newData.child('mentorUid').val() == auth.uid))"
+      }
+    },
+    "mentorRatings": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$mentorUid": {
+        ".read": "auth != null && ($mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        "$appointmentId": {
+          ".read": "auth != null && ($mentorUid == auth.uid || data.child('studentUid').val() == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (!data.exists() && root.child('users').child(auth.uid).child('userType').val() == 'student' && newData.child('ratingId').val() == $appointmentId && newData.child('appointmentId').val() == $appointmentId && newData.child('mentorUid').val() == $mentorUid && newData.child('studentUid').val() == auth.uid && newData.child('isVerified').val() == true && newData.child('overallRating').val() >= 1 && newData.child('overallRating').val() <= 5 && newData.child('reviewStatus').val() == 'pending' && root.child('mentorAppointments').child($appointmentId).child('studentUid').val() == auth.uid && root.child('mentorAppointments').child($appointmentId).child('mentorUid').val() == $mentorUid && root.child('mentorAppointments').child($appointmentId).child('status').val() == 'completed' && root.child('studentMentors').child(auth.uid).child($mentorUid).child('status').val() == 'connected'))"
+        }
+      }
+    },
+    "studentRatings": {
+      "$studentUid": {
+        ".read": "auth != null && ($studentUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        "$appointmentId": {
+          ".write": "auth != null && ($studentUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin') && newData.child('appointmentId').val() == $appointmentId && newData.child('studentUid').val() == $studentUid"
+        }
+      }
+    },
+    "mentorRatingSummaries": {
+      ".read": true,
+      "$mentorUid": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || $mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'student')"
+      }
+    },
+    "publicMentorReviews": {
+      ".read": true,
+      "$mentorUid": {
+        "$appointmentId": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+        }
+      }
+    },
+    "reviewReports": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$mentorUid": {
+        "$appointmentId": {
+          ".read": "auth != null && ($mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+          ".write": "auth != null && ($mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+        }
+      }
+    },
+    "guestMessages": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".indexOn": ["status", "createdAt"],
+      "$messageId": {
+        ".write": "(auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin') || (!data.exists() && newData.exists())",
+        ".validate": "(auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin') || (newData.hasChildren(['messageId', 'senderType', 'fullName', 'contactNumber', 'subject', 'message', 'sourcePage', 'status', 'priority', 'createdAt', 'updatedAt']) && newData.child('messageId').val() == $messageId && newData.child('senderType').val() == 'guest' && newData.child('fullName').isString() && newData.child('fullName').val().length >= 2 && newData.child('fullName').val().length <= 120 && newData.child('contactNumber').isString() && newData.child('contactNumber').val().matches(/^(0?7[0-9]{8}|\\+947[0-9]{8})$/) && (!newData.child('email').exists() || (newData.child('email').isString() && (newData.child('email').val() == '' || newData.child('email').val().matches(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)))) && newData.child('subject').isString() && newData.child('subject').val().length > 0 && newData.child('subject').val().length <= 120 && newData.child('message').isString() && newData.child('message').val().length >= 10 && newData.child('message').val().length <= 1000 && newData.child('sourcePage').isString() && newData.child('status').isString() && newData.child('status').val().matches(/^(new|read|in-progress|replied|closed|archived)$/) && newData.child('priority').val() == 'normal')"
+      }
+    },
+    "contactMessages": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".write": true
+    },
+    "adminMessages": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".indexOn": ["senderUid", "status", "createdAt"],
+      "$messageId": {
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || !data.exists() || data.child('senderUid').val() == auth.uid)"
+      }
+    },
+    "conversations": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$conversationId": {
+        ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('participantIds').child(auth.uid).val() == true || $conversationId == 'admin_' + auth.uid)",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (newData.exists() && (data.child('participantIds').child(auth.uid).val() == true || newData.child('participantIds').child(auth.uid).val() == true || $conversationId == 'admin_' + auth.uid)))"
+      }
+    },
+    "notifications": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || $uid == 'admin' || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        "$notificationId": {
+          ".write": "auth != null && ($uid == auth.uid || $uid == 'admin' || root.child('users').child(auth.uid).child('userType').val() == 'admin' || (!data.exists() && newData.exists()))"
+        }
+      },
+      "admin": {
+        "$notificationId": {
+          ".write": "(auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin') || (!data.exists() && newData.hasChildren(['title', 'message', 'type', 'isRead', 'relatedId', 'createdAt']) && newData.child('title').val() == 'New Ask EduPath Message' && newData.child('message').val() == 'A new guest message has been submitted through Ask EduPath.' && newData.child('type').val() == 'ASK_EDUPATH_MESSAGE' && newData.child('isRead').val() == false) || (!data.exists() && auth != null && newData.hasChildren(['title', 'message', 'type', 'mentorUid', 'createdAt']) && newData.child('type').val() == 'mentor_application_submitted' && newData.child('mentorUid').val() == auth.uid) || (!data.exists() && auth != null && newData.hasChildren(['title', 'message', 'type', 'mentorUid', 'changeId', 'createdAt']) && newData.child('type').val() == 'approved_mentor_profile_updated' && newData.child('mentorUid').val() == auth.uid) || (!data.exists() && auth != null && root.child('users').child(auth.uid).child('userType').val() == 'student' && newData.child('type').val() == 'mentor_review_submitted' && newData.child('studentUid').val() == auth.uid)"
+        }
+      }
+    },
+    "activityLogs": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".write": "auth != null"
+    },
+    "presence": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && $uid == auth.uid"
+      }
+    },
+    "loginHistory": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "savedCourses": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && $uid == auth.uid"
+      }
+    },
+    "savedScholarships": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && $uid == auth.uid"
+      }
+    },
+    "studentProgress": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "careerGuides": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "userMessages": {
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+      }
+    },
+    "adminNotes": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    }
+  }
+}
