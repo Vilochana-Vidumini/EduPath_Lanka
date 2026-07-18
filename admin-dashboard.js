@@ -964,8 +964,10 @@ function renderCourses() {
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-course="${c.id}">View</button>
                 <button class="btn btn-sm btn-primary" data-edit-course="${c.id}">Edit</button>
-                <button class="btn btn-sm btn-success" data-course-status="${c.id}" data-status="active">Activate</button>
-                <button class="btn btn-sm btn-warning" data-course-status="${c.id}" data-status="inactive">Deactivate</button>
+                ${normalize(c.status) === "active" 
+                    ? `<button class="btn btn-sm btn-warning" data-course-status="${c.id}" data-status="inactive">Deactivate</button>`
+                    : `<button class="btn btn-sm btn-success" data-course-status="${c.id}" data-status="active">Activate</button>`
+                }
                 <button class="btn btn-sm btn-danger" data-course-status="${c.id}" data-status="archived">Archive</button>
             </td>
         </tr>
@@ -1109,8 +1111,10 @@ function renderScholarships() {
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-scholarship="${s.id}">View</button>
                 <button class="btn btn-sm btn-primary" data-edit-scholarship="${s.id}">Edit</button>
-                <button class="btn btn-sm btn-success" data-scholarship-status="${s.id}" data-status="active">Activate</button>
-                <button class="btn btn-sm btn-warning" data-scholarship-status="${s.id}" data-status="inactive">Deactivate</button>
+                ${normalize(s.status) === "active" 
+                    ? `<button class="btn btn-sm btn-warning" data-scholarship-status="${s.id}" data-status="inactive">Deactivate</button>`
+                    : `<button class="btn btn-sm btn-success" data-scholarship-status="${s.id}" data-status="active">Activate</button>`
+                }
                 <button class="btn btn-sm btn-danger" data-scholarship-status="${s.id}" data-status="archived">Archive</button>
             </td>
         </tr>

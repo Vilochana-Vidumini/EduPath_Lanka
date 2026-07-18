@@ -207,15 +207,34 @@ ul {
     margin: 0.15rem 0.75rem;
     border-radius: 10px;
 }
-.sidebar-links li a i {
-    width: 24px;
-    margin-right: 12px;
-    font-size: 1.1rem;
-    transition: var(--transition);
+
+/* Shared Icon Alignment System */
+.student-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-height: 42px;
+}
+.student-nav-item i,
+.student-nav-item .nav-icon {
+    width: 18px;
+    min-width: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
     text-align: center;
+    margin: 0;
     flex-shrink: 0;
     color: #64748b;
+    transition: var(--transition);
+    font-size: 1.1rem;
 }
+.student-nav-item span.sidebar-label {
+    min-width: 0;
+    line-height: 1.2;
+}
+
 .sidebar-links li a:hover {
     background: rgba(79, 70, 229, 0.08);
     color: #0f172a;

@@ -523,13 +523,40 @@ async function generatePathway(event) {
         updates[`students/${currentUser.uid}/lastPathwayUpdatedAt`] = serverTimestamp();
         updates[`students/${currentUser.uid}/pathwayLastUpdatedAt`] = serverTimestamp();
         updates[`students/${currentUser.uid}/educationLevel`] = formData.currentEducationLevel;
-        updates[`students/${currentUser.uid}/interestArea`] = formData.interestAreas[0] || "Not Sure Yet";
-        updates[`students/${currentUser.uid}/futureGoal`] = formData.dreamCareer || formData.futurePreference[0] || "Not sure yet";
+        updates[`students/${currentUser.uid}/interestArea`] = formData.interestAreas?.[0] || "Not Sure Yet";
+        updates[`students/${currentUser.uid}/futureGoal`] = formData.dreamCareer || formData.futurePreference?.[0] || "Not sure yet";
         updates[`students/${currentUser.uid}/skills`] = formData.skills;
         updates[`students/${currentUser.uid}/financialSupport`] = formData.financialSupport;
         updates[`students/${currentUser.uid}/learningMode`] = formData.learningMode;
-        updates[`students/${currentUser.uid}/preferredDistrict`] = formData.preferredDistricts[0] || formData.district;
+        updates[`students/${currentUser.uid}/preferredDistrict`] = formData.preferredDistricts?.[0] || formData.district;
         updates[`students/${currentUser.uid}/profileUpdatedAfterPathway`] = false;
+
+        // --- Profile Sync ---
+        // Personal Profile
+        if (formData.fullName) updates[`studentProfiles/${currentUser.uid}/personal/fullName`] = formData.fullName;
+        if (formData.email || currentUser.email) updates[`studentProfiles/${currentUser.uid}/personal/email`] = formData.email || currentUser.email;
+        if (formData.phone) updates[`studentProfiles/${currentUser.uid}/personal/phone`] = formData.phone;
+        if (formData.district) updates[`studentProfiles/${currentUser.uid}/personal/district`] = formData.district;
+        updates[`studentProfiles/${currentUser.uid}/personal/updatedAt`] = serverTimestamp();
+
+        // Academic Profile
+        if (formData.currentEducationLevel) updates[`learningProfiles/${currentUser.uid}/educationLevel`] = formData.currentEducationLevel;
+        if (formData.school) updates[`learningProfiles/${currentUser.uid}/school`] = formData.school;
+        if (formData.learningMode) updates[`learningProfiles/${currentUser.uid}/learningMode`] = formData.learningMode;
+        if (formData.interestAreas && formData.interestAreas.length > 0) updates[`learningProfiles/${currentUser.uid}/subjectInterests`] = formData.interestAreas.join(", ");
+        updates[`learningProfiles/${currentUser.uid}/updatedAt`] = serverTimestamp();
+
+        // Talent Profile
+        if (formData.primaryTalentCategory) updates[`talentProfiles/${currentUser.uid}/category`] = formData.primaryTalentCategory;
+        if (formData.specificTalent) updates[`talentProfiles/${currentUser.uid}/specificSkill`] = formData.specificTalent;
+        if (formData.trainingLevel) updates[`talentProfiles/${currentUser.uid}/trainingLevel`] = formData.trainingLevel;
+        updates[`talentProfiles/${currentUser.uid}/updatedAt`] = serverTimestamp();
+
+        // Discovery Profile
+        if (formData.hobbies) updates[`discoveryProfiles/${currentUser.uid}/hobbies`] = formData.hobbies;
+        if (formData.personalityTraits && formData.personalityTraits.length > 0) updates[`discoveryProfiles/${currentUser.uid}/personalityTraits`] = formData.personalityTraits.join(", ");
+        updates[`discoveryProfiles/${currentUser.uid}/updatedAt`] = serverTimestamp();
+        // ---------------------
 
         const logRef = push(ref(database, "activityLogs"));
         updates[`activityLogs/${logRef.key}`] = {

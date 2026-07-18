@@ -1,5 +1,6 @@
-import { auth, database } from "./firebase-config.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { auth, database, storage } from "./firebase-config.js";
+import { onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
 import { ref, get, set, update, push, remove, serverTimestamp, onValue, off, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast, preserveThemeOnClear } from "./auth-nav.js?v=20260614-brand";
 import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
@@ -11,6 +12,10 @@ const state = {
     uid: null,
     user: {},
     student: {},
+    personalProfile: {},
+    academicProfile: {},
+    talentProfile: {},
+    discoveryProfile: {},
     pathwayResults: {},
     currentResult: null,
     currentResultId: null,
@@ -75,7 +80,11 @@ let recommendationFilterTimer = null;
 
 const sectionTitles = {
     "overview-section": "Student Dashboard",
-    "pathway-section": "My Pathway Summary",
+    "pathway-section": "Future Path",
+    "personal-profile-section": "Personal Profile",
+    "academic-profile-section": "Academic Profile",
+    "talent-profile-section": "Talent Profile",
+    "discovery-profile-section": "Discovery Profile",
     "pathway-history-section": "Pathway History",
     "next-steps-section": "Next Step Plan",
     "recommended-courses-section": "Courses I Can Proceed",
@@ -126,6 +135,45 @@ function sidebarSectionFor(sectionId) {
     return parentMap[sectionId] || sectionId;
 }
 
+// --- Helper Functions for Data Handling ---
+function getFirstNonEmpty(...values) {
+    for (const val of values) {
+        if (val !== undefined && val !== null && val !== "") return val;
+    }
+    return "";
+}
+
+function normalizeStringList(strOrArray) {
+    if (!strOrArray) return "";
+    if (Array.isArray(strOrArray)) return strOrArray.join(", ");
+    return String(strOrArray);
+}
+
+function setFieldValue(fieldId, value) {
+    const el = document.getElementById(fieldId);
+    if (el) el.value = value || "";
+}
+
+function getFieldValue(fieldId) {
+    const el = document.getElementById(fieldId);
+    return el ? el.value.trim() : "";
+}
+
+function getLatestPathwayResult() {
+    let latest = {};
+    if (state.pathwayResults) {
+        const sorted = Object.values(state.pathwayResults).sort((a, b) => {
+            const timeA = a.timestamp || 0;
+            const timeB = b.timestamp || 0;
+            return timeB - timeA;
+        });
+        if (sorted.length > 0) {
+            latest = sorted[0];
+        }
+    }
+    return latest;
+}
+// ------------------------------------------
 const profileFields = [
     ["fullName", "Full Name", "user"],
     ["email", "Email", "user"],
@@ -196,6 +244,20 @@ function bindStaticActions() {
         const isHidden = panel.classList.toggle("hidden");
         button.textContent = isHidden ? "Expand Details" : "Hide Details";
     });
+
+    document.getElementById("future-path-form")?.addEventListener("submit", saveFuturePath);
+    document.getElementById("personal-profile-form")?.addEventListener("submit", savePersonalProfile);
+    document.getElementById("academic-profile-form")?.addEventListener("submit", saveAcademicProfile);
+    document.getElementById("talent-profile-form")?.addEventListener("submit", saveTalentProfile);
+    document.getElementById("discovery-profile-form")?.addEventListener("submit", saveDiscoveryProfile);
+
+    document.getElementById("personal-avatar-upload")?.addEventListener("change", handleAvatarUpload);
+    document.getElementById("personal-password-form")?.addEventListener("submit", handlePasswordChange);
+    document.getElementById("field-personal-bio")?.addEventListener("input", (e) => {
+        const countEl = document.getElementById("personal-bio-count");
+        if (countEl) countEl.textContent = e.target.value.length;
+    });
+
     bindDashboardActionDelegation();
     window.addEventListener("hashchange", () => showDashboardSection(getSectionFromHash()));
 }
@@ -334,6 +396,26 @@ function setupRealtime(uid) {
         ensureRecommendedSkills();
         scheduleRecommendationSave();
     }, renderError("pathway-content", "Unable to load pathway results."));
+
+    onValue(ref(database, `studentProfiles/${uid}/personal`), (snap) => {
+        state.personalProfile = snap.val() || {};
+        renderAll();
+    });
+
+    onValue(ref(database, `learningProfiles/${uid}`), (snap) => {
+        state.academicProfile = snap.val() || {};
+        renderAll();
+    });
+
+    onValue(ref(database, `talentProfiles/${uid}`), (snap) => {
+        state.talentProfile = snap.val() || {};
+        renderAll();
+    });
+
+    onValue(ref(database, `discoveryProfiles/${uid}`), (snap) => {
+        state.discoveryProfile = snap.val() || {};
+        renderAll();
+    });
 
     onValue(ref(database, "courses"), (snap) => {
         state.courses = snap.val() || {};
@@ -504,6 +586,11 @@ function renderAll() {
     renderIdentity();
     renderWelcome();
     renderProfileCompletion();
+    renderPersonalProfile();
+    renderAcademicProfile();
+    renderTalentProfile();
+    renderDiscoveryProfile();
+    renderFuturePath();
     renderPathway();
     renderPathwayHistory();
     renderCourses();
@@ -606,45 +693,47 @@ function renderIdentity() {
 }
 
 function renderWelcome() {
-    const completed = state.student.pathwayCompleted === true || !!state.currentResult;
-    const outdated = state.student.recommendationsOutdated === true;
+    const path = state.student.pathwayPreference;
+    const completed = !!path;
     const buttons = document.getElementById("welcome-actions");
-    const badge = document.getElementById("outdated-badge");
     const message = document.getElementById("welcome-flow-message");
+    const badge = document.getElementById("outdated-badge");
 
-    if (badge) badge.classList.toggle("hidden", !outdated);
+    if (badge) badge.classList.toggle("hidden", true);
     if (!buttons || !message) return;
 
     if (!completed) {
-        message.textContent = "Complete the Pathway Finder once to receive personalized course, scholarship, mentor, and skill recommendations.";
+        message.textContent = "Welcome! Let's get started by selecting your Future Path.";
         buttons.innerHTML = `
-            <a href="pathway.html?mode=first-time" class="btn btn-primary">Complete Pathway Finder <i class="fas fa-arrow-right"></i></a>
-            <button type="button" class="btn btn-outline dashboard-jump" data-section="recommended-courses-section">Explore Matches</button>
-            <a href="profile.html" class="btn btn-outline">Complete Profile</a>
+            <button type="button" class="btn btn-primary dashboard-jump" data-section="pathway-section">Choose Future Path <i class="fas fa-arrow-right"></i></button>
         `;
         bindJumpButtons();
         return;
     }
 
-    if (outdated) {
-        message.textContent = "Your profile information has changed. Recalculate your pathway to receive updated recommendations.";
-        buttons.innerHTML = `
-            <a href="pathway.html?mode=update" class="btn btn-primary">Recalculate Recommendations <i class="fas fa-sync-alt"></i></a>
-            <button type="button" class="btn btn-outline dashboard-jump" data-section="recommended-courses-section">Explore Matches</button>
-            <a href="pathway.html?mode=update" class="btn btn-outline">Update Pathway</a>
-            <a href="#pathway-history" data-section="pathway-history-section" class="btn btn-outline dashboard-jump">View History</a>
-        `;
-        bindJumpButtons();
-        return;
+    if (path === "academic") {
+        message.textContent = "You're on the Academic Path. Complete your Academic Profile to get personalized course and scholarship matches.";
+    } else if (path === "talent") {
+        message.textContent = "You're on the Talent Path. Complete your Talent Profile to find opportunities matching your skills.";
+    } else if (path === "combined") {
+        message.textContent = "You're on the Combined Path. We will recommend both academic and talent-based opportunities.";
+    } else {
+        message.textContent = "You're Undecided. Take the Pathway Finder to discover the best options for your future, or complete the Discovery Profile.";
     }
 
-    message.textContent = "Your current pathway is ready. Review it, compare matches, or update details when your goals change.";
+    let profileSection = 'personal-profile-section';
+    if (path === 'academic') profileSection = 'academic-profile-section';
+    else if (path === 'talent') profileSection = 'talent-profile-section';
+    else if (path === 'combined') profileSection = 'academic-profile-section';
+    else if (path === 'undecided') profileSection = 'discovery-profile-section';
+
     buttons.innerHTML = `
-        <a href="#next-steps" data-section="next-steps-section" class="btn btn-primary dashboard-jump">Continue My Plan <i class="fas fa-arrow-right"></i></a>
+        <button type="button" class="btn btn-primary dashboard-jump" data-section="${profileSection}">Complete Profile <i class="fas fa-arrow-right"></i></button>
         <button type="button" class="btn btn-outline dashboard-jump" data-section="recommended-courses-section">Explore Matches <i class="fas fa-search"></i></button>
-        <a href="pathway.html?mode=update" class="btn btn-outline">Update Pathway <i class="fas fa-pen"></i></a>
+        <a href="pathway.html?mode=${state.currentResult ? 'update' : 'first-time'}" class="btn btn-outline">Pathway Finder</a>
     `;
     bindJumpButtons();
+
 }
 
 function bindJumpButtons() {
@@ -652,34 +741,66 @@ function bindJumpButtons() {
 }
 
 function renderProfileCompletion() {
-    const completed = [];
-    const missing = [];
-    profileFields.forEach(([key, label, source]) => {
-        const value = source === "user" ? state.user[key] : state.student[key];
-        (hasValue(value) ? completed : missing).push(label);
-    });
+    const personalFields = ["fullName", "email", "phone", "district", "dateOfBirth", "gender"];
+    const academicFields = ["currentEducationLevel", "currentInstitution", "careerGoals", "preferredFields", "preferredStudyModes", "budgetMax"];
+    const talentFields = ["primaryTalentCategory", "specificTalent", "trainingLevel", "yearsOfExperience", "highestAchievement", "talentGoals"];
+    const discoveryFields = ["hobbies", "personalityTraits", "workEnv", "preferredRoles", "enjoyedSubjects", "hatedSubjects"];
 
-    const percentage = Math.round((completed.length / profileFields.length) * 100);
+    const personalData = buildPersonalProfileForDisplay();
+    const academicData = buildAcademicProfileForDisplay();
+    const talentData = buildTalentProfileForDisplay();
+    const discoveryData = state.discoveryProfile || {};
+
+    const getScoreFromData = (fields, dataObj) => {
+        let completed = 0;
+        fields.forEach(f => {
+            if (hasValue(dataObj?.[f])) completed++;
+        });
+        return fields.length ? Math.round((completed / fields.length) * 100) : 0;
+    };
+
+    const personalScore = getScoreFromData(personalFields, personalData);
+    const academicScore = getScoreFromData(academicFields, academicData);
+    const talentScore = getScoreFromData(talentFields, talentData);
+    const discoveryScore = getScoreFromData(discoveryFields, discoveryData);
+
+    setText("personal-completeness", personalScore);
+    setText("academic-completeness", academicScore);
+    setText("talent-completeness", talentScore);
+    setText("discovery-completeness", discoveryScore);
+
+    const path = state.student.pathwayPreference || "undecided";
+    let overallPercentage = 0;
+    
+    if (path === "academic") {
+        overallPercentage = Math.round((personalScore * 0.5) + (academicScore * 0.5));
+    } else if (path === "talent") {
+        overallPercentage = Math.round((personalScore * 0.5) + (talentScore * 0.5));
+    } else if (path === "combined") {
+        overallPercentage = Math.round((personalScore * 0.4) + (academicScore * 0.3) + (talentScore * 0.3));
+    } else { // undecided
+        overallPercentage = Math.round((personalScore * 0.5) + (discoveryScore * 0.5));
+    }
+
+    const percentage = overallPercentage;
+
     setText("profile-strength-badge", `${percentage}% Complete`);
     setText("profile-strength-message", percentage >= 90 ? "Your profile is strong and ready for accurate recommendations." : "Add missing details to improve recommendation quality.");
     setText("profile-completion-stat", `${percentage}%`);
     setText("overview-profile-completion-stat", `${percentage}%`);
     setText("overview-profile-status", percentage >= 100 ? "Complete" : percentage >= 80 ? "Almost there" : percentage >= 50 ? "In progress" : "Needs details");
     setText("profile-completion-label", percentage >= 100 ? "Complete" : percentage >= 80 ? "Almost there" : percentage >= 50 ? "In progress" : "Needs details");
+    
+    const academicTitle = document.querySelector("#academic-profile-section h2");
+    const talentTitle = document.querySelector("#talent-profile-section h2");
+    if (academicTitle) academicTitle.textContent = (path === "talent") ? "Academic Profile (Optional)" : "Academic Profile";
+    if (talentTitle) talentTitle.textContent = (path === "academic") ? "Talent Profile (Optional)" : "Talent Profile";
     setText("pathway-setup-status", state.student.pathwayCompleted === true || state.currentResult ? "Completed" : "Not Started");
 
     const bar = document.getElementById("dynamic-profile-progress-bar");
     if (bar) bar.style.width = `${percentage}%`;
     const ring = document.querySelector(".student-profile-ring");
     if (ring) ring.style.setProperty("--student-profile-progress", `${percentage * 3.6}deg`);
-
-    renderChecklist("profile-completed-list", completed, true);
-    renderChecklist("profile-todo-list", missing, false);
-
-    const pathwayItem = document.getElementById("pathway-setup-list");
-    if (pathwayItem) {
-        renderChecklist("pathway-setup-list", [state.currentResult ? "First Pathway Result" : "Complete First Pathway Result"], !!state.currentResult);
-    }
 
     if (state.student.profileCompletion !== percentage && state.uid) {
         update(ref(database, `students/${state.uid}`), { profileCompletion: percentage }).catch(console.error);
@@ -1054,47 +1175,63 @@ function renderMentors() {
     bindRecommendationFilters(container, "mentors");
 }
 
-function recommendationProfile() {
+function buildStudentRecommendationProfile() {
     const result = state.currentResult || {};
+    const personal = state.personalProfile || {};
+    const academic = state.academicProfile || {};
+    const talent = state.talentProfile || {};
+    const discovery = state.discoveryProfile || {};
+    const student = state.student || {};
+
     return {
-        currentEducationLevel: result.basicProfile?.currentEducationLevel || result.educationLevel || state.student.educationLevel,
-        educationLevel: result.educationLevel || result.basicProfile?.currentEducationLevel || state.student.educationLevel,
-        alStream: result.academicBackground?.alStream || result.examStream,
+        currentEducationLevel: result.basicProfile?.currentEducationLevel || result.educationLevel || academic.educationLevel || student.educationLevel,
+        educationLevel: result.educationLevel || result.basicProfile?.currentEducationLevel || academic.educationLevel || student.educationLevel,
+        alStream: result.academicBackground?.alStream || result.examStream || academic.examStream,
         olStatus: result.academicBackground?.olStatus,
         alStatus: result.academicBackground?.alStatus,
-        interestAreas: result.interests?.interestAreas || arrayValue(result.interestArea || state.student.interestArea),
+        interestAreas: result.interests?.interestAreas || arrayValue(result.interestArea || academic.subjectInterests || student.interestArea),
         enjoyableWorkTypes: result.interests?.enjoyableWorkTypes || [],
-        skills: result.skillsAndStrengths?.skills || arrayValue(result.skills || state.student.skills),
+        skills: result.skillsAndStrengths?.skills || arrayValue(result.skills || talent.specificSkill || student.skills),
         strengths: result.skillsAndStrengths?.strengths || [],
         futurePreference: result.goals?.futurePreference || [],
-        dreamCareer: result.goals?.dreamCareer || result.futureGoal || state.student.futureGoal,
-        learningMode: result.learningPreferences?.learningMode || result.learningMode || state.student.learningMode,
+        dreamCareer: result.goals?.dreamCareer || result.futureGoal || discovery.preferredRoles || student.futureGoal,
+        learningMode: result.learningPreferences?.learningMode || result.learningMode || academic.learningMode || student.learningMode,
         courseDuration: result.learningPreferences?.courseDuration,
         timeAvailability: result.learningPreferences?.timeAvailability || [],
-        preferredDistricts: result.learningPreferences?.preferredDistricts || arrayValue(result.preferredDistrict || state.student.preferredDistrict || state.student.district),
+        preferredDistricts: result.learningPreferences?.preferredDistricts || arrayValue(result.preferredDistrict || personal.district || student.preferredDistrict || student.district),
         preferredLanguage: result.basicProfile?.preferredLanguage || result.learningPreferences?.preferredLanguage,
-        district: result.basicProfile?.district || result.district || state.student.district,
-        financialSupport: result.supportNeeds?.financialSupport || result.financialSupport || state.student.financialSupport,
+        district: result.basicProfile?.district || result.district || personal.district || student.district,
+        financialSupport: result.supportNeeds?.financialSupport || result.financialSupport || student.financialSupport,
         budgetRange: result.supportNeeds?.budgetRange || result.budgetRange,
         biggestChallenge: result.supportNeeds?.biggestChallenge || [],
         supportNeeded: result.supportNeeds?.supportNeeded || [],
-        recommendedPathway: result.recommendedPathway || ""
+        recommendedPathway: result.recommendedPathway || student.pathwayPreference || "",
+        isTalentOnly: student.pathwayPreference === "talent",
+        isAcademicOnly: student.pathwayPreference === "academic"
     };
 }
 
 function courseMatch(id, course) {
-    const profile = recommendationProfile();
+    const profile = buildStudentRecommendationProfile();
     const reasons = [];
     const missing = [];
     const fields = [];
     let score = 0;
-    addScore(includesAny([course.category, course.subcategory, course.description, course.skillsCovered, course.careerOpportunities], [...profile.interestAreas, profile.recommendedPathway]), 25, "Matches your interest/pathway", "category");
-    addScore(educationMatches(profile.currentEducationLevel, course), 20, `Suitable for ${profile.currentEducationLevel || "your education level"}`, "education");
-    addScore(includesAny([course.careerOpportunities, course.description, course.category], [profile.dreamCareer, ...profile.futurePreference]), 15, "Aligns with your future goal", "career");
-    addScore(includesAny([course.skillsCovered, course.description], [...profile.skills, ...profile.strengths]), 10, "Covers your selected skills", "skills");
-    addScore(modeMatches(profile.learningMode, course.mode || course.learningMode), 10, "Matches your learning mode", "mode");
-    addScore(locationMatches([profile.district, ...profile.preferredDistricts], course.district || course.location || course.mode), 10, "Fits your location preference", "district");
-    addScore(budgetMatches(profile, course), 10, "Fits your budget preference", "budget");
+    if (profile.isTalentOnly) {
+        addScore(includesAny([course.category, course.subcategory, course.description, course.skillsCovered, course.careerOpportunities], [...profile.interestAreas, profile.recommendedPathway]), 35, "Matches your interest/pathway", "category");
+        addScore(includesAny([course.careerOpportunities, course.description, course.category], [profile.dreamCareer, ...profile.futurePreference]), 20, "Aligns with your future goal", "career");
+        addScore(includesAny([course.skillsCovered, course.description], [...profile.skills, ...profile.strengths]), 25, "Covers your selected skills", "skills");
+        addScore(modeMatches(profile.learningMode, course.mode || course.learningMode), 10, "Matches your learning mode", "mode");
+        addScore(locationMatches([profile.district, ...profile.preferredDistricts], course.district || course.location || course.mode), 10, "Fits your location preference", "district");
+    } else {
+        addScore(includesAny([course.category, course.subcategory, course.description, course.skillsCovered, course.careerOpportunities], [...profile.interestAreas, profile.recommendedPathway]), 25, "Matches your interest/pathway", "category");
+        addScore(educationMatches(profile.currentEducationLevel, course), 20, `Suitable for ${profile.currentEducationLevel || "your education level"}`, "education");
+        addScore(includesAny([course.careerOpportunities, course.description, course.category], [profile.dreamCareer, ...profile.futurePreference]), 15, "Aligns with your future goal", "career");
+        addScore(includesAny([course.skillsCovered, course.description], [...profile.skills, ...profile.strengths]), 10, "Covers your selected skills", "skills");
+        addScore(modeMatches(profile.learningMode, course.mode || course.learningMode), 10, "Matches your learning mode", "mode");
+        addScore(locationMatches([profile.district, ...profile.preferredDistricts], course.district || course.location || course.mode), 10, "Fits your location preference", "district");
+        addScore(budgetMatches(profile, course), 10, "Fits your budget preference", "budget");
+    }
     if (!hasValue(course.qualificationLevel) && !hasValue(course.eligibility)) missing.push("Check entry requirements with institute");
     if (!hasValue(course.applicationDeadline)) missing.push("Verify application deadline");
     const matchScore = Math.min(score, 100);
@@ -1134,15 +1271,22 @@ function courseMatch(id, course) {
 }
 
 function scholarshipMatch(id, item) {
-    const profile = recommendationProfile();
+    const profile = buildStudentRecommendationProfile();
     const reasons = [];
     const warnings = [];
     let score = 0;
     addScore(needsFinancialHelp() || textIncludesAny(`${item.supportType} ${item.description} ${item.eligibility}`, ["bursary", "financial aid", "scholarship", "free", "monthly support", "tuition support"]), 30, "Matches your financial support need");
-    addScore(includesAny([item.educationLevel, item.qualificationLevel, item.eligibility], [profile.currentEducationLevel]), 25, "Suitable for your education level");
+    
+    if (profile.isTalentOnly) {
+        addScore(includesAny([item.category, item.description], [...profile.interestAreas, profile.recommendedPathway]), 25, "Category matches your pathway");
+        addScore(includesAny([item.qualificationLevel, item.eligibility], [...profile.skills, ...profile.strengths, "Talent", "Skill", "Sports", "Arts"]), 25, "Eligibility matches your skills");
+    } else {
+        addScore(includesAny([item.educationLevel, item.qualificationLevel, item.eligibility], [profile.currentEducationLevel]), 25, "Suitable for your education level");
+        addScore(includesAny([item.qualificationLevel, item.eligibility], [profile.currentEducationLevel, profile.alStream, profile.olStatus, profile.alStatus, "O/L", "A/L", "Diploma", "Undergraduate", "Vocational"]), 15, "Eligibility matches your background");
+        addScore(includesAny([item.category, item.description], [...profile.interestAreas, profile.recommendedPathway]), 10, "Category matches your pathway");
+    }
+    
     addScore(locationMatches([profile.district, ...profile.preferredDistricts], item.district || item.coverage), 15, "Available in your district or islandwide");
-    addScore(includesAny([item.qualificationLevel, item.eligibility], [profile.currentEducationLevel, profile.alStream, profile.olStatus, profile.alStatus, "O/L", "A/L", "Diploma", "Undergraduate", "Vocational"]), 15, "Eligibility matches your background");
-    addScore(includesAny([item.category, item.description], [...profile.interestAreas, profile.recommendedPathway]), 10, "Category matches your pathway");
     const deadlineState = deadlineStatus(item.deadline);
     addScore(deadlineState.active, 5, "Deadline appears active");
     if (deadlineState.warning) warnings.push(deadlineState.warning);
@@ -1178,13 +1322,19 @@ function scholarshipMatch(id, item) {
 }
 
 function mentorMatch(uid, mentor) {
-    const profile = recommendationProfile();
+    const profile = buildStudentRecommendationProfile();
     const reasons = [];
     let score = 0;
-    addScore(includesAny([mentor.field, mentor.expertise, mentor.mentoringField, mentor.shortBio, mentor.bio], [...profile.interestAreas, profile.recommendedPathway, profile.dreamCareer]), 30, "Mentor expertise matches your pathway");
-    addScore(includesAny(mentor.guidanceAreas, [...profile.supportNeeded, ...profile.biggestChallenge, ...profile.futurePreference]), 20, "Guidance area fits your current need");
-    addScore(includesAny(mentor.supportedStudentLevels || mentor.studentLevelsSupported, [profile.currentEducationLevel]), 15, "Supports your education level");
-    addScore(includesAny(mentor.languages || mentor.language || mentor.preferredLanguage || mentor.preferredLanguages, [profile.preferredLanguage]), 10, "Language preference match");
+    if (profile.isTalentOnly) {
+        addScore(includesAny([mentor.field, mentor.expertise, mentor.mentoringField, mentor.shortBio, mentor.bio], [...profile.interestAreas, profile.recommendedPathway, profile.dreamCareer, ...profile.skills]), 35, "Mentor expertise matches your pathway");
+        addScore(includesAny(mentor.guidanceAreas, [...profile.supportNeeded, ...profile.biggestChallenge, ...profile.futurePreference, ...profile.skills]), 30, "Guidance area fits your current need");
+        addScore(includesAny(mentor.languages || mentor.language || mentor.preferredLanguage || mentor.preferredLanguages, [profile.preferredLanguage]), 10, "Language preference match");
+    } else {
+        addScore(includesAny([mentor.field, mentor.expertise, mentor.mentoringField, mentor.shortBio, mentor.bio], [...profile.interestAreas, profile.recommendedPathway, profile.dreamCareer]), 30, "Mentor expertise matches your pathway");
+        addScore(includesAny(mentor.guidanceAreas, [...profile.supportNeeded, ...profile.biggestChallenge, ...profile.futurePreference]), 20, "Guidance area fits your current need");
+        addScore(includesAny(mentor.supportedStudentLevels || mentor.studentLevelsSupported, [profile.currentEducationLevel]), 15, "Supports your education level");
+        addScore(includesAny(mentor.languages || mentor.language || mentor.preferredLanguage || mentor.preferredLanguages, [profile.preferredLanguage]), 10, "Language preference match");
+    }
     addScore(availabilityMatches(profile.timeAvailability, mentor), 10, "Availability matches your schedule");
     addScore(modeMatches(profile.learningMode, mentor.mentoringMode || mentor.availability), 10, "Mentoring mode match");
     addScore(hasValue(mentor.yearsOfExperience || mentor.experience) || hasValue(mentor.organization || mentor.universityOrCompany) || hasValue(mentor.highestQualification) || hasValue(mentor.shortBio || mentor.bio) || hasValue(mentor.photoURL), 5, "Strong mentor profile");
@@ -2918,6 +3068,8 @@ function openMentorConversation(mentorUid) {
     const connection = state.connectedMentors[mentorUid];
     if (!connection || normalize(connection.status) !== "connected") {
         showToast("You can message only connected mentors.", "error");
+        state.activeMentorConversationId = null;
+        showDashboardSection("mentor-messages-section");
         return;
     }
     state.activeMentorConversationId = mentorConversationId(mentorUid, state.uid);
@@ -3861,3 +4013,507 @@ function getCourseImage(course = {}) {
 function getScholarshipImage(scholarship = {}) {
     return sanitizeImageURL(scholarship.imageURL || scholarship.raw?.imageURL, "images/scholarship-placeholder.png", "images");
 }
+
+// --- Profile rendering and saving ---
+
+function buildPersonalProfileForDisplay() {
+    const profile = state.personalProfile || {};
+    const pathway = getLatestPathwayResult();
+    const fallback = state.student || {};
+    const user = state.user || {};
+
+    return {
+        fullName: getFirstNonEmpty(profile.fullName, fallback.fullName, user.fullName, pathway.fullName),
+        displayName: getFirstNonEmpty(profile.displayName, fallback.displayName, user.displayName, pathway.preferredName),
+        email: getFirstNonEmpty(profile.email, user.email, pathway.email),
+        phone: getFirstNonEmpty(profile.phone, fallback.phone, user.phone, pathway.phone),
+        whatsapp: getFirstNonEmpty(profile.whatsapp, fallback.whatsapp, pathway.whatsapp),
+        dateOfBirth: getFirstNonEmpty(profile.dateOfBirth, fallback.dateOfBirth, pathway.dateOfBirth),
+        age: getFirstNonEmpty(profile.age, fallback.age, pathway.age),
+        gender: getFirstNonEmpty(profile.gender, fallback.gender, pathway.gender),
+        district: getFirstNonEmpty(profile.district, fallback.district, pathway.district),
+        city: getFirstNonEmpty(profile.city, fallback.city, pathway.city),
+        address: getFirstNonEmpty(profile.address, fallback.address, pathway.address),
+        preferredLanguages: getFirstNonEmpty(profile.preferredLanguages, fallback.preferredLanguages, normalizeStringList(pathway.languages)),
+        bio: getFirstNonEmpty(profile.bio, fallback.bio, pathway.bio),
+        guardianName: getFirstNonEmpty(profile.guardianName, fallback.guardianName, pathway.guardianName),
+        guardianPhone: getFirstNonEmpty(profile.guardianPhone, fallback.guardianPhone, pathway.guardianPhone),
+        emergencyContact: getFirstNonEmpty(profile.emergencyContact, fallback.emergencyContact, pathway.emergencyContact),
+        photoURL: getFirstNonEmpty(profile.photoURL, fallback.photoURL, user.photoURL),
+        updatedAt: profile.updatedAt || profile.createdAt
+    };
+}
+
+function renderPersonalProfile() {
+    const data = buildPersonalProfileForDisplay();
+    
+    document.getElementById("personal-avatar-preview").src = data.photoURL || "images/default-avatar.png";
+    setFieldValue("field-personal-fullName", data.fullName);
+    setFieldValue("field-personal-displayName", data.displayName);
+    setFieldValue("field-personal-email", data.email);
+    setFieldValue("field-personal-phone", data.phone);
+    setFieldValue("field-personal-whatsapp", data.whatsapp);
+    setFieldValue("field-personal-dateOfBirth", data.dateOfBirth);
+    setFieldValue("field-personal-age", data.age);
+    setFieldValue("field-personal-gender", data.gender);
+    setFieldValue("field-personal-district", data.district);
+    setFieldValue("field-personal-city", data.city);
+    setFieldValue("field-personal-address", data.address);
+    setFieldValue("field-personal-preferredLanguages", data.preferredLanguages);
+    
+    const bioField = document.getElementById("field-personal-bio");
+    if (bioField) {
+        bioField.value = data.bio;
+        const countSpan = document.getElementById("personal-bio-count");
+        if (countSpan) countSpan.textContent = data.bio.length;
+    }
+    
+    setFieldValue("field-personal-guardianName", data.guardianName);
+    setFieldValue("field-personal-guardianPhone", data.guardianPhone);
+    setFieldValue("field-personal-emergencyContact", data.emergencyContact);
+
+    setText("personal-last-updated", formatDate(data.updatedAt));
+}
+
+async function savePersonalProfile(e) {
+    e.preventDefault();
+    if (!state.uid) return;
+    
+    const data = {
+        fullName: getFieldValue("field-personal-fullName"),
+        displayName: getFieldValue("field-personal-displayName"),
+        phone: getFieldValue("field-personal-phone"),
+        whatsapp: getFieldValue("field-personal-whatsapp"),
+        dateOfBirth: getFieldValue("field-personal-dateOfBirth"),
+        age: getFieldValue("field-personal-age"),
+        gender: getFieldValue("field-personal-gender"),
+        district: getFieldValue("field-personal-district"),
+        city: getFieldValue("field-personal-city"),
+        address: getFieldValue("field-personal-address"),
+        preferredLanguages: getFieldValue("field-personal-preferredLanguages"),
+        bio: getFieldValue("field-personal-bio"),
+        guardianName: getFieldValue("field-personal-guardianName"),
+        guardianPhone: getFieldValue("field-personal-guardianPhone"),
+        emergencyContact: getFieldValue("field-personal-emergencyContact"),
+        updatedAt: serverTimestamp()
+    };
+    
+    try {
+        const updates = {};
+        updates[`studentProfiles/${state.uid}/personal`] = data;
+        
+        // Also update core nodes to ensure sync
+        const studentUpdates = { fullName: data.fullName, phone: data.phone, district: data.district, bio: data.bio };
+        if (data.displayName) studentUpdates.displayName = data.displayName;
+        updates[`students/${state.uid}`] = studentUpdates;
+        
+        updates[`users/${state.uid}`] = { fullName: data.fullName, phone: data.phone };
+        if (data.displayName) updates[`users/${state.uid}`].displayName = data.displayName;
+        
+        await update(ref(database), updates);
+        
+        showToast("Personal Profile saved successfully.", "success");
+    } catch (err) {
+        showToast("Failed to save personal profile.", "error");
+    }
+}
+
+function buildAcademicProfileForDisplay() {
+    const profile = state.academicProfile || {};
+    const pathway = getLatestPathwayResult();
+    const fallback = state.student || {};
+
+    return {
+        currentEducationLevel: getFirstNonEmpty(profile.currentEducationLevel, profile.educationLevel, fallback.educationLevel, pathway.educationLevel),
+        highestCompletedEducation: getFirstNonEmpty(profile.highestCompletedEducation, pathway.highestCompletedEducation),
+        currentInstitution: getFirstNonEmpty(profile.currentInstitution, profile.school, fallback.school, pathway.school),
+        currentQualification: getFirstNonEmpty(profile.currentQualification, pathway.currentQualification),
+        currentGrade: getFirstNonEmpty(profile.currentGrade, pathway.currentGrade),
+        
+        olYear: getFirstNonEmpty(profile.olYear, pathway.olYear),
+        olResults: getFirstNonEmpty(profile.olResults, pathway.olResults),
+        olSubjects: getFirstNonEmpty(profile.olSubjects, pathway.olSubjects),
+        
+        alStream: getFirstNonEmpty(profile.alStream, profile.examStream, fallback.examStream, pathway.alStream),
+        alYear: getFirstNonEmpty(profile.alYear, pathway.alYear),
+        alResults: getFirstNonEmpty(profile.alResults, profile.resultStatus, fallback.resultStatus, pathway.alResults),
+        alSubjects: getFirstNonEmpty(profile.alSubjects, pathway.alSubjects),
+        zScore: getFirstNonEmpty(profile.zScore, pathway.zScore),
+        districtRank: getFirstNonEmpty(profile.districtRank, pathway.districtRank),
+        
+        otherQualifications: getFirstNonEmpty(profile.otherQualifications, pathway.otherQualifications),
+        academicAchievements: getFirstNonEmpty(profile.academicAchievements, pathway.academicAchievements),
+        
+        preferredFields: getFirstNonEmpty(profile.preferredFields, profile.subjectInterests, fallback.subjectInterests, normalizeStringList(pathway.interests)),
+        careerGoals: getFirstNonEmpty(profile.careerGoals, fallback.futureGoal, normalizeStringList(pathway.careers)),
+        skillsToImprove: getFirstNonEmpty(profile.skillsToImprove, normalizeStringList(pathway.skills)),
+        preferredCourseLevels: getFirstNonEmpty(profile.preferredCourseLevels, normalizeStringList(pathway.courseTypes)),
+        
+        preferredStudyModes: getFirstNonEmpty(profile.preferredStudyModes, profile.learningMode, fallback.learningMode, normalizeStringList(pathway.learningModes)),
+        preferredLocations: getFirstNonEmpty(profile.preferredLocations, pathway.preferredLocations),
+        budgetMin: getFirstNonEmpty(profile.budgetMin, pathway.budgetMin),
+        budgetMax: getFirstNonEmpty(profile.budgetMax, pathway.budgetMax),
+        financialSupportNeeded: getFirstNonEmpty(profile.financialSupportNeeded, fallback.financialSupport, normalizeStringList(pathway.financialSupport)),
+        preferredDuration: getFirstNonEmpty(profile.preferredDuration, normalizeStringList(pathway.courseDurations)),
+        willingToStudyAbroad: getFirstNonEmpty(profile.willingToStudyAbroad, pathway.willingToStudyAbroad),
+        preferredCountries: getFirstNonEmpty(profile.preferredCountries, pathway.preferredCountries),
+        
+        updatedAt: profile.updatedAt || profile.createdAt
+    };
+}
+
+function renderAcademicProfile() {
+    const data = buildAcademicProfileForDisplay();
+    
+    setFieldValue("field-academic-currentEducationLevel", data.currentEducationLevel);
+    setFieldValue("field-academic-highestCompletedEducation", data.highestCompletedEducation);
+    setFieldValue("field-academic-currentInstitution", data.currentInstitution);
+    setFieldValue("field-academic-currentQualification", data.currentQualification);
+    setFieldValue("field-academic-currentGrade", data.currentGrade);
+
+    setFieldValue("field-academic-olYear", data.olYear);
+    setFieldValue("field-academic-olResults", data.olResults);
+    setFieldValue("field-academic-olSubjects", data.olSubjects);
+
+    setFieldValue("field-academic-alStream", data.alStream);
+    setFieldValue("field-academic-alYear", data.alYear);
+    setFieldValue("field-academic-alResults", data.alResults);
+    setFieldValue("field-academic-zScore", data.zScore);
+    setFieldValue("field-academic-districtRank", data.districtRank);
+    setFieldValue("field-academic-alSubjects", data.alSubjects);
+
+    setFieldValue("field-academic-otherQualifications", data.otherQualifications);
+    setFieldValue("field-academic-academicAchievements", data.academicAchievements);
+
+    setFieldValue("field-academic-preferredFields", data.preferredFields);
+    setFieldValue("field-academic-careerGoals", data.careerGoals);
+    setFieldValue("field-academic-skillsToImprove", data.skillsToImprove);
+    setFieldValue("field-academic-preferredCourseLevels", data.preferredCourseLevels);
+
+    setFieldValue("field-academic-preferredStudyModes", data.preferredStudyModes);
+    setFieldValue("field-academic-preferredLocations", data.preferredLocations);
+    setFieldValue("field-academic-budgetMin", data.budgetMin);
+    setFieldValue("field-academic-budgetMax", data.budgetMax);
+    setFieldValue("field-academic-financialSupportNeeded", data.financialSupportNeeded);
+    setFieldValue("field-academic-preferredDuration", data.preferredDuration);
+    setFieldValue("field-academic-willingToStudyAbroad", data.willingToStudyAbroad);
+    setFieldValue("field-academic-preferredCountries", data.preferredCountries);
+
+    setText("academic-last-updated", formatDate(data.updatedAt));
+}
+
+async function saveAcademicProfile(e) {
+    e.preventDefault();
+    if (!state.uid) return;
+    
+    const data = {
+        currentEducationLevel: getFieldValue("field-academic-currentEducationLevel"),
+        highestCompletedEducation: getFieldValue("field-academic-highestCompletedEducation"),
+        currentInstitution: getFieldValue("field-academic-currentInstitution"),
+        currentQualification: getFieldValue("field-academic-currentQualification"),
+        currentGrade: getFieldValue("field-academic-currentGrade"),
+        
+        olYear: getFieldValue("field-academic-olYear"),
+        olResults: getFieldValue("field-academic-olResults"),
+        olSubjects: getFieldValue("field-academic-olSubjects"),
+        
+        alStream: getFieldValue("field-academic-alStream"),
+        alYear: getFieldValue("field-academic-alYear"),
+        alResults: getFieldValue("field-academic-alResults"),
+        alSubjects: getFieldValue("field-academic-alSubjects"),
+        zScore: getFieldValue("field-academic-zScore"),
+        districtRank: getFieldValue("field-academic-districtRank"),
+        
+        otherQualifications: getFieldValue("field-academic-otherQualifications"),
+        academicAchievements: getFieldValue("field-academic-academicAchievements"),
+        
+        preferredFields: getFieldValue("field-academic-preferredFields"),
+        careerGoals: getFieldValue("field-academic-careerGoals"),
+        skillsToImprove: getFieldValue("field-academic-skillsToImprove"),
+        preferredCourseLevels: getFieldValue("field-academic-preferredCourseLevels"),
+        
+        preferredStudyModes: getFieldValue("field-academic-preferredStudyModes"),
+        preferredLocations: getFieldValue("field-academic-preferredLocations"),
+        budgetMin: getFieldValue("field-academic-budgetMin"),
+        budgetMax: getFieldValue("field-academic-budgetMax"),
+        financialSupportNeeded: getFieldValue("field-academic-financialSupportNeeded"),
+        preferredDuration: getFieldValue("field-academic-preferredDuration"),
+        willingToStudyAbroad: getFieldValue("field-academic-willingToStudyAbroad"),
+        preferredCountries: getFieldValue("field-academic-preferredCountries"),
+        
+        updatedAt: serverTimestamp()
+    };
+    
+    try {
+        const updates = {};
+        updates[`learningProfiles/${state.uid}`] = data;
+        
+        const studentUpdates = {};
+        if (data.currentEducationLevel) studentUpdates.educationLevel = data.currentEducationLevel;
+        if (data.alStream) studentUpdates.examStream = data.alStream;
+        if (data.alResults) studentUpdates.resultStatus = data.alResults;
+        if (data.currentInstitution) studentUpdates.school = data.currentInstitution;
+        if (data.preferredStudyModes) studentUpdates.learningMode = data.preferredStudyModes;
+        if (data.preferredFields) studentUpdates.subjectInterests = data.preferredFields;
+        if (data.financialSupportNeeded) studentUpdates.financialSupport = data.financialSupportNeeded;
+        if (data.careerGoals) studentUpdates.futureGoal = data.careerGoals;
+        
+        if (Object.keys(studentUpdates).length > 0) {
+            updates[`students/${state.uid}`] = studentUpdates;
+        }
+
+        await update(ref(database), updates);
+        showToast("Academic Profile saved successfully.", "success");
+        recalculateStudentRecommendations({ updateCourses: true, updateScholarships: true, updateMentors: true });
+    } catch (err) {
+        showToast("Failed to save academic profile.", "error");
+    }
+}
+
+function buildTalentProfileForDisplay() {
+    const profile = state.talentProfile || {};
+    const pathway = getLatestPathwayResult();
+
+    return {
+        talentPathStatus: getFirstNonEmpty(profile.talentPathStatus, pathway.talentPathStatus),
+        primaryTalentCategory: getFirstNonEmpty(profile.primaryTalentCategory, profile.category, pathway.primaryTalentCategory),
+        specificTalent: getFirstNonEmpty(profile.specificTalent, profile.specificSkill, pathway.specificTalent),
+        
+        trainingLevel: getFirstNonEmpty(profile.trainingLevel, pathway.trainingLevel),
+        yearsOfExperience: getFirstNonEmpty(profile.yearsOfExperience, profile.experienceYears, pathway.yearsOfExperience),
+        currentCoachOrAcademy: getFirstNonEmpty(profile.currentCoachOrAcademy, pathway.currentCoachOrAcademy),
+        
+        highestAchievement: getFirstNonEmpty(profile.highestAchievement, profile.achievements, pathway.highestAchievement),
+        awardsAndRecognitions: getFirstNonEmpty(profile.awardsAndRecognitions, pathway.awardsAndRecognitions),
+        
+        portfolioLink: getFirstNonEmpty(profile.portfolioLink, pathway.portfolioLink),
+        videoShowcaseLink: getFirstNonEmpty(profile.videoShowcaseLink, pathway.videoShowcaseLink),
+        
+        talentGoals: getFirstNonEmpty(profile.talentGoals, pathway.talentGoals),
+        supportNeededTalent: getFirstNonEmpty(profile.supportNeededTalent, pathway.supportNeededTalent),
+        preferredTrainingModes: getFirstNonEmpty(profile.preferredTrainingModes, normalizeStringList(pathway.preferredTrainingModes)),
+        willingToRelocateForTraining: getFirstNonEmpty(profile.willingToRelocateForTraining, pathway.willingToRelocateForTraining),
+        
+        updatedAt: profile.updatedAt || profile.createdAt
+    };
+}
+
+function renderTalentProfile() {
+    const data = buildTalentProfileForDisplay();
+    
+    setFieldValue("field-talent-talentPathStatus", data.talentPathStatus);
+    setFieldValue("field-talent-primaryTalentCategory", data.primaryTalentCategory);
+    setFieldValue("field-talent-specificTalent", data.specificTalent);
+    
+    setFieldValue("field-talent-trainingLevel", data.trainingLevel);
+    setFieldValue("field-talent-yearsOfExperience", data.yearsOfExperience);
+    setFieldValue("field-talent-currentCoachOrAcademy", data.currentCoachOrAcademy);
+    
+    setFieldValue("field-talent-highestAchievement", data.highestAchievement);
+    setFieldValue("field-talent-awardsAndRecognitions", data.awardsAndRecognitions);
+    
+    setFieldValue("field-talent-portfolioLink", data.portfolioLink);
+    setFieldValue("field-talent-videoShowcaseLink", data.videoShowcaseLink);
+    
+    setFieldValue("field-talent-talentGoals", data.talentGoals);
+    setFieldValue("field-talent-supportNeededTalent", data.supportNeededTalent);
+    setFieldValue("field-talent-preferredTrainingModes", data.preferredTrainingModes);
+    setFieldValue("field-talent-willingToRelocateForTraining", data.willingToRelocateForTraining);
+
+    setText("talent-last-updated", formatDate(data.updatedAt));
+}
+
+async function saveTalentProfile(e) {
+    e.preventDefault();
+    if (!state.uid) return;
+    
+    const data = {
+        talentPathStatus: getFieldValue("field-talent-talentPathStatus"),
+        primaryTalentCategory: getFieldValue("field-talent-primaryTalentCategory"),
+        specificTalent: getFieldValue("field-talent-specificTalent"),
+        
+        trainingLevel: getFieldValue("field-talent-trainingLevel"),
+        yearsOfExperience: getFieldValue("field-talent-yearsOfExperience"),
+        currentCoachOrAcademy: getFieldValue("field-talent-currentCoachOrAcademy"),
+        
+        highestAchievement: getFieldValue("field-talent-highestAchievement"),
+        awardsAndRecognitions: getFieldValue("field-talent-awardsAndRecognitions"),
+        
+        portfolioLink: getFieldValue("field-talent-portfolioLink"),
+        videoShowcaseLink: getFieldValue("field-talent-videoShowcaseLink"),
+        
+        talentGoals: getFieldValue("field-talent-talentGoals"),
+        supportNeededTalent: getFieldValue("field-talent-supportNeededTalent"),
+        preferredTrainingModes: getFieldValue("field-talent-preferredTrainingModes"),
+        willingToRelocateForTraining: getFieldValue("field-talent-willingToRelocateForTraining"),
+        
+        updatedAt: serverTimestamp()
+    };
+    
+    try {
+        await update(ref(database, `talentProfiles/${state.uid}`), data);
+        showToast("Talent Profile saved successfully.", "success");
+        recalculateStudentRecommendations({ updateCourses: false, updateScholarships: true, updateMentors: true });
+    } catch (err) {
+        showToast("Failed to save talent profile.", "error");
+    }
+}
+
+function renderDiscoveryProfile() {
+    const profile = state.discoveryProfile || {};
+    
+    document.getElementById("field-discovery-hobbies").value = profile.hobbies || "";
+    document.getElementById("field-discovery-personalityTraits").value = profile.personalityTraits || "";
+    document.getElementById("field-discovery-workEnv").value = profile.workEnv || "";
+    document.getElementById("field-discovery-preferredRoles").value = profile.preferredRoles || "";
+    document.getElementById("field-discovery-enjoyedSubjects").value = profile.enjoyedSubjects || "";
+    document.getElementById("field-discovery-hatedSubjects").value = profile.hatedSubjects || "";
+
+    setText("discovery-last-updated", formatDate(profile.updatedAt || profile.createdAt));
+}
+
+async function saveDiscoveryProfile(e) {
+    e.preventDefault();
+    if (!state.uid) return;
+    
+    const data = {
+        hobbies: document.getElementById("field-discovery-hobbies").value.trim(),
+        personalityTraits: document.getElementById("field-discovery-personalityTraits").value.trim(),
+        workEnv: document.getElementById("field-discovery-workEnv").value,
+        preferredRoles: document.getElementById("field-discovery-preferredRoles").value,
+        enjoyedSubjects: document.getElementById("field-discovery-enjoyedSubjects").value.trim(),
+        hatedSubjects: document.getElementById("field-discovery-hatedSubjects").value.trim(),
+        updatedAt: serverTimestamp()
+    };
+    
+    try {
+        await update(ref(database, `discoveryProfiles/${state.uid}`), data);
+        showToast("Discovery Profile saved successfully.", "success");
+    } catch (err) {
+        showToast("Failed to save discovery profile.", "error");
+    }
+}
+
+function renderFuturePath() {
+    const path = state.student.pathwayPreference || "undecided";
+    const radio = document.querySelector(`input[name="pathwayPreference"][value="${path}"]`);
+    if (radio) radio.checked = true;
+    setText("pathway-last-updated", formatDate(state.student.pathwayPreferenceUpdatedAt));
+}
+
+async function saveFuturePath(e) {
+    e.preventDefault();
+    if (!state.uid) return;
+    
+    const radio = document.querySelector('input[name="pathwayPreference"]:checked');
+    if (!radio) return showToast("Please select a path.", "error");
+    
+    try {
+        await update(ref(database, `students/${state.uid}`), { 
+            pathwayPreference: radio.value,
+            pathwayPreferenceUpdatedAt: serverTimestamp()
+        });
+        showToast("Future Path updated.", "success");
+    } catch (err) {
+        showToast("Failed to update Future Path.", "error");
+    }
+}
+
+async function handleAvatarUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowed.includes(file.type)) {
+        showToast("Invalid file type. Only JPG, PNG, WEBP allowed.", "error");
+        return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+        showToast("File is too large. Max 2MB.", "error");
+        return;
+    }
+    const uid = state.uid;
+    if (!uid) return;
+    
+    document.getElementById("personal-avatar-preview").style.opacity = "0.5";
+    try {
+        const fileRef = storageRef(storage, `avatars/${uid}_${Date.now()}`);
+        await uploadBytes(fileRef, file);
+        const url = await getDownloadURL(fileRef);
+        
+        await update(ref(database), {
+            [`users/${uid}/photoURL`]: url,
+            [`students/${uid}/photoURL`]: url,
+            [`studentProfiles/${uid}/personal/photoURL`]: url
+        });
+        
+        document.getElementById("personal-avatar-preview").src = url;
+        if (state.personalProfile) state.personalProfile.photoURL = url;
+        if (state.student) state.student.photoURL = url;
+        if (state.user) state.user.photoURL = url;
+        
+        if (typeof updateSidebarUser === "function") {
+            updateSidebarUser(state.user.fullName || "User", "student", url);
+        }
+        showToast("Profile picture updated.", "success");
+    } catch (err) {
+        console.error("Avatar upload error:", err);
+        showToast("Failed to upload image.", "error");
+    } finally {
+        document.getElementById("personal-avatar-preview").style.opacity = "1";
+    }
+}
+
+async function handlePasswordChange(e) {
+    e.preventDefault();
+    const current = document.getElementById("field-password-current").value;
+    const newPwd = document.getElementById("field-password-new").value;
+    const confirmPwd = document.getElementById("field-password-confirm").value;
+    
+    if (newPwd.length < 8) {
+        showToast("New password must be at least 8 characters.", "error");
+        return;
+    }
+    if (newPwd !== confirmPwd) {
+        showToast("Passwords do not match.", "error");
+        return;
+    }
+    if (current === newPwd) {
+        showToast("New password must be different from current password.", "error");
+        return;
+    }
+    
+    const user = auth.currentUser;
+    if (!user || !user.email) return;
+    
+    const btn = document.getElementById("save-password-btn");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+    btn.disabled = true;
+    
+    try {
+        const credential = EmailAuthProvider.credential(user.email, current);
+        await reauthenticateWithCredential(user, credential);
+        await updatePassword(user, newPwd);
+        showToast("Password updated successfully.", "success");
+        document.getElementById("personal-password-form").reset();
+    } catch (err) {
+        console.error("Password change error:", err);
+        if (err.code === "auth/invalid-credential" || err.code === "auth/wrong-password") {
+            showToast("Current password is incorrect.", "error");
+        } else {
+            showToast(err.message || "Failed to update password.", "error");
+        }
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
+}
+
+function recalculateStudentRecommendations({ updateCourses, updateScholarships, updateMentors }) {
+    if (updateCourses && typeof renderCourses === "function") renderCourses();
+    if (updateScholarships && typeof renderScholarships === "function") renderScholarships();
+    if (updateMentors && typeof renderMentors === "function") renderMentors();
+    if (typeof renderStudentOverview === "function") renderStudentOverview();
+    if (typeof scheduleRecommendationSave === "function") scheduleRecommendationSave();
+}
+

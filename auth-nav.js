@@ -898,7 +898,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             <a href="${dashboardUrl}" class="ep-dropdown-item"><i class="fas fa-tachometer-alt"></i> My Dashboard</a>
                             <a href="${profileUrl}" class="ep-dropdown-item"><i class="fas fa-user"></i> My Profile</a>
-                            <a href="profile.html#security" class="ep-dropdown-item"><i class="fas fa-key"></i> Change Password</a>
+                            <a href="${profileUrl}" class="ep-dropdown-item"><i class="fas fa-key"></i> Change Password</a>
                             <a href="${getPublicHomeDestination()}" class="ep-dropdown-item"><i class="fas fa-house"></i> Public Home</a>
                             <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 4px 0;">
                             <a href="#" class="ep-dropdown-item text-danger" id="ep-dropdown-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>

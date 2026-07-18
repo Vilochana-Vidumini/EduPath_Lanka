@@ -15,39 +15,86 @@
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="profile.css?v=20260625-mentor-submit-feedback">
     <link rel="stylesheet" href="theme.css?v=20260614-softglass">
+    <link rel="stylesheet" href="student-dashboard.css?v=20260624-image-path-fix">
 </head>
-<body>
+<body class="student-dashboard-page">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-    <!-- 1. Header / Navigation Bar -->
-    <header class="header">
-        <div class="container nav-container">
-            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
-
-            <nav class="nav-links">
-                <!-- Stable navigation links injected via auth-nav.js -->
-            </nav>
-
-            <div class="nav-buttons">
-                <!-- Populated via auth-nav.js -->
-            </div>
-
-            <!-- Hamburger Menu for Mobile -->
-            <div class="hamburger">
-                <i class="fas fa-bars"></i>
-            </div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="index.html" class="dashboard-brand-logo">
+                <img src="images/edupath-logo-transparent.png" alt="EduPath Lanka logo">
+                <span>EduPath <strong>Lanka</strong></span>
+            </a>
+            <button type="button" class="sidebar-toggle sidebar-toggle-brand" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            <i class="fas fa-times close-sidebar" id="close-sidebar"></i>
         </div>
+        <a class="sidebar-user" id="sidebar-user" href="profile.html" title="Profile">
+            <div class="sidebar-user-avatar" id="sidebar-user-avatar"><span class="sidebar-initials">ST</span><span class="online-dot" aria-hidden="true"></span></div>
+            <div class="sidebar-user-info">
+                <span class="sidebar-user-name" id="sidebar-user-name">Loading...</span>
+                <span class="sidebar-user-role role-student" id="sidebar-user-role">Student</span>
+            </div>
+        </a>
+        <ul class="sidebar-links flat-sidebar-links">
+            <li class="sidebar-section-label"><span>MAIN</span></li>
+            <li><a href="student-dashboard.html#overview" title="Dashboard"><i class="fas fa-house" aria-hidden="true"></i><span class="sidebar-label">Dashboard</span></a></li>
 
-        <!-- Mobile Menu Overlay -->
-        <div class="mobile-menu">
-            <div class="close-btn"><i class="fas fa-times"></i></div>
-            <nav class="mobile-links">
-                <!-- Populated via auth-nav.js -->
-            </nav>
-        </div>
-    </header>
+            <li class="sidebar-section-label"><span>MY FUTURE</span></li>
+            <li><a href="student-dashboard.html#pathway" title="Future Path"><i class="fas fa-compass" aria-hidden="true"></i><span class="sidebar-label">Future Path</span></a></li>
+            <li><a href="#personal" title="Personal Profile" class="active"><i class="fas fa-user" aria-hidden="true"></i><span class="sidebar-label">Personal Profile</span></a></li>
+            <li><a href="#academic" title="Academic Profile"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span class="sidebar-label">Academic Profile</span></a></li>
+            <li><a href="#talent" title="Talent Profile"><i class="fas fa-star" aria-hidden="true"></i><span class="sidebar-label">Talent Profile</span></a></li>
+            <li><a href="#discovery" title="Discovery Profile"><i class="fas fa-search" aria-hidden="true"></i><span class="sidebar-label">Discovery Profile</span></a></li>
 
-    <!-- 2. Profile Main Content Section -->
-    <main class="profile-container">
+            <li class="sidebar-section-label"><span>EXPLORE</span></li>
+            <li><a href="student-dashboard.html#recommended-courses" title="Courses"><i class="fas fa-book-open" aria-hidden="true"></i><span class="sidebar-label">Courses</span></a></li>
+            <li><a href="student-dashboard.html#scholarships" title="Scholarships"><i class="fas fa-award" aria-hidden="true"></i><span class="sidebar-label">Scholarships</span></a></li>
+            <li><a href="institutes.html" title="Institutes"><i class="fas fa-university" aria-hidden="true"></i><span class="sidebar-label">Institutes</span></a></li>
+            <li><a href="student-dashboard.html#mentors" title="Mentors"><i class="fas fa-user-group" aria-hidden="true"></i><span class="sidebar-label">Mentors</span></a></li>
+            <li><a href="talent-opportunities.html#arts" title="Arts Opportunities"><i class="fas fa-palette" aria-hidden="true"></i><span class="sidebar-label">Arts Opportunities</span></a></li>
+            <li><a href="talent-opportunities.html#sports" title="Sports Opportunities"><i class="fas fa-running" aria-hidden="true"></i><span class="sidebar-label">Sports Opportunities</span></a></li>
+
+            <li class="sidebar-section-label"><span>MY JOURNEY</span></li>
+            <li><a href="student-dashboard.html#saved-courses" title="Saved Opportunities"><i class="fas fa-bookmark" aria-hidden="true"></i><span class="sidebar-label">Saved Opportunities</span></a></li>
+            <li><a href="student-dashboard.html#applied-scholarships" title="Applications"><i class="fas fa-paper-plane" aria-hidden="true"></i><span class="sidebar-label">Applications</span></a></li>
+            <li><a href="student-dashboard.html#mentor-requests" title="Mentor Requests"><i class="fas fa-envelope-open-text" aria-hidden="true"></i><span class="sidebar-label">Mentor Requests</span></a></li>
+            <li><a href="student-dashboard.html#connected-mentors" title="Connected Mentors"><i class="fas fa-hands-helping" aria-hidden="true"></i><span class="sidebar-label">Connected Mentors</span></a></li>
+            <li><a href="student-dashboard.html#mentor-sessions" title="Appointments"><i class="fas fa-calendar-check" aria-hidden="true"></i><span class="sidebar-label">Appointments</span></a></li>
+            <li><a href="student-dashboard.html#mentor-messages" title="Messages"><i class="fas fa-message" aria-hidden="true"></i><span class="sidebar-label">Messages</span><span class="nav-badge" id="sidebar-unread-message-count"></span></a></li>
+            <li><a href="student-dashboard.html#skills" title="Learning Goals"><i class="fas fa-bullseye" aria-hidden="true"></i><span class="sidebar-label">Learning Goals</span></a></li>
+            <li><a href="student-dashboard.html#mentor-sessions" title="Reviews Submitted"><i class="fas fa-star-half-alt" aria-hidden="true"></i><span class="sidebar-label">Reviews Submitted</span></a></li>
+
+            <li class="sidebar-section-label"><span>GENERAL</span></li>
+            <li><a href="student-dashboard.html#notifications" title="Notifications"><i class="fas fa-bell" aria-hidden="true"></i><span class="sidebar-label">Notifications</span><span class="nav-badge" id="sidebar-notification-count"></span></a></li>
+            <li><a href="#security" title="Account and Security"><i class="fas fa-shield-alt" aria-hidden="true"></i><span class="sidebar-label">Account and Security</span></a></li>
+            <li><a href="index.html" title="Public Home"><i class="fas fa-house-user" aria-hidden="true"></i><span class="sidebar-label">Public Home</span></a></li>
+            <li><a href="#" id="logout-btn-sidebar" class="text-danger" title="Logout"><i class="fas fa-right-from-bracket" aria-hidden="true"></i><span class="sidebar-label">Logout</span></a></li>
+        </ul>
+        <a href="student-dashboard.html#support" class="sidebar-support-link dashboard-jump" title="Contact Support">
+            <i class="fas fa-headset" aria-hidden="true"></i>
+            <div><strong>Need Help?</strong><span>Contact Support</span></div>
+        </a>
+    </aside>
+
+    <main class="main-content">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button type="button" class="sidebar-toggle topbar-sidebar-toggle" id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
+                <h2 class="page-title">My Profile</h2>
+            </div>
+            <div class="topbar-right dashboard-topbar-actions">
+                <button type="button" class="topbar-icon-btn theme-toggle" id="theme-toggle" aria-label="Toggle theme"><i class="fas fa-sun"></i></button>
+                <div class="user-profile">
+                    <div class="avatar bg-primary text-white" id="topbar-avatar"><i class="fas fa-user"></i></div>
+                    <span class="user-name" id="top-user-name">Loading...</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="dashboard-container">
+            <main class="profile-container" style="padding-top: 1rem;">
         <div class="profile-grid">
             
             <!-- Left Panel: Avatar & Core Info Card -->
@@ -566,6 +613,8 @@
                 </form>
             </div>
             
+        </div>
+    </main>
         </div>
     </main>
 

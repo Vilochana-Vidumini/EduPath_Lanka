@@ -16,6 +16,8 @@ import {
     normalizeList
 } from "./validation.js";
 import { getDashboardDestination, normalizeRole } from "./shared-navigation.js";
+import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
+import { ensureDashboardTopbarLayout } from "./dashboard-topbar.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
@@ -159,6 +161,14 @@ document.addEventListener('DOMContentLoaded', () => {
             cachedUserData = userSnapshot.val();
             userRole = normalizeRole(cachedUserData.userType || 'student') || 'student';
             
+            // Initialize Dashboard Layout Components
+            ensureDashboardTopbarLayout();
+            initDashboardSidebar();
+            if (cachedUserData) {
+                updateSidebarUser(cachedUserData.fullName || 'User', userRole, cachedUserData.photoURL);
+            }
+
+            populateFormData();
             // Set dynamic sidebar back-link URL
             const backLink = document.getElementById('dashboard-back-link');
             if (backLink) {
@@ -167,16 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Bind role specifics
             if (userRole === 'student') {
-                document.getElementById('student-specific-card').classList.remove('hidden');
-                document.getElementById('mentor-specific-card').classList.add('hidden');
-                
-                // Fetch student details
-                get(ref(database, 'students/' + uid)).then((roleSnap) => {
-                    cachedRoleData = roleSnap.exists() ? roleSnap.val() : {};
-                    populateFormData();
-                    calculateProfileStrength();
-                });
-
+                window.location.replace('student-dashboard.html#personal-profile-section');
+                return;
             } else if (userRole === 'mentor') {
                 document.getElementById('student-specific-card').classList.add('hidden');
                 document.getElementById('mentor-specific-card').classList.remove('hidden');
