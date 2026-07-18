@@ -523,6 +523,7 @@ async function generatePathway(event) {
         updates[`students/${currentUser.uid}/lastPathwayUpdatedAt`] = serverTimestamp();
         updates[`students/${currentUser.uid}/pathwayLastUpdatedAt`] = serverTimestamp();
         updates[`students/${currentUser.uid}/educationLevel`] = formData.currentEducationLevel;
+<<<<<<< HEAD
         updates[`students/${currentUser.uid}/interestArea`] = formData.interestAreas?.[0] || "Not Sure Yet";
         updates[`students/${currentUser.uid}/futureGoal`] = formData.dreamCareer || formData.futurePreference?.[0] || "Not sure yet";
         updates[`students/${currentUser.uid}/skills`] = formData.skills;
@@ -558,6 +559,16 @@ async function generatePathway(event) {
         updates[`discoveryProfiles/${currentUser.uid}/updatedAt`] = serverTimestamp();
         // ---------------------
 
+=======
+        updates[`students/${currentUser.uid}/interestArea`] = formData.interestAreas[0] || "Not Sure Yet";
+        updates[`students/${currentUser.uid}/futureGoal`] = formData.dreamCareer || formData.futurePreference[0] || "Not sure yet";
+        updates[`students/${currentUser.uid}/skills`] = formData.skills;
+        updates[`students/${currentUser.uid}/financialSupport`] = formData.financialSupport;
+        updates[`students/${currentUser.uid}/learningMode`] = formData.learningMode;
+        updates[`students/${currentUser.uid}/preferredDistrict`] = formData.preferredDistricts[0] || formData.district;
+        updates[`students/${currentUser.uid}/profileUpdatedAfterPathway`] = false;
+
+>>>>>>> origin/Sewmini
         const logRef = push(ref(database, "activityLogs"));
         updates[`activityLogs/${logRef.key}`] = {
             logId: logRef.key,

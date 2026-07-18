@@ -1,6 +1,11 @@
+<<<<<<< HEAD
 import { auth, database, storage } from "./firebase-config.js";
 import { onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
+=======
+import { auth, database } from "./firebase-config.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+>>>>>>> origin/Sewmini
 import { ref, get, set, update, push, remove, serverTimestamp, onValue, off, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast, preserveThemeOnClear } from "./auth-nav.js?v=20260614-brand";
 import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
@@ -12,10 +17,13 @@ const state = {
     uid: null,
     user: {},
     student: {},
+<<<<<<< HEAD
     personalProfile: {},
     academicProfile: {},
     talentProfile: {},
     discoveryProfile: {},
+=======
+>>>>>>> origin/Sewmini
     pathwayResults: {},
     currentResult: null,
     currentResultId: null,
@@ -80,11 +88,15 @@ let recommendationFilterTimer = null;
 
 const sectionTitles = {
     "overview-section": "Student Dashboard",
+<<<<<<< HEAD
     "pathway-section": "Future Path",
     "personal-profile-section": "Personal Profile",
     "academic-profile-section": "Academic Profile",
     "talent-profile-section": "Talent Profile",
     "discovery-profile-section": "Discovery Profile",
+=======
+    "pathway-section": "My Pathway Summary",
+>>>>>>> origin/Sewmini
     "pathway-history-section": "Pathway History",
     "next-steps-section": "Next Step Plan",
     "recommended-courses-section": "Courses I Can Proceed",
@@ -135,6 +147,7 @@ function sidebarSectionFor(sectionId) {
     return parentMap[sectionId] || sectionId;
 }
 
+<<<<<<< HEAD
 // --- Helper Functions for Data Handling ---
 function getFirstNonEmpty(...values) {
     for (const val of values) {
@@ -174,6 +187,8 @@ function getLatestPathwayResult() {
     return latest;
 }
 // ------------------------------------------
+=======
+>>>>>>> origin/Sewmini
 const profileFields = [
     ["fullName", "Full Name", "user"],
     ["email", "Email", "user"],
@@ -244,6 +259,7 @@ function bindStaticActions() {
         const isHidden = panel.classList.toggle("hidden");
         button.textContent = isHidden ? "Expand Details" : "Hide Details";
     });
+<<<<<<< HEAD
 
     document.getElementById("future-path-form")?.addEventListener("submit", saveFuturePath);
     document.getElementById("personal-profile-form")?.addEventListener("submit", savePersonalProfile);
@@ -258,6 +274,8 @@ function bindStaticActions() {
         if (countEl) countEl.textContent = e.target.value.length;
     });
 
+=======
+>>>>>>> origin/Sewmini
     bindDashboardActionDelegation();
     window.addEventListener("hashchange", () => showDashboardSection(getSectionFromHash()));
 }
@@ -385,7 +403,10 @@ function setupRealtime(uid) {
 
     onValue(ref(database, `students/${uid}`), (snap) => {
         state.student = snap.val() || {};
+<<<<<<< HEAD
         checkPathwayPreference();
+=======
+>>>>>>> origin/Sewmini
         renderAll();
     }, renderError("overview-status", "Unable to load your student profile."));
 
@@ -397,6 +418,7 @@ function setupRealtime(uid) {
         scheduleRecommendationSave();
     }, renderError("pathway-content", "Unable to load pathway results."));
 
+<<<<<<< HEAD
     onValue(ref(database, `studentProfiles/${uid}/personal`), (snap) => {
         state.personalProfile = snap.val() || {};
         renderAll();
@@ -417,6 +439,8 @@ function setupRealtime(uid) {
         renderAll();
     });
 
+=======
+>>>>>>> origin/Sewmini
     onValue(ref(database, "courses"), (snap) => {
         state.courses = snap.val() || {};
         renderCourses();
@@ -529,6 +553,7 @@ function setupRealtime(uid) {
     }, renderError("support-replies-list", "Unable to load support messages."));
 }
 
+<<<<<<< HEAD
 function checkPathwayPreference() {
     if (!state.student.pathwayPreference) {
         document.getElementById("pathway-selection-modal")?.classList.remove("hidden");
@@ -553,6 +578,8 @@ document.getElementById("skip-pathway-btn")?.addEventListener("click", () => {
     document.getElementById("pathway-selection-modal")?.classList.add("hidden");
 });
 
+=======
+>>>>>>> origin/Sewmini
 async function recordStudentLogout() {
     const user = auth.currentUser;
     if (!user) return;
@@ -586,11 +613,14 @@ function renderAll() {
     renderIdentity();
     renderWelcome();
     renderProfileCompletion();
+<<<<<<< HEAD
     renderPersonalProfile();
     renderAcademicProfile();
     renderTalentProfile();
     renderDiscoveryProfile();
     renderFuturePath();
+=======
+>>>>>>> origin/Sewmini
     renderPathway();
     renderPathwayHistory();
     renderCourses();
@@ -693,6 +723,7 @@ function renderIdentity() {
 }
 
 function renderWelcome() {
+<<<<<<< HEAD
     const path = state.student.pathwayPreference;
     const completed = !!path;
     const buttons = document.getElementById("welcome-actions");
@@ -706,11 +737,29 @@ function renderWelcome() {
         message.textContent = "Welcome! Let's get started by selecting your Future Path.";
         buttons.innerHTML = `
             <button type="button" class="btn btn-primary dashboard-jump" data-section="pathway-section">Choose Future Path <i class="fas fa-arrow-right"></i></button>
+=======
+    const completed = state.student.pathwayCompleted === true || !!state.currentResult;
+    const outdated = state.student.recommendationsOutdated === true;
+    const buttons = document.getElementById("welcome-actions");
+    const badge = document.getElementById("outdated-badge");
+    const message = document.getElementById("welcome-flow-message");
+
+    if (badge) badge.classList.toggle("hidden", !outdated);
+    if (!buttons || !message) return;
+
+    if (!completed) {
+        message.textContent = "Complete the Pathway Finder once to receive personalized course, scholarship, mentor, and skill recommendations.";
+        buttons.innerHTML = `
+            <a href="pathway.html?mode=first-time" class="btn btn-primary">Complete Pathway Finder <i class="fas fa-arrow-right"></i></a>
+            <button type="button" class="btn btn-outline dashboard-jump" data-section="recommended-courses-section">Explore Matches</button>
+            <a href="profile.html" class="btn btn-outline">Complete Profile</a>
+>>>>>>> origin/Sewmini
         `;
         bindJumpButtons();
         return;
     }
 
+<<<<<<< HEAD
     if (path === "academic") {
         message.textContent = "You're on the Academic Path. Complete your Academic Profile to get personalized course and scholarship matches.";
     } else if (path === "talent") {
@@ -734,6 +783,27 @@ function renderWelcome() {
     `;
     bindJumpButtons();
 
+=======
+    if (outdated) {
+        message.textContent = "Your profile information has changed. Recalculate your pathway to receive updated recommendations.";
+        buttons.innerHTML = `
+            <a href="pathway.html?mode=update" class="btn btn-primary">Recalculate Recommendations <i class="fas fa-sync-alt"></i></a>
+            <button type="button" class="btn btn-outline dashboard-jump" data-section="recommended-courses-section">Explore Matches</button>
+            <a href="pathway.html?mode=update" class="btn btn-outline">Update Pathway</a>
+            <a href="#pathway-history" data-section="pathway-history-section" class="btn btn-outline dashboard-jump">View History</a>
+        `;
+        bindJumpButtons();
+        return;
+    }
+
+    message.textContent = "Your current pathway is ready. Review it, compare matches, or update details when your goals change.";
+    buttons.innerHTML = `
+        <a href="#next-steps" data-section="next-steps-section" class="btn btn-primary dashboard-jump">Continue My Plan <i class="fas fa-arrow-right"></i></a>
+        <button type="button" class="btn btn-outline dashboard-jump" data-section="recommended-courses-section">Explore Matches <i class="fas fa-search"></i></button>
+        <a href="pathway.html?mode=update" class="btn btn-outline">Update Pathway <i class="fas fa-pen"></i></a>
+    `;
+    bindJumpButtons();
+>>>>>>> origin/Sewmini
 }
 
 function bindJumpButtons() {
@@ -741,6 +811,7 @@ function bindJumpButtons() {
 }
 
 function renderProfileCompletion() {
+<<<<<<< HEAD
     const personalFields = ["fullName", "email", "phone", "district", "dateOfBirth", "gender"];
     const academicFields = ["currentEducationLevel", "currentInstitution", "careerGoals", "preferredFields", "preferredStudyModes", "budgetMax"];
     const talentFields = ["primaryTalentCategory", "specificTalent", "trainingLevel", "yearsOfExperience", "highestAchievement", "talentGoals"];
@@ -784,17 +855,30 @@ function renderProfileCompletion() {
 
     const percentage = overallPercentage;
 
+=======
+    const completed = [];
+    const missing = [];
+    profileFields.forEach(([key, label, source]) => {
+        const value = source === "user" ? state.user[key] : state.student[key];
+        (hasValue(value) ? completed : missing).push(label);
+    });
+
+    const percentage = Math.round((completed.length / profileFields.length) * 100);
+>>>>>>> origin/Sewmini
     setText("profile-strength-badge", `${percentage}% Complete`);
     setText("profile-strength-message", percentage >= 90 ? "Your profile is strong and ready for accurate recommendations." : "Add missing details to improve recommendation quality.");
     setText("profile-completion-stat", `${percentage}%`);
     setText("overview-profile-completion-stat", `${percentage}%`);
     setText("overview-profile-status", percentage >= 100 ? "Complete" : percentage >= 80 ? "Almost there" : percentage >= 50 ? "In progress" : "Needs details");
     setText("profile-completion-label", percentage >= 100 ? "Complete" : percentage >= 80 ? "Almost there" : percentage >= 50 ? "In progress" : "Needs details");
+<<<<<<< HEAD
     
     const academicTitle = document.querySelector("#academic-profile-section h2");
     const talentTitle = document.querySelector("#talent-profile-section h2");
     if (academicTitle) academicTitle.textContent = (path === "talent") ? "Academic Profile (Optional)" : "Academic Profile";
     if (talentTitle) talentTitle.textContent = (path === "academic") ? "Talent Profile (Optional)" : "Talent Profile";
+=======
+>>>>>>> origin/Sewmini
     setText("pathway-setup-status", state.student.pathwayCompleted === true || state.currentResult ? "Completed" : "Not Started");
 
     const bar = document.getElementById("dynamic-profile-progress-bar");
@@ -802,6 +886,17 @@ function renderProfileCompletion() {
     const ring = document.querySelector(".student-profile-ring");
     if (ring) ring.style.setProperty("--student-profile-progress", `${percentage * 3.6}deg`);
 
+<<<<<<< HEAD
+=======
+    renderChecklist("profile-completed-list", completed, true);
+    renderChecklist("profile-todo-list", missing, false);
+
+    const pathwayItem = document.getElementById("pathway-setup-list");
+    if (pathwayItem) {
+        renderChecklist("pathway-setup-list", [state.currentResult ? "First Pathway Result" : "Complete First Pathway Result"], !!state.currentResult);
+    }
+
+>>>>>>> origin/Sewmini
     if (state.student.profileCompletion !== percentage && state.uid) {
         update(ref(database, `students/${state.uid}`), { profileCompletion: percentage }).catch(console.error);
     }
@@ -1175,6 +1270,7 @@ function renderMentors() {
     bindRecommendationFilters(container, "mentors");
 }
 
+<<<<<<< HEAD
 function buildStudentRecommendationProfile() {
     const result = state.currentResult || {};
     const personal = state.personalProfile || {};
@@ -1208,15 +1304,47 @@ function buildStudentRecommendationProfile() {
         recommendedPathway: result.recommendedPathway || student.pathwayPreference || "",
         isTalentOnly: student.pathwayPreference === "talent",
         isAcademicOnly: student.pathwayPreference === "academic"
+=======
+function recommendationProfile() {
+    const result = state.currentResult || {};
+    return {
+        currentEducationLevel: result.basicProfile?.currentEducationLevel || result.educationLevel || state.student.educationLevel,
+        educationLevel: result.educationLevel || result.basicProfile?.currentEducationLevel || state.student.educationLevel,
+        alStream: result.academicBackground?.alStream || result.examStream,
+        olStatus: result.academicBackground?.olStatus,
+        alStatus: result.academicBackground?.alStatus,
+        interestAreas: result.interests?.interestAreas || arrayValue(result.interestArea || state.student.interestArea),
+        enjoyableWorkTypes: result.interests?.enjoyableWorkTypes || [],
+        skills: result.skillsAndStrengths?.skills || arrayValue(result.skills || state.student.skills),
+        strengths: result.skillsAndStrengths?.strengths || [],
+        futurePreference: result.goals?.futurePreference || [],
+        dreamCareer: result.goals?.dreamCareer || result.futureGoal || state.student.futureGoal,
+        learningMode: result.learningPreferences?.learningMode || result.learningMode || state.student.learningMode,
+        courseDuration: result.learningPreferences?.courseDuration,
+        timeAvailability: result.learningPreferences?.timeAvailability || [],
+        preferredDistricts: result.learningPreferences?.preferredDistricts || arrayValue(result.preferredDistrict || state.student.preferredDistrict || state.student.district),
+        preferredLanguage: result.basicProfile?.preferredLanguage || result.learningPreferences?.preferredLanguage,
+        district: result.basicProfile?.district || result.district || state.student.district,
+        financialSupport: result.supportNeeds?.financialSupport || result.financialSupport || state.student.financialSupport,
+        budgetRange: result.supportNeeds?.budgetRange || result.budgetRange,
+        biggestChallenge: result.supportNeeds?.biggestChallenge || [],
+        supportNeeded: result.supportNeeds?.supportNeeded || [],
+        recommendedPathway: result.recommendedPathway || ""
+>>>>>>> origin/Sewmini
     };
 }
 
 function courseMatch(id, course) {
+<<<<<<< HEAD
     const profile = buildStudentRecommendationProfile();
+=======
+    const profile = recommendationProfile();
+>>>>>>> origin/Sewmini
     const reasons = [];
     const missing = [];
     const fields = [];
     let score = 0;
+<<<<<<< HEAD
     if (profile.isTalentOnly) {
         addScore(includesAny([course.category, course.subcategory, course.description, course.skillsCovered, course.careerOpportunities], [...profile.interestAreas, profile.recommendedPathway]), 35, "Matches your interest/pathway", "category");
         addScore(includesAny([course.careerOpportunities, course.description, course.category], [profile.dreamCareer, ...profile.futurePreference]), 20, "Aligns with your future goal", "career");
@@ -1232,6 +1360,15 @@ function courseMatch(id, course) {
         addScore(locationMatches([profile.district, ...profile.preferredDistricts], course.district || course.location || course.mode), 10, "Fits your location preference", "district");
         addScore(budgetMatches(profile, course), 10, "Fits your budget preference", "budget");
     }
+=======
+    addScore(includesAny([course.category, course.subcategory, course.description, course.skillsCovered, course.careerOpportunities], [...profile.interestAreas, profile.recommendedPathway]), 25, "Matches your interest/pathway", "category");
+    addScore(educationMatches(profile.currentEducationLevel, course), 20, `Suitable for ${profile.currentEducationLevel || "your education level"}`, "education");
+    addScore(includesAny([course.careerOpportunities, course.description, course.category], [profile.dreamCareer, ...profile.futurePreference]), 15, "Aligns with your future goal", "career");
+    addScore(includesAny([course.skillsCovered, course.description], [...profile.skills, ...profile.strengths]), 10, "Covers your selected skills", "skills");
+    addScore(modeMatches(profile.learningMode, course.mode || course.learningMode), 10, "Matches your learning mode", "mode");
+    addScore(locationMatches([profile.district, ...profile.preferredDistricts], course.district || course.location || course.mode), 10, "Fits your location preference", "district");
+    addScore(budgetMatches(profile, course), 10, "Fits your budget preference", "budget");
+>>>>>>> origin/Sewmini
     if (!hasValue(course.qualificationLevel) && !hasValue(course.eligibility)) missing.push("Check entry requirements with institute");
     if (!hasValue(course.applicationDeadline)) missing.push("Verify application deadline");
     const matchScore = Math.min(score, 100);
@@ -1271,11 +1408,16 @@ function courseMatch(id, course) {
 }
 
 function scholarshipMatch(id, item) {
+<<<<<<< HEAD
     const profile = buildStudentRecommendationProfile();
+=======
+    const profile = recommendationProfile();
+>>>>>>> origin/Sewmini
     const reasons = [];
     const warnings = [];
     let score = 0;
     addScore(needsFinancialHelp() || textIncludesAny(`${item.supportType} ${item.description} ${item.eligibility}`, ["bursary", "financial aid", "scholarship", "free", "monthly support", "tuition support"]), 30, "Matches your financial support need");
+<<<<<<< HEAD
     
     if (profile.isTalentOnly) {
         addScore(includesAny([item.category, item.description], [...profile.interestAreas, profile.recommendedPathway]), 25, "Category matches your pathway");
@@ -1287,6 +1429,12 @@ function scholarshipMatch(id, item) {
     }
     
     addScore(locationMatches([profile.district, ...profile.preferredDistricts], item.district || item.coverage), 15, "Available in your district or islandwide");
+=======
+    addScore(includesAny([item.educationLevel, item.qualificationLevel, item.eligibility], [profile.currentEducationLevel]), 25, "Suitable for your education level");
+    addScore(locationMatches([profile.district, ...profile.preferredDistricts], item.district || item.coverage), 15, "Available in your district or islandwide");
+    addScore(includesAny([item.qualificationLevel, item.eligibility], [profile.currentEducationLevel, profile.alStream, profile.olStatus, profile.alStatus, "O/L", "A/L", "Diploma", "Undergraduate", "Vocational"]), 15, "Eligibility matches your background");
+    addScore(includesAny([item.category, item.description], [...profile.interestAreas, profile.recommendedPathway]), 10, "Category matches your pathway");
+>>>>>>> origin/Sewmini
     const deadlineState = deadlineStatus(item.deadline);
     addScore(deadlineState.active, 5, "Deadline appears active");
     if (deadlineState.warning) warnings.push(deadlineState.warning);
@@ -1322,6 +1470,7 @@ function scholarshipMatch(id, item) {
 }
 
 function mentorMatch(uid, mentor) {
+<<<<<<< HEAD
     const profile = buildStudentRecommendationProfile();
     const reasons = [];
     let score = 0;
@@ -1335,6 +1484,15 @@ function mentorMatch(uid, mentor) {
         addScore(includesAny(mentor.supportedStudentLevels || mentor.studentLevelsSupported, [profile.currentEducationLevel]), 15, "Supports your education level");
         addScore(includesAny(mentor.languages || mentor.language || mentor.preferredLanguage || mentor.preferredLanguages, [profile.preferredLanguage]), 10, "Language preference match");
     }
+=======
+    const profile = recommendationProfile();
+    const reasons = [];
+    let score = 0;
+    addScore(includesAny([mentor.field, mentor.expertise, mentor.mentoringField, mentor.shortBio, mentor.bio], [...profile.interestAreas, profile.recommendedPathway, profile.dreamCareer]), 30, "Mentor expertise matches your pathway");
+    addScore(includesAny(mentor.guidanceAreas, [...profile.supportNeeded, ...profile.biggestChallenge, ...profile.futurePreference]), 20, "Guidance area fits your current need");
+    addScore(includesAny(mentor.supportedStudentLevels || mentor.studentLevelsSupported, [profile.currentEducationLevel]), 15, "Supports your education level");
+    addScore(includesAny(mentor.languages || mentor.language || mentor.preferredLanguage || mentor.preferredLanguages, [profile.preferredLanguage]), 10, "Language preference match");
+>>>>>>> origin/Sewmini
     addScore(availabilityMatches(profile.timeAvailability, mentor), 10, "Availability matches your schedule");
     addScore(modeMatches(profile.learningMode, mentor.mentoringMode || mentor.availability), 10, "Mentoring mode match");
     addScore(hasValue(mentor.yearsOfExperience || mentor.experience) || hasValue(mentor.organization || mentor.universityOrCompany) || hasValue(mentor.highestQualification) || hasValue(mentor.shortBio || mentor.bio) || hasValue(mentor.photoURL), 5, "Strong mentor profile");
@@ -3068,8 +3226,11 @@ function openMentorConversation(mentorUid) {
     const connection = state.connectedMentors[mentorUid];
     if (!connection || normalize(connection.status) !== "connected") {
         showToast("You can message only connected mentors.", "error");
+<<<<<<< HEAD
         state.activeMentorConversationId = null;
         showDashboardSection("mentor-messages-section");
+=======
+>>>>>>> origin/Sewmini
         return;
     }
     state.activeMentorConversationId = mentorConversationId(mentorUid, state.uid);
@@ -4013,6 +4174,7 @@ function getCourseImage(course = {}) {
 function getScholarshipImage(scholarship = {}) {
     return sanitizeImageURL(scholarship.imageURL || scholarship.raw?.imageURL, "images/scholarship-placeholder.png", "images");
 }
+<<<<<<< HEAD
 
 // --- Profile rendering and saving ---
 
@@ -4517,3 +4679,5 @@ function recalculateStudentRecommendations({ updateCourses, updateScholarships, 
     if (typeof scheduleRecommendationSave === "function") scheduleRecommendationSave();
 }
 
+=======
+>>>>>>> origin/Sewmini

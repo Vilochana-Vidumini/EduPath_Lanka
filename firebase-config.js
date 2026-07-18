@@ -3,7 +3,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { getDatabase } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+<<<<<<< HEAD
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
+=======
+>>>>>>> origin/Sewmini
 
 export const firebaseConfig = {
     apiKey: "AIzaSyD33FV6wnVeEiM3-DhSgqigSZcp88a2ztc",
@@ -19,5 +22,8 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 export const database = getDatabase(app);
+<<<<<<< HEAD
 export const storage = getStorage(app);
+=======
+>>>>>>> origin/Sewmini
 export const googleProvider = new GoogleAuthProvider();

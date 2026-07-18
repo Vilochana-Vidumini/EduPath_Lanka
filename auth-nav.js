@@ -71,7 +71,10 @@ const AUTH_PANEL_LINKS = {
         { href: 'student-dashboard.html#pathway-history', icon: 'fa-poll-h', label: 'My Results' },
         { href: 'courses.html', icon: 'fa-book-open', label: 'Courses' },
         { href: 'scholarships.html', icon: 'fa-hand-holding-usd', label: 'Scholarships' },
+<<<<<<< HEAD
         { href: 'talent-opportunities.html', icon: 'fa-star', label: 'Talent Opportunities' },
+=======
+>>>>>>> origin/Sewmini
         { href: 'mentors.html', icon: 'fa-chalkboard-teacher', label: 'Mentors' },
         { href: getPublicHomeDestination(), icon: 'fa-home', label: 'Public Home' },
     ],
@@ -898,7 +901,11 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             <a href="${dashboardUrl}" class="ep-dropdown-item"><i class="fas fa-tachometer-alt"></i> My Dashboard</a>
                             <a href="${profileUrl}" class="ep-dropdown-item"><i class="fas fa-user"></i> My Profile</a>
+<<<<<<< HEAD
                             <a href="${profileUrl}" class="ep-dropdown-item"><i class="fas fa-key"></i> Change Password</a>
+=======
+                            <a href="profile.html#security" class="ep-dropdown-item"><i class="fas fa-key"></i> Change Password</a>
+>>>>>>> origin/Sewmini
                             <a href="${getPublicHomeDestination()}" class="ep-dropdown-item"><i class="fas fa-house"></i> Public Home</a>
                             <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 4px 0;">
                             <a href="#" class="ep-dropdown-item text-danger" id="ep-dropdown-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>

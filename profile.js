@@ -16,8 +16,11 @@ import {
     normalizeList
 } from "./validation.js";
 import { getDashboardDestination, normalizeRole } from "./shared-navigation.js";
+<<<<<<< HEAD
 import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
 import { ensureDashboardTopbarLayout } from "./dashboard-topbar.js";
+=======
+>>>>>>> origin/Sewmini
 
 document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
@@ -104,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+<<<<<<< HEAD
     document.querySelectorAll('[data-student-tab]').forEach((button) => {
         button.addEventListener('click', () => {
             const tab = button.dataset.studentTab;
@@ -112,6 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+=======
+>>>>>>> origin/Sewmini
     function toggleEditingMode(isEditing) {
         const inputs = profileDetailsForm.querySelectorAll('.form-input');
         inputs.forEach(input => {
@@ -126,7 +132,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+<<<<<<< HEAD
         profileDetailsForm.querySelectorAll('[data-profile-checkbox-group] input, .mentor-declarations input[type="checkbox"], input[name="field-pathwayPreference"], input[name="field-talentOpportunities"]').forEach(input => {
+=======
+        profileDetailsForm.querySelectorAll('[data-profile-checkbox-group] input, .mentor-declarations input[type="checkbox"]').forEach(input => {
+>>>>>>> origin/Sewmini
             input.disabled = !isEditing;
         });
 
@@ -161,6 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cachedUserData = userSnapshot.val();
             userRole = normalizeRole(cachedUserData.userType || 'student') || 'student';
             
+<<<<<<< HEAD
             // Initialize Dashboard Layout Components
             ensureDashboardTopbarLayout();
             initDashboardSidebar();
@@ -169,6 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             populateFormData();
+=======
+>>>>>>> origin/Sewmini
             // Set dynamic sidebar back-link URL
             const backLink = document.getElementById('dashboard-back-link');
             if (backLink) {
@@ -177,8 +190,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Bind role specifics
             if (userRole === 'student') {
+<<<<<<< HEAD
                 window.location.replace('student-dashboard.html#personal-profile-section');
                 return;
+=======
+                document.getElementById('student-specific-card').classList.remove('hidden');
+                document.getElementById('mentor-specific-card').classList.add('hidden');
+                
+                // Fetch student details
+                get(ref(database, 'students/' + uid)).then((roleSnap) => {
+                    cachedRoleData = roleSnap.exists() ? roleSnap.val() : {};
+                    populateFormData();
+                    calculateProfileStrength();
+                });
+
+>>>>>>> origin/Sewmini
             } else if (userRole === 'mentor') {
                 document.getElementById('student-specific-card').classList.add('hidden');
                 document.getElementById('mentor-specific-card').classList.remove('hidden');
@@ -312,6 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('field-financialSupport').value = cachedRoleData.financialSupport || '';
             document.getElementById('field-learningMode').value = cachedRoleData.learningMode || '';
             document.getElementById('field-skills').value = cachedRoleData.skills || '';
+<<<<<<< HEAD
             
             // New fields
             const pathwayPref = cachedRoleData.pathwayPreference || 'undecided';
@@ -325,6 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('input[name="field-talentOpportunities"]').forEach(cb => {
                 cb.checked = selectedOpportunities.has(cb.value);
             });
+=======
+>>>>>>> origin/Sewmini
 
         } else if (userRole === 'mentor' && cachedRoleData) {
             const mentor = mergedMentorProfile || cachedRoleData;
@@ -762,11 +791,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 financialSupport: document.getElementById('field-financialSupport').value,
                 learningMode: document.getElementById('field-learningMode').value,
                 skills: normalizeList(document.getElementById('field-skills').value).join(', '),
+<<<<<<< HEAD
                 pathwayPreference: document.querySelector('input[name="field-pathwayPreference"]:checked')?.value || 'undecided',
                 enjoyedActivities: document.getElementById('field-enjoyedActivities').value,
                 workStyle: document.getElementById('field-workStyle').value,
                 talentsList: document.getElementById('field-talentsList').value,
                 talentOpportunities: [...document.querySelectorAll('input[name="field-talentOpportunities"]:checked')].map(cb => cb.value),
+=======
+>>>>>>> origin/Sewmini
                 updatedAt: now
             };
             const recommendationDataChanged = recommendationFields.some((field) => {

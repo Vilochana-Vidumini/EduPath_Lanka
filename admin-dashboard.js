@@ -91,9 +91,12 @@ const adminSections = {
     "manage-courses": { title: "Manage Courses" },
     "manage-scholarships": { title: "Manage Scholarships" },
     "pathway-results": { title: "Pathway Results" },
+<<<<<<< HEAD
     "manage-talent-categories": { title: "Talent Categories" },
     "manage-talent-opportunities": { title: "Talent Opportunities" },
     "achievement-verifications": { title: "Achievement Verifications" },
+=======
+>>>>>>> origin/Sewmini
     "mentor-approvals": { title: "Mentor Approvals" },
     "mentor-profile-updates": { title: "Mentor Profile Updates" },
     "mentor-requests": { title: "Mentor Requests" },
@@ -266,9 +269,12 @@ function runSectionRender(sectionId) {
     if (sectionId === "mentor-reviews") renderMentorReviews();
     if (sectionId === "mentor-profile-updates") renderMentorProfileUpdates();
     if (sectionId === "system-status") renderSystemStatus();
+<<<<<<< HEAD
     if (sectionId === "manage-talent-categories") renderTalentCategories();
     if (sectionId === "manage-talent-opportunities") renderTalentOpportunities();
     if (sectionId === "achievement-verifications") renderAchievementVerifications();
+=======
+>>>>>>> origin/Sewmini
 }
 
 function startAdminClock() {
@@ -964,10 +970,15 @@ function renderCourses() {
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-course="${c.id}">View</button>
                 <button class="btn btn-sm btn-primary" data-edit-course="${c.id}">Edit</button>
+<<<<<<< HEAD
                 ${normalize(c.status) === "active" 
                     ? `<button class="btn btn-sm btn-warning" data-course-status="${c.id}" data-status="inactive">Deactivate</button>`
                     : `<button class="btn btn-sm btn-success" data-course-status="${c.id}" data-status="active">Activate</button>`
                 }
+=======
+                <button class="btn btn-sm btn-success" data-course-status="${c.id}" data-status="active">Activate</button>
+                <button class="btn btn-sm btn-warning" data-course-status="${c.id}" data-status="inactive">Deactivate</button>
+>>>>>>> origin/Sewmini
                 <button class="btn btn-sm btn-danger" data-course-status="${c.id}" data-status="archived">Archive</button>
             </td>
         </tr>
@@ -1111,10 +1122,15 @@ function renderScholarships() {
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-scholarship="${s.id}">View</button>
                 <button class="btn btn-sm btn-primary" data-edit-scholarship="${s.id}">Edit</button>
+<<<<<<< HEAD
                 ${normalize(s.status) === "active" 
                     ? `<button class="btn btn-sm btn-warning" data-scholarship-status="${s.id}" data-status="inactive">Deactivate</button>`
                     : `<button class="btn btn-sm btn-success" data-scholarship-status="${s.id}" data-status="active">Activate</button>`
                 }
+=======
+                <button class="btn btn-sm btn-success" data-scholarship-status="${s.id}" data-status="active">Activate</button>
+                <button class="btn btn-sm btn-warning" data-scholarship-status="${s.id}" data-status="inactive">Deactivate</button>
+>>>>>>> origin/Sewmini
                 <button class="btn btn-sm btn-danger" data-scholarship-status="${s.id}" data-status="archived">Archive</button>
             </td>
         </tr>
@@ -3218,6 +3234,7 @@ function escapeHtml(value) {
 function escapeAttr(value) {
     return escapeHtml(value).replace(/`/g, "&#096;");
 }
+<<<<<<< HEAD
 
 // --- Talent & Opportunities System ---
 async function renderTalentCategories() {
@@ -3276,3 +3293,5 @@ async function renderAchievementVerifications() {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading verifications.</td></tr>';
     }
 }
+=======
+>>>>>>> origin/Sewmini

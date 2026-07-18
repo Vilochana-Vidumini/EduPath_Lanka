@@ -207,6 +207,7 @@ ul {
     margin: 0.15rem 0.75rem;
     border-radius: 10px;
 }
+<<<<<<< HEAD
 
 /* Shared Icon Alignment System */
 .student-nav-item {
@@ -235,6 +236,17 @@ ul {
     line-height: 1.2;
 }
 
+=======
+.sidebar-links li a i {
+    width: 24px;
+    margin-right: 12px;
+    font-size: 1.1rem;
+    transition: var(--transition);
+    text-align: center;
+    flex-shrink: 0;
+    color: #64748b;
+}
+>>>>>>> origin/Sewmini
 .sidebar-links li a:hover {
     background: rgba(79, 70, 229, 0.08);
     color: #0f172a;

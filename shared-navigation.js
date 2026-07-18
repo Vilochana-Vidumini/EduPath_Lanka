@@ -33,7 +33,11 @@ export function getDashboardDestination(role) {
 
 export function getProfileDestination(role) {
     const destinations = {
+<<<<<<< HEAD
         student: "student-dashboard.html#personal-profile-section",
+=======
+        student: "profile.html",
+>>>>>>> origin/Sewmini
         mentor: "mentor-dashboard.html#my-profile",
         admin: "profile.html",
         institute: "institute-dashboard.html#profile"
