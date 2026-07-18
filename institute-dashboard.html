@@ -68,15 +68,8 @@
             <div class="topbar-left">
                 <button type="button" class="sidebar-toggle topbar-sidebar-toggle" id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
                 <div>
-                    <h2 class="page-title" id="page-title">Dashboard</h2>
-                    <p class="page-subtitle" id="page-subtitle">Manage your courses and student inquiries.</p>
-                </div>
-            </div>
-
-            <div class="topbar-center search-bar-container">
-                <div class="topbar-search">
-                    <i class="fas fa-search"></i>
-                    <input type="search" id="global-dashboard-search" placeholder="Search courses, scholarships, inquiries...">
+                    <h2 class="page-title" id="page-title">Institute Dashboard</h2>
+                    <p class="page-subtitle" id="page-subtitle" style="display: none;"></p>
                 </div>
             </div>
 
@@ -333,7 +326,23 @@
                             <label>Government Registration Number<input id="profileRegNumber" required placeholder="HEI/2026/001"></label>
                             <label>Established Year<input id="profileEstablished" type="number" min="1800" max="2026" placeholder="2010"></label>
                         </div>
-                        <label>Institute Logo URL<input id="profileLogo" placeholder="https://example.com/logo.png"></label>
+                        <div class="logo-upload-wrapper">
+                            <label class="form-label">Institute Logo</label>
+                            <div class="logo-upload-container">
+                                <div class="logo-preview-box" id="logo-preview-box">
+                                    <span class="preview-placeholder" id="logo-preview-placeholder">IN</span>
+                                    <img id="logo-preview-img" class="logo-preview-img hidden" src="" alt="Logo Preview">
+                                </div>
+                                <div class="logo-upload-actions">
+                                    <label for="profileLogoFile" class="btn btn-outline logo-upload-btn">
+                                        <i class="fas fa-cloud-upload-alt"></i> Select Logo
+                                    </label>
+                                    <input type="file" id="profileLogoFile" accept=".png, .jpg, .jpeg" style="display: none;">
+                                    <input type="hidden" id="profileLogo">
+                                    <span class="file-info-text" id="logo-file-info">Accepts PNG, JPG, JPEG (Max 2MB)</span>
+                                </div>
+                            </div>
+                        </div>
                         <label>Institute Description<textarea id="profileDescription" rows="4" required placeholder="Describe your institute, values, degree paths, and history..."></textarea></label>
                         
                         <div class="form-section-title">Contact & Location Details</div>
@@ -518,6 +527,107 @@
                             </tbody>
                         </table>
                     </div>
+                </div>
+            </section>
+
+            <!-- SECTION 5B: ADD/EDIT SCHOLARSHIP FORM -->
+            <section id="add-scholarship-section" class="dashboard-section">
+                <div class="panel glass">
+                    <div class="panel-head">
+                        <h3 id="schol-form-title">Add Scholarship</h3>
+                        <button class="btn btn-light" id="cancel-schol-btn">Back to Scholarships</button>
+                    </div>
+                    <form id="schol-form" class="dash-form">
+                        <input type="hidden" id="editing-schol-id">
+                        
+                        <label>Scholarship Name *
+                            <input id="schol-name" required placeholder="President's Fund Scholarship Programme For G.C.E. A/L Students">
+                        </label>
+                        
+                        <div class="form-grid">
+                            <label>Provider *
+                                <input id="schol-provider" required placeholder="President's Fund Sri Lanka">
+                            </label>
+                            <label>Provider Type
+                                <input id="schol-provider-type" placeholder="Government">
+                            </label>
+                        </div>
+                        
+                        <label>Category
+                            <input id="schol-category" placeholder="A/L Student Scholarship">
+                        </label>
+                        
+                        <label>Description
+                            <textarea id="schol-description" rows="4" required placeholder="A scholarship programme offered through the President's Fund to support selected G.C.E. Advanced Level students in Sri Lanka."></textarea>
+                        </label>
+                        
+                        <label>Eligibility
+                            <textarea id="schol-eligibility" rows="4" required placeholder="Selected G.C.E. A/L students in Sri Lanka. Past notices mention students from government schools or non-fee-levying private schools, financial need..."></textarea>
+                        </label>
+                        
+                        <div class="form-grid">
+                            <label>Support Type
+                                <input id="schol-support-type" placeholder="Monthly scholarship">
+                            </label>
+                            <label>Amount / Benefit
+                                <input id="schol-amount" placeholder="Rs. 6,000 per month for 24 months">
+                            </label>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <label>Deadline
+                                <input id="schol-deadline" type="date" required>
+                            </label>
+                            <label>District / Islandwide
+                                <input id="schol-district" placeholder="Islandwide">
+                            </label>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <label>Qualification Level
+                                <input id="schol-qualification" placeholder="G.C.E. Advanced Level">
+                            </label>
+                            <label>Apply Link
+                                <input id="schol-apply-link" type="url" placeholder="https://example.com/apply">
+                            </label>
+                        </div>
+                        
+                        <div class="form-grid">
+                            <label>Contact Email
+                                <input id="schol-contact-email" type="email" placeholder="info@presidentsfund.gov.lk">
+                            </label>
+                            <label>Contact Phone
+                                <input id="schol-contact-phone" placeholder="+94 11 234 5678">
+                            </label>
+                        </div>
+                        
+                        <label>Image URL
+                            <input id="schol-image-url" placeholder="images/scholarship-placeholder.png">
+                        </label>
+                        <span class="form-helper-text" style="font-size: 0.8rem; color: var(--theme-muted); display: block; margin-top: -8px; margin-bottom: 12px;">Use a project image path such as images/scholarship-name.png, or type only the filename such as scholarship-name.png.</span>
+                        
+                        <div class="schol-image-preview-box" id="schol-image-preview">
+                            <span>Scholarship Image preview</span>
+                        </div>
+                        
+                        <div class="image-url-help-box">
+                            <strong>How to use a GitHub Image</strong>
+                            <p>Add the image to the project images folder, then paste the local path here. Example: images/scholarship-placeholder.png. GitHub Raw links also work, but normal GitHub /blob/ links should not be used.</p>
+                        </div>
+                        
+                        <label>Status
+                            <select id="schol-status">
+                                <option value="draft">Draft</option>
+                                <option value="pending">Pending Approval</option>
+                                <option value="active">Active</option>
+                                <option value="expired">Expired</option>
+                            </select>
+                        </label>
+                        
+                        <div class="form-submit-row" style="margin-top: 20px;">
+                            <button class="btn btn-primary" type="submit" id="schol-submit-btn"><i class="fas fa-plus"></i> Add Scholarship</button>
+                        </div>
+                    </form>
                 </div>
             </section>
 
@@ -777,64 +887,7 @@
         </div>
     </main>
 
-    <!-- POPUP EDIT SCHOLARSHIP MODAL -->
-    <div id="schol-modal" class="modal-overlay hidden">
-        <div class="modal-card glass">
-            <div class="modal-header">
-                <h3 id="schol-modal-title">Publish Scholarship Scheme</h3>
-                <button type="button" class="close-modal-btn" id="close-schol-modal"><i class="fas fa-times"></i></button>
-            </div>
-            <form id="schol-form" class="dash-form">
-                <input type="hidden" id="editing-schol-id">
-                <div class="form-grid">
-                    <label>Scholarship Name*<input id="schol-name" required placeholder="SLIIT Merit-Based Scholarship 2026"></label>
-                    <label>Provider (Authority)*<input id="schol-provider" required placeholder="Sri Lanka Institute of IT"></label>
-                </div>
-                <div class="form-grid">
-                    <label>Category (Field)*<input id="schol-category" required placeholder="Computer Science & Engineering"></label>
-                    <label>Provider Type*
-                        <select id="schol-provider-type" required>
-                            <option>University</option>
-                            <option>Government</option>
-                            <option>Corporate</option>
-                            <option>Foundation</option>
-                            <option>Foreign Embassy</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="form-grid">
-                    <label>Funding Cover Type*
-                        <select id="schol-support-type" required>
-                            <option>Full Tuition</option>
-                            <option>Partial Tuition</option>
-                            <option>Monthly Allowance</option>
-                            <option>One-time Grant</option>
-                        </select>
-                    </label>
-                    <label>Scholarship Value / Amount*<input id="schol-amount" required placeholder="Rs. 500,000 / 100% Free"></label>
-                </div>
-                <div class="form-grid">
-                    <label>Application Deadline*<input id="schol-deadline" type="date" required></label>
-                    <label>District Preference*<input id="schol-district" required placeholder="All Island / Colombo"></label>
-                </div>
-                <div class="form-grid">
-                    <label>Minimum Qualification Level*<input id="schol-qualification" required placeholder="GCE A/L 3 Passes in English / Edexcel"></label>
-                    <label>External Apply Link<input id="schol-apply-link" type="url" placeholder="https://example.com/apply"></label>
-                </div>
-                <div class="form-grid">
-                    <label>Contact Email<input id="schol-contact-email" type="email" placeholder="scholarship@sliit.lk"></label>
-                    <label>Contact Phone<input id="schol-contact-phone" placeholder="+94 11 234 5678"></label>
-                </div>
-                <label>Display Banner Image URL (optional)<input id="schol-image-url" placeholder="https://example.com/scholarship-banner.png"></label>
-                <label>Scholarship Description*<textarea id="schol-description" rows="3" required placeholder="Provide program structure, target audiences, key courses eligible..."></textarea></label>
-                <label>Eligibility & Selection Criteria*<textarea id="schol-eligibility" rows="3" required placeholder="List minimum GPA, family financial background thresholds, research portfolios..."></textarea></label>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" id="btn-cancel-schol">Cancel</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Scholarship</button>
-                </div>
-            </form>
-        </div>
-    </div>
+
 
     <!-- POPUP EDIT EVENT MODAL -->
     <div id="event-modal" class="modal-overlay hidden">
@@ -893,6 +946,7 @@
 
     <div id="toast" class="toast"></div>
 
+    <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="theme.js"></script>
     <script type="module" src="institute-dashboard.js"></script>
 </body>

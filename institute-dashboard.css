@@ -1767,3 +1767,128 @@ td select {
         grid-column: span 1;
     }
 }
+
+/* Logo Upload Area & Image Preview styles */
+.logo-upload-wrapper {
+    margin-bottom: 1.5rem;
+}
+
+.logo-upload-wrapper .form-label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--theme-text);
+    margin-bottom: 0.5rem;
+}
+
+.logo-upload-container {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--theme-border);
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    backdrop-filter: blur(10px);
+}
+
+.logo-preview-box {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 2px dashed var(--theme-border);
+    display: grid;
+    place-items: center;
+    background: var(--theme-surface);
+    overflow: hidden;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+}
+
+.logo-preview-box .preview-placeholder {
+    font-weight: 850;
+    font-size: 1.6rem;
+    color: var(--theme-muted);
+}
+
+.logo-preview-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.logo-upload-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.logo-upload-btn {
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 8px 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 50px;
+    width: fit-content;
+}
+
+.file-info-text {
+    font-size: 0.75rem;
+    color: var(--theme-muted);
+}
+
+/* Sidebar & welcome avatar image sizing */
+.sidebar-user-avatar img {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    object-fit: cover;
+}
+
+#welcome-logo-circle {
+    overflow: hidden;
+}
+
+/* Scholarship Image Preview Box */
+.schol-image-preview-box {
+    width: 100%;
+    max-width: 320px;
+    height: 180px;
+    border: 2px dashed rgba(37, 99, 235, 0.4);
+    border-radius: var(--radius-md);
+    background: var(--theme-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--theme-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Image URL Help Alert Box */
+.image-url-help-box {
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.16);
+    border-radius: var(--radius-sm);
+    padding: 12px 16px;
+    margin-bottom: 1.5rem;
+    color: #2563eb;
+    font-size: 0.82rem;
+    line-height: 1.4;
+}
+html[data-theme="dark"] .image-url-help-box {
+    background: rgba(37, 99, 235, 0.15);
+    color: #60a5fa;
+}
+.image-url-help-box strong {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 700;
+}

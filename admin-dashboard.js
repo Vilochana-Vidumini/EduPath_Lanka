@@ -1108,10 +1108,18 @@ function renderScholarships() {
             <td><span class="badge ${statusBadgeClass(s.status)}">${escapeHtml(normalize(s.status || "draft"))}</span></td>
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-scholarship="${s.id}">View</button>
-                <button class="btn btn-sm btn-primary" data-edit-scholarship="${s.id}">Edit</button>
-                <button class="btn btn-sm btn-success" data-scholarship-status="${s.id}" data-status="active">Activate</button>
-                <button class="btn btn-sm btn-warning" data-scholarship-status="${s.id}" data-status="inactive">Deactivate</button>
-                <button class="btn btn-sm btn-danger" data-scholarship-status="${s.id}" data-status="archived">Archive</button>
+                ${(normalize(s.status) === "pending" || normalize(s.status) === "pending approval" || normalize(s.status) === "pending_approval") ? `
+                    <button class="btn btn-sm btn-success" data-scholarship-status="${s.id}" data-status="active">Approve</button>
+                    <button class="btn btn-sm btn-danger" data-scholarship-reject="${s.id}">Reject</button>
+                ` : `
+                    <button class="btn btn-sm btn-primary" data-edit-scholarship="${s.id}">Edit</button>
+                    ${normalize(s.status) === "active" ? `
+                        <button class="btn btn-sm btn-warning" data-scholarship-status="${s.id}" data-status="inactive">Deactivate</button>
+                    ` : `
+                        <button class="btn btn-sm btn-success" data-scholarship-status="${s.id}" data-status="active">Activate</button>
+                    `}
+                    <button class="btn btn-sm btn-danger" data-scholarship-status="${s.id}" data-status="archived">Archive</button>
+                `}
             </td>
         </tr>
     `).join("");
@@ -2072,6 +2080,7 @@ function bindRowActions(root) {
     root.querySelectorAll("[data-edit-scholarship]").forEach((btn) => btn.addEventListener("click", () => editScholarship(btn.dataset.editScholarship)));
     root.querySelectorAll("[data-view-scholarship]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Scholarship Details", objectDetails(adminState.scholarships[btn.dataset.viewScholarship]))));
     root.querySelectorAll("[data-scholarship-status]").forEach((btn) => btn.addEventListener("click", () => updateScholarshipStatus(btn.dataset.scholarshipStatus, btn.dataset.status)));
+    root.querySelectorAll("[data-scholarship-reject]").forEach((btn) => btn.addEventListener("click", () => rejectScholarship(btn.dataset.scholarshipReject)));
     root.querySelectorAll("[data-request-status]").forEach((btn) => btn.addEventListener("click", () => updateRequestStatus(btn.dataset.requestStatus, btn.dataset.status)));
     root.querySelectorAll("[data-view-guest]").forEach((btn) => btn.addEventListener("click", () => viewGuestInquiry(btn.dataset.viewGuest)));
     root.querySelectorAll("[data-guest-status]").forEach((btn) => btn.addEventListener("click", () => updateGuestStatus(btn.dataset.guestStatus, btn.dataset.status)));
@@ -2278,6 +2287,22 @@ async function updateScholarshipStatus(id, status) {
     await update(ref(database, `scholarships/${id}`), { status, updatedAt: serverTimestamp() });
     await logActivity(`scholarship_${status === "active" ? "activated" : status === "inactive" ? "deactivated" : "updated"}`, `Set scholarship status to ${status}`, "scholarship", id);
     showToast(`Scholarship ${status}.`, "success");
+}
+
+async function rejectScholarship(id) {
+    const reason = prompt("Enter the rejection reason for this scholarship (optional):") || "Does not meet requirements";
+    try {
+        await update(ref(database, `scholarships/${id}`), {
+            status: "rejected",
+            rejectionReason: reason,
+            updatedAt: serverTimestamp()
+        });
+        await logActivity("scholarship_rejected", `Rejected scholarship. Reason: ${reason}`, "scholarship", id);
+        showToast("Scholarship rejected.", "warning");
+    } catch (e) {
+        console.error(e);
+        showToast("Action failed.", "error");
+    }
 }
 
 async function updateRequestStatus(id, status) {

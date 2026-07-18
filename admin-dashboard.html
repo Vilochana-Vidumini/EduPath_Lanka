@@ -42,6 +42,7 @@
             <li class="sidebar-section-label">Content Management</li>
             <li><a href="#manage-courses" data-section="manage-courses"><i class="fas fa-book"></i><span class="sidebar-label">Courses</span></a></li>
             <li><a href="#manage-scholarships" data-section="manage-scholarships"><i class="fas fa-hand-holding-usd"></i><span class="sidebar-label">Scholarships</span></a></li>
+            <li><a href="#manage-events" data-section="manage-events"><i class="fas fa-calendar-alt"></i><span class="sidebar-label">Events</span></a></li>
             <li><a href="#pathway-results" data-section="pathway-results"><i class="fas fa-route"></i><span class="sidebar-label">Pathways</span></a></li>
             <li class="sidebar-section-label">Talent & Discoveries</li>
             <li><a href="#manage-talent-categories" data-section="manage-talent-categories"><i class="fas fa-tags"></i><span class="sidebar-label">Talent Categories</span></a></li>
@@ -311,6 +312,32 @@
                             <div class="form-group"><label>Status</label><select id="schol-status" class="form-control"><option value="draft">Draft</option><option value="active">Active</option><option value="inactive">Inactive</option><option value="archived">Archived</option></select></div>
                             <div class="form-group full-width form-actions"><button type="submit" class="btn btn-primary"><span id="scholarship-submit-label">Add Scholarship</span></button><button type="button" id="scholarship-cancel-edit" class="btn btn-danger hidden">Cancel Edit</button></div>
                         </form>
+                    </div>
+                </div>
+            </section>
+
+            <section id="manage-events" class="dashboard-section content-section">
+                <div class="section-header"><h2>Manage Campus Events</h2></div>
+                <div class="course-management-stack">
+                    <div class="table-card glass">
+                        <div class="p-3 border-bottom"><h3>Events</h3></div>
+                        <div class="table-responsive">
+                            <table class="data-table events-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" class="col-long">Event Title</th>
+                                        <th scope="col" class="col-medium">Institute</th>
+                                        <th scope="col" class="col-medium">Date</th>
+                                        <th scope="col" class="col-medium">Location</th>
+                                        <th scope="col" class="col-status">Status</th>
+                                        <th scope="col" class="col-actions">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-events-tbody">
+                                    <tr><td colspan="6" class="text-center py-4 data-loading">Loading events...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </section>

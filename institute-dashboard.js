@@ -64,6 +64,10 @@ async function initDashboard(user) {
     initDashboardNotifications(user.uid, "institute");
 
     bindRealtimeData();
+
+    // Wire hash route routing
+    handleHashRoute();
+    window.addEventListener("hashchange", handleHashRoute);
 }
 
 function wireUi() {
@@ -82,6 +86,46 @@ function wireUi() {
     // Auth & Profile
     document.getElementById("logout-btn-sidebar")?.addEventListener("click", logout);
     document.getElementById("profile-form")?.addEventListener("submit", saveProfile);
+
+    // Profile Logo File Upload & FileReader Preview
+    const logoFileInput = document.getElementById("profileLogoFile");
+    const logoHiddenInput = document.getElementById("profileLogo");
+    const logoPreviewImg = document.getElementById("logo-preview-img");
+    const logoPreviewPlaceholder = document.getElementById("logo-preview-placeholder");
+
+    logoFileInput?.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
+        if (!allowedTypes.includes(file.type)) {
+            toast("Please select a valid image file (PNG, JPG, or JPEG).");
+            logoFileInput.value = "";
+            return;
+        }
+
+        if (file.size > 2 * 1024 * 1024) {
+            toast("Logo image size should not exceed 2MB.");
+            logoFileInput.value = "";
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64Data = event.target.result;
+            if (logoHiddenInput) {
+                logoHiddenInput.value = base64Data;
+            }
+            if (logoPreviewImg) {
+                logoPreviewImg.src = base64Data;
+                logoPreviewImg.classList.remove("hidden");
+            }
+            if (logoPreviewPlaceholder) {
+                logoPreviewPlaceholder.classList.add("hidden");
+            }
+        };
+        reader.readAsDataURL(file);
+    });
 
     // Courses Action Handles
     document.getElementById("open-add-course-btn")?.addEventListener("click", () => {
@@ -124,12 +168,26 @@ function wireUi() {
     document.getElementById("institute-support-form")?.addEventListener("submit", sendInstituteSupportMessage);
 
     // Scholarships
-    document.getElementById("open-add-schol-btn")?.addEventListener("click", () => openScholModal());
-    document.getElementById("quick-add-schol-btn")?.addEventListener("click", () => openScholModal());
-    document.getElementById("action-create-schol")?.addEventListener("click", () => openScholModal());
-    document.getElementById("close-schol-modal")?.addEventListener("click", () => closeScholModal());
-    document.getElementById("btn-cancel-schol")?.addEventListener("click", () => closeScholModal());
+    document.getElementById("open-add-schol-btn")?.addEventListener("click", () => openAddScholarship());
+    document.getElementById("quick-add-schol-btn")?.addEventListener("click", () => openAddScholarship());
+    document.getElementById("action-create-schol")?.addEventListener("click", () => openAddScholarship());
+    document.getElementById("cancel-schol-btn")?.addEventListener("click", () => showSection("scholarships-section"));
     document.getElementById("schol-form")?.addEventListener("submit", saveScholarship);
+
+    // Scholarship Form Image URL Preview Handler
+    document.getElementById("schol-image-url")?.addEventListener("input", (e) => {
+        const url = e.target.value.trim();
+        const previewBox = document.getElementById("schol-image-preview");
+        if (previewBox) {
+            if (url) {
+                previewBox.style.backgroundImage = `url('${url}')`;
+                previewBox.querySelector("span").textContent = "";
+            } else {
+                previewBox.style.backgroundImage = "";
+                previewBox.querySelector("span").textContent = "Scholarship Image preview";
+            }
+        }
+    });
     document.getElementById("schol-search")?.addEventListener("input", (e) => {
         state.scholSearch = e.target.value.toLowerCase();
         renderScholarships();
@@ -296,7 +354,7 @@ function bindRealtimeData() {
 }
 
 function showSection(sectionId) {
-    if (!isInstituteApproved() && !["dashboard-section", "support-section", "settings-section", "profile-section", "add-course-section"].includes(sectionId)) {
+    if (!isInstituteApproved() && !["dashboard-section", "support-section", "settings-section", "profile-section", "add-course-section", "add-scholarship-section"].includes(sectionId)) {
         toast("Your institute profile is pending review. This section is locked until approved.");
         sectionId = "dashboard-section";
     }
@@ -311,10 +369,11 @@ function showSection(sectionId) {
     });
 
     const titles = {
-        "dashboard-section": ["Dashboard Workspace", "Manage your courses, scholarship lists, events and enquiries."],
+        "dashboard-section": ["Institute Dashboard", ""],
         "courses-section": ["My Courses Catalog", "Configure, edit, publish, or suspend courses from public searches."],
         "add-course-section": ["Course Setup Spec", "Add detailed course modules, criteria, intake schedules, and images."],
         "scholarships-section": ["Scholarships Registry", "Promote institution funding scopes, full tuitions, and criteria."],
+        "add-scholarship-section": ["Scholarship Setup Spec", "Add detailed scholarship criteria, support types, intake schedules, and images."],
         "events-section": ["Upcoming Campus Events", "Host Open Days, webinars, local career seminars, and workshops."],
         "applications-section": ["Student Enrolments", "Review qualifications, contact details, and respond to incoming students."],
         "inquiries-section": ["Course Inquiry Inbox", "Maintain and respond to incoming student academic enquiries."],
@@ -327,9 +386,58 @@ function showSection(sectionId) {
 
     const [title, subtitle] = titles[sectionId] || titles["dashboard-section"];
     text("page-title", title);
-    text("page-subtitle", subtitle);
+    
+    const subtitleEl = document.getElementById("page-subtitle");
+    if (subtitleEl) {
+        subtitleEl.textContent = subtitle;
+        subtitleEl.style.display = subtitle ? "block" : "none";
+    }
+
+    // Update URL hash without triggering hashchange event
+    const hashMapping = {
+        "dashboard-section": "overview",
+        "profile-section": "profile",
+        "courses-section": "courses",
+        "add-course-section": "add-course",
+        "scholarships-section": "scholarships",
+        "add-scholarship-section": "add-scholarship",
+        "events-section": "events",
+        "applications-section": "applications",
+        "inquiries-section": "inquiries",
+        "analytics-section": "analytics",
+        "reports-section": "reports",
+        "notifications-section": "notifications",
+        "support-section": "chat-admin",
+        "settings-section": "settings"
+    };
+    const targetHash = hashMapping[sectionId] ? `#${hashMapping[sectionId]}` : "";
+    if (window.location.hash !== targetHash) {
+        history.replaceState(null, null, targetHash || " ");
+    }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function handleHashRoute() {
+    const hash = window.location.hash;
+    const mapping = {
+        "#overview": "dashboard-section",
+        "#profile": "profile-section",
+        "#courses": "courses-section",
+        "#add-course": "add-course-section",
+        "#scholarships": "scholarships-section",
+        "#add-scholarship": "add-scholarship-section",
+        "#events": "events-section",
+        "#applications": "applications-section",
+        "#inquiries": "inquiries-section",
+        "#analytics": "analytics-section",
+        "#reports": "reports-section",
+        "#notifications": "notifications-section",
+        "#chat-admin": "support-section",
+        "#settings": "settings-section"
+    };
+    const sectionId = mapping[hash] || "dashboard-section";
+    showSection(sectionId);
 }
 
 function renderIdentity() {
@@ -363,6 +471,42 @@ function renderIdentity() {
             topbarAvatar.innerHTML = `<img src="${state.institute.logoURL}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
         } else {
             topbarAvatar.innerHTML = `<i class="fas fa-user"></i>`;
+        }
+    }
+
+    // Also update auth-nav dropdown if it has hydrated the topbar
+    const dropdownTrigger = document.getElementById("ep-user-dropdown-trigger");
+    if (dropdownTrigger) {
+        let avatarImgEl = dropdownTrigger.querySelector(".ep-avatar-img");
+        if (state.institute.logoURL) {
+            if (avatarImgEl && avatarImgEl.tagName === "IMG") {
+                avatarImgEl.src = state.institute.logoURL;
+            } else if (avatarImgEl) {
+                const newImg = document.createElement("img");
+                newImg.className = "ep-avatar-img";
+                newImg.src = state.institute.logoURL;
+                newImg.alt = name;
+                avatarImgEl.replaceWith(newImg);
+            }
+        } else {
+            if (avatarImgEl && avatarImgEl.tagName === "DIV") {
+                avatarImgEl.textContent = initials;
+            } else if (avatarImgEl) {
+                const newDiv = document.createElement("div");
+                newDiv.className = "ep-avatar-img";
+                newDiv.textContent = initials;
+                avatarImgEl.replaceWith(newDiv);
+            }
+        }
+        
+        const avatarNameEl = dropdownTrigger.querySelector(".ep-avatar-name");
+        if (avatarNameEl) {
+            avatarNameEl.textContent = name.split(" ")[0];
+        }
+
+        const dropdownUsername = document.querySelector(".ep-dropdown-username");
+        if (dropdownUsername) {
+            dropdownUsername.textContent = name;
         }
     }
 }
@@ -495,7 +639,27 @@ function renderProfile() {
     setValue("profileWebsite", state.institute.websiteURL || "");
     setValue("profileFacebook", state.institute.facebookPage || "");
     setValue("profileLinkedIn", state.institute.linkedinPage || "");
-    setValue("profileLogo", state.institute.logoURL || state.user.photoURL || "");
+    
+    const logoURL = state.institute.logoURL || state.user.photoURL || "";
+    setValue("profileLogo", logoURL);
+    
+    const logoPreviewImg = document.getElementById("logo-preview-img");
+    const logoPreviewPlaceholder = document.getElementById("logo-preview-placeholder");
+    if (logoPreviewImg && logoPreviewPlaceholder) {
+        if (logoURL) {
+            logoPreviewImg.src = logoURL;
+            logoPreviewImg.classList.remove("hidden");
+            logoPreviewPlaceholder.classList.add("hidden");
+        } else {
+            logoPreviewImg.src = "";
+            logoPreviewImg.classList.add("hidden");
+            const name = state.institute.instituteName || state.user.fullName || "Institute";
+            const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
+            logoPreviewPlaceholder.textContent = initials || "IN";
+            logoPreviewPlaceholder.classList.remove("hidden");
+        }
+    }
+
     setValue("profileDescription", state.institute.description || "");
     setValue("profileRegNumber", state.institute.regNumber || "");
     setValue("profileEstablished", state.institute.establishedYear || "");
@@ -692,20 +856,24 @@ function resetCourseForm() {
 }
 
 // ----------------- SCHOLARSHIPS -----------------
-function openScholModal(scholId = "") {
-    const modal = document.getElementById("schol-modal");
-    if (!modal) return;
-    modal.classList.remove("hidden");
-
+function openAddScholarship(scholId = "") {
     const form = document.getElementById("schol-form");
     form.reset();
     setValue("editing-schol-id", "");
-    text("schol-modal-title", "Publish Scholarship Scheme");
+    text("schol-form-title", "Add Scholarship");
+    
+    // reset image preview
+    const previewBox = document.getElementById("schol-image-preview");
+    if (previewBox) {
+        previewBox.style.backgroundImage = "";
+        const placeholderSpan = previewBox.querySelector("span");
+        if (placeholderSpan) placeholderSpan.textContent = "Scholarship Image preview";
+    }
 
     if (scholId) {
         const s = state.scholarships[scholId];
         if (!s) return;
-        text("schol-modal-title", "Edit Scholarship Scheme");
+        text("schol-form-title", "Edit Scholarship");
         setValue("editing-schol-id", scholId);
         setValue("schol-name", s.scholarshipName || s.name || "");
         setValue("schol-provider", s.provider || "");
@@ -722,11 +890,19 @@ function openScholModal(scholId = "") {
         setValue("schol-image-url", s.imageURL || "");
         setValue("schol-description", s.description || "");
         setValue("schol-eligibility", s.eligibility || "");
-    }
-}
+        setValue("schol-status", s.status || "draft");
 
-function closeScholModal() {
-    document.getElementById("schol-modal").classList.add("hidden");
+        // Set image preview background if image exists
+        if (s.imageURL && previewBox) {
+            previewBox.style.backgroundImage = `url('${s.imageURL}')`;
+            const placeholderSpan = previewBox.querySelector("span");
+            if (placeholderSpan) placeholderSpan.textContent = "";
+        }
+    } else {
+        setValue("schol-status", "draft");
+    }
+
+    showSection("add-scholarship-section");
 }
 
 async function saveScholarship(event) {
@@ -756,9 +932,7 @@ async function saveScholarship(event) {
         contactEmail: value("schol-contact-email") || "",
         contactPhone: value("schol-contact-phone") || "",
         imageURL: value("schol-image-url") || "images/schol-placeholder.png",
-        status: editingId ? (
-            ["active", "rejected"].includes(normalize(state.scholarships[editingId]?.status)) ? "pending" : (state.scholarships[editingId]?.status || "pending")
-        ) : "pending",
+        status: value("schol-status") || "draft",
         updatedAt: serverTimestamp()
     };
 
@@ -767,8 +941,8 @@ async function saveScholarship(event) {
     await set(ref(database, `scholarships/${id}`), payload);
     await logActivity(editingId ? "scholarship_updated" : "scholarship_created", `${editingId ? "Updated" : "Created"} scholarship ${payload.scholarshipName}`, id);
 
-    closeScholModal();
-    toast("Scholarship scheme saved successfully. Awaiting Admin activation.");
+    showSection("scholarships-section");
+    toast("Scholarship saved successfully.");
 }
 
 function renderScholarships() {
@@ -776,15 +950,35 @@ function renderScholarships() {
     if (!container) return;
 
     let rows = Object.values(state.scholarships);
+    
+    // Filter rows based on search search text and selected filter category
+    const todayStr = new Date().toISOString().split("T")[0];
+
     rows = rows.filter((s) => {
         const haystack = [s.scholarshipName, s.provider, s.category, s.description].join(" ").toLowerCase();
         const matchesSearch = haystack.includes(state.scholSearch);
-        const matchesStatus = state.scholStatus === "all" || normalize(s.status || "pending") === state.scholStatus;
+        
+        const deadlinePassed = s.deadline ? s.deadline < todayStr : false;
+        const statusNorm = normalize(s.status || "draft");
+
+        const isActive = statusNorm === "active" && !deadlinePassed;
+        const isPending = statusNorm === "pending" || statusNorm === "pending approval" || statusNorm === "pending_approval";
+        const isExpired = statusNorm === "expired" || (statusNorm === "active" && deadlinePassed);
+
+        let matchesStatus = true;
+        if (state.scholStatus === "active") {
+            matchesStatus = isActive;
+        } else if (state.scholStatus === "pending") {
+            matchesStatus = isPending;
+        } else if (state.scholStatus === "expired") {
+            matchesStatus = isExpired;
+        }
+
         return matchesSearch && matchesStatus;
     });
 
     if (!rows.length) {
-        container.innerHTML = `<tr><td colspan="6" class="text-center muted">No scholarships have been added yet.</td></tr>`;
+        container.innerHTML = `<tr><td colspan="6" class="text-center muted">No scholarships match the selected criteria.</td></tr>`;
         return;
     }
 
@@ -792,8 +986,8 @@ function renderScholarships() {
         return `
             <tr>
                 <td><strong>${esc(s.scholarshipName)}</strong><br><span class="muted">${esc(s.provider)}</span></td>
-                <td><span class="badge badge-cyan">${esc(s.supportType)}</span></td>
-                <td><strong>${esc(s.amount)}</strong></td>
+                <td><span class="badge badge-cyan">${esc(s.category)}</span></td>
+                <td><strong>${esc(s.supportType)} (${esc(s.amount)})</strong></td>
                 <td>${esc(s.deadline || "-")}</td>
                 <td>${getStatusBadge(s.status)}</td>
                 <td>${getTableActions("schol", s.scholarshipId, s.status)}</td>
@@ -801,7 +995,7 @@ function renderScholarships() {
         `;
     }).join("");
 
-    container.querySelectorAll("[data-edit-schol]").forEach((btn) => btn.addEventListener("click", () => openScholModal(btn.dataset.editSchol)));
+    container.querySelectorAll("[data-edit-schol]").forEach((btn) => btn.addEventListener("click", () => openAddScholarship(btn.dataset.editSchol)));
     container.querySelectorAll("[data-delete-schol]").forEach((btn) => btn.addEventListener("click", () => deleteScholarship(btn.dataset.deleteSchol)));
     container.querySelectorAll("[data-view-schol]").forEach((btn) => btn.addEventListener("click", () => viewScholarshipDetails(btn.dataset.viewSchol)));
     container.querySelectorAll("[data-view-reason-schol]").forEach((btn) => btn.addEventListener("click", () => viewRejectionReason("scholarship", btn.dataset.viewReasonSchol)));
@@ -867,7 +1061,9 @@ async function saveEvent(event) {
         registrationLink: value("event-registration-link") || "",
         imageURL: value("event-image-url") || "images/event-placeholder.png",
         description: value("event-description"),
-        status: "active",
+        status: editingId ? (
+            ["active", "rejected"].includes(normalize(state.events[editingId]?.status)) ? "pending" : (state.events[editingId]?.status || "pending")
+        ) : "pending",
         updatedAt: serverTimestamp()
     };
 
@@ -877,7 +1073,7 @@ async function saveEvent(event) {
     await logActivity(editingId ? "event_updated" : "event_created", `${editingId ? "Updated" : "Scheduled"} event: ${payload.title}`, id);
 
     closeEventModal();
-    toast("Event scheduled and live for student calendars.");
+    toast("Event scheduled successfully. Awaiting Admin activation.");
 }
 
 function renderEvents() {
@@ -2061,6 +2257,10 @@ function getStatusBadge(status) {
         return `<span class="badge badge-success">Approved</span>`;
     } else if (s === "rejected") {
         return `<span class="badge badge-danger">Rejected</span>`;
+    } else if (s === "expired") {
+        return `<span class="badge badge-secondary" style="background:#64748b;color:#ffffff;">Expired</span>`;
+    } else if (s === "draft") {
+        return `<span class="badge badge-secondary" style="background:#94a3b8;color:#ffffff;">Draft</span>`;
     } else {
         return `<span class="badge badge-warning">Pending Approval</span>`;
     }
@@ -2080,6 +2280,12 @@ function getTableActions(type, id, status) {
             <div class="table-actions">
                 <button class="btn btn-sm btn-light" data-view-reason-${type}="${escAttr(id)}"><i class="fas fa-circle-exclamation text-danger"></i> View Reason</button>
                 <button class="btn btn-sm btn-light" data-edit-${type}="${escAttr(id)}"><i class="fas fa-repeat"></i> Edit & Resubmit</button>
+            </div>
+        `;
+    } else if (s === "expired") {
+        return `
+            <div class="table-actions">
+                <button class="btn btn-sm btn-light" data-view-${type}="${escAttr(id)}"><i class="fas fa-eye"></i> View</button>
             </div>
         `;
     } else {
