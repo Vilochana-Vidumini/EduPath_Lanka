@@ -3473,12 +3473,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-goal').textContent = req.futureGoal || studentData.futureGoal || studentData.goal || userData.futureGoal || latestResult.futureGoal || latestResult.goals?.dreamCareer || 'N/A';
         document.getElementById('modal-learning-mode').textContent = studentData.learningMode || userData.learningMode || latestResult.learningMode || latestResult.learningPreferences?.learningMode || 'N/A';
         document.getElementById('modal-skills').textContent = displayVal(req.skills || studentData.skills || userData.skills || latestResult.skills || latestResult.skillsAndStrengths?.skills || 'N/A');
-<<<<<<< HEAD
                     <div class="modal-row"><strong>Pathway Preference:</strong> <span><span style="text-transform: capitalize;">${escapeHtml(req.pathwayPreference || 'N/A')}</span></span></div>
                     ${req.enjoyedActivities ? `<div class="modal-row full-width"><strong>Enjoyed Activities:</strong> <div style="margin-top:0.25rem;">${escapeHtml(req.enjoyedActivities)}</div></div>` : ''}
                     ${req.talentsList ? `<div class="modal-row full-width"><strong>Talents:</strong> <div style="margin-top:0.25rem;">${escapeHtml(req.talentsList)}</div></div>` : ''}
-=======
->>>>>>> origin/Sewmini
         document.getElementById('modal-message').textContent = req.message || 'N/A';
         document.getElementById('modal-pathway-result').textContent = Object.keys(latestResult || {}).length ? `${latestResult.pathway || latestResult.recommendedPathway || 'Recommended pathway unavailable'} (${displayVal(latestResult.pathwayScore || latestResult.score || 'N/A')})` : 'No pathway result available yet.';
         document.getElementById('modal-requested-at').textContent = formatSupportDate(req.createdAt);

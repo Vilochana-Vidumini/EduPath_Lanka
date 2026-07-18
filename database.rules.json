@@ -409,7 +409,6 @@
     "adminNotes": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
       ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
-<<<<<<< HEAD
     },
     "learningProfiles": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
@@ -438,8 +437,6 @@
         ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
         ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
       }
-=======
->>>>>>> origin/Sewmini
     }
   }
 }

@@ -468,24 +468,16 @@ textarea.form-input {
     background: rgba(239, 68, 68, 0.06);
 }
 
-<<<<<<< HEAD
 .mentor-profile-tabs,
 .student-profile-tabs {
-=======
-.mentor-profile-tabs {
->>>>>>> origin/Sewmini
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 22px;
 }
 
-<<<<<<< HEAD
 .mentor-tab,
 .student-tab {
-=======
-.mentor-tab {
->>>>>>> origin/Sewmini
     border: 1px solid rgba(203, 213, 225, 0.75);
     background: rgba(255, 255, 255, 0.75);
     color: #475569;
@@ -499,19 +491,14 @@ textarea.form-input {
 }
 
 .mentor-tab.active,
-<<<<<<< HEAD
 .mentor-tab:hover,
 .student-tab.active,
 .student-tab:hover {
-=======
-.mentor-tab:hover {
->>>>>>> origin/Sewmini
     border-color: rgba(79, 70, 229, 0.35);
     background: rgba(79, 70, 229, 0.09);
     color: var(--primary);
 }
 
-<<<<<<< HEAD
 .mentor-tab-panel,
 .student-tab-panel {
     display: none;
@@ -519,13 +506,6 @@ textarea.form-input {
 
 .mentor-tab-panel.active,
 .student-tab-panel.active {
-=======
-.mentor-tab-panel {
-    display: none;
-}
-
-.mentor-tab-panel.active {
->>>>>>> origin/Sewmini
     display: block;
 }
 

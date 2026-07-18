@@ -77,7 +77,6 @@ export function normalizeStudentProfile(result = {}, student = {}) {
     };
 }
 
-<<<<<<< HEAD
 export function getLearnerRecommendationProfile({ userRole, studentProfile, learningProfile, pathwayResult, talentProfile, discoveryProfile }) {
     if (userRole === "mentor" && learningProfile) {
         return normalizeLearningProfile(learningProfile);
@@ -130,13 +129,6 @@ export function buildStudentRecommendationProfile({ studentProfile = {}, learnin
         // Include flat properties for backward compatibility with existing recommendation functions
         ...normalizeStudentProfile({}, studentProfile)
     };
-=======
-export function getLearnerRecommendationProfile({ userRole, studentProfile, learningProfile, pathwayResult }) {
-    if (userRole === "mentor" && learningProfile) {
-        return normalizeLearningProfile(learningProfile);
-    }
-    return normalizeStudentProfile(pathwayResult, studentProfile);
->>>>>>> origin/Sewmini
 }
 
 // ----------------------------------------------------------------------
@@ -449,7 +441,6 @@ export function recommendMentors(profile, mentorsObj, currentUid) {
 
     return recommendations.filter(r => r.eligibilityStatus === "eligible").sort((a, b) => b.matchScore - a.matchScore);
 }
-<<<<<<< HEAD
 
 // TALENT OPPORTUNITY RECOMMENDATIONS
 export function recommendTalentOpportunities(profile, opportunitiesObj) {
@@ -547,5 +538,3 @@ export function recommendTalentOpportunities(profile, opportunitiesObj) {
     // Sort: score desc
     return recommendations.filter(r => r.eligibilityStatus !== "ineligible").sort((a, b) => b.matchScore - a.matchScore);
 }
-=======
->>>>>>> origin/Sewmini

@@ -308,12 +308,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 rejectedAt: null,
                 rejectionReason: ''
             });
-<<<<<<< HEAD
             payload.pathwayPreference = currentStudentData?.pathwayPreference || 'undecided';
             payload.enjoyedActivities = currentStudentData?.enjoyedActivities || '';
             payload.talentsList = currentStudentData?.talentsList || '';
-=======
->>>>>>> origin/Sewmini
 
             const notificationRef = push(ref(database, `notifications/${mentorId}`));
             await set(notificationRef, {
