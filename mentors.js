@@ -1,4 +1,4 @@
-import { auth, database } from "./firebase-config.js";
+﻿import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, push, set, serverTimestamp, onValue, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast } from "./auth-nav.js?v=20260614-brand";
@@ -34,6 +34,31 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPathwayResultId = '';
     let currentMentorRequests = {};
     let ratingSummaries = {};
+
+    const mentorCategoryTerms = {
+        tech: ["software", "technology", "information technology", "computer", "computing", "web development", "app development", "programming", "developer", "data science", "data analytics", "cyber security", "cybersecurity", "cloud", "network", "artificial intelligence", "machine learning", "digital", "it mentor"],
+        vocational: ["nvq", "vocational", "technical", "technician", "trade", "craft", "skills training", "career training", "automotive", "electrical", "electronic", "mechanical", "civil", "construction", "hospitality", "culinary", "beauty", "plumbing", "welding"],
+        business: ["business", "management", "entrepreneur", "entrepreneurship", "startup", "start-up", "marketing", "finance", "accounting", "commerce", "economics", "leadership", "human resource", "hrm", "operations", "project management", "administration", "sales"],
+        creative: ["design", "creative", "art", "arts", "drawing", "graphic", "media", "photography", "film", "animation", "music", "dance", "dancing", "theatre", "acting", "fashion", "writing", "content creation", "performing arts", "architecture"],
+        sports: ["sport", "sports", "athlete", "athletics", "coach", "coaching", "fitness", "physical education", "football", "cricket", "rugby", "basketball", "volleyball", "swimming", "badminton", "tennis", "martial arts", "wellness"]
+    };
+
+    function flattenMentorText(value) {
+        if (value == null) return "";
+        if (Array.isArray(value)) return value.map(flattenMentorText).join(" ");
+        if (typeof value === "object") return Object.entries(value).filter(([, enabled]) => enabled !== false && enabled != null).map(([key, item]) => `${key} ${flattenMentorText(item)}`).join(" ");
+        return String(value);
+    }
+
+    function mentorCategoryMatches(directoryText, term) {
+        const normalizedTerm = String(term || "").toLowerCase().replace(/[^a-z0-9+#/& -]+/g, " ").replace(/\s+/g, " ").trim();
+        return normalizedTerm && (` ${directoryText} `).includes(` ${normalizedTerm} `);
+    }
+
+    function mentorDirectoryText(mentor = {}, user = {}) {
+        return [mentor.fullName, user.fullName, mentor.field, mentor.mentoringField, mentor.expertise, mentor.specialization, mentor.currentPosition, mentor.designation, mentor.role, mentor.profession, mentor.mentorType, mentor.professionalTypes, mentor.guidanceAreas, mentor.adviceAreas, mentor.supportAreas, mentor.skills, mentor.majorSkills, mentor.tags, mentor.supportedFields, mentor.supportedTalentCategories, mentor.bio, mentor.universityOrCompany, mentor.organization, mentor.currentOrganization]
+            .map(flattenMentorText).join(" ").toLowerCase().replace(/[^a-z0-9+#/& -]+/g, " ").replace(/\s+/g, " ").trim();
+    }
 
     // Check Auth State
     onAuthStateChanged(auth, async (user) => {
@@ -133,7 +158,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 approvalStatus: mentor.approvalStatus || mentor.status || '',
                                 publicVisibility: mentor.publicVisibility === true,
                                 mentoringEnabled: mentor.mentoringEnabled === true,
-                                userType: user.userType || user.role || 'mentor'
+                                userType: user.userType || user.role || 'mentor',
+                                directoryText: mentorDirectoryText(mentor, user)
                             });
                         }
                     }));
@@ -158,15 +184,10 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderMentors() {
         if (!grid) return;
 
-        let filtered = allMentors.filter(mentor => {
-            const cat = activeCategory.toLowerCase();
-            const matchesCategory = activeCategory === 'all' || 
-                                    mentor.category.includes(cat) || 
-                                    mentor.designation.toLowerCase().includes(cat);
-            
-            const matchesSearch = mentor.name.toLowerCase().includes(searchQuery) ||
-                                 mentor.designation.toLowerCase().includes(searchQuery) ||
-                                 mentor.company.toLowerCase().includes(searchQuery);
+        const filtered = allMentors.filter((mentor) => {
+            const categoryTerms = mentorCategoryTerms[activeCategory] || [];
+            const matchesCategory = activeCategory === "all" || categoryTerms.some((term) => mentorCategoryMatches(mentor.directoryText, term));
+            const matchesSearch = !searchQuery || mentor.directoryText.includes(searchQuery);
             return matchesCategory && matchesSearch;
         });
 
@@ -175,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-muted);">
                     <i class="fas fa-user-slash" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
                     <h3>No mentors found</h3>
-                    <p>No approved mentors are available right now. Please check again later.</p>
+                    <p>${activeCategory === "all" && !searchQuery ? "No approved mentors are available right now." : "No mentors match this category and search. Try another category or clear the search."}</p>
                 </div>
             `;
             return;

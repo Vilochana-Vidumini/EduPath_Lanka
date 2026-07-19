@@ -1,4 +1,4 @@
-import { auth, database } from "./firebase-config.js";
+﻿import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, update, push, onValue, off, query, orderByChild, equalTo, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast, preserveThemeOnClear } from "./auth-nav.js?v=20260614-brand";
@@ -6,9 +6,23 @@ import { updateSidebarUser } from "./sidebar.js";
 import { ensureDashboardTopbarLayout, initDashboardNotifications, updateDashboardGreetingName } from "./dashboard-topbar.js";
 import { activeRequestFor, accountRole, isAccountActive, isApprovedMentorProfile, normalizeAppointment, normalizeConnection, normalizeList, normalizeMentorshipRequest, normalizeStatus, normalizeUserRoles } from "./mentorship-utils.js";
 import { ratingLabel } from "./ratings.js";
-import { getLearnerRecommendationProfile, recommendCourses, recommendScholarships, recommendInstitutes, recommendMentors } from "./recommendation-engine.js";
+import { getLearnerRecommendationProfile, recommendCourses, recommendScholarships, recommendInstitutes } from "./recommendation-engine.js";
 
-const state = {
+
+let learningDateTimer = null;
+function startLearningDateTime() {
+    const updateClock = () => {
+        const now = new Date();
+        const dateElement = document.getElementById("mentor-learning-date");
+        const timeElement = document.getElementById("mentor-learning-time");
+        const timeTextElement = document.getElementById("mentor-learning-time-text");
+        if (dateElement) dateElement.textContent = now.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+        if (timeTextElement) timeTextElement.textContent = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+        if (timeElement) timeElement.dateTime = now.toISOString();
+    };
+    updateClock();
+    if (!learningDateTimer) learningDateTimer = setInterval(updateClock, 60000);
+}const state = {
     uid: "",
     user: {},
     mentorProfile: {},
@@ -32,7 +46,8 @@ const state = {
     savedOpportunities: {},
     opportunityApplications: {},
     activeSavedFilter: "courses",
-    activeSection: "overview"
+    activeSection: "overview",
+    autoOpenMentorUid: new URLSearchParams(window.location.search).get("mentor") || ""
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -43,47 +58,48 @@ document.addEventListener("DOMContentLoaded", () => {
     onAuthStateChanged(auth, async (user) => {
         if (!user) return window.location.href = "login.html";
         state.uid = user.uid;
-        
+
         const userSnap = await get(ref(database, `users/${user.uid}`));
         const userData = userSnap.val() || {};
         const roles = normalizeUserRoles(userData);
-        
+
         if (!roles.roles.mentor || !isAccountActive(userData)) {
             showToast("Only active approved mentors can open My Learning.", "error");
             window.location.href = "mentor-dashboard.html";
             return;
         }
-        
+
         const mentorSnap = await get(ref(database, `mentors/${user.uid}`));
         const mentorProfile = mentorSnap.val() || {};
-        
+
         if (!isApprovedMentorProfile(mentorProfile, userData)) {
             showToast("My Learning is available after your mentor profile is approved.", "warning");
             window.location.href = "mentor-dashboard.html";
             return;
         }
-        
+
         state.user = userData;
         state.mentorProfile = mentorProfile;
-        
+
         const fullName = userData.fullName || mentorProfile.fullName || "Mentor";
-        
+
         // Update simple sidebar user
         const sidebarName = document.getElementById("sidebar-user-name");
         if (sidebarName) sidebarName.textContent = fullName;
-        
+
         const sidebarAvatar = document.getElementById("sidebar-user-avatar-img");
         if (sidebarAvatar && (userData.photoURL || mentorProfile.photoURL)) {
             sidebarAvatar.src = userData.photoURL || mentorProfile.photoURL;
         }
-        
+
         updateDashboardGreetingName(fullName);
         setText("top-user-name", fullName);
         ensureDashboardTopbarLayout();
+        startLearningDateTime();
         initDashboardNotifications(user.uid);
-        
+
         setupRealtime(user.uid);
-        
+
         // Init routing
         const hash = window.location.hash ? window.location.hash.slice(1) : "overview";
         openLearningSection(hash);
@@ -96,7 +112,7 @@ function bindNavigation() {
     const sidebar = document.getElementById("sidebar");
     const overlay = document.getElementById("sidebar-overlay");
     const toggles = document.querySelectorAll("[data-sidebar-toggle], .close-sidebar");
-    
+
     toggles.forEach(toggle => {
         toggle.addEventListener("click", () => {
             if (window.innerWidth <= 900) {
@@ -123,7 +139,7 @@ function bindNavigation() {
             e.preventDefault();
             const section = btn.dataset.learningNav;
             openLearningSection(section);
-            
+
             // Close mobile sidebar if open
             if (window.innerWidth <= 900) {
                 sidebar?.classList.remove("active");
@@ -135,7 +151,7 @@ function bindNavigation() {
 
 function openLearningSection(sectionId, options = {}) {
     state.activeSection = sectionId;
-    
+
     // Update URL hash without triggering hashchange
     if (window.location.hash !== `#${sectionId}`) {
         history.pushState(null, "", `#${sectionId}`);
@@ -145,7 +161,7 @@ function openLearningSection(sectionId, options = {}) {
     document.querySelectorAll(".learning-section").forEach(sec => {
         sec.classList.remove("active");
     });
-    
+
     const activeSectionEl = document.querySelector(`[data-learning-section="${sectionId}"]`) || document.getElementById(`section-${sectionId}`);
     if (activeSectionEl) {
         activeSectionEl.classList.add("active");
@@ -160,11 +176,11 @@ function openLearningSection(sectionId, options = {}) {
     switch(sectionId) {
         case "overview": renderOverview(); break;
         case "learning-profile": populateLearningProfileForm(); break;
-        case "courses": 
-        case "scholarships": 
-        case "institutes": 
-        case "find-mentor": 
-            renderRecommendations(); 
+        case "courses":
+        case "scholarships":
+        case "institutes":
+        case "find-mentor":
+            renderRecommendations();
             break;
         case "my-requests": renderRequests(); break;
         case "connected-mentors": renderConnections(); break;
@@ -191,10 +207,10 @@ function bindStaticActions() {
     document.getElementById("request-mentorship-modal")?.addEventListener("click", (event) => {
         if (event.target.id === "request-mentorship-modal") closeRequestModal();
     });
-    
+
     document.getElementById("learning-request-form")?.addEventListener("submit", submitMentorshipRequest);
     document.getElementById("learning-profile-form")?.addEventListener("submit", saveLearningProfile);
-    
+
     document.querySelector("[data-request-tabs]")?.addEventListener("click", (event) => {
         const button = event.target.closest("[data-request-filter]");
         if (!button) return;
@@ -218,31 +234,31 @@ function bindStaticActions() {
 // --- Data Loading & Setup ---
 function setupRealtime(uid) {
     // Initial critical data
-    onValue(ref(database, `learningProfiles/${uid}`), (snap) => { 
-        state.learningProfile = snap.val() || {}; 
+    onValue(ref(database, `learningProfiles/${uid}`), (snap) => {
+        state.learningProfile = snap.val() || {};
         if (state.activeSection === "learning-profile") populateLearningProfileForm();
-        if (["overview", "courses", "scholarships", "institutes"].includes(state.activeSection)) renderRecommendations(); 
+        if (["overview", "courses", "scholarships", "institutes"].includes(state.activeSection)) renderRecommendations();
     });
 
-    onValue(query(ref(database, "mentorshipConnections"), orderByChild("menteeUid"), equalTo(uid)), (snap) => { 
-        state.connections = snap.val() || {}; 
-        syncConversationListeners(); 
-        renderAllIfActive(["overview", "connected-mentors"]); 
+    onValue(query(ref(database, "mentorshipConnections"), orderByChild("menteeUid"), equalTo(uid)), (snap) => {
+        state.connections = snap.val() || {};
+        syncConversationListeners();
+        renderAllIfActive(["overview", "connected-mentors"]);
     });
 
-    onValue(query(ref(database, "appointments"), orderByChild("menteeUid"), equalTo(uid)), (snap) => { 
-        state.appointments = snap.val() || {}; 
-        renderAllIfActive(["overview", "learning-sessions"]); 
+    onValue(query(ref(database, "mentorshipSessions"), orderByChild("menteeUid"), equalTo(uid)), (snap) => {
+        state.appointments = snap.val() || {};
+        renderAllIfActive(["overview", "learning-sessions"]);
     });
 
-    onValue(ref(database, `learningGoals/${uid}`), (snap) => { 
-        state.goals = snap.val() || {}; 
-        renderAllIfActive(["overview", "learning-goals"]); 
+    onValue(ref(database, `learningGoals/${uid}`), (snap) => {
+        state.goals = snap.val() || {};
+        renderAllIfActive(["overview", "learning-goals"]);
     });
 
-    onValue(ref(database, `savedOpportunities/${uid}`), (snap) => { 
-        state.savedOpportunities = snap.val() || {}; 
-        renderAllIfActive(["overview", "saved-opportunities"]); 
+    onValue(ref(database, `savedOpportunities/${uid}`), (snap) => {
+        state.savedOpportunities = snap.val() || {};
+        renderAllIfActive(["overview", "saved-opportunities"]);
     });
 
     // Detailed data (could be lazy loaded, but we need it for summaries too)
@@ -250,15 +266,16 @@ function setupRealtime(uid) {
         state.mentors = snap.val() || {};
         await loadMentorUsers();
         renderAllIfActive(["overview", "find-mentor", "my-requests", "connected-mentors"]);
+        if (state.autoOpenMentorUid && state.mentors[state.autoOpenMentorUid]) { const target = state.autoOpenMentorUid; state.autoOpenMentorUid = ""; openLearningSection("find-mentor"); openRequestModal(target); }
     });
 
     onValue(ref(database, "courses"), (snap) => { state.courses = snap.val() || {}; renderAllIfActive(["overview", "courses"]); });
     onValue(ref(database, "scholarships"), (snap) => { state.scholarships = snap.val() || {}; renderAllIfActive(["overview", "scholarships"]); });
     onValue(ref(database, "institutes"), (snap) => { state.institutes = snap.val() || {}; renderAllIfActive(["overview", "institutes"]); });
-    
+
     onValue(query(ref(database, "mentorshipRequests"), orderByChild("requesterUid"), equalTo(uid)), (snap) => { state.requests = snap.val() || {}; renderAllIfActive(["my-requests"]); });
     onValue(query(ref(database, "mentorRequests"), orderByChild("studentUid"), equalTo(uid)), (snap) => { state.legacyRequests = snap.val() || {}; renderAllIfActive(["my-requests"]); });
-    
+
     onValue(ref(database, `studentRatings/${uid}`), (snap) => { state.reviews = snap.val() || {}; renderAllIfActive(["reviews-submitted", "overview"]); });
     onValue(ref(database, `opportunityApplications/${uid}`), (snap) => { state.opportunityApplications = snap.val() || {}; renderAllIfActive(["applications"]); });
 }
@@ -284,11 +301,11 @@ function renderOverview() {
     const profile = getLearnerRecommendationProfile({ userRole: "mentor", learningProfile: state.learningProfile });
     const recommendedCourses = recommendCourses(profile, state.courses);
     const recommendedScholarships = recommendScholarships(profile, state.scholarships);
-    
+
     const connections = activeConnections();
     const appointments = Object.values(state.appointments || {}).map(normalizeAppointment);
     const upcoming = appointments.filter((item) => ["accepted", "confirmed", "scheduled", "upcoming"].includes(normalizeStatus(item.status)) && sessionTime(item) >= Date.now());
-    
+
     setText("stat-course-matches", recommendedCourses.length);
     setText("stat-scholarship-matches", recommendedScholarships.length);
     setText("stat-saved-opportunities", Object.keys(state.savedOpportunities || {}).length);
@@ -309,28 +326,28 @@ function renderOverview() {
 // --- Specific Rendering logic ---
 function renderRecommendations() {
     const profile = getLearnerRecommendationProfile({ userRole: "mentor", learningProfile: state.learningProfile });
-    
+
     const coursesGrid = document.getElementById("courses-grid");
     if (coursesGrid && state.activeSection === "courses") {
         const recommended = recommendCourses(profile, state.courses);
         if (!recommended.length) coursesGrid.innerHTML = emptyBlock("No courses match your profile right now.");
         else coursesGrid.innerHTML = recommended.map(courseCard).join("");
     }
-    
+
     const scholarshipsGrid = document.getElementById("scholarships-grid");
     if (scholarshipsGrid && state.activeSection === "scholarships") {
         const recommended = recommendScholarships(profile, state.scholarships);
         if (!recommended.length) scholarshipsGrid.innerHTML = emptyBlock("No scholarships match your profile right now.");
         else scholarshipsGrid.innerHTML = recommended.map(scholarshipCard).join("");
     }
-    
+
     const institutesGrid = document.getElementById("institutes-grid");
     if (institutesGrid && state.activeSection === "institutes") {
         const recommended = recommendInstitutes(profile, state.institutes, state.courses);
         if (!recommended.length) institutesGrid.innerHTML = emptyBlock("No institutes match your profile right now.");
         else institutesGrid.innerHTML = recommended.map(instituteCard).join("");
     }
-    
+
     if (state.activeSection === "find-mentor") {
         renderMentors();
     }
@@ -341,13 +358,14 @@ function renderMentors() {
     if (!grid) return;
     const rows = availableMentorRows();
     if (!rows.length) {
-        grid.innerHTML = emptyBlock("No available mentors match your current learning needs.");
+        grid.innerHTML = emptyBlock("No other approved mentors are currently available.");
         return;
     }
     grid.innerHTML = rows.map(mentorCard).join("");
 }
 
 function availableMentorRows() {
+    // This is a directory, not a recommendation list: no learning-profile, field, score, or category filtering.
     return Object.entries(state.mentors || {})
         .map(([uid, mentor]) => ({ uid, mentor: { ...mentor, uid }, user: state.mentorUsers[uid] || {} }))
         .filter(({ uid, mentor, user }) => isAvailablePublicMentor({ ...user, ...mentor, uid }, state.uid))
@@ -484,17 +502,9 @@ function renderGoals() {
     const container = document.getElementById("learning-goals-list");
     if (!container) return;
     const rows = Object.values(state.goals || {}).sort((a, b) => timeValue(b.createdAt) - timeValue(a.createdAt));
-    if (!rows.length) {
-        container.innerHTML = emptyBlock("Add a learning goal to track your progress.");
-        return;
-    }
-    container.innerHTML = rows.map((goal) => `<article class="mentor-learning-card" style="display:block;">
-        <h4 style="margin:0 0 8px; font-size:1.1rem;">${escapeHtml(goal.title || "Learning Goal")}</h4>
-        <p style="margin:0 0 12px; font-size:0.85rem; color:#71819a;">${escapeHtml(goal.category || "General")} - ${Number(goal.progress || 0)}% complete</p>
-        <span class="learning-status ${normalizeStatus(goal.status || "active")}">${escapeHtml(formatStatus(goal.status || "active"))}</span>
-    </article>`).join("");
+    if (!rows.length) { container.innerHTML = emptyBlock("Create a learning goal to track your growth."); return; }
+    container.innerHTML = rows.map((goal) => `<article class="mentor-learning-card" style="display:block;"><h4 style="margin:0 0 8px; font-size:1.1rem;">${escapeHtml(goal.title || "Learning Goal")}</h4><p style="margin:0 0 8px; font-size:0.85rem; color:#71819a;">${escapeHtml(goal.description || "No description added.")}</p><p style="margin:0 0 12px; font-size:0.85rem; color:#71819a;">${escapeHtml(goal.category || "General")} - ${Number(goal.progress || 0)}% complete${goal.targetDate ? ` - Target ${escapeHtml(goal.targetDate)}` : ""}</p><span class="learning-status ${normalizeStatus(goal.status || "active")}">${escapeHtml(formatStatus(goal.status || "active"))}</span><div class="mentor-learning-card-actions" style="margin-top:12px;"><button class="btn btn-outline btn-sm" data-edit-goal="${escapeAttr(goal.goalId)}">Edit</button><button class="btn btn-outline btn-sm" data-toggle-goal="${escapeAttr(goal.goalId)}">${normalizeStatus(goal.status) === "completed" ? "Reopen" : "Mark Complete"}</button><button class="btn btn-outline btn-sm" data-pause-goal="${escapeAttr(goal.goalId)}">${normalizeStatus(goal.status) === "paused" ? "Resume" : "Pause"}</button><button class="btn btn-outline btn-sm" data-delete-goal="${escapeAttr(goal.goalId)}" style="color:#dc2626;">Delete</button></div></article>`).join("");
 }
-
 function renderReviews() {
     const container = document.getElementById("reviews-submitted-list");
     if (!container) return;
@@ -525,7 +535,7 @@ function renderSavedOpportunities() {
         if (s.type === "courses" && state.courses[s.entityId]) title = state.courses[s.entityId].courseName || state.courses[s.entityId].name;
         if (s.type === "scholarships" && state.scholarships[s.entityId]) title = state.scholarships[s.entityId].scholarshipName || state.scholarships[s.entityId].name;
         if (s.type === "institutes" && state.institutes[s.entityId]) title = state.institutes[s.entityId].name;
-        
+
         return `<article class="opportunity-card" style="display:flex; flex-direction:column; justify-content:space-between;">
             <div>
                 <h4 style="margin:0 0 8px; font-size:1.1rem;">${escapeHtml(title)}</h4>
@@ -614,7 +624,15 @@ function handlePageClick(event) {
     const chatButton = event.target.closest("[data-open-chat]");
     if (chatButton) return openChat(chatButton.dataset.openChat);
     const scheduleButton = event.target.closest("[data-schedule-session]");
-    if (scheduleButton) return showToast("Meeting scheduling for mentor-to-mentor sessions is ready for the next implementation pass.", "info");
+    if (scheduleButton) return scheduleMentorshipSession(scheduleButton.dataset.scheduleSession);
+    const editGoalButton = event.target.closest("[data-edit-goal]");
+    if (editGoalButton) return editLearningGoal(editGoalButton.dataset.editGoal);
+    const toggleGoalButton = event.target.closest("[data-toggle-goal]");
+    if (toggleGoalButton) return setLearningGoalStatus(toggleGoalButton.dataset.toggleGoal, normalizeStatus(state.goals[toggleGoalButton.dataset.toggleGoal]?.status) === "completed" ? "active" : "completed");
+    const pauseGoalButton = event.target.closest("[data-pause-goal]");
+    if (pauseGoalButton) return setLearningGoalStatus(pauseGoalButton.dataset.pauseGoal, normalizeStatus(state.goals[pauseGoalButton.dataset.pauseGoal]?.status) === "paused" ? "active" : "paused");
+    const deleteGoalButton = event.target.closest("[data-delete-goal]");
+    if (deleteGoalButton) return deleteLearningGoal(deleteGoalButton.dataset.deleteGoal);
 
     const toggleSavedBtn = event.target.closest("[data-toggle-saved]");
     if (toggleSavedBtn) return toggleSaved(toggleSavedBtn.dataset.toggleSaved, toggleSavedBtn.dataset.savedType);
@@ -626,10 +644,24 @@ function handlePageClick(event) {
     if (withdrawBtn) return withdrawApp(withdrawBtn.dataset.withdrawApp);
 }
 
+async function scheduleMentorshipSession(connectionId) {
+    const connection = state.connections[connectionId];
+    if (!connection || normalizeStatus(connection.status) !== "active") return showToast("An active mentor connection is required.", "warning");
+    const date = prompt("Session date (YYYY-MM-DD):", new Date(Date.now() + 86400000).toISOString().slice(0, 10)); if (!date) return;
+    const time = prompt("Start time (HH:MM):", "18:00"); if (!time) return;
+    const topic = prompt("Session topic:", connection.topic || "Mentorship Session"); if (!topic?.trim()) return;
+    const duration = Math.max(15, Math.min(240, Number(prompt("Duration in minutes:", "60") || 60)));
+    const meetingLink = prompt("Meeting link (optional):", "") || "";
+    const sessionRef = push(ref(database, "mentorshipSessions"));
+    const startDateTime = new Date(`${date}T${time}:00`).getTime();
+    if (!Number.isFinite(startDateTime)) return showToast("Enter a valid date and time.", "warning");
+    await update(ref(database, `mentorshipSessions/${sessionRef.key}`), { sessionId: sessionRef.key, connectionId, mentorUid: connection.mentorUid, mentorName: connection.mentorName || mentorNameFor(connection.mentorUid), menteeUid: state.uid, menteeName: state.user.fullName || state.mentorProfile.fullName || "Mentee", mentorRelationshipRole: "mentor", menteeRelationshipRole: "mentee", topic: topic.trim(), date, time, startDateTime, durationMinutes: duration, meetingLink, status: "pending", createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+    showToast("Learning session request created.", "success"); openLearningSection("learning-sessions");
+}
 function openChat(conversationId) {
     const conversation = state.conversations[conversationId];
     if (!conversation) return showToast("Conversation is not available yet.", "warning");
-    
+
     // Switch to messages section if not already
     if (state.activeSection !== "messages") {
         openLearningSection("messages");
@@ -639,14 +671,14 @@ function openChat(conversationId) {
     setText("learning-chat-title", mentorNameFor(conversation.mentorUid));
     setText("learning-chat-subtitle", conversation.topic || "Learning conversation");
     renderChatThread(conversation);
-    
+
     const input = document.getElementById("learning-chat-input");
     const btn = document.querySelector("#learning-chat-form button");
     if (input && btn) {
         input.disabled = false;
         btn.disabled = false;
     }
-    
+
     // update active state in list
     document.querySelectorAll(".message-item").forEach(item => {
         item.classList.toggle("active", item.dataset.openChat === conversationId);
@@ -709,7 +741,7 @@ async function sendLearningMessage(event) {
     const conversation = state.conversations[state.activeConversationId];
     const text = value("learning-chat-input");
     if (!conversation || text.length < 1 || text.length > 1500) return showToast("Message must be 1 to 1500 characters.", "warning");
-    
+
     document.getElementById("learning-chat-input").value = "";
     const receiverUid = conversation.mentorUid === state.uid ? conversation.menteeUid : conversation.mentorUid;
     const msgRef = push(ref(database, `conversations/${state.activeConversationId}/messages`));
@@ -721,7 +753,7 @@ async function sendLearningMessage(event) {
     updates[`conversations/${state.activeConversationId}/updatedAt`] = serverTimestamp();
     updates[`conversations/${state.activeConversationId}/unreadByMentor`] = Number(conversation.unreadByMentor || 0) + 1;
     updates[`notifications/${receiverUid}/${notificationRef.key}`] = { notificationId: notificationRef.key, type: "new_message", title: "New Learning Message", message: text.slice(0, 120), targetUserUid: receiverUid, senderUid: state.uid, senderRole: "mentor", relatedEntityType: "conversation", relatedEntityId: state.activeConversationId, conversationId: state.activeConversationId, targetPage: "mentor-dashboard.html", targetSection: "messages", read: false, status: "unread", createdAt: serverTimestamp() };
-    
+
     await update(ref(database), updates);
 }
 
@@ -764,7 +796,11 @@ async function submitMentorshipRequest(event) {
     if (mentorUid === state.uid) return showToast("You cannot request mentorship from yourself.", "error");
     if (!isAccountActive(state.user) || !isAvailablePublicMentor({ ...mentorUser, ...mentor, uid: mentorUid }, state.uid)) return showToast("This mentor is not currently available.", "error");
     const existingSnap = await get(query(ref(database, "mentorshipRequests"), orderByChild("requesterUid"), equalTo(state.uid))).catch(() => null);
-    if (activeRequestFor(existingSnap?.val?.() || {}, state.uid, mentorUid, topic)) return showToast("You already have an active mentorship request with this mentor.", "warning");
+    const existingRequest = Object.values(existingSnap?.val?.() || {}).map(normalizeMentorshipRequest).find((request) => request.requesterUid === state.uid && request.targetMentorUid === mentorUid && normalizeStatus(request.status) === "pending");
+    if (existingRequest) return showToast("You already have a pending request with this mentor.", "warning");
+    const connectionSnap = await get(query(ref(database, "mentorshipConnections"), orderByChild("menteeUid"), equalTo(state.uid))).catch(() => null);
+    const activeConnection = Object.values(connectionSnap?.val?.() || {}).map(normalizeConnection).find((connection) => connection.menteeUid === state.uid && connection.mentorUid === mentorUid && normalizeStatus(connection.status) === "active");
+    if (activeConnection) return showToast("You are already connected with this mentor.", "warning");
 
     const requestRef = push(ref(database, "mentorshipRequests"));
     const notificationRef = push(ref(database, `notifications/${mentorUid}`));
@@ -777,6 +813,7 @@ async function submitMentorshipRequest(event) {
         requesterPhotoURL: state.user.photoURL || state.mentorProfile.photoURL || "",
         requesterAccountRole: accountRole(state.user) || "mentor",
         requesterRelationshipRole: "mentee",
+        targetRelationshipRole: "mentor",
         targetMentorUid: mentorUid,
         targetMentorName: mentorName,
         targetMentorPhotoURL: mentor.photoURL || mentorUser.photoURL || "",
@@ -809,13 +846,19 @@ async function cancelRequest(requestId) {
 }
 
 async function addLearningGoal() {
-    const title = prompt("Learning goal title:");
-    if (!title) return;
+    const title = prompt("Learning goal title:"); if (!title?.trim()) return;
     const goalRef = push(ref(database, `learningGoals/${state.uid}`));
-    await update(ref(database), { [`learningGoals/${state.uid}/${goalRef.key}`]: { goalId: goalRef.key, uid: state.uid, title: title.trim(), category: "General", description: "", targetDate: "", relatedMentorUid: "", relatedConnectionId: "", progress: 0, status: "active", createdAt: serverTimestamp(), updatedAt: serverTimestamp() } });
+    await update(ref(database), { [`learningGoals/${state.uid}/${goalRef.key}`]: { goalId: goalRef.key, uid: state.uid, title: title.trim(), description: "", category: "General", targetDate: "", progress: 0, status: "active", createdAt: serverTimestamp(), updatedAt: serverTimestamp() } });
     showToast("Learning goal added.", "success");
 }
-
+async function editLearningGoal(goalId) {
+    const goal = state.goals[goalId]; if (!goal) return;
+    const title = prompt("Learning goal title:", goal.title || ""); if (title === null || !title.trim()) return;
+    const description = prompt("Description:", goal.description || ""), category = prompt("Category:", goal.category || "General"), targetDate = prompt("Target date (YYYY-MM-DD):", goal.targetDate || ""), progressValue = prompt("Progress (0-100):", String(goal.progress || 0)), progress = Math.max(0, Math.min(100, Number(progressValue ?? goal.progress ?? 0)));
+    await update(ref(database, `learningGoals/${state.uid}/${goalId}`), { title: title.trim(), description: String(description ?? goal.description ?? "").trim(), category: String(category ?? goal.category ?? "General").trim() || "General", targetDate: String(targetDate ?? goal.targetDate ?? "").trim(), progress, updatedAt: serverTimestamp() }); showToast("Learning goal updated.", "success");
+}
+async function setLearningGoalStatus(goalId, status) { if (!state.goals[goalId] || !["active", "completed", "paused"].includes(status)) return; await update(ref(database, `learningGoals/${state.uid}/${goalId}`), { status, progress: status === "completed" ? 100 : Number(state.goals[goalId].progress || 0), updatedAt: serverTimestamp() }); showToast(status === "completed" ? "Learning goal completed." : "Learning goal status updated.", "success"); }
+async function deleteLearningGoal(goalId) { if (!state.goals[goalId] || !confirm("Delete this learning goal?")) return; await remove(ref(database, `learningGoals/${state.uid}/${goalId}`)); showToast("Learning goal deleted.", "success"); }
 function syncConversationListeners() {
     const ids = new Set(activeConnections().map((connection) => conversationIdFor(connection.mentorUid, state.uid)));
     Object.entries(state.conversationRefs).forEach(([id, dbRef]) => {

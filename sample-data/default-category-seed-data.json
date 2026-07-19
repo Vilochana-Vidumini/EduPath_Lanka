@@ -1,0 +1,3271 @@
+{
+  "academicCategories": {
+    "academic_business_and_management": {
+      "categoryId": "academic_business_and_management",
+      "title": "Business and Management",
+      "slug": "business_and_management",
+      "description": "Business and Management category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "business",
+        "management",
+        "entrepreneurship",
+        "marketing",
+        "hrm",
+        "leadership",
+        "project management",
+        "operations",
+        "business analytics"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 10,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Business and Management",
+      "relatedFields": [
+        "Business Management",
+        "Marketing",
+        "Human Resource Management",
+        "Entrepreneurship",
+        "Project Management",
+        "Operations Management",
+        "Business Analytics"
+      ],
+      "relatedCareerGoals": [
+        "Business Manager",
+        "Entrepreneur",
+        "Marketing Executive",
+        "HR Executive",
+        "Project Coordinator",
+        "Operations Executive"
+      ],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_accounting_and_finance": {
+      "categoryId": "academic_accounting_and_finance",
+      "title": "Accounting and Finance",
+      "slug": "accounting_and_finance",
+      "description": "Accounting and Finance category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "accounting",
+        "finance"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 20,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Accounting and Finance",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_information_technology": {
+      "categoryId": "academic_information_technology",
+      "title": "Information Technology",
+      "slug": "information_technology",
+      "description": "Information Technology category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "information",
+        "technology"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 30,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Information Technology",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_engineering_and_technology": {
+      "categoryId": "academic_engineering_and_technology",
+      "title": "Engineering and Technology",
+      "slug": "engineering_and_technology",
+      "description": "Engineering and Technology category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "engineering",
+        "technology"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 40,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Engineering and Technology",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_medicine_and_health_sciences": {
+      "categoryId": "academic_medicine_and_health_sciences",
+      "title": "Medicine and Health Sciences",
+      "slug": "medicine_and_health_sciences",
+      "description": "Medicine and Health Sciences category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "medicine",
+        "health",
+        "sciences"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 50,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Medicine and Health Sciences",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_arts_and_humanities": {
+      "categoryId": "academic_arts_and_humanities",
+      "title": "Arts and Humanities",
+      "slug": "arts_and_humanities",
+      "description": "Arts and Humanities category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "arts",
+        "humanities"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 60,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Arts and Humanities",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_education_and_teaching": {
+      "categoryId": "academic_education_and_teaching",
+      "title": "Education and Teaching",
+      "slug": "education_and_teaching",
+      "description": "Education and Teaching category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "education",
+        "teaching"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 70,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Education and Teaching",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_law_and_public_administration": {
+      "categoryId": "academic_law_and_public_administration",
+      "title": "Law and Public Administration",
+      "slug": "law_and_public_administration",
+      "description": "Law and Public Administration category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "law",
+        "public",
+        "administration"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 80,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Law and Public Administration",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_science_and_research": {
+      "categoryId": "academic_science_and_research",
+      "title": "Science and Research",
+      "slug": "science_and_research",
+      "description": "Science and Research category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "science",
+        "research"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 90,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Science and Research",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_agriculture_and_environment": {
+      "categoryId": "academic_agriculture_and_environment",
+      "title": "Agriculture and Environment",
+      "slug": "agriculture_and_environment",
+      "description": "Agriculture and Environment category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "agriculture",
+        "environment"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 100,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Agriculture and Environment",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_hospitality_and_tourism": {
+      "categoryId": "academic_hospitality_and_tourism",
+      "title": "Hospitality and Tourism",
+      "slug": "hospitality_and_tourism",
+      "description": "Hospitality and Tourism category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "hospitality",
+        "tourism"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 110,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Hospitality and Tourism",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_media_and_communication": {
+      "categoryId": "academic_media_and_communication",
+      "title": "Media and Communication",
+      "slug": "media_and_communication",
+      "description": "Media and Communication category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "media",
+        "communication"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 120,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Media and Communication",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_vocational_and_technical_training": {
+      "categoryId": "academic_vocational_and_technical_training",
+      "title": "Vocational and Technical Training",
+      "slug": "vocational_and_technical_training",
+      "description": "Vocational and Technical Training category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "vocational",
+        "technical",
+        "training"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 130,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Vocational and Technical Training",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    },
+    "academic_foundation_and_academic_improvement": {
+      "categoryId": "academic_foundation_and_academic_improvement",
+      "title": "Foundation and Academic Improvement",
+      "slug": "foundation_and_academic_improvement",
+      "description": "Foundation and Academic Improvement category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "foundation",
+        "academic",
+        "improvement"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 140,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mainField": "Foundation and Academic Improvement",
+      "relatedFields": [],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "suitableStreams": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "academic_improvement",
+        "undecided"
+      ]
+    }
+  },
+  "courseCategories": {
+    "course_business_management": {
+      "categoryId": "course_business_management",
+      "title": "Business Management",
+      "academicCategoryId": "academic_business_and_management",
+      "description": "Business Management courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "business",
+        "management"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 10
+    },
+    "course_entrepreneurship": {
+      "categoryId": "course_entrepreneurship",
+      "title": "Entrepreneurship",
+      "academicCategoryId": "academic_business_and_management",
+      "description": "Entrepreneurship courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "entrepreneurship"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 20
+    },
+    "course_marketing": {
+      "categoryId": "course_marketing",
+      "title": "Marketing",
+      "academicCategoryId": "academic_business_and_management",
+      "description": "Marketing courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "marketing"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 30
+    },
+    "course_human_resource_management": {
+      "categoryId": "course_human_resource_management",
+      "title": "Human Resource Management",
+      "academicCategoryId": "academic_business_and_management",
+      "description": "Human Resource Management courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "human",
+        "resource",
+        "management"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 40
+    },
+    "course_project_management": {
+      "categoryId": "course_project_management",
+      "title": "Project Management",
+      "academicCategoryId": "academic_business_and_management",
+      "description": "Project Management courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "project",
+        "management"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 50
+    },
+    "course_business_analytics": {
+      "categoryId": "course_business_analytics",
+      "title": "Business Analytics",
+      "academicCategoryId": "academic_business_and_management",
+      "description": "Business Analytics courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "business",
+        "analytics"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 60
+    },
+    "course_digital_marketing": {
+      "categoryId": "course_digital_marketing",
+      "title": "Digital Marketing",
+      "academicCategoryId": "academic_business_and_management",
+      "description": "Digital Marketing courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "digital",
+        "marketing"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 70
+    },
+    "course_event_management": {
+      "categoryId": "course_event_management",
+      "title": "Event Management",
+      "academicCategoryId": "academic_business_and_management",
+      "description": "Event Management courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "event",
+        "management"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 80
+    },
+    "course_software_development": {
+      "categoryId": "course_software_development",
+      "title": "Software Development",
+      "academicCategoryId": "academic_information_technology",
+      "description": "Software Development courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "software",
+        "development"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 10
+    },
+    "course_web_development": {
+      "categoryId": "course_web_development",
+      "title": "Web Development",
+      "academicCategoryId": "academic_information_technology",
+      "description": "Web Development courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "web",
+        "development"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 20
+    },
+    "course_data_analytics": {
+      "categoryId": "course_data_analytics",
+      "title": "Data Analytics",
+      "academicCategoryId": "academic_information_technology",
+      "description": "Data Analytics courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "data",
+        "analytics"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 30
+    },
+    "course_cybersecurity": {
+      "categoryId": "course_cybersecurity",
+      "title": "Cybersecurity",
+      "academicCategoryId": "academic_information_technology",
+      "description": "Cybersecurity courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "cybersecurity"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 40
+    },
+    "course_ui_ux_design": {
+      "categoryId": "course_ui_ux_design",
+      "title": "UI/UX Design",
+      "academicCategoryId": "academic_information_technology",
+      "description": "UI/UX Design courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "ui/ux",
+        "design"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 50
+    },
+    "course_ai_and_machine_learning": {
+      "categoryId": "course_ai_and_machine_learning",
+      "title": "AI and Machine Learning",
+      "academicCategoryId": "academic_information_technology",
+      "description": "AI and Machine Learning courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "ai",
+        "and",
+        "machine",
+        "learning"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 60
+    },
+    "course_networking": {
+      "categoryId": "course_networking",
+      "title": "Networking",
+      "academicCategoryId": "academic_information_technology",
+      "description": "Networking courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "networking"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 70
+    },
+    "course_electrical_engineering": {
+      "categoryId": "course_electrical_engineering",
+      "title": "Electrical Engineering",
+      "academicCategoryId": "academic_engineering_and_technology",
+      "description": "Electrical Engineering courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "electrical",
+        "engineering"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 10
+    },
+    "course_electronic_engineering": {
+      "categoryId": "course_electronic_engineering",
+      "title": "Electronic Engineering",
+      "academicCategoryId": "academic_engineering_and_technology",
+      "description": "Electronic Engineering courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "electronic",
+        "engineering"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 20
+    },
+    "course_mechanical_engineering": {
+      "categoryId": "course_mechanical_engineering",
+      "title": "Mechanical Engineering",
+      "academicCategoryId": "academic_engineering_and_technology",
+      "description": "Mechanical Engineering courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "mechanical",
+        "engineering"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 30
+    },
+    "course_civil_engineering": {
+      "categoryId": "course_civil_engineering",
+      "title": "Civil Engineering",
+      "academicCategoryId": "academic_engineering_and_technology",
+      "description": "Civil Engineering courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "civil",
+        "engineering"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 40
+    },
+    "course_mechatronics": {
+      "categoryId": "course_mechatronics",
+      "title": "Mechatronics",
+      "academicCategoryId": "academic_engineering_and_technology",
+      "description": "Mechatronics courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "mechatronics"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 50
+    },
+    "course_foundation_studies": {
+      "categoryId": "course_foundation_studies",
+      "title": "Foundation Studies",
+      "academicCategoryId": "academic_foundation_and_academic_improvement",
+      "description": "Foundation Studies courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic_improvement",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "foundation",
+        "studies"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 10
+    },
+    "course_english_language": {
+      "categoryId": "course_english_language",
+      "title": "English Language",
+      "academicCategoryId": "academic_foundation_and_academic_improvement",
+      "description": "English Language courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic_improvement",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "english",
+        "language"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 20
+    },
+    "course_ict_basics": {
+      "categoryId": "course_ict_basics",
+      "title": "ICT Basics",
+      "academicCategoryId": "academic_foundation_and_academic_improvement",
+      "description": "ICT Basics courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic_improvement",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "ict",
+        "basics"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 30
+    },
+    "course_o_l_support": {
+      "categoryId": "course_o_l_support",
+      "title": "O/L Support",
+      "academicCategoryId": "academic_foundation_and_academic_improvement",
+      "description": "O/L Support courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic_improvement",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "o/l",
+        "support"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 40
+    },
+    "course_a_l_support": {
+      "categoryId": "course_a_l_support",
+      "title": "A/L Support",
+      "academicCategoryId": "academic_foundation_and_academic_improvement",
+      "description": "A/L Support courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic_improvement",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "a/l",
+        "support"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 50
+    },
+    "course_study_skills": {
+      "categoryId": "course_study_skills",
+      "title": "Study Skills",
+      "academicCategoryId": "academic_foundation_and_academic_improvement",
+      "description": "Study Skills courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic_improvement",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "study",
+        "skills"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 60
+    },
+    "course_creative_entrepreneurship": {
+      "categoryId": "course_creative_entrepreneurship",
+      "title": "Creative Entrepreneurship",
+      "academicCategoryId": "academic_arts_and_humanities",
+      "description": "Creative Entrepreneurship courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "creative",
+        "entrepreneurship"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 10
+    },
+    "course_event_management_creative": {
+      "categoryId": "course_event_management_creative",
+      "title": "Event Management Creative",
+      "academicCategoryId": "academic_arts_and_humanities",
+      "description": "Event Management Creative courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "event",
+        "management",
+        "creative"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 20
+    },
+    "course_digital_content_creation": {
+      "categoryId": "course_digital_content_creation",
+      "title": "Digital Content Creation",
+      "academicCategoryId": "academic_arts_and_humanities",
+      "description": "Digital Content Creation courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "digital",
+        "content",
+        "creation"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 30
+    },
+    "course_photography": {
+      "categoryId": "course_photography",
+      "title": "Photography",
+      "academicCategoryId": "academic_arts_and_humanities",
+      "description": "Photography courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "photography"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 40
+    },
+    "course_performing_arts": {
+      "categoryId": "course_performing_arts",
+      "title": "Performing Arts",
+      "academicCategoryId": "academic_arts_and_humanities",
+      "description": "Performing Arts courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "performing",
+        "arts"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 50
+    },
+    "course_graphic_design": {
+      "categoryId": "course_graphic_design",
+      "title": "Graphic Design",
+      "academicCategoryId": "academic_arts_and_humanities",
+      "description": "Graphic Design courses",
+      "courseLevels": [],
+      "suitableEducationLevels": [],
+      "suitablePathways": [
+        "academic",
+        "combined",
+        "undecided"
+      ],
+      "relatedCareerGoals": [],
+      "relatedSkills": [],
+      "matchingKeywords": [
+        "graphic",
+        "design"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 60
+    }
+  },
+  "scholarshipCategories": {
+    "scholarship_academic_merit_scholarships": {
+      "categoryId": "scholarship_academic_merit_scholarships",
+      "title": "Academic Merit Scholarships",
+      "slug": "academic_merit_scholarships",
+      "description": "Academic Merit Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "academic",
+        "merit",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 10,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_financial_aid_scholarships": {
+      "categoryId": "scholarship_financial_aid_scholarships",
+      "title": "Financial Aid Scholarships",
+      "slug": "financial_aid_scholarships",
+      "description": "Financial Aid Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "financial",
+        "aid",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 20,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_business_and_management_scholarships": {
+      "categoryId": "scholarship_business_and_management_scholarships",
+      "title": "Business and Management Scholarships",
+      "slug": "business_and_management_scholarships",
+      "description": "Business and Management Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "business",
+        "management",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 30,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_it_scholarships": {
+      "categoryId": "scholarship_it_scholarships",
+      "title": "IT Scholarships",
+      "slug": "it_scholarships",
+      "description": "IT Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "it",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 40,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_engineering_scholarships": {
+      "categoryId": "scholarship_engineering_scholarships",
+      "title": "Engineering Scholarships",
+      "slug": "engineering_scholarships",
+      "description": "Engineering Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "engineering",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 50,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_women_leadership_scholarships": {
+      "categoryId": "scholarship_women_leadership_scholarships",
+      "title": "Women Leadership Scholarships",
+      "slug": "women_leadership_scholarships",
+      "description": "Women Leadership Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "women",
+        "leadership",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 60,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_entrepreneurship_scholarships": {
+      "categoryId": "scholarship_entrepreneurship_scholarships",
+      "title": "Entrepreneurship Scholarships",
+      "slug": "entrepreneurship_scholarships",
+      "description": "Entrepreneurship Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "entrepreneurship",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 70,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_talent_scholarships": {
+      "categoryId": "scholarship_talent_scholarships",
+      "title": "Talent Scholarships",
+      "slug": "talent_scholarships",
+      "description": "Talent Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "talent",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 80,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_arts_scholarships": {
+      "categoryId": "scholarship_arts_scholarships",
+      "title": "Arts Scholarships",
+      "slug": "arts_scholarships",
+      "description": "Arts Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "arts",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 90,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_sports_scholarships": {
+      "categoryId": "scholarship_sports_scholarships",
+      "title": "Sports Scholarships",
+      "slug": "sports_scholarships",
+      "description": "Sports Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "sports",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 100,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_vocational_training_scholarships": {
+      "categoryId": "scholarship_vocational_training_scholarships",
+      "title": "Vocational Training Scholarships",
+      "slug": "vocational_training_scholarships",
+      "description": "Vocational Training Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "vocational",
+        "training",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 110,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_foundation_education_support": {
+      "categoryId": "scholarship_foundation_education_support",
+      "title": "Foundation Education Support",
+      "slug": "foundation_education_support",
+      "description": "Foundation Education Support category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "foundation",
+        "education",
+        "support"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 120,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_international_study_scholarships": {
+      "categoryId": "scholarship_international_study_scholarships",
+      "title": "International Study Scholarships",
+      "slug": "international_study_scholarships",
+      "description": "International Study Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "international",
+        "study",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 130,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    },
+    "scholarship_research_scholarships": {
+      "categoryId": "scholarship_research_scholarships",
+      "title": "Research Scholarships",
+      "slug": "research_scholarships",
+      "description": "Research Scholarships category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "research",
+        "scholarships"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 140,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "scholarshipType": "Scholarship",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "eligiblePathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "eligibleEducationLevels": [],
+      "requiresAcademicResults": false,
+      "requiresTalentProfile": false,
+      "requiresFinancialNeed": false
+    }
+  },
+  "mentorExpertiseCategories": {
+    "mentor_business_mentor": {
+      "categoryId": "mentor_business_mentor",
+      "title": "Business Mentor",
+      "slug": "business_mentor",
+      "description": "Business Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "business",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 10,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Academic / Career",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_entrepreneurship_mentor": {
+      "categoryId": "mentor_entrepreneurship_mentor",
+      "title": "Entrepreneurship Mentor",
+      "slug": "entrepreneurship_mentor",
+      "description": "Entrepreneurship Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "entrepreneurship",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 20,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Academic / Career",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_marketing_mentor": {
+      "categoryId": "mentor_marketing_mentor",
+      "title": "Marketing Mentor",
+      "slug": "marketing_mentor",
+      "description": "Marketing Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "marketing",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 30,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Academic / Career",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_finance_mentor": {
+      "categoryId": "mentor_finance_mentor",
+      "title": "Finance Mentor",
+      "slug": "finance_mentor",
+      "description": "Finance Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "finance",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 40,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Academic / Career",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_accounting_mentor": {
+      "categoryId": "mentor_accounting_mentor",
+      "title": "Accounting Mentor",
+      "slug": "accounting_mentor",
+      "description": "Accounting Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "accounting",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 50,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Academic / Career",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_it_mentor": {
+      "categoryId": "mentor_it_mentor",
+      "title": "IT Mentor",
+      "slug": "it_mentor",
+      "description": "IT Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "it",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 60,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Academic / Career",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_engineering_mentor": {
+      "categoryId": "mentor_engineering_mentor",
+      "title": "Engineering Mentor",
+      "slug": "engineering_mentor",
+      "description": "Engineering Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "engineering",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 70,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Academic / Career",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_career_guidance_mentor": {
+      "categoryId": "mentor_career_guidance_mentor",
+      "title": "Career Guidance Mentor",
+      "slug": "career_guidance_mentor",
+      "description": "Career Guidance Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "career",
+        "guidance",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 80,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Academic / Career",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_university_guidance_mentor": {
+      "categoryId": "mentor_university_guidance_mentor",
+      "title": "University Guidance Mentor",
+      "slug": "university_guidance_mentor",
+      "description": "University Guidance Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "university",
+        "guidance",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 90,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Academic / Career",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_study_skills_mentor": {
+      "categoryId": "mentor_study_skills_mentor",
+      "title": "Study Skills Mentor",
+      "slug": "study_skills_mentor",
+      "description": "Study Skills Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "study",
+        "skills",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 100,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Academic / Career",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_dance_coach": {
+      "categoryId": "mentor_dance_coach",
+      "title": "Dance Coach",
+      "slug": "dance_coach",
+      "description": "Dance Coach category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "dance",
+        "coach"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 110,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Talent / Coaching",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_music_mentor": {
+      "categoryId": "mentor_music_mentor",
+      "title": "Music Mentor",
+      "slug": "music_mentor",
+      "description": "Music Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "music",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 120,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Talent / Coaching",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_performing_arts_mentor": {
+      "categoryId": "mentor_performing_arts_mentor",
+      "title": "Performing Arts Mentor",
+      "slug": "performing_arts_mentor",
+      "description": "Performing Arts Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "performing",
+        "arts",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 130,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Talent / Coaching",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_art_mentor": {
+      "categoryId": "mentor_art_mentor",
+      "title": "Art Mentor",
+      "slug": "art_mentor",
+      "description": "Art Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "art",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 140,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Talent / Coaching",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_sports_coach": {
+      "categoryId": "mentor_sports_coach",
+      "title": "Sports Coach",
+      "slug": "sports_coach",
+      "description": "Sports Coach category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "sports",
+        "coach"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 150,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Talent / Coaching",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_fitness_coach": {
+      "categoryId": "mentor_fitness_coach",
+      "title": "Fitness Coach",
+      "slug": "fitness_coach",
+      "description": "Fitness Coach category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "fitness",
+        "coach"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 160,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Talent / Coaching",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_photography_mentor": {
+      "categoryId": "mentor_photography_mentor",
+      "title": "Photography Mentor",
+      "slug": "photography_mentor",
+      "description": "Photography Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "photography",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 170,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Talent / Coaching",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_creative_career_mentor": {
+      "categoryId": "mentor_creative_career_mentor",
+      "title": "Creative Career Mentor",
+      "slug": "creative_career_mentor",
+      "description": "Creative Career Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "creative",
+        "career",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 180,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Talent / Coaching",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_public_speaking_coach": {
+      "categoryId": "mentor_public_speaking_coach",
+      "title": "Public Speaking Coach",
+      "slug": "public_speaking_coach",
+      "description": "Public Speaking Coach category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "public",
+        "speaking",
+        "coach"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 190,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Talent / Coaching",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    },
+    "mentor_content_creation_mentor": {
+      "categoryId": "mentor_content_creation_mentor",
+      "title": "Content Creation Mentor",
+      "slug": "content_creation_mentor",
+      "description": "Content Creation Mentor category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "content",
+        "creation",
+        "mentor"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 200,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "mentorType": "Talent / Coaching",
+      "relatedAcademicCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedCourseCategoryIds": [],
+      "supportedPathways": [
+        "academic",
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "supportedStudentLevels": [],
+      "supportedSkillLevels": []
+    }
+  },
+  "talentCategories": {
+    "talent_dancing": {
+      "categoryId": "talent_dancing",
+      "title": "Dancing",
+      "mainType": "Arts",
+      "description": "Dancing talent category",
+      "subCategories": [
+        "Kandyan Dancing",
+        "Traditional Dancing",
+        "Modern Dancing",
+        "Hip Hop",
+        "Stage Performance",
+        "Choreography"
+      ],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "dancing",
+        "kandyan dancing",
+        "traditional dancing",
+        "modern dancing",
+        "hip hop",
+        "stage performance",
+        "choreography"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": true,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 10
+    },
+    "talent_music": {
+      "categoryId": "talent_music",
+      "title": "Music",
+      "mainType": "Arts",
+      "description": "Music talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "music"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": true,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 20
+    },
+    "talent_drawing_and_painting": {
+      "categoryId": "talent_drawing_and_painting",
+      "title": "Drawing and Painting",
+      "mainType": "Arts",
+      "description": "Drawing and Painting talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "drawing and painting"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 30
+    },
+    "talent_drama_and_acting": {
+      "categoryId": "talent_drama_and_acting",
+      "title": "Drama and Acting",
+      "mainType": "Arts",
+      "description": "Drama and Acting talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "drama and acting"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 40
+    },
+    "talent_writing_and_poetry": {
+      "categoryId": "talent_writing_and_poetry",
+      "title": "Writing and Poetry",
+      "mainType": "Arts",
+      "description": "Writing and Poetry talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "writing and poetry"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 50
+    },
+    "talent_digital_art": {
+      "categoryId": "talent_digital_art",
+      "title": "Digital Art",
+      "mainType": "Arts",
+      "description": "Digital Art talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "digital art"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 60
+    },
+    "talent_cricket": {
+      "categoryId": "talent_cricket",
+      "title": "Cricket",
+      "mainType": "Sports",
+      "description": "Cricket talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "cricket"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 70
+    },
+    "talent_football": {
+      "categoryId": "talent_football",
+      "title": "Football",
+      "mainType": "Sports",
+      "description": "Football talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "football"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 80
+    },
+    "talent_athletics": {
+      "categoryId": "talent_athletics",
+      "title": "Athletics",
+      "mainType": "Sports",
+      "description": "Athletics talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "athletics"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 90
+    },
+    "talent_swimming": {
+      "categoryId": "talent_swimming",
+      "title": "Swimming",
+      "mainType": "Sports",
+      "description": "Swimming talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "swimming"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 100
+    },
+    "talent_badminton": {
+      "categoryId": "talent_badminton",
+      "title": "Badminton",
+      "mainType": "Sports",
+      "description": "Badminton talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "badminton"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 110
+    },
+    "talent_chess": {
+      "categoryId": "talent_chess",
+      "title": "Chess",
+      "mainType": "Sports",
+      "description": "Chess talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "chess"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 120
+    },
+    "talent_netball": {
+      "categoryId": "talent_netball",
+      "title": "Netball",
+      "mainType": "Sports",
+      "description": "Netball talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "netball"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 130
+    },
+    "talent_volleyball": {
+      "categoryId": "talent_volleyball",
+      "title": "Volleyball",
+      "mainType": "Sports",
+      "description": "Volleyball talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "volleyball"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 140
+    },
+    "talent_photography": {
+      "categoryId": "talent_photography",
+      "title": "Photography",
+      "mainType": "Practical / Creative Skills",
+      "description": "Photography talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "photography"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 150
+    },
+    "talent_video_editing": {
+      "categoryId": "talent_video_editing",
+      "title": "Video Editing",
+      "mainType": "Practical / Creative Skills",
+      "description": "Video Editing talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "video editing"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 160
+    },
+    "talent_graphic_design": {
+      "categoryId": "talent_graphic_design",
+      "title": "Graphic Design",
+      "mainType": "Practical / Creative Skills",
+      "description": "Graphic Design talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "graphic design"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 170
+    },
+    "talent_embroidery_and_thread_work": {
+      "categoryId": "talent_embroidery_and_thread_work",
+      "title": "Embroidery and Thread Work",
+      "mainType": "Practical / Creative Skills",
+      "description": "Embroidery and Thread Work talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "embroidery and thread work"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 180
+    },
+    "talent_content_creation": {
+      "categoryId": "talent_content_creation",
+      "title": "Content Creation",
+      "mainType": "Practical / Creative Skills",
+      "description": "Content Creation talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "content creation"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 190
+    },
+    "talent_public_speaking": {
+      "categoryId": "talent_public_speaking",
+      "title": "Public Speaking",
+      "mainType": "Practical / Creative Skills",
+      "description": "Public Speaking talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "public speaking"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 200
+    },
+    "talent_event_organizing": {
+      "categoryId": "talent_event_organizing",
+      "title": "Event Organizing",
+      "mainType": "Practical / Creative Skills",
+      "description": "Event Organizing talent category",
+      "subCategories": [],
+      "supportedSkillLevels": [
+        "Beginner",
+        "Intermediate",
+        "Advanced",
+        "Professional"
+      ],
+      "recommendedOpportunityTypes": [],
+      "relatedMentorTypes": [],
+      "matchingKeywords": [
+        "event organizing"
+      ],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ],
+      "suitableStudentLevels": [],
+      "minAge": 0,
+      "maxAge": 100,
+      "publicVisibility": true,
+      "featured": false,
+      "showInTalentProfile": true,
+      "showInOpportunityFilters": true,
+      "showInMentorFilters": true,
+      "status": "active",
+      "sortOrder": 210
+    }
+  },
+  "opportunityCategories": {
+    "opportunity_competition": {
+      "categoryId": "opportunity_competition",
+      "title": "Competition",
+      "slug": "competition",
+      "description": "Competition category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "competition"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 10,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_workshop": {
+      "categoryId": "opportunity_workshop",
+      "title": "Workshop",
+      "slug": "workshop",
+      "description": "Workshop category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "workshop"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 20,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_training_program": {
+      "categoryId": "opportunity_training_program",
+      "title": "Training Program",
+      "slug": "training_program",
+      "description": "Training Program category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "training",
+        "program"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 30,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_audition": {
+      "categoryId": "opportunity_audition",
+      "title": "Audition",
+      "slug": "audition",
+      "description": "Audition category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "audition"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 40,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_exhibition": {
+      "categoryId": "opportunity_exhibition",
+      "title": "Exhibition",
+      "slug": "exhibition",
+      "description": "Exhibition category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "exhibition"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 50,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_stage_performance": {
+      "categoryId": "opportunity_stage_performance",
+      "title": "Stage Performance",
+      "slug": "stage_performance",
+      "description": "Stage Performance category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "stage",
+        "performance"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 60,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_academy_program": {
+      "categoryId": "opportunity_academy_program",
+      "title": "Academy Program",
+      "slug": "academy_program",
+      "description": "Academy Program category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "academy",
+        "program"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 70,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_club_membership": {
+      "categoryId": "opportunity_club_membership",
+      "title": "Club Membership",
+      "slug": "club_membership",
+      "description": "Club Membership category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "club",
+        "membership"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 80,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_coaching": {
+      "categoryId": "opportunity_coaching",
+      "title": "Coaching",
+      "slug": "coaching",
+      "description": "Coaching category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "coaching"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 90,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_portfolio_showcase": {
+      "categoryId": "opportunity_portfolio_showcase",
+      "title": "Portfolio Showcase",
+      "slug": "portfolio_showcase",
+      "description": "Portfolio Showcase category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "portfolio",
+        "showcase"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 100,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_talent_scholarship": {
+      "categoryId": "opportunity_talent_scholarship",
+      "title": "Talent Scholarship",
+      "slug": "talent_scholarship",
+      "description": "Talent Scholarship category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "talent",
+        "scholarship"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 110,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_trial": {
+      "categoryId": "opportunity_trial",
+      "title": "Trial",
+      "slug": "trial",
+      "description": "Trial category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "trial"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 120,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_tournament": {
+      "categoryId": "opportunity_tournament",
+      "title": "Tournament",
+      "slug": "tournament",
+      "description": "Tournament category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "tournament"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 130,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_internship": {
+      "categoryId": "opportunity_internship",
+      "title": "Internship",
+      "slug": "internship",
+      "description": "Internship category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "internship"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 140,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_freelance_project": {
+      "categoryId": "opportunity_freelance_project",
+      "title": "Freelance Project",
+      "slug": "freelance_project",
+      "description": "Freelance Project category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "freelance",
+        "project"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 150,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    },
+    "opportunity_creative_entrepreneurship_program": {
+      "categoryId": "opportunity_creative_entrepreneurship_program",
+      "title": "Creative Entrepreneurship Program",
+      "slug": "creative_entrepreneurship_program",
+      "description": "Creative Entrepreneurship Program category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "creative",
+        "entrepreneurship",
+        "program"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 160,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "applicableTalentMainTypes": [],
+      "suitablePathways": [
+        "talent",
+        "combined",
+        "undecided"
+      ]
+    }
+  },
+  "providerCategories": {
+    "provider_university": {
+      "categoryId": "provider_university",
+      "title": "University",
+      "slug": "university",
+      "description": "University category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "university"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 10,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "providerType": "Education / Opportunity Provider",
+      "relatedCourseCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedOpportunityCategoryIds": []
+    },
+    "provider_private_institute": {
+      "categoryId": "provider_private_institute",
+      "title": "Private Institute",
+      "slug": "private_institute",
+      "description": "Private Institute category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "private",
+        "institute"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 20,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "providerType": "Education / Opportunity Provider",
+      "relatedCourseCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedOpportunityCategoryIds": []
+    },
+    "provider_vocational_training_center": {
+      "categoryId": "provider_vocational_training_center",
+      "title": "Vocational Training Center",
+      "slug": "vocational_training_center",
+      "description": "Vocational Training Center category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "vocational",
+        "training",
+        "center"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 30,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "providerType": "Education / Opportunity Provider",
+      "relatedCourseCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedOpportunityCategoryIds": []
+    },
+    "provider_professional_academy": {
+      "categoryId": "provider_professional_academy",
+      "title": "Professional Academy",
+      "slug": "professional_academy",
+      "description": "Professional Academy category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "professional",
+        "academy"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 40,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "providerType": "Education / Opportunity Provider",
+      "relatedCourseCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedOpportunityCategoryIds": []
+    },
+    "provider_creative_arts_academy": {
+      "categoryId": "provider_creative_arts_academy",
+      "title": "Creative Arts Academy",
+      "slug": "creative_arts_academy",
+      "description": "Creative Arts Academy category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "creative",
+        "arts",
+        "academy"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 50,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "providerType": "Education / Opportunity Provider",
+      "relatedCourseCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedOpportunityCategoryIds": []
+    },
+    "provider_sports_academy": {
+      "categoryId": "provider_sports_academy",
+      "title": "Sports Academy",
+      "slug": "sports_academy",
+      "description": "Sports Academy category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "sports",
+        "academy"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 60,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "providerType": "Education / Opportunity Provider",
+      "relatedCourseCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedOpportunityCategoryIds": []
+    },
+    "provider_government_provider": {
+      "categoryId": "provider_government_provider",
+      "title": "Government Provider",
+      "slug": "government_provider",
+      "description": "Government Provider category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "government",
+        "provider"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 70,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "providerType": "Education / Opportunity Provider",
+      "relatedCourseCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedOpportunityCategoryIds": []
+    },
+    "provider_nonprofit_organization": {
+      "categoryId": "provider_nonprofit_organization",
+      "title": "Nonprofit Organization",
+      "slug": "nonprofit_organization",
+      "description": "Nonprofit Organization category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "nonprofit",
+        "organization"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 80,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "providerType": "Education / Opportunity Provider",
+      "relatedCourseCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedOpportunityCategoryIds": []
+    },
+    "provider_online_learning_provider": {
+      "categoryId": "provider_online_learning_provider",
+      "title": "Online Learning Provider",
+      "slug": "online_learning_provider",
+      "description": "Online Learning Provider category for EduPath Lanka recommendations.",
+      "matchingKeywords": [
+        "online",
+        "learning",
+        "provider"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "sortOrder": 90,
+      "createdAt": 0,
+      "updatedAt": 0,
+      "providerType": "Education / Opportunity Provider",
+      "relatedCourseCategoryIds": [],
+      "relatedTalentCategoryIds": [],
+      "relatedOpportunityCategoryIds": []
+    }
+  }
+}

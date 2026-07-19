@@ -40,7 +40,9 @@
             <li><a href="#dashboard-overview" data-section="dashboard-overview" class="active" title="Dashboard"><i class="fas fa-table-cells-large"></i><span class="sidebar-label">Dashboard</span></a></li>
             <li class="mentor-complete-profile-nav"><a href="#complete-profile" data-section="complete-profile" title="Complete Mentor Profile"><i class="fas fa-clipboard-check"></i><span class="sidebar-label">Complete Profile</span></a></li>
             <li><a href="#my-profile" data-section="my-profile" title="My Profile"><i class="fas fa-user-tie"></i><span class="sidebar-label">My Profile</span></a></li>
+            <li><a href="mentor-learning.html" title="My Learning"><i class="fas fa-graduation-cap"></i><span class="sidebar-label">My Learning</span></a></li>
             <li><a href="#requests" data-section="requests" title="Student Requests"><i class="fas fa-user-plus"></i><span class="sidebar-label">Student Requests</span> <span class="badge badge-warning" id="req-count">0</span></a></li>
+            <li><a href="#learning-requests" data-section="learning-requests" title="Incoming Learning Requests"><i class="fas fa-user-graduate"></i><span class="sidebar-label">Learning Requests</span> <span class="badge badge-warning" id="learning-req-count">0</span></a></li>
             <li><a href="#accepted" data-section="accepted" title="My Mentees"><i class="fas fa-user-check"></i><span class="sidebar-label">My Mentees</span></a></li>
             <li><a href="#messages" data-section="messages" title="Messages"><i class="fas fa-comments"></i><span class="sidebar-label">Messages</span></a></li>
             <li><a href="#rejected" data-section="rejected" title="Closed Requests"><i class="fas fa-user-times"></i><span class="sidebar-label">Closed Requests</span></a></li>
@@ -63,6 +65,7 @@
                 <h2 class="page-title mentor-topbar-title">Mentor Dashboard</h2>
             </div>
             <div class="topbar-right dashboard-topbar-actions">
+                <a href="mentor-learning.html" class="btn btn-outline mentor-learning-switch"><i class="fas fa-graduation-cap" aria-hidden="true"></i> Switch to My Learning</a>
                 <div class="mentor-date-time" aria-label="Current date and time">
                     <span class="date-time-item"><i class="fas fa-calendar-days" aria-hidden="true"></i><span id="mentor-dashboard-date">Today</span></span>
                     <span class="date-time-divider" aria-hidden="true"></span>
@@ -86,7 +89,7 @@
                                 <div class="mentor-home-intro">
                                     <span class="mentor-home-eyebrow">Welcome back,</span>
                                     <div class="mentor-home-name-row">
-                                        <h1 id="mentor-home-name">Mentor <span class="mentor-home-wave" aria-hidden="true">👋</span></h1>
+                                        <h1 id="mentor-home-name">Mentor <span class="mentor-home-wave" aria-hidden="true">&#128075;</span></h1>
                                     </div>
                                     <p id="mentor-home-message">Your guidance can shape a student's future.</p>
                                 </div>
@@ -450,6 +453,10 @@
                 </div>
             </section>
 
+            <section id="learning-requests" class="dashboard-section content-section">
+                <div class="section-header"><h2>Mentor-to-Mentor Learning Requests</h2><p class="section-desc">Review requests from approved mentors who want to learn from you while acting as mentees.</p></div>
+                <div id="learning-requests-grid" class="cards-grid"><div class="text-muted p-4">Loading learning requests...</div></div>
+            </section>
             <!-- 5. Accepted Students -->
             <section id="accepted" class="dashboard-section content-section">
                 <div class="section-header">
@@ -787,6 +794,6 @@
     <script type="module" src="theme.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="mentor-dashboard.js?v=20260705-profile-loading-fix"></script>
+    <script type="module" src="mentor-dashboard.js?v=20260718-next-session-fix"></script>
 </body>
 </html>

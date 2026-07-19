@@ -195,6 +195,12 @@ function wireUi() {
 }
 
 function bindRealtimeData() {
+    // Keep the user and institute approval records synchronized in the UI.
+    onValue(ref(database, `users/${state.uid}`), (snapshot) => {
+        state.user = { ...state.user, ...(snapshot.val() || {}) };
+        renderIdentity();
+        enforceInstituteApproval();
+    });
     // 1. Institute Info
     onValue(ref(database, `institutes/${state.uid}`), (snapshot) => {
         state.institute = snapshot.val() || {};
@@ -371,7 +377,8 @@ function enforceInstituteApproval() {
     const approved = isInstituteApproved();
     document.getElementById("approval-notice")?.classList.toggle("hidden", approved);
 
-    const statusText = state.institute.verificationStatus || state.institute.status || state.user.accountStatus || "Pending";
+    const statuses = [state.institute.verificationStatus, state.institute.approvalStatus, state.institute.status, state.user.instituteStatus].map(normalize).filter(Boolean); if (!statuses.length && state.user.accountStatus) statuses.push(normalize(state.user.accountStatus));
+    const statusText = statuses.includes("approved") || statuses.includes("active") ? "Approved" : statuses[0] || "Pending";
     const badge = document.getElementById("approval-badge");
     if (badge) {
         badge.textContent = statusText;
@@ -397,8 +404,8 @@ function enforceInstituteApproval() {
 }
 
 function isInstituteApproved() {
-    const status = normalize(state.institute.verificationStatus || state.institute.status || state.user.accountStatus);
-    return status === "approved" || status === "active";
+    const statuses = [state.institute.verificationStatus, state.institute.approvalStatus, state.institute.status, state.user.instituteStatus].map(normalize).filter(Boolean); if (!statuses.length && state.user.accountStatus) statuses.push(normalize(state.user.accountStatus));
+    return statuses.includes("approved") || statuses.includes("active");
 }
 
 function renderStats() {

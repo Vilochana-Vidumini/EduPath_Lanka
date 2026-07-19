@@ -1,4 +1,4 @@
-/* EduPath Lanka — Light / Dark theme (shared) */
+﻿/* EduPath Lanka â€” Light / Dark theme (shared) */
 
 html[data-theme="light"],
 :root {
@@ -852,7 +852,7 @@ html[data-theme="dark"] .table-responsive table td {
     flex-shrink: 0;
 }
 
-/* Dashboard topbar — aligned icons */
+/* Dashboard topbar â€” aligned icons */
 .dashboard-topbar-actions,
 .topbar-right.dashboard-topbar-actions {
     display: flex;
@@ -1208,7 +1208,7 @@ html[data-theme="dark"] .cta-card h2 {
 }
 
 /* =========================================
-   Dashboard sidebar — collapse & shared
+   Dashboard sidebar â€” collapse & shared
    ========================================= */
 .sidebar-overlay {
     display: none;
@@ -1513,8 +1513,12 @@ html.sidebar-collapsed .main-content {
 }
 
 .ep-auth-panel-header .logo span {
-    color: var(--theme-primary);
+    color: var(--sidebar-text);
 }
+
+.ep-auth-panel-header .ep-auth-panel-brand { display: inline-flex; align-items: center; gap: 9px; }
+.ep-auth-panel-header .ep-auth-panel-brand img { width: 34px; height: 34px; object-fit: contain; }
+.ep-auth-panel-header .ep-auth-panel-brand strong { color: var(--theme-primary); }
 
 .ep-auth-panel-close {
     width: 36px;

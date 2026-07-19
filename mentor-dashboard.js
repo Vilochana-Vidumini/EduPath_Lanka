@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeConversationId = null;
     let currentUserData = {};
     let currentRequestRows = [];
+    let incomingLearningRequests = {};
+    let learningRequestDetails = {};
     let mentorAvailability = {};
     let currentMentorData = {};
     let mentorAccessApproved = false;
@@ -30,6 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedAppointmentDate = dateKeyLocal(new Date());
     let activeAppointmentTab = 'pending';
     let mentorDateTimer = null;
+    let initialMentorProfileLoaded = false;
+    let availabilityListenerStarted = false;
+    let approvedDataListenersStarted = false;
     const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
     function normalizeMentorApplicationSection() {
@@ -94,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mentor-application-form')?.addEventListener('submit', submitMentorApplication);
     document.getElementById('save-mentor-draft-btn')?.addEventListener('click', saveMentorApplicationDraft);
     document.addEventListener('click', handleApprovedProfileClick);
+    document.addEventListener('click', handleLearningRequestAction);
     document.addEventListener('change', handleApprovedProfileChange);
     document.addEventListener('submit', handleApprovedProfileSubmit);
     document.getElementById('save-availability-btn')?.addEventListener('click', saveAvailability);
@@ -142,17 +148,19 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDashboardGreetingName(userData.fullName || 'Mentor');
         updateMentorHeroName(userData.fullName || 'Mentor');
 
-        // Load Mentor Specific Data from /mentors/{uid}
-        get(ref(database, 'mentors/' + uid)).then((snapshot) => {
-            let mentorData = { status: "pending" };
-            if (snapshot.exists()) {
-                mentorData = snapshot.val();
-            }
-            currentMentorData = { ...mentorData, email: mentorData.email || userData.email, fullName: mentorData.fullName || userData.fullName, phone: mentorData.phone || userData.phone };
+        // Keep approval, profile edits, and admin changes synchronized while the dashboard is open.
+        onValue(ref(database, `mentors/${uid}`), (snapshot) => {
+            const mentorData = snapshot.exists() ? snapshot.val() : { status: 'pending' };
+            currentMentorData = {
+                ...mentorData,
+                email: mentorData.email || userData.email,
+                fullName: mentorData.fullName || userData.fullName,
+                phone: mentorData.phone || userData.phone
+            };
             mentorAccessApproved = isApprovedMentor(currentMentorData, userData);
             updateStatusUI(mentorApprovalStatus(currentMentorData));
-            calculateProfileCompletion(uid, userData, mentorData);
-            renderAvailability(mentorData);
+            if (!initialMentorProfileLoaded) calculateProfileCompletion(uid, userData, mentorData);
+            renderAvailability(Object.keys(mentorAvailability || {}).length ? mentorAvailability : mentorData);
             populateMentorApplicationForm(currentMentorData, userData);
             renderMentorApplicationStatus(currentMentorData);
             applyMentorAccessGate();
@@ -160,23 +168,25 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMentorHero();
 
             if (mentorAccessApproved) {
-                listenForRequests(uid, userData.fullName);
-                listenForConnectedStudents(uid);
-                listenForAppointments(uid);
-                listenForRatings(uid);
+                if (!approvedDataListenersStarted) {
+                    approvedDataListenersStarted = true;
+                    listenForRequests(uid, userData.fullName);
+                    listenForConnectedStudents(uid);
+                    listenForAppointments(uid);
+                    listenForRatings(uid);
+                    listenForLearningRequests(uid);
+                }
             } else {
                 showApplicationFirst();
             }
-        }).catch((error) => {
+            initialMentorProfileLoaded = true;
+        }, (error) => {
             console.error('Mentor profile load failed:', error);
             const root = document.getElementById('approved-mentor-profile-root');
-            if (root) {
-                root.innerHTML = `<div class="mentor-profile-readonly-card glass"><h3>Profile could not load</h3><p>${escapeHtml(friendlyFirebaseError(error))}</p></div>`;
-            }
+            if (root) root.innerHTML = `<div class="mentor-profile-readonly-card glass"><h3>Profile could not load</h3><p>${escapeHtml(friendlyFirebaseError(error))}</p></div>`;
             showToast(friendlyFirebaseError(error), 'error');
         });
     }
-
     function listenForAdminSupport(uid) {
         onValue(ref(database, `conversations/${supportConversationId(uid)}`), (snapshot) => {
             supportConversation = snapshot.val() || {};
@@ -322,6 +332,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function appointmentSortTime(item = {}) {
         return new Date(`${item.date || '2099-12-31'}T${item.startTime || '23:59'}`).getTime() || getTimeValue(item.createdAt);
+    }
+    function isFutureAppointment(item = {}, now = Date.now()) {
+        const scheduledTime = appointmentSortTime(item);
+        return Number.isFinite(scheduledTime) && scheduledTime >= now;
     }
     function formatDay(dateValue = '') {
         const date = new Date(`${dateValue}T00:00:00`);
@@ -558,6 +572,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function listenForAvailability(uid) {
+        if (availabilityListenerStarted) return;
+        availabilityListenerStarted = true;
         onValue(ref(database, `mentorAvailability/${uid}`), (snapshot) => {
             mentorAvailability = snapshot.val() || {};
             renderAvailability(mentorAvailability);
@@ -755,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateMentorHeroName(fullName) {
         const welcomeNameEl = document.getElementById('mentor-home-name');
         if (!welcomeNameEl) return;
-        welcomeNameEl.innerHTML = `${escapeHtml(fullName || 'Mentor')} <span class="mentor-home-wave" aria-hidden="true">👋</span>`;
+        welcomeNameEl.innerHTML = `${escapeHtml(fullName || 'Mentor')} <span class="mentor-home-wave" aria-hidden="true">&#128075;</span>`;
         
         const len = (fullName || '').length;
         welcomeNameEl.classList.toggle('is-long-name', len > 15 && len <= 25);
@@ -973,8 +989,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateHeroNextSessionMetric() {
+        const now = Date.now();
         const upcoming = Object.values(mentorAppointments || {})
-            .filter((item) => String(item.status || '').toLowerCase() === 'accepted')
+            .filter((item) => String(item.status || '').toLowerCase() === 'accepted' && isFutureAppointment(item, now))
             .sort((a, b) => appointmentSortTime(a) - appointmentSortTime(b));
         if (!mentorAccessApproved) {
             setTextSafe('mentor-modern-next-session', 'Locked until approval');
@@ -2081,10 +2098,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (progressMsg) {
             if (percentage < 80) {
-                progressMsg.textContent = "⚠️ Please complete your profile to at least 80% strength to ensure your application gets approved quickly by our admins!";
+                progressMsg.textContent = "Please complete your profile to at least 80% strength to help your application get reviewed quickly.";
                 progressMsg.style.color = '#f59e0b';
             } else {
-                progressMsg.textContent = "🎉 Excellent! Your profile strength is optimized for immediate admin approval and student matching.";
+                progressMsg.textContent = "Excellent! Your profile is complete and ready for student matching.";
                 progressMsg.style.color = '#10b981';
             }
         }
@@ -2106,6 +2123,83 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+    function listenForLearningRequests(uid) {
+        const incomingQuery = query(ref(database, 'mentorshipRequests'), orderByChild('targetMentorUid'), equalTo(uid));
+        onValue(incomingQuery, async (snapshot) => {
+            incomingLearningRequests = snapshot.val() || {};
+            const rows = await Promise.all(Object.entries(incomingLearningRequests).map(async ([requestId, request]) => {
+                const requesterUid = request.requesterUid || '';
+                const [userSnap, mentorSnap, learningSnap, personalSnap] = await Promise.all([
+                    requesterUid ? safeGet(ref(database, `users/${requesterUid}`)) : Promise.resolve(null),
+                    requesterUid ? safeGet(ref(database, `mentors/${requesterUid}`)) : Promise.resolve(null),
+                    requesterUid ? safeGet(ref(database, `learningProfiles/${requesterUid}`)) : Promise.resolve(null),
+                    requesterUid ? safeGet(ref(database, `studentProfiles/${requesterUid}/personal`)) : Promise.resolve(null)
+                ]);
+                return { requestId, request, user: userSnap?.val?.() || {}, mentor: mentorSnap?.val?.() || {}, learning: learningSnap?.val?.() || {}, personal: personalSnap?.val?.() || {} };
+            }));
+            learningRequestDetails = Object.fromEntries(rows.map((row) => [row.requestId, row]));
+            renderIncomingLearningRequests();
+        }, (error) => {
+            console.error('Incoming learning requests failed:', error);
+            const grid = document.getElementById('learning-requests-grid');
+            if (grid) grid.innerHTML = `<div class="text-muted p-4">${escapeHtml(friendlyFirebaseError(error))}</div>`;
+        });
+    }
+
+    function renderIncomingLearningRequests() {
+        const grid = document.getElementById('learning-requests-grid');
+        if (!grid) return;
+        const rows = Object.values(learningRequestDetails).filter(({ request }) => normalizeMentorshipStatus(request.status) === 'pending' && request.targetMentorUid === currentUid);
+        const count = document.getElementById('learning-req-count');
+        if (count) count.textContent = String(rows.length);
+        if (!rows.length) { grid.innerHTML = '<div class="empty-state"><i class="fas fa-user-graduate"></i><p>No incoming mentor learning requests.</p></div>'; return; }
+        grid.innerHTML = rows.map(({ requestId, request, user, mentor }) => {
+            const name = request.requesterName || mentor.fullName || user.fullName || 'Approved Mentor';
+            const photo = request.requesterPhotoURL || mentor.photoURL || user.photoURL || '';
+            return `<article class="student-card request-card glass"><div class="request-card-header"><div style="display:flex;gap:12px;align-items:center;">${photo ? `<img class="avatar-sm" src="${escapeHtml(photo)}" alt="">` : `<span class="mini-avatar">${escapeHtml(getInitials(name))}</span>`}<div><h4>${escapeHtml(name)}</h4><div><span class="badge badge-approved">Approved Mentor</span> <span class="badge badge-warning">Requesting as Mentee</span></div></div></div></div><p><strong>Topic:</strong> ${escapeHtml(request.topic || 'General Mentorship')}</p><p><strong>Goal:</strong> ${escapeHtml(request.goal || 'Not provided')}</p><p><strong>Message:</strong> ${escapeHtml(request.message || 'No message')}</p><p class="text-sm"><strong>Preferred:</strong> ${escapeHtml(request.preferredMode || 'Flexible')} ${request.preferredDays ? `- ${escapeHtml(request.preferredDays)}` : ''}</p><p class="text-sm text-muted">${escapeHtml(formatSupportDate(request.createdAt))}</p><div class="request-card-actions"><button class="btn btn-secondary btn-sm" data-view-learning-request="${escapeHtml(requestId)}">View Details</button><button class="btn btn-success btn-sm" data-accept-learning-request="${escapeHtml(requestId)}">Accept</button><button class="btn btn-danger btn-sm" data-reject-learning-request="${escapeHtml(requestId)}">Reject</button></div></article>`;
+        }).join('');
+    }
+
+    function normalizeMentorshipStatus(value) { return String(value || 'pending').trim().toLowerCase().replace(/[ -]+/g, '_'); }
+
+    function handleLearningRequestAction(event) {
+        const view = event.target.closest('[data-view-learning-request]'); if (view) return openLearningRequestDetails(view.dataset.viewLearningRequest);
+        const accept = event.target.closest('[data-accept-learning-request]'); if (accept) return acceptMentorshipRequest(accept.dataset.acceptLearningRequest);
+        const reject = event.target.closest('[data-reject-learning-request]'); if (reject) { const note = prompt('Optional response note:', '') || ''; return rejectMentorshipRequest(reject.dataset.rejectLearningRequest, note); }
+    }
+
+    function openLearningRequestDetails(requestId) {
+        const row = learningRequestDetails[requestId]; if (!row) return;
+        const { request, user, mentor, learning } = row;
+        let modal = document.getElementById('learning-request-detail-modal');
+        if (!modal) { modal = document.createElement('div'); modal.id = 'learning-request-detail-modal'; modal.className = 'modal-overlay hidden'; document.body.appendChild(modal); }
+        const name = request.requesterName || mentor.fullName || user.fullName || 'Approved Mentor';
+        modal.innerHTML = `<div class="modal-card request-modal-card"><div class="modal-header"><h3>${escapeHtml(name)} - Learning Request</h3><button class="modal-close" data-close-learning-request>&times;</button></div><div class="modal-body"><div class="modal-row"><strong>Role / Title:</strong><span>${escapeHtml(mentor.currentRole || mentor.currentPosition || mentor.mentorType || 'Mentor')}</span></div><div class="modal-row"><strong>Organization:</strong><span>${escapeHtml(mentor.organization || mentor.universityOrCompany || 'Not provided')}</span></div><div class="modal-row"><strong>Field / Expertise:</strong><span>${escapeHtml(displayVal(mentor.field || mentor.expertise || 'Not provided'))}</span></div><div class="modal-row"><strong>Experience:</strong><span>${escapeHtml(displayVal(mentor.yearsOfExperience || mentor.experience || 'Not provided'))}</span></div><div class="modal-row"><strong>Languages:</strong><span>${escapeHtml(displayVal(mentor.languages || 'Not provided'))}</span></div><div class="modal-row"><strong>Learning Interests:</strong><span>${escapeHtml(displayVal(learning.preferredFields || learning.skillsToImprove || 'Not provided'))}</span></div><div class="modal-row"><strong>Topic:</strong><span>${escapeHtml(request.topic || 'General Mentorship')}</span></div><div class="modal-row"><strong>Goal:</strong><span>${escapeHtml(request.goal || 'Not provided')}</span></div><div class="modal-row"><strong>Message:</strong><span>${escapeHtml(request.message || 'No message')}</span></div><div class="request-card-actions"><button class="btn btn-success" data-accept-learning-request="${escapeHtml(requestId)}">Accept</button><button class="btn btn-danger" data-reject-learning-request="${escapeHtml(requestId)}">Reject</button></div></div></div>`;
+        modal.classList.remove('hidden');
+        modal.querySelector('[data-close-learning-request]')?.addEventListener('click', () => modal.classList.add('hidden'));
+    }
+
+    async function acceptMentorshipRequest(requestId) {
+        const snap = await get(ref(database, `mentorshipRequests/${requestId}`));
+        const request = snap.val();
+        if (!request || request.targetMentorUid !== currentUid || normalizeMentorshipStatus(request.status) !== 'pending') return showToast('This learning request is no longer available.', 'error');
+        const connectionRef = push(ref(database, 'mentorshipConnections'));
+        const notificationRef = push(ref(database, `notifications/${request.requesterUid}`));
+        const learningConversationId = `mentor_${currentUid}_${request.requesterUid}`;
+        const connection = { connectionId: connectionRef.key, requestId, mentorUid: currentUid, mentorName: request.targetMentorName || currentMentorData.fullName || currentUserData.fullName || 'Mentor', mentorPhotoURL: request.targetMentorPhotoURL || currentMentorData.photoURL || currentUserData.photoURL || '', menteeUid: request.requesterUid, menteeName: request.requesterName || 'Mentor', menteePhotoURL: request.requesterPhotoURL || '', menteeAccountRole: request.requesterAccountRole || 'mentor', mentorRelationshipRole: 'mentor', menteeRelationshipRole: 'mentee', topic: request.topic || 'General Mentorship', category: request.category || 'General Guidance', goal: request.goal || '', status: 'active', conversationId: learningConversationId, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), endedAt: null };
+        const updates = {};
+        updates[`mentorshipConnections/${connectionRef.key}`] = connection;
+        updates[`conversations/${learningConversationId}`] = { conversationId: learningConversationId, mentorUid: currentUid, menteeUid: request.requesterUid, participantIds: { [currentUid]: true, [request.requesterUid]: true }, topic: connection.topic, lastMessage: "", unreadByMentor: 0, unreadByMentee: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+        updates[`mentorshipRequests/${requestId}/status`] = 'accepted'; updates[`mentorshipRequests/${requestId}/respondedAt`] = serverTimestamp(); updates[`mentorshipRequests/${requestId}/updatedAt`] = serverTimestamp();
+        updates[`notifications/${request.requesterUid}/${notificationRef.key}`] = { notificationId: notificationRef.key, type: 'mentorship_request_accepted', title: 'Mentorship Request Accepted', message: `${connection.mentorName} accepted your learning request.`, targetUserUid: request.requesterUid, senderUid: currentUid, relatedEntityType: 'mentorship_connection', relatedEntityId: connectionRef.key, targetPage: 'mentor-learning.html', targetSection: 'connected-mentors', read: false, status: 'unread', createdAt: serverTimestamp() };
+        await update(ref(database), updates); document.getElementById('learning-request-detail-modal')?.classList.add('hidden'); showToast('Mentorship request accepted.', 'success');
+    }
+
+    async function rejectMentorshipRequest(requestId, note = '') {
+        const snap = await get(ref(database, `mentorshipRequests/${requestId}`)); const request = snap.val();
+        if (!request || request.targetMentorUid !== currentUid || normalizeMentorshipStatus(request.status) !== 'pending') return showToast('This learning request is no longer available.', 'error');
+        await update(ref(database, `mentorshipRequests/${requestId}`), { status: 'rejected', respondedAt: serverTimestamp(), updatedAt: serverTimestamp(), responseNote: String(note || '').slice(0, 500) }); document.getElementById('learning-request-detail-modal')?.classList.add('hidden'); showToast('Mentorship request rejected.', 'success');
+    }
     function listenForRequests(uid, mentorName) {
         const reqRef = query(ref(database, 'mentorRequests'), orderByChild('mentorUid'), equalTo(uid));
         onValue(reqRef, async (snapshot) => {
@@ -2589,9 +2683,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderMentorAppointments() {
         const entries = Object.entries(mentorAppointments || {});
+        const now = Date.now();
         const pending = entries.filter(([, item]) => String(item.status || '').toLowerCase() === 'pending')
             .sort(([, a], [, b]) => appointmentSortTime(a) - appointmentSortTime(b));
-        const upcoming = entries.filter(([, item]) => String(item.status || '').toLowerCase() === 'accepted')
+        const upcoming = entries.filter(([, item]) => String(item.status || '').toLowerCase() === 'accepted' && isFutureAppointment(item, now))
             .sort(([, a], [, b]) => appointmentSortTime(a) - appointmentSortTime(b));
         const completed = entries.filter(([, item]) => String(item.status || '').toLowerCase() === 'completed')
             .sort(([, a], [, b]) => appointmentSortTime(b) - appointmentSortTime(a));
@@ -3456,6 +3551,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="modal-row"><strong>Interest Area:</strong> <span id="modal-interest"></span></div>
                 <div class="modal-row"><strong>Future Goal:</strong> <span id="modal-goal"></span></div>
                 <div class="modal-row"><strong>Learning Mode:</strong> <span id="modal-learning-mode"></span></div>
+                <div class="modal-row"><strong>Pathway Preference:</strong> <span id="modal-pathway-preference"></span></div>
+                <div class="modal-row"><strong>Enjoyed Activities:</strong> <span id="modal-enjoyed-activities"></span></div>
+                <div class="modal-row"><strong>Talents:</strong> <span id="modal-talents"></span></div>
                 <div class="modal-row"><strong>Skills:</strong> <span id="modal-skills"></span></div>
                 <div class="modal-row"><strong>Request Message:</strong> <span id="modal-message"></span></div>
                 <div class="modal-row"><strong>Latest Pathway Match:</strong> <span id="modal-pathway-result"></span></div>
@@ -3472,11 +3570,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-interest').textContent = req.interestArea || studentData.interestArea || studentData.interest || userData.interestArea || latestResult.interestArea || latestResult.interests?.interestAreas?.[0] || 'N/A';
         document.getElementById('modal-goal').textContent = req.futureGoal || studentData.futureGoal || studentData.goal || userData.futureGoal || latestResult.futureGoal || latestResult.goals?.dreamCareer || 'N/A';
         document.getElementById('modal-learning-mode').textContent = studentData.learningMode || userData.learningMode || latestResult.learningMode || latestResult.learningPreferences?.learningMode || 'N/A';
-        document.getElementById('modal-skills').textContent = displayVal(req.skills || studentData.skills || userData.skills || latestResult.skills || latestResult.skillsAndStrengths?.skills || 'N/A');
-                    <div class="modal-row"><strong>Pathway Preference:</strong> <span><span style="text-transform: capitalize;">${escapeHtml(req.pathwayPreference || 'N/A')}</span></span></div>
-                    ${req.enjoyedActivities ? `<div class="modal-row full-width"><strong>Enjoyed Activities:</strong> <div style="margin-top:0.25rem;">${escapeHtml(req.enjoyedActivities)}</div></div>` : ''}
-                    ${req.talentsList ? `<div class="modal-row full-width"><strong>Talents:</strong> <div style="margin-top:0.25rem;">${escapeHtml(req.talentsList)}</div></div>` : ''}
-        document.getElementById('modal-message').textContent = req.message || 'N/A';
+        document.getElementById('modal-pathway-preference').textContent = req.pathwayPreference || studentData.pathwayPreference || latestResult.pathwayPreference || 'N/A';
+        document.getElementById('modal-enjoyed-activities').textContent = displayVal(req.enjoyedActivities || studentData.enjoyedActivities || 'N/A');
+        document.getElementById('modal-talents').textContent = displayVal(req.talentsList || studentData.talents || studentData.specificTalent || 'N/A');
+        document.getElementById('modal-skills').textContent = displayVal(req.skills || studentData.skills || userData.skills || latestResult.skills || latestResult.skillsAndStrengths?.skills || 'N/A');        document.getElementById('modal-message').textContent = req.message || 'N/A';
         document.getElementById('modal-pathway-result').textContent = Object.keys(latestResult || {}).length ? `${latestResult.pathway || latestResult.recommendedPathway || 'Recommended pathway unavailable'} (${displayVal(latestResult.pathwayScore || latestResult.score || 'N/A')})` : 'No pathway result available yet.';
         document.getElementById('modal-requested-at').textContent = formatSupportDate(req.createdAt);
 

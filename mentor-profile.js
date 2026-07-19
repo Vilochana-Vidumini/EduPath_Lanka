@@ -585,13 +585,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (connectCardDesc) {
                 connectCardDesc.textContent = "You are viewing this profile as an administrator. You can view their registration details or manage approval status from the admin dashboard.";
             }
-        } else if (currentUserType === 'mentor') {
+        } else if (mentorProfile.loginEnabled === false || mentorProfile.isManualProfile === true) {
+            const buttons = `<a href="contact.html?subject=${encodeURIComponent(`Guidance request for ${mentorProfile.fullName || 'manual mentor'}`)}" class="btn btn-primary"><i class="fas fa-headset"></i> Request Guidance / Contact Admin</a><a href="mentors.html" class="btn btn-outline"><i class="fas fa-users"></i> View Other Mentors</a>`;
+            heroActions.innerHTML = buttons;
+            connectionActions.innerHTML = buttons;
+            if (connectCardDesc) connectCardDesc.textContent = "This mentor profile is managed by EduPath Lanka. Contact the admin team to arrange guidance; direct messaging and mentor login are not available.";        } else if (currentUserType === 'mentor') {
             // Logged in Mentor (other) State
-            const btns = `<button type="button" class="btn btn-primary" disabled><i class="fas fa-user-tie"></i> View Public Profile</button>`;
+            const btns = `<a class="btn btn-primary" href="mentor-learning.html?mentor=${encodeURIComponent(mentorUid)}#find-mentor"><i class="fas fa-paper-plane"></i> Request Mentorship</a><a class="btn btn-outline" href="mentor-learning.html"><i class="fas fa-graduation-cap"></i> Open My Learning</a>`;
             heroActions.innerHTML = btns;
             connectionActions.innerHTML = btns;
             if (connectCardDesc) {
-                connectCardDesc.textContent = "Only students can connect with this mentor. You are logged in as a mentor.";
+                connectCardDesc.textContent = "Request mentorship from this approved mentor while keeping your own mentor profile active.";
             }
         } else if (currentUserType === 'student') {
             // Logged in Student State

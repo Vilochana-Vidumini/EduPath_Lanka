@@ -5,6 +5,7 @@ import { showToast, preserveThemeOnClear } from "./auth-nav.js?v=20260614-brand"
 import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
 import { ensureDashboardTopbarLayout, initDashboardNotifications, updateDashboardGreetingName } from "./dashboard-topbar.js";
 import { calculateMentorRatingSummary, normalizeRatingStatus } from "./ratings.js";
+import { runRecommendationTestSuite, testCombinedBusinessDancingStudent, testTalentOnlyDancingStudent, testAcademicBusinessStudent, testAcademicEngineeringStudent, testUndecidedStudent } from "./recommendation-test-helper.js";
 
 const adminState = {
     users: {},
@@ -13,6 +14,14 @@ const adminState = {
     institutes: {},
     courses: {},
     scholarships: {},
+    academicCategories: {},
+    courseCategories: {},
+    scholarshipCategories: {},
+    mentorExpertiseCategories: {},
+    talentCategories: {},
+    opportunityCategories: {},
+    providerCategories: {},
+    talentOpportunities: {},
     pathwayResults: {},
     mentorRequests: {},
     mentorRatings: {},
@@ -70,6 +79,9 @@ const adminState = {
     },
     editingCourseId: null,
     editingScholarshipId: null,
+    editingCategoryCmsId: null,
+    editingTalentCategoryId: null,
+    editingTalentOpportunityId: null,
     selectedConversationId: null
 };
 
@@ -88,6 +100,9 @@ const adminSections = {
     "manage-mentors": { title: "Manage Mentors" },
     "manage-institutes": { title: "Manage Institutes" },
     "manage-admins": { title: "Manage Admins" },
+    "manage-category-cms": { title: "Category Management" },
+    "category-review": { title: "Category Review" },
+    "recommendation-testing": { title: "Recommendation Testing" },
     "manage-courses": { title: "Manage Courses" },
     "manage-scholarships": { title: "Manage Scholarships" },
     "pathway-results": { title: "Pathway Results" },
@@ -112,6 +127,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bindNavigation();
     bindFormsAndFilters();
     bindAdminCommandSearch();
+    bindRecommendationTesting();
     startAdminClock();
     validateAdminNavigation();
 
@@ -266,6 +282,8 @@ function runSectionRender(sectionId) {
     if (sectionId === "mentor-reviews") renderMentorReviews();
     if (sectionId === "mentor-profile-updates") renderMentorProfileUpdates();
     if (sectionId === "system-status") renderSystemStatus();
+    if (sectionId === "manage-category-cms") { renderCategoryCms(); populateMasterCategorySelects(); }
+    if (sectionId === "category-review") renderCategoryReview();
     if (sectionId === "manage-talent-categories") renderTalentCategories();
     if (sectionId === "manage-talent-opportunities") renderTalentOpportunities();
     if (sectionId === "achievement-verifications") renderAchievementVerifications();
@@ -339,6 +357,37 @@ function bindFormsAndFilters() {
     document.getElementById("scholarship-form")?.addEventListener("submit", saveScholarship);
     document.getElementById("show-scholarship-form")?.addEventListener("click", openScholarshipFormForAdd);
     document.getElementById("scholarship-cancel-edit")?.addEventListener("click", closeScholarshipForm);
+    document.getElementById("btn-add-talent-category")?.addEventListener("click", () => toggleTalentForm("talent-category-form-card", "talent-category-title"));
+    document.getElementById("talent-category-cancel")?.addEventListener("click", () => closeTalentForm("talent-category-form-card", "talent-category-form"));
+    document.getElementById("talent-category-form")?.addEventListener("submit", saveTalentCategory);
+    document.getElementById("btn-add-talent-opportunity")?.addEventListener("click", () => toggleTalentForm("talent-opportunity-form-card", "talent-opportunity-title"));
+    document.getElementById("talent-opportunity-cancel")?.addEventListener("click", () => closeTalentForm("talent-opportunity-form-card", "talent-opportunity-form"));
+    document.getElementById("talent-opportunity-form")?.addEventListener("submit", saveTalentOpportunity);
+    document.getElementById("talent-opportunity-category")?.addEventListener("change", updateTalentOpportunityDependencies);
+    document.getElementById("category-cms-path")?.addEventListener("change", () => { resetCategoryCmsForm(); renderCategoryCms(); });
+    document.getElementById("category-cms-search")?.addEventListener("input", renderCategoryCms);
+    document.getElementById("category-cms-add")?.addEventListener("click", () => { resetCategoryCmsForm(); openCategoryCmsForm(); });
+    document.getElementById("category-cms-cancel")?.addEventListener("click", resetCategoryCmsForm);
+    document.getElementById("category-cms-form")?.addEventListener("submit", saveCategoryCms);
+    document.getElementById("category-review-filter")?.addEventListener("change", renderCategoryReview);
+    document.getElementById("category-review-search")?.addEventListener("input", renderCategoryReview);
+    document.getElementById("category-review-form")?.addEventListener("submit", saveCategoryReviewAssignment);
+    document.getElementById("category-review-cancel")?.addEventListener("click", closeCategoryReviewEditor);
+    document.getElementById("course-academic-category")?.addEventListener("change", populateCourseCategorySelect);
+    document.getElementById("show-manual-mentor-form")?.addEventListener("click", () => document.getElementById("manual-mentor-form-card")?.classList.remove("hidden"));
+    document.getElementById("manual-mentor-cancel")?.addEventListener("click", () => { document.getElementById("manual-mentor-form")?.reset(); document.getElementById("manual-mentor-form-card")?.classList.add("hidden"); });
+    document.getElementById("manual-mentor-form")?.addEventListener("submit", saveManualMentor);
+    document.getElementById("show-admin-institute-form")?.addEventListener("click", () => { populateMasterCategorySelects(); document.getElementById("admin-institute-form-card")?.classList.remove("hidden"); });
+    document.getElementById("admin-institute-cancel")?.addEventListener("click", () => { document.getElementById("admin-institute-form")?.reset(); document.getElementById("admin-institute-form-card")?.classList.add("hidden"); });
+    document.getElementById("admin-institute-form")?.addEventListener("submit", saveAdminInstitute);
+    document.addEventListener("click", (event) => {
+        const categoryEdit = event.target.closest("[data-edit-talent-category]");
+        const opportunityEdit = event.target.closest("[data-edit-talent-opportunity]");
+        const opportunityArchive = event.target.closest("[data-archive-talent-opportunity]");
+        if (categoryEdit) editTalentCategory(categoryEdit.dataset.editTalentCategory);
+        if (opportunityEdit) editTalentOpportunity(opportunityEdit.dataset.editTalentOpportunity);
+        if (opportunityArchive) archiveTalentOpportunity(opportunityArchive.dataset.archiveTalentOpportunity);
+    });
     document.getElementById("compose-message-form")?.addEventListener("submit", sendAdminMessage);
     document.getElementById("admin-mark-all-notifications-read")?.addEventListener("click", markAllAdminNotificationsRead);
     bindSupportInboxControls();
@@ -438,8 +487,16 @@ function initRealtimeListeners() {
         ["students", "students", () => { renderOverview(); renderStudents(); renderPathwayResults(); renderReports(); }],
         ["mentors", "mentors", () => { renderOverview(); renderMentors(); renderMentorApprovals(); renderReports(); updateSidebarBadges(); }],
         ["institutes", "institutes", () => { renderOverview(); renderInstitutes(); renderReports(); }],
-        ["courses", "courses", () => { renderOverview(); renderCourses(); renderReports(); renderSystemStatus(); }],
+        ["courses", "courses", () => { renderOverview(); renderCourses(); renderInstitutes(); renderReports(); renderSystemStatus(); }],
         ["scholarships", "scholarships", () => { renderOverview(); renderScholarships(); renderReports(); renderSystemStatus(); }],
+        ["academicCategories", "academicCategories", () => { renderCategoryCms(); populateMasterCategorySelects(); }],
+        ["courseCategories", "courseCategories", () => { renderCategoryCms(); populateMasterCategorySelects(); }],
+        ["scholarshipCategories", "scholarshipCategories", () => { renderCategoryCms(); populateMasterCategorySelects(); }],
+        ["mentorExpertiseCategories", "mentorExpertiseCategories", () => { renderCategoryCms(); populateMasterCategorySelects(); }],
+        ["talentCategories", "talentCategories", () => { renderTalentCategories(); populateTalentCategoryOptions(); renderCategoryCms(); populateMasterCategorySelects(); }],
+        ["opportunityCategories", "opportunityCategories", () => { renderCategoryCms(); populateMasterCategorySelects(); }],
+        ["providerCategories", "providerCategories", () => { renderCategoryCms(); populateMasterCategorySelects(); }],
+        ["talentOpportunities", "talentOpportunities", () => { renderTalentOpportunities(); }],
         ["pathwayResults", "pathwayResults", () => { renderOverview(); renderStudents(); renderPathwayResults(); renderReports(); }],
         ["mentorRequests", "mentorRequests", () => { renderOverview(); renderStudents(); renderMentorRequests(); renderReports(); updateSidebarBadges(); }],
         ["mentorRatings", "mentorRatings", () => { renderOverview(); renderMentorReviews(); renderReports(); updateSidebarBadges(); }],
@@ -842,7 +899,7 @@ function getMentorRows() {
 function renderInstitutes() {
     const tbody = document.getElementById("admin-institutes-tbody");
     if (!tbody) return;
-    let rows = getInstituteRows();
+    let rows = getInstituteRows().filter((institute) => !["rejected", "suspended", "disabled"].includes(normalize(institute.accountStatus)) && !["rejected", "suspended"].includes(normalize(institute.verificationStatus || institute.approvalStatus || institute.status)));
     const q = normalize(adminState.filters.instituteSearch);
     if (q) rows = rows.filter((i) => normalize(`${i.instituteName} ${i.fullName} ${i.email} ${i.phone} ${i.district}`).includes(q));
     const result = paginateRows(rows, "institutes");
@@ -855,12 +912,12 @@ function renderInstitutes() {
             <td>${contactCell(i.email, i.phone)}</td>
             <td>${escapeHtml(display(i.district))}</td>
             <td><span class="badge ${statusBadgeClass(i.verificationStatus || i.status || "pending")}">${escapeHtml(normalize(i.verificationStatus || i.status || "pending"))}</span></td>
-            <td>${Object.values(adminState.courses).filter((c) => c.instituteUid === i.uid).length}</td>
+            <td>${Object.values(adminState.courses).filter((c) => c.instituteUid === i.uid || c.instituteId === i.uid || normalize(c.instituteName || c.institute) === normalize(i.instituteName || i.name)).length}</td>
             <td><span class="badge ${accountBadgeClass(i.accountStatus || i.status || "active")}">${escapeHtml(normalize(i.accountStatus || i.status || "active"))}</span></td>
             <td class="action-btns">
                 <button class="btn btn-sm btn-info" data-view-institute="${i.uid}">View</button>
-                <button class="btn btn-sm btn-success" data-approve-institute="${i.uid}">Approve</button>
-                <button class="btn btn-sm btn-warning" data-reject-institute="${i.uid}">Reject</button>
+                ${["approved", "active"].includes(normalize(i.verificationStatus || i.approvalStatus || i.status)) ? "" : `<button class="btn btn-sm btn-success" data-approve-institute="${i.uid}">Approve</button>`}
+                ${normalize(i.verificationStatus || i.approvalStatus || i.status) === "rejected" ? "" : `<button class="btn btn-sm btn-warning" data-reject-institute="${i.uid}">Reject</button>`}
                 <button class="btn btn-sm btn-primary" data-message-user="${i.uid}">Message</button>
                 <button class="btn btn-sm ${normalize(i.accountStatus) === "suspended" ? "btn-success" : "btn-danger"}" data-toggle-account="${i.uid}">${normalize(i.accountStatus) === "suspended" ? "Reactivate" : "Suspend"}</button>
             </td>
@@ -894,22 +951,13 @@ function renderAdmins() {
 }
 
 function getInstituteRows() {
-    return Object.entries(adminState.users)
-        .filter(([, user]) => userRole(user) === "institute")
-        .filter(([uid, user]) => !isHiddenAdminUser(uid, user))
-        .map(([uid, user]) => {
+    const ids = new Set([...Object.entries(adminState.users).filter(([, user]) => userRole(user) === "institute").map(([uid]) => uid), ...Object.keys(adminState.institutes).filter((uid) => adminState.institutes[uid]?.isAdminManaged)]);
+    return [...ids]
+        .filter((uid) => !isHiddenAdminUser(uid, adminState.users[uid] || {}))
+        .map((uid) => {
+            const user = adminState.users[uid] || {};
             const institute = adminState.institutes[uid] || {};
-            return {
-                uid,
-                ...user,
-                ...institute,
-                fullName: user.fullName || institute.instituteName,
-                instituteName: institute.instituteName || user.fullName,
-                email: user.email || institute.email,
-                phone: user.phone || institute.phone,
-                photoURL: user.photoURL || institute.logoURL,
-                accountStatus: user.accountStatus || institute.status || "active"
-            };
+            return { uid, ...user, ...institute, fullName: user.fullName || institute.instituteName, instituteName: institute.instituteName || user.fullName, email: user.email || institute.email, phone: user.phone || institute.phone, photoURL: user.photoURL || institute.logoURL, accountStatus: user.accountStatus || institute.accountStatus || institute.status || "active" };
         })
         .sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt));
 }
@@ -1006,7 +1054,14 @@ function getCoursePayload() {
         courseName: value("course-name"),
         instituteName: value("course-institute"),
         instituteType: value("course-institute-type"),
-        category: value("course-category"),
+        academicCategoryId: value("course-academic-category"),
+        academicCategoryTitle: adminState.academicCategories[value("course-academic-category")]?.title || "",
+        courseCategoryId: value("course-category"),
+        courseCategoryTitle: adminState.courseCategories[value("course-category")]?.title || "",
+        category: adminState.courseCategories[value("course-category")]?.title || value("course-category"),
+        matchingKeywords: talentList(value("course-keywords")),
+        suitablePathways: selectedValues("course-pathways"),
+        eligibleEducationLevels: talentList(value("course-education-levels")),
         description: value("course-description"),
         duration: value("course-duration"),
         mode: value("course-mode"),
@@ -1033,7 +1088,12 @@ function editCourse(id) {
     setValue("course-name", c.courseName || c.name);
     setValue("course-institute", c.instituteName || c.institute);
     setValue("course-institute-type", c.instituteType);
-    setValue("course-category", c.category);
+    setValue("course-academic-category", c.academicCategoryId || "");
+    populateCourseCategorySelect();
+    setValue("course-category", c.courseCategoryId || Object.entries(adminState.courseCategories).find(([,x]) => normalize(x.title) === normalize(c.courseCategoryTitle || c.category))?.[0] || "");
+    setValue("course-keywords", talentList(c.matchingKeywords).join(", "));
+    setSelectedValues("course-pathways", c.suitablePathways);
+    setValue("course-education-levels", talentList(c.eligibleEducationLevels).join(", "));
     setValue("course-description", c.description);
     setValue("course-duration", c.duration);
     setValue("course-mode", c.mode);
@@ -1150,7 +1210,16 @@ function getScholarshipPayload() {
         scholarshipName: value("schol-name"),
         provider: value("schol-provider"),
         providerType: value("schol-provider-type"),
-        category: value("schol-category"),
+        scholarshipCategoryId: value("schol-category"),
+        scholarshipCategoryTitle: adminState.scholarshipCategories[value("schol-category")]?.title || "",
+        category: adminState.scholarshipCategories[value("schol-category")]?.title || value("schol-category"),
+        relatedAcademicCategoryIds: selectedValues("schol-academic-categories"),
+        relatedTalentCategoryIds: selectedValues("schol-talent-categories"),
+        eligiblePathways: selectedValues("schol-pathways"),
+        eligibleEducationLevels: talentList(value("schol-education-levels")),
+        requiresFinancialNeed: checked("schol-financial-required"),
+        requiresAcademicResults: checked("schol-results-required"),
+        requiresTalentProfile: checked("schol-talent-required"),
         description: value("schol-description"),
         eligibility: value("schol-eligibility"),
         supportType: value("schol-support-type"),
@@ -1173,7 +1242,14 @@ function editScholarship(id) {
     setValue("schol-name", s.scholarshipName || s.name);
     setValue("schol-provider", s.provider);
     setValue("schol-provider-type", s.providerType);
-    setValue("schol-category", s.category);
+    setValue("schol-category", s.scholarshipCategoryId || Object.entries(adminState.scholarshipCategories).find(([,x]) => normalize(x.title) === normalize(s.scholarshipCategoryTitle || s.category))?.[0] || "");
+    setSelectedValues("schol-academic-categories", s.relatedAcademicCategoryIds);
+    setSelectedValues("schol-talent-categories", s.relatedTalentCategoryIds);
+    setSelectedValues("schol-pathways", s.eligiblePathways);
+    setValue("schol-education-levels", talentList(s.eligibleEducationLevels).join(", "));
+    setChecked("schol-financial-required", s.requiresFinancialNeed);
+    setChecked("schol-results-required", s.requiresAcademicResults);
+    setChecked("schol-talent-required", s.requiresTalentProfile);
     setValue("schol-description", s.description);
     setValue("schol-eligibility", s.eligibility);
     setValue("schol-support-type", s.supportType);
@@ -3219,45 +3295,76 @@ function escapeAttr(value) {
     return escapeHtml(value).replace(/`/g, "&#096;");
 }
 
+// --- Category Migration Review ---
+const categoryReviewDefinitions={courses:{label:"Course",required:["academic","course"],fields:{academic:"academicCategoryId",course:"courseCategoryId"}},scholarships:{label:"Scholarship",required:["scholarship"],fields:{scholarship:"scholarshipCategoryId",academic:"relatedAcademicCategoryIds",talent:"relatedTalentCategoryIds"}},mentors:{label:"Mentor",required:["mentor"],fields:{mentor:"expertiseCategoryIds",academic:"relatedAcademicCategoryIds",talent:"relatedTalentCategoryIds"}},institutes:{label:"Institute",required:["provider"],fields:{provider:"providerCategoryId",academic:"relatedAcademicCategoryIds",course:"relatedCourseCategoryIds",talent:"relatedTalentCategoryIds",opportunity:"relatedOpportunityCategoryIds"}},talentOpportunities:{label:"Talent Opportunity",required:["talent","opportunity"],fields:{talent:"categoryId",opportunity:"opportunityCategoryId"}}};
+const categoryReviewPaths={academic:"academicCategories",course:"courseCategories",scholarship:"scholarshipCategories",mentor:"mentorExpertiseCategories",talent:"talentCategories",opportunity:"opportunityCategories",provider:"providerCategories"};
+function reviewRecordTitle(path,item,id){return item.courseName||item.scholarshipName||item.fullName||item.instituteName||item.title||item.name||id;}
+function reviewFieldMissing(item,field){const value=item[field];return value==null||value===""||Array.isArray(value)&&!value.length||typeof value==="object"&&!Array.isArray(value)&&!Object.keys(value).length;}
+function categoryReviewRows(){const rows=[];for(const [path,definition] of Object.entries(categoryReviewDefinitions)){for(const [id,item] of Object.entries(adminState[path]||{})){const missing=definition.required.filter(type=>reviewFieldMissing(item,definition.fields[type]));rows.push({path,id,item,definition,missing,title:reviewRecordTitle(path,item,id)});}}return rows;}
+function categoryReviewMatchesFilter(row,filter){if(filter==="all")return true;if(filter==="needs-review")return row.item.needsCategoryReview===true||row.missing.length>0;if(filter==="missing-academic")return row.path==="courses"&&reviewFieldMissing(row.item,"academicCategoryId");if(filter==="missing-course")return row.path==="courses"&&reviewFieldMissing(row.item,"courseCategoryId");if(filter==="missing-scholarship")return row.path==="scholarships"&&reviewFieldMissing(row.item,"scholarshipCategoryId");if(filter==="missing-mentor")return row.path==="mentors"&&reviewFieldMissing(row.item,"expertiseCategoryIds");if(filter==="missing-talent")return row.path==="talentOpportunities"&&reviewFieldMissing(row.item,"categoryId");if(filter==="missing-opportunity")return row.path==="talentOpportunities"&&reviewFieldMissing(row.item,"opportunityCategoryId");return false;}
+function renderCategoryReview(){const tbody=document.getElementById("category-review-tbody");if(!tbody)return;const filter=value("category-review-filter")||"needs-review",q=normalize(value("category-review-search"));const all=categoryReviewRows(),rows=all.filter(row=>categoryReviewMatchesFilter(row,filter)&&(!q||normalize(`${row.title} ${row.path} ${row.item.category} ${row.item.field}`).includes(q)));const count=all.filter(row=>row.item.needsCategoryReview===true||row.missing.length).length;setText("badge-category-review",count||"");tbody.innerHTML=rows.length?rows.map(row=>{const assigned=Object.entries(row.definition.fields).map(([type,field])=>{const ids=talentList(row.item[field]);return ids.map(id=>adminState[categoryReviewPaths[type]]?.[id]?.title||id).join(", ");}).filter(Boolean).join(" / ")||row.item.category||row.item.field||"Unassigned";const reason=row.item.needsCategoryReview?"Low-confidence migration":row.missing.length?`Missing ${row.missing.join(" and ")} category`:"Categorized";return `<tr><td>${escapeHtml(row.definition.label)}</td><td><strong>${escapeHtml(row.title)}</strong><small>${escapeHtml(row.id)}</small></td><td>${escapeHtml(assigned)}</td><td>${escapeHtml(reason)}</td><td><button class="btn btn-primary btn-sm" data-review-assign="${escapeAttr(row.path)}:${escapeAttr(row.id)}">Assign Categories</button></td></tr>`;}).join(""):'<tr><td colspan="5" class="text-center p-4">No records match this review filter.</td></tr>';tbody.querySelectorAll("[data-review-assign]").forEach(button=>button.onclick=()=>{const [path,id]=button.dataset.reviewAssign.split(":");openCategoryReviewEditor(path,id);});}
+function fillReviewSelect(type,value){const select=document.getElementById(`category-review-${type}`),path=categoryReviewPaths[type];if(!select)return;select.innerHTML=categoryOptions(path,"",true);select.value=talentList(value)[0]||"";}
+function openCategoryReviewEditor(path,id){const definition=categoryReviewDefinitions[path],item=adminState[path]?.[id];if(!definition||!item)return;setValue("category-review-path",path);setValue("category-review-id",id);setText("category-review-editor-title",`Assign Categories - ${reviewRecordTitle(path,item,id)}`);for(const type of Object.keys(categoryReviewPaths)){const group=document.querySelector(`[data-review-field="${type}"]`),field=definition.fields[type];group?.classList.toggle("hidden",!field);if(field)fillReviewSelect(type,item[field]);}document.getElementById("category-review-editor")?.classList.remove("hidden");document.getElementById("category-review-editor")?.scrollIntoView({behavior:"smooth",block:"start"});}
+function closeCategoryReviewEditor(){document.getElementById("category-review-form")?.reset();document.getElementById("category-review-editor")?.classList.add("hidden");}
+async function saveCategoryReviewAssignment(event){event.preventDefault();const path=value("category-review-path"),id=value("category-review-id"),definition=categoryReviewDefinitions[path],item=adminState[path]?.[id];if(!definition||!item)return;const changes={};for(const [type,field] of Object.entries(definition.fields)){const selected=value(`category-review-${type}`);if(!selected)continue;const category=adminState[categoryReviewPaths[type]]?.[selected],isArray=field.endsWith("Ids");changes[field]=isArray?[selected]:selected;const titleField={academic:isArray?"relatedAcademicCategoryTitles":"academicCategoryTitle",course:isArray?"relatedCourseCategoryTitles":"courseCategoryTitle",scholarship:"scholarshipCategoryTitle",mentor:"expertiseCategoryTitles",talent:isArray?"relatedTalentCategoryTitles":path==="talentOpportunities"?"categoryTitle":"talentCategoryTitle",opportunity:isArray?"relatedOpportunityCategoryTitles":"opportunityCategoryTitle",provider:"providerCategoryTitle"}[type];if(titleField)changes[titleField]=isArray?[category?.title||selected]:category?.title||selected;if(path==="talentOpportunities"&&type==="talent"){changes.talentCategoryId=selected;changes.talentCategoryTitle=category?.title||selected;changes.mainType=category?.mainType||item.mainType||"";}if(path==="talentOpportunities"&&type==="opportunity")changes.opportunityType=category?.title||selected;}
+ const stillMissing=definition.required.some(type=>!changes[definition.fields[type]]&&reviewFieldMissing(item,definition.fields[type]));if(stillMissing)return showToast("Assign every required category before saving.","error");changes.needsCategoryReview=false;changes.categoryMigration={...(item.categoryMigration||{}),manuallyReviewed:true,reviewedAt:serverTimestamp(),reviewedBy:adminState.adminUid,migrationVersion:"category-backfill-v1"};changes.updatedAt=serverTimestamp();try{await update(ref(database,`${path}/${id}`),changes);closeCategoryReviewEditor();showToast("Category assignment saved.","success");}catch(error){console.error(error);showToast("Category assignment failed.","error");}}
+// --- Reusable Category CMS ---
+const categoryCmsConfig = {
+    academicCategories:{label:"Academic",prefix:"academic"},courseCategories:{label:"Course",prefix:"course"},scholarshipCategories:{label:"Scholarship",prefix:"scholarship"},mentorExpertiseCategories:{label:"Mentor Expertise",prefix:"mentor"},talentCategories:{label:"Talent",prefix:"talent"},opportunityCategories:{label:"Opportunity",prefix:"opportunity"},providerCategories:{label:"Provider",prefix:"provider"}
+};
+function currentCategoryPath(){return value("category-cms-path")||"academicCategories";}
+function categorySlug(text){return String(text||"").trim().toLowerCase().replace(/&/g," and ").replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,"");}
+function categoryOptions(path,selected="",includeHidden=false){return '<option value="">Select category</option>'+Object.entries(adminState[path]||{}).filter(([,c])=>includeHidden||(normalize(c.status)==="active"&&c.publicVisibility!==false)).sort(([,a],[,b])=>(Number(a.sortOrder)||100)-(Number(b.sortOrder)||100)||display(a.title).localeCompare(display(b.title))).map(([id,c])=>`<option value="${escapeAttr(c.categoryId||id)}" ${(c.categoryId||id)===selected?"selected":""}>${escapeHtml(c.title||c.name||id)}</option>`).join("");}
+function fillSelect(id,path,multiple=false){const el=document.getElementById(id);if(!el)return;const old=multiple?selectedValues(id):el.value;el.innerHTML=(multiple?"":'<option value="">Select category</option>')+Object.entries(adminState[path]||{}).filter(([,c])=>normalize(c.status)==="active"&&c.publicVisibility!==false).sort(([,a],[,b])=>(Number(a.sortOrder)||100)-(Number(b.sortOrder)||100)).map(([key,c])=>`<option value="${escapeAttr(c.categoryId||key)}">${escapeHtml(c.title||c.name||key)}</option>`).join("");if(multiple)setSelectedValues(id,old);else el.value=old;}
+function populateMasterCategorySelects(){fillSelect("course-academic-category","academicCategories");populateCourseCategorySelect();fillSelect("schol-category","scholarshipCategories");fillSelect("schol-academic-categories","academicCategories",true);fillSelect("schol-talent-categories","talentCategories",true);fillSelect("manual-mentor-expertise","mentorExpertiseCategories",true);fillSelect("manual-mentor-academic","academicCategories",true);fillSelect("manual-mentor-talent","talentCategories",true);fillSelect("admin-institute-provider-category","providerCategories");fillSelect("admin-institute-course-categories","courseCategories",true);fillSelect("admin-institute-talent-categories","talentCategories",true);fillSelect("admin-institute-opportunity-categories","opportunityCategories",true);const parent=document.getElementById("category-cms-parent");if(parent)parent.innerHTML=categoryOptions("academicCategories");const type=document.getElementById("talent-opportunity-type");if(type&&Object.keys(adminState.opportunityCategories).length){const old=type.value;type.innerHTML=categoryOptions("opportunityCategories").replace("Select category","Select opportunity type");type.value=old;}}
+function populateCourseCategorySelect(){const select=document.getElementById("course-category");if(!select)return;const academicId=value("course-academic-category"),old=select.value;select.innerHTML='<option value="">Select course category</option>'+Object.entries(adminState.courseCategories||{}).filter(([,c])=>normalize(c.status)==="active"&&c.publicVisibility!==false&&(!academicId||!c.academicCategoryId||c.academicCategoryId===academicId)).map(([id,c])=>`<option value="${escapeAttr(c.categoryId||id)}">${escapeHtml(c.title||c.name||id)}</option>`).join("");select.value=old;}
+function resetCategoryCmsForm(){adminState.editingCategoryCmsId=null;document.getElementById("category-cms-form")?.reset();setChecked("category-cms-public",true);setValue("category-cms-sort","100");document.getElementById("category-cms-id")?.removeAttribute("readonly");document.getElementById("category-cms-form-card")?.classList.add("hidden");setText("category-cms-form-title","Add Category");}
+function openCategoryCmsForm(){populateMasterCategorySelects();document.getElementById("category-cms-form-card")?.classList.remove("hidden");document.getElementById("category-cms-title")?.focus();}
+function categoryCmsPayload(){let metadata={};const raw=value("category-cms-metadata");if(raw){try{metadata=JSON.parse(raw);}catch(_){throw new Error("Advanced metadata must be valid JSON.");}}const path=currentCategoryPath(),prefix=categoryCmsConfig[path].prefix,title=value("category-cms-title"),id=adminState.editingCategoryCmsId||categorySlug(value("category-cms-id"))||`${prefix}_${categorySlug(title)}`;return{id,payload:{...metadata,categoryId:id,title,slug:categorySlug(title),description:value("category-cms-description"),mainField:value("category-cms-main-field"),mainType:metadata.mainType||value("category-cms-main-field"),academicCategoryId:value("category-cms-parent")||metadata.academicCategoryId||"",matchingKeywords:talentList(value("category-cms-keywords")),status:value("category-cms-status")||"active",publicVisibility:checked("category-cms-public"),sortOrder:Number(value("category-cms-sort"))||100}};}
+async function saveCategoryCms(event){event.preventDefault();try{const path=currentCategoryPath(),{id,payload}=categoryCmsPayload(),existing=adminState[path]?.[id];if(!payload.title)return showToast("Category title is required.","error");if(!adminState.editingCategoryCmsId&&existing)return showToast("Duplicate category ID is not allowed.","error");await set(ref(database,`${path}/${id}`),{...(existing||{}),...payload,createdAt:existing?.createdAt||serverTimestamp(),updatedAt:serverTimestamp(),createdBy:existing?.createdBy||adminState.adminUid});resetCategoryCmsForm();showToast("Category saved.","success");}catch(error){console.error(error);showToast(error.message||"Category save failed.","error");}}
+function renderCategoryCms(){const tbody=document.getElementById("category-cms-tbody");if(!tbody)return;const path=currentCategoryPath(),q=normalize(value("category-cms-search"));const rows=Object.entries(adminState[path]||{}).filter(([id,c])=>!q||normalize(`${id} ${c.title} ${c.mainField} ${c.mainType}`).includes(q)).sort(([,a],[,b])=>(Number(a.sortOrder)||100)-(Number(b.sortOrder)||100));tbody.innerHTML=rows.length?rows.map(([id,c])=>`<tr><td>${Number(c.sortOrder)||100}</td><td><strong>${escapeHtml(c.title||c.name||id)}</strong></td><td>${escapeHtml(c.categoryId||id)}</td><td>${escapeHtml(c.mainField||c.mainType||c.scholarshipType||c.mentorType||"—")}</td><td><span class="badge ${normalize(c.status)==="active"?"badge-active":"badge-pending"}">${escapeHtml(c.status||"inactive")}</span></td><td>${c.publicVisibility===false?"Hidden":"Public"}</td><td><button class="btn btn-primary btn-sm" data-cms-edit="${escapeAttr(id)}">Edit</button> <button class="btn btn-danger btn-sm" data-cms-archive="${escapeAttr(id)}">Archive</button></td></tr>`).join(""):'<tr><td colspan="7" class="text-center p-4">No categories found.</td></tr>';tbody.querySelectorAll("[data-cms-edit]").forEach(b=>b.onclick=()=>editCategoryCms(b.dataset.cmsEdit));tbody.querySelectorAll("[data-cms-archive]").forEach(b=>b.onclick=()=>archiveCategoryCms(b.dataset.cmsArchive));}
+function editCategoryCms(id){const path=currentCategoryPath(),c=adminState[path]?.[id];if(!c)return;adminState.editingCategoryCmsId=id;setValue("category-cms-title",c.title||c.name);setValue("category-cms-id",c.categoryId||id);document.getElementById("category-cms-id")?.setAttribute("readonly","");setValue("category-cms-main-field",c.mainField||c.mainType||c.scholarshipType||c.mentorType);setValue("category-cms-parent",c.academicCategoryId);setValue("category-cms-description",c.description);setValue("category-cms-keywords",talentList(c.matchingKeywords).join(", "));const common=new Set(["categoryId","title","name","slug","description","mainField","mainType","academicCategoryId","matchingKeywords","status","publicVisibility","sortOrder","createdAt","updatedAt","createdBy"]);const metadata=Object.fromEntries(Object.entries(c).filter(([key])=>!common.has(key)));setValue("category-cms-metadata",Object.keys(metadata).length?JSON.stringify(metadata,null,2):"");setValue("category-cms-sort",c.sortOrder||100);setValue("category-cms-status",c.status||"active");setChecked("category-cms-public",c.publicVisibility!==false);setText("category-cms-form-title","Edit Category");openCategoryCmsForm();}
+async function archiveCategoryCms(id){if(!confirm("Archive this category? Existing content will remain unchanged."))return;try{await update(ref(database,`${currentCategoryPath()}/${id}`),{status:"archived",publicVisibility:false,updatedAt:serverTimestamp()});showToast("Category archived.","success");}catch(error){console.error(error);showToast("Category archive failed.","error");}}
+async function saveAdminInstitute(event){event.preventDefault();const name=value("admin-institute-name"),providerCategoryId=value("admin-institute-provider-category");if(!name||!providerCategoryId)return showToast("Institute name and provider category are required.","error");const base=`institute_${categorySlug(name)}`,id=adminState.institutes[base]?`${base}_${Date.now()}`:base;try{await set(ref(database,`institutes/${id}`),{uid:id,instituteId:id,isAdminManaged:true,loginEnabled:false,instituteName:name,name,email:value("admin-institute-email"),phone:value("admin-institute-phone"),district:value("admin-institute-district"),location:value("admin-institute-district"),providerCategoryId,providerCategoryTitle:adminState.providerCategories[providerCategoryId]?.title||providerCategoryId,relatedCourseCategoryIds:selectedValues("admin-institute-course-categories"),relatedTalentCategoryIds:selectedValues("admin-institute-talent-categories"),relatedOpportunityCategoryIds:selectedValues("admin-institute-opportunity-categories"),description:value("admin-institute-description"),status:value("admin-institute-status")||"active",approvalStatus:"approved",verificationStatus:"approved",accountStatus:"active",publicVisibility:checked("admin-institute-public"),featured:checked("admin-institute-featured"),showOnHomePage:checked("admin-institute-home"),createdByAdminUid:adminState.adminUid,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});event.currentTarget.reset();document.getElementById("admin-institute-form-card")?.classList.add("hidden");showToast("Institute profile created.","success");}catch(error){console.error(error);showToast("Institute save failed.","error");}}
+async function saveManualMentor(event){event.preventDefault();const name=value("manual-mentor-name"),expertiseIds=selectedValues("manual-mentor-expertise");if(!name||!value("manual-mentor-type")||!expertiseIds.length)return showToast("Name, mentor type, and expertise category are required.","error");const base=`mentor_${categorySlug(value("manual-mentor-field")||value("manual-mentor-type"))}`,numbers=Object.keys(adminState.mentors).filter(id=>id.startsWith(base)).map(id=>Number(id.match(/_(\d+)$/)?.[1])||0),mentorId=`${base}_${String(Math.max(0,...numbers)+1).padStart(3,"0")}`;const titles=expertiseIds.map(id=>adminState.mentorExpertiseCategories[id]?.title||id);try{await set(ref(database,`mentors/${mentorId}`),{uid:mentorId,mentorId,isManualProfile:true,loginEnabled:false,fullName:name,displayName:name,email:value("manual-mentor-email"),phone:value("manual-mentor-phone"),status:"approved",approvalStatus:"approved",accountStatus:"active",publicVisibility:true,mentoringEnabled:true,mentorType:value("manual-mentor-type"),expertiseCategoryIds:expertiseIds,expertiseCategoryTitles:titles,relatedAcademicCategoryIds:selectedValues("manual-mentor-academic"),relatedTalentCategoryIds:selectedValues("manual-mentor-talent"),field:value("manual-mentor-field")||titles.join(", "),expertise:titles,role:value("manual-mentor-role"),organization:value("manual-mentor-organization"),guidanceAreas:talentList(value("manual-mentor-guidance")),supportedStudentLevels:talentList(value("manual-mentor-student-levels")),supportedSkillLevels:talentList(value("manual-mentor-skill-levels")),languages:talentList(value("manual-mentor-languages")),mentoringModes:talentList(value("manual-mentor-modes")),location:value("manual-mentor-location"),district:value("manual-mentor-location"),availability:"Contact admin to arrange guidance",experienceYears:Number(value("manual-mentor-experience"))||0,rating:0,capacity:10,bio:value("manual-mentor-bio"),createdByAdminUid:adminState.adminUid,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});event.currentTarget.reset();document.getElementById("manual-mentor-form-card")?.classList.add("hidden");showToast("Manual mentor profile created.","success");}catch(error){console.error(error);showToast("Manual mentor creation failed.","error");}}
 // --- Talent & Opportunities System ---
-async function renderTalentCategories() {
-    const tbody = document.getElementById('admin-talent-categories-tbody');
-    if (!tbody) return;
-    try {
-        const snap = await get(ref(database, 'talentCategories'));
-        if (!snap.exists()) {
-            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted p-4">No talent categories found.</td></tr>';
-            return;
-        }
-        const data = snap.val();
-        tbody.innerHTML = Object.keys(data).map(key => {
-            const cat = data[key];
-            return `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(cat.title || cat.name || key)}</td><td>${escapeHtml(cat.description || '')}</td><td><button class="btn btn-secondary btn-sm" disabled>Edit</button></td></tr>`;
-        }).join('');
-    } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading categories.</td></tr>';
-    }
+const talentList = (value) => Array.isArray(value) ? value.filter(Boolean) : value && typeof value === "object" ? Object.values(value).filter(Boolean) : String(value || "").split(",").map((item) => item.trim()).filter(Boolean);
+const selectedValues = (id) => [...(document.getElementById(id)?.selectedOptions || [])].map((option) => option.value).filter(Boolean);
+const checked = (id) => Boolean(document.getElementById(id)?.checked);
+function setChecked(id, state) { const element = document.getElementById(id); if (element) element.checked = Boolean(state); }
+function setSelectedValues(id, values) { const selected = new Set(talentList(values)); [...(document.getElementById(id)?.options || [])].forEach((option) => { option.selected = selected.has(option.value); }); }
+function talentCategoryId(title) { return String(title || "").trim().toLowerCase().replace(/&/g, " and ").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, ""); }
+function activeTalentCategories() { return Object.entries(adminState.talentCategories || {}).filter(([, category]) => normalize(category.status) === "active" && category.publicVisibility === true && category.showInOpportunityFilters !== false); }
+function openTalentForm(cardId, focusId) { document.getElementById(cardId)?.classList.remove("hidden"); document.getElementById(cardId)?.scrollIntoView({behavior:"smooth",block:"start"}); setTimeout(() => document.getElementById(focusId)?.focus(), 200); }
+function closeTalentForm(cardId, formId) { document.getElementById(formId)?.reset(); document.getElementById(cardId)?.classList.add("hidden"); if (formId === "talent-category-form") adminState.editingTalentCategoryId = null; if (formId === "talent-opportunity-form") adminState.editingTalentOpportunityId = null; }
+function toggleTalentForm(cardId, focusId) { if (cardId === "talent-category-form-card") resetTalentCategoryForm(); else resetTalentOpportunityForm(); openTalentForm(cardId, focusId); }
+function populateTalentCategoryOptions(selectedId = "") {
+    const select = document.getElementById("talent-opportunity-category"); if (!select) return;
+    select.innerHTML = '<option value="">Select an active category</option>' + activeTalentCategories().sort(([,a],[,b]) => display(a.title||a.name).localeCompare(display(b.title||b.name))).map(([id, category]) => `<option value="${escapeAttr(category.categoryId || id)}">${escapeHtml(category.title || category.name || id)}</option>`).join("");
+    select.value = selectedId; updateTalentOpportunityDependencies();
 }
-
-async function renderTalentOpportunities() {
-    const tbody = document.getElementById('admin-talent-opportunities-tbody');
-    if (!tbody) return;
-    try {
-        const snap = await get(ref(database, 'talentOpportunities'));
-        if (!snap.exists()) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted p-4">No talent opportunities found.</td></tr>';
-            return;
-        }
-        const data = snap.val();
-        tbody.innerHTML = Object.keys(data).map(key => {
-            const opp = data[key];
-            return `<tr><td>${escapeHtml(opp.title || 'Untitled')}</td><td>${escapeHtml(opp.provider || opp.organization || 'Unknown')}</td><td>${escapeHtml(opp.type || opp.category || 'General')}</td><td><span class="badge ${opp.status === 'active' ? 'badge-active' : 'badge-pending'}">${escapeHtml((opp.status || 'pending').toUpperCase())}</span></td><td><button class="btn btn-secondary btn-sm" disabled>Manage</button></td></tr>`;
-        }).join('');
-    } catch(e) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading opportunities.</td></tr>';
-    }
+function updateTalentOpportunityDependencies() {
+    const id = value("talent-opportunity-category"); const category = adminState.talentCategories[id] || Object.values(adminState.talentCategories).find((item) => item.categoryId === id) || {};
+    const subs = talentList(category.subCategories || category.subcategories); const subSelect = document.getElementById("talent-opportunity-subcategory"); const manual = document.getElementById("talent-opportunity-subcategory-manual");
+    if (subSelect) { subSelect.innerHTML = subs.length ? '<option value="">Select subcategory</option>' + subs.map((item) => `<option>${escapeHtml(item)}</option>`).join("") : '<option value="">No defined subcategories</option>'; subSelect.disabled = !subs.length; }
+    manual?.classList.toggle("hidden", subs.length > 0); if (!value("talent-opportunity-talent-types")) setValue("talent-opportunity-talent-types", subs.join(", "));
+    const mentorSelect = document.getElementById("talent-opportunity-mentors"); if (mentorSelect) mentorSelect.innerHTML = Object.entries(adminState.mentors).filter(([,m]) => normalize(m.approvalStatus || m.status) === "approved" && (!id || [m.supportedTalentCategories,m.talentCategories,m.expertise,m.field].some((field) => normalize(display(field)).includes(normalize(category.title || category.name || id))))).map(([uid,m]) => `<option value="${escapeAttr(uid)}">${escapeHtml(m.fullName || adminState.users[uid]?.fullName || "Mentor")}</option>`).join("");
+    const instituteSelect = document.getElementById("talent-opportunity-institute"); if (instituteSelect && instituteSelect.options.length <= 1) instituteSelect.innerHTML = '<option value="">None</option>' + Object.entries(adminState.institutes).filter(([,i]) => ["active","approved"].includes(normalize(i.status || i.approvalStatus))).map(([uid,i]) => `<option value="${escapeAttr(uid)}">${escapeHtml(i.name || i.instituteName || adminState.users[uid]?.fullName || "Institute")}</option>`).join("");
 }
-
+function resetTalentCategoryForm() { adminState.editingTalentCategoryId=null; document.getElementById("talent-category-form")?.reset(); setChecked("talent-category-public",true); setChecked("talent-category-filter",true); setText("talent-category-form-title","Add Talent Category"); setText("talent-category-submit-label","Save Category"); document.getElementById("talent-category-id")?.removeAttribute("readonly"); }
+function resetTalentOpportunityForm() { adminState.editingTalentOpportunityId=null; document.getElementById("talent-opportunity-form")?.reset(); setChecked("talent-opportunity-public",true); setChecked("talent-opportunity-home",true); setChecked("talent-opportunity-dashboard",true); setText("talent-opportunity-form-title","Add Talent Opportunity"); setText("talent-opportunity-submit-label","Save Opportunity"); populateTalentCategoryOptions(); }
+async function saveTalentCategory(event) {
+    event.preventDefault(); const title=value("talent-category-title"), id=adminState.editingTalentCategoryId || talentCategoryId(value("talent-category-id") || title); if(!title||!id||!value("talent-category-main-type")) return showToast("Title and main type are required.","error");
+    const existing=adminState.talentCategories[id]; if(!adminState.editingTalentCategoryId && existing) return showToast("That category ID already exists.","error");
+    try { await set(ref(database,`talentCategories/${id}`),{...(existing||{}),categoryId:id,title,name:title,mainType:value("talent-category-main-type"),subCategories:talentList(value("talent-category-subcategories")),description:value("talent-category-description"),status:value("talent-category-status")||"active",publicVisibility:checked("talent-category-public"),showInOpportunityFilters:checked("talent-category-filter"),createdBy:existing?.createdBy||adminState.adminUid,createdAt:existing?.createdAt||serverTimestamp(),updatedAt:serverTimestamp()}); closeTalentForm("talent-category-form-card","talent-category-form"); showToast("Talent category saved.","success"); } catch(error){console.error(error);showToast("Talent category save failed. Deploy the updated Firebase rules if permission is denied.","error");}
+}
+function editTalentCategory(id) { const c=adminState.talentCategories[id]; if(!c)return; adminState.editingTalentCategoryId=id; setValue("talent-category-id",c.categoryId||id); document.getElementById("talent-category-id")?.setAttribute("readonly",""); setValue("talent-category-title",c.title||c.name); setValue("talent-category-main-type",c.mainType); setValue("talent-category-subcategories",talentList(c.subCategories||c.subcategories).join(", ")); setValue("talent-category-description",c.description); setValue("talent-category-status",c.status||"active"); setChecked("talent-category-public",c.publicVisibility===true); setChecked("talent-category-filter",c.showInOpportunityFilters!==false); setText("talent-category-form-title","Edit Talent Category"); setText("talent-category-submit-label","Save Changes"); openTalentForm("talent-category-form-card","talent-category-title"); }
+function opportunityPayload(existing={}) { const categoryId=value("talent-opportunity-category"), category=adminState.talentCategories[categoryId]||{}, categoryTitle=category.title||category.name||existing.categoryTitle||existing.category||""; const subSelect=document.getElementById("talent-opportunity-subcategory"); const subCategory=subSelect&&!subSelect.disabled?subSelect.value:value("talent-opportunity-subcategory-manual"); return {title:value("talent-opportunity-title"),provider:value("talent-opportunity-provider"),organizer:value("talent-opportunity-organizer")||value("talent-opportunity-provider"),categoryId,categoryTitle,category:categoryTitle,mainType:category.mainType||existing.mainType||"",subCategory,talentTypes:talentList(value("talent-opportunity-talent-types")),opportunityCategoryId:value("talent-opportunity-type"),opportunityCategoryTitle:adminState.opportunityCategories[value("talent-opportunity-type")]?.title||value("talent-opportunity-type"),opportunityType:adminState.opportunityCategories[value("talent-opportunity-type")]?.title||value("talent-opportunity-type"),type:adminState.opportunityCategories[value("talent-opportunity-type")]?.title||value("talent-opportunity-type"),description:value("talent-opportunity-description"),eligibleSkillLevels:selectedValues("talent-opportunity-skill-levels"),eligibleEducationLevels:selectedValues("talent-opportunity-education-levels"),eligibleAgeMin:Number(value("talent-opportunity-age-min"))||null,eligibleAgeMax:Number(value("talent-opportunity-age-max"))||null,location:value("talent-opportunity-location"),district:value("talent-opportunity-district"),mode:value("talent-opportunity-mode"),feeType:value("talent-opportunity-fee-type"),fee:Number(value("talent-opportunity-fee"))||0,deadline:value("talent-opportunity-deadline"),eventDate:value("talent-opportunity-event-date"),eligibility:value("talent-opportunity-eligibility"),requirements:value("talent-opportunity-requirements"),applicationUrl:value("talent-opportunity-link"),applicationLink:value("talent-opportunity-link"),applyLink:value("talent-opportunity-link"),imageURL:sanitizeImageURL(value("talent-opportunity-image"),"","images"),relatedMentorIds:selectedValues("talent-opportunity-mentors"),linkedInstituteId:value("talent-opportunity-institute"),matchingKeywords:talentList(value("talent-opportunity-keywords")),publicVisibility:checked("talent-opportunity-public"),featured:checked("talent-opportunity-featured"),showOnHomePage:checked("talent-opportunity-home"),showOnStudentDashboard:checked("talent-opportunity-dashboard"),ongoing:checked("talent-opportunity-ongoing"),status:value("talent-opportunity-status")||"draft"}; }
+async function saveTalentOpportunity(event) { event.preventDefault(); const id=adminState.editingTalentOpportunityId, existing=id?adminState.talentOpportunities[id]||{}:{}, payload=opportunityPayload(existing); if(!payload.title||!payload.provider||!payload.categoryId||!payload.opportunityType)return showToast("Title, provider, category, and opportunity type are required.","error"); if(payload.eligibleAgeMin&&payload.eligibleAgeMax&&payload.eligibleAgeMin>payload.eligibleAgeMax)return showToast("Minimum age cannot exceed maximum age.","error"); try{const target=id?ref(database,`talentOpportunities/${id}`):push(ref(database,"talentOpportunities")); const opportunityId=id||target.key; await set(target,{...existing,...payload,opportunityId,createdBy:existing.createdBy||adminState.adminUid,createdAt:existing.createdAt||serverTimestamp(),updatedAt:serverTimestamp()}); closeTalentForm("talent-opportunity-form-card","talent-opportunity-form");showToast("Talent opportunity saved.","success");}catch(error){console.error(error);showToast("Talent opportunity save failed.","error");} }
+function editTalentOpportunity(id) { const o=adminState.talentOpportunities[id];if(!o)return;adminState.editingTalentOpportunityId=id; const fields={"talent-opportunity-title":o.title,"talent-opportunity-provider":o.provider,"talent-opportunity-organizer":o.organizer,"talent-opportunity-type":o.opportunityCategoryId||Object.entries(adminState.opportunityCategories).find(([,x])=>normalize(x.title)===normalize(o.opportunityCategoryTitle||o.opportunityType||o.type))?.[0]||o.opportunityType||o.type,"talent-opportunity-description":o.description,"talent-opportunity-age-min":o.eligibleAgeMin,"talent-opportunity-age-max":o.eligibleAgeMax,"talent-opportunity-mode":o.mode,"talent-opportunity-fee-type":o.feeType,"talent-opportunity-fee":o.fee,"talent-opportunity-location":o.location,"talent-opportunity-district":o.district,"talent-opportunity-deadline":o.deadline,"talent-opportunity-event-date":o.eventDate,"talent-opportunity-eligibility":o.eligibility,"talent-opportunity-requirements":o.requirements,"talent-opportunity-keywords":talentList(o.matchingKeywords).join(", "),"talent-opportunity-talent-types":talentList(o.talentTypes).join(", "),"talent-opportunity-link":o.applicationUrl||o.applicationLink||o.applyLink,"talent-opportunity-image":o.imageURL||o.imagePath,"talent-opportunity-status":o.status||"draft"};Object.entries(fields).forEach(([key,val])=>setValue(key,val)); populateTalentCategoryOptions(o.categoryId||Object.entries(adminState.talentCategories).find(([,c])=>normalize(c.title||c.name)===normalize(o.categoryTitle||o.category))?.[0]||""); updateTalentOpportunityDependencies(); const sub=document.getElementById("talent-opportunity-subcategory");if(sub&&[...sub.options].some(x=>x.value===o.subCategory))sub.value=o.subCategory;else setValue("talent-opportunity-subcategory-manual",o.subCategory);setSelectedValues("talent-opportunity-skill-levels",o.eligibleSkillLevels);setSelectedValues("talent-opportunity-education-levels",o.eligibleEducationLevels);setSelectedValues("talent-opportunity-mentors",o.relatedMentorIds);setValue("talent-opportunity-institute",o.linkedInstituteId);setChecked("talent-opportunity-public",o.publicVisibility!==false);setChecked("talent-opportunity-featured",o.featured);setChecked("talent-opportunity-home",o.showOnHomePage!==false);setChecked("talent-opportunity-dashboard",o.showOnStudentDashboard!==false);setChecked("talent-opportunity-ongoing",o.ongoing);setText("talent-opportunity-form-title","Edit Talent Opportunity");setText("talent-opportunity-submit-label","Save Changes");openTalentForm("talent-opportunity-form-card","talent-opportunity-title"); }
+async function archiveTalentOpportunity(id) { if(!confirm("Archive this talent opportunity?"))return;try{await update(ref(database,`talentOpportunities/${id}`),{status:"archived",publicVisibility:false,updatedAt:serverTimestamp()});showToast("Opportunity archived.","success");}catch(error){console.error(error);showToast("Opportunity could not be archived.","error");} }
+function renderTalentCategories() { const tbody=document.getElementById("admin-talent-categories-tbody");if(!tbody)return;const rows=Object.entries(adminState.talentCategories||{});tbody.innerHTML=rows.length?rows.map(([id,c])=>`<tr><td>${escapeHtml(c.categoryId||id)}</td><td>${escapeHtml(c.title||c.name||id)}</td><td>${escapeHtml(c.mainType||"Other")}</td><td>${escapeHtml(talentList(c.subCategories||c.subcategories).join(", ")||"—")}</td><td><span class="badge ${normalize(c.status)==="active"?"badge-active":"badge-pending"}">${escapeHtml(c.status||"inactive")}</span></td><td><button class="btn btn-primary btn-sm" data-edit-talent-category="${escapeAttr(id)}">Edit</button></td></tr>`).join(""):'<tr><td colspan="6" class="text-center p-4">No talent categories found.</td></tr>'; }
+function renderTalentOpportunities() { const tbody=document.getElementById("admin-talent-opportunities-tbody");if(!tbody)return;const rows=Object.entries(adminState.talentOpportunities||{}).sort(([,a],[,b])=>getTime(b.updatedAt||b.createdAt)-getTime(a.updatedAt||a.createdAt));tbody.innerHTML=rows.length?rows.map(([id,o])=>`<tr><td><strong>${escapeHtml(o.title||"Untitled")}</strong>${o.featured?'<span class="badge badge-info">Featured</span>':""}</td><td>${escapeHtml(o.provider||o.organization||"Unknown")}</td><td>${escapeHtml(o.categoryTitle||o.category||"General")}</td><td>${escapeHtml(o.subCategory||"—")}</td><td>${escapeHtml(o.opportunityType||o.type||"General")}</td><td>${escapeHtml(o.ongoing?"Ongoing":o.deadline||"—")}</td><td>${escapeHtml(o.location||o.district||"—")}</td><td>${escapeHtml(o.mode||"—")}</td><td><span class="badge ${normalize(o.status)==="active"?"badge-active":"badge-pending"}">${escapeHtml(o.status||"draft")}</span></td><td>${o.publicVisibility===false?"Hidden":"Public"}</td><td><button class="btn btn-primary btn-sm" data-edit-talent-opportunity="${escapeAttr(id)}">Edit</button> <button class="btn btn-danger btn-sm" data-archive-talent-opportunity="${escapeAttr(id)}">Archive</button></td></tr>`).join(""):'<tr><td colspan="11" class="text-center p-4">No talent opportunities found.</td></tr>'; }
 async function renderAchievementVerifications() {
     const tbody = document.getElementById('admin-achievement-verifications-tbody');
     if (!tbody) return;
@@ -3276,3 +3383,105 @@ async function renderAchievementVerifications() {
         tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading verifications.</td></tr>';
     }
 }
+
+function updateRecommendationDebugStatus(){const enabled=localStorage.getItem("debugRecommendations")==="true";const status=document.getElementById("recommendation-debug-status");if(status){status.textContent=`Debug Mode: ${enabled?"Enabled":"Disabled"}`;status.classList.toggle("text-success",enabled);}}
+function bindRecommendationTesting() {
+    updateRecommendationDebugStatus();
+    document.getElementById("run-all-recommendation-tests")?.addEventListener("click", () => renderRecommendationTestResults(runRecommendationTestSuite()));
+    document.querySelectorAll("[data-recommendation-test]").forEach((button) => button.addEventListener("click", () => {
+        const tests = {
+            combined_business_dancing: testCombinedBusinessDancingStudent,
+            talent_only_dancing: testTalentOnlyDancingStudent,
+            academic_business: testAcademicBusinessStudent,
+            academic_engineering: testAcademicEngineeringStudent,
+            undecided: testUndecidedStudent
+        };
+        const testName = button.dataset.recommendationTest;
+        document.querySelectorAll("[data-recommendation-test]").forEach((item) => item.classList.toggle("active", item === button));
+        const loading = document.getElementById("recommendation-test-loading");
+        const root = document.getElementById("recommendation-test-results");
+        loading?.classList.remove("hidden");
+        if (root) root.innerHTML = "";
+        const results = testName === "all" ? runRecommendationTestSuite() : tests[testName] ? [tests[testName]()] : [];
+        loading?.classList.add("hidden");
+        if (results.length) { const status=results.every(test=>test.pass)?"PASS":"FAIL"; document.querySelectorAll("[data-scenario-status]").forEach(label=>{if(testName==="all"||label.dataset.scenarioStatus===testName){label.textContent=status;label.className=status.toLowerCase();}}); renderRecommendationTestResults(results); root?.scrollIntoView({ behavior: "smooth", block: "start" }); }
+    }));
+    document.getElementById("enable-recommendation-debug")?.addEventListener("click",()=>{localStorage.setItem("debugRecommendations","true");updateRecommendationDebugStatus();showToast("Debug mode enabled. Run tests again to view detailed console logs.","success");});
+    document.getElementById("disable-recommendation-debug")?.addEventListener("click",()=>{localStorage.removeItem("debugRecommendations");updateRecommendationDebugStatus();showToast("Debug mode disabled.","success");});
+    document.addEventListener("click",(event)=>{const button=event.target.closest("[data-recommendation-debug-key]");if(!button)return;const row=recommendationDebugRows[button.dataset.recommendationDebugKey];if(!row)return;console.group("[Recommendation Debug] "+recommendationItemTitle(row));console.log(row);console.groupEnd();showToast("Debug score written to the browser console.","success");});
+document.addEventListener("click",(event)=>{const add=event.target.closest("[data-add-recommendation-record]");if(add)setTimeout(()=>document.getElementById(add.dataset.addRecommendationRecord)?.click(),0);const review=event.target.closest("[data-category-review-record]");if(review){event.preventDefault();event.stopImmediatePropagation();showAdminSection("category-review");setValue("category-review-filter","all");setValue("category-review-search",review.dataset.categoryReviewTitle||review.dataset.categoryReviewRecord);renderCategoryReview();const row=categoryReviewRows().find(x=>x.id===review.dataset.categoryReviewRecord);if(row)openCategoryReviewEditor(row.path,row.id);}const focus=event.target.closest("[data-focus-recommendation-record]");if(focus){const id=focus.dataset.focusRecommendationRecord,type=focus.dataset.recommendationRecordType;sessionStorage.setItem("adminRecommendationFocusRecord",id);setTimeout(()=>{if(type==="courses")editCourse(id);else if(type==="scholarships")editScholarship(id);else if(type==="opportunities")editTalentOpportunity(id);else showToast("Opened the related "+type+" record: "+id+".","info");},0);}});
+}
+
+function recommendationDataIssues() {
+    const issues = [];
+    Object.entries(adminState.courses || {}).forEach(([id, item]) => {
+        if (!item.academicCategoryId) issues.push({ type: "Course", id, issue: "Missing academicCategoryId" });
+        if (!item.courseCategoryId) issues.push({ type: "Course", id, issue: "Missing courseCategoryId" });
+    });
+    Object.entries(adminState.mentors || {}).forEach(([id, item]) => {
+        if (!Array.isArray(item.expertiseCategoryIds) || !item.expertiseCategoryIds.length) issues.push({ type: "Mentor", id, issue: "Missing expertiseCategoryIds" });
+        if ((!item.relatedAcademicCategoryIds?.length) && (!item.relatedTalentCategoryIds?.length)) issues.push({ type: "Mentor", id, issue: "Missing related academic/talent categories" });
+    });
+    Object.entries(adminState.scholarships || {}).forEach(([id, item]) => {
+        if (!item.scholarshipCategoryId) issues.push({ type: "Scholarship", id, issue: "Missing scholarshipCategoryId" });
+    });
+    Object.entries(adminState.institutes || {}).forEach(([id, item]) => {
+        if ((!item.relatedAcademicCategoryIds?.length) && (!item.relatedTalentCategoryIds?.length) && (!item.relatedCourseCategoryIds?.length)) issues.push({ type: "Institute", id, issue: "Missing related categories" });
+    });
+    Object.entries(adminState.talentOpportunities || {}).forEach(([id, item]) => {
+        if (!item.categoryId) issues.push({ type: "Opportunity", id, issue: "Missing categoryId" });
+        if (!item.opportunityCategoryId) issues.push({ type: "Opportunity", id, issue: "Missing opportunityCategoryId" });
+    });
+    return issues;
+}
+
+const recommendationTypeConfig = { courses:{label:"Courses",section:"manage-courses",fix:"Assign Academic Category and Course Category."}, scholarships:{label:"Scholarships",section:"manage-scholarships",fix:"Assign Scholarship Category and related Academic/Talent Categories."}, mentors:{label:"Mentors",section:"manage-mentors",fix:"Assign Mentor Expertise and related Academic/Talent Categories."}, institutes:{label:"Institutes",section:"manage-institutes",fix:"Assign Provider and related Academic/Talent/Course Categories."}, opportunities:{label:"Talent Opportunities",section:"manage-talent-opportunities",fix:"Assign Talent Category and Opportunity Category."} };
+let recommendationDebugRows={};
+let lastRecommendationTests=[];
+function recommendationItemTitle(row){return row?.courseName||row?.scholarshipName||row?.mentorName||row?.instituteName||row?.name||row?.opportunityName||"Untitled";}
+function recommendationProfileSummary(p){const academic=p.academicCategoryTitles?.join(", ")||p.academicInterests?.join(", ")||"None",talent=p.talentCategoryTitles?.join(", ")||p.talentInterests?.join(", ")||"None",interest=p.preferredFields?.slice(0,3).join(", ")||p.discovery?.interests?.join(", ")||"None";return '<div class="recommendation-profile-summary"><div class="qa-profile-heading"><h4>Active Test Scenario</h4><span>'+escapeHtml(p.pathwayPreference||"undecided")+'</span></div><dl><div><dt>Pathway</dt><dd>'+escapeHtml(p.pathwayPreference||"undecided")+'</dd></div><div><dt>Academic category</dt><dd>'+escapeHtml(academic)+'</dd></div><div><dt>Interest</dt><dd>'+escapeHtml(interest)+'</dd></div><div><dt>Talent</dt><dd>'+escapeHtml(talent)+'</dd></div><div><dt>Education</dt><dd>'+escapeHtml(p.educationLevel||"Not provided")+'</dd></div></dl></div>';}
+const recommendationRecordSources={courses:{state:"courses",section:"manage-courses",add:"show-course-form"},scholarships:{state:"scholarships",section:"manage-scholarships",add:"show-scholarship-form"},mentors:{state:"mentors",section:"manage-mentors",add:"show-manual-mentor-form"},institutes:{state:"institutes",section:"manage-institutes",add:"show-admin-institute-form"},opportunities:{state:"talentOpportunities",section:"manage-talent-opportunities",add:"btn-add-talent-opportunity"}};
+function recommendationRecordCorpus(item){return JSON.stringify(item||{}).toLowerCase();}
+function findExpectedRecommendationRecord(keyword,preferredType){const order=[preferredType,...Object.keys(recommendationRecordSources).filter(x=>x!==preferredType)];for(const type of order){const source=recommendationRecordSources[type];for(const [id,item] of Object.entries(adminState[source.state]||{})){if(recommendationRecordCorpus(item).includes(String(keyword).toLowerCase()))return{type,id,item,source};}}return null;}
+function diagnoseExpectedRecommendation(keyword,preferredType,profile){const match=findExpectedRecommendationRecord(keyword,preferredType);if(!match)return{exists:false,message:"No matching record found. Add a new scholarship/opportunity/course containing this keyword.",source:recommendationRecordSources[preferredType]};const {type,item}=match,reasons=[];const status=String(item.status||item.approvalStatus||"").toLowerCase(),active=["active","approved","published","open"];if(status&&!active.includes(status))reasons.push("inactive status ("+status+")");if(item.publicVisibility===false)reasons.push("publicVisibility is false");const missing=[];if(type==="courses"){if(!item.academicCategoryId)missing.push("Academic Category ID");if(!item.courseCategoryId)missing.push("Course Category ID");}if(type==="scholarships"){if(!item.scholarshipCategoryId)missing.push("Scholarship Category ID");if(!(item.relatedAcademicCategoryIds?.length||item.relatedTalentCategoryIds?.length))missing.push("related Academic/Talent Category");}if(type==="mentors"){if(!item.expertiseCategoryIds?.length)missing.push("Mentor Expertise Category");if(!(item.relatedAcademicCategoryIds?.length||item.relatedTalentCategoryIds?.length))missing.push("related Academic/Talent Category");}if(type==="institutes"){if(!item.providerCategoryId)missing.push("Provider Category");if(!(item.relatedAcademicCategoryIds?.length||item.relatedTalentCategoryIds?.length||item.relatedCourseCategoryIds?.length))missing.push("related Academic/Talent Category");}if(type==="opportunities"){if(!item.categoryId)missing.push("Talent Category");if(!item.opportunityCategoryId)missing.push("Opportunity Category");}if(missing.length)reasons.push("missing "+missing.join(", "));const keywords=[item.matchingKeywords,item.keywords,item.tags].flat().filter(Boolean).join(" ").toLowerCase();if(!keywords.includes(String(keyword).toLowerCase()))reasons.push("missing matching keyword ‘"+keyword+"’");const eligible=[item.eligiblePathways,item.suitablePathways,item.supportedPathways].flat().filter(Boolean).map(x=>String(x).toLowerCase()),path=String(profile?.pathwayPreference||"undecided").toLowerCase();if(eligible.length&&!eligible.includes(path))reasons.push("unsuitable pathway (requires "+eligible.join(", ")+")");const deadline=item.deadline||item.applicationDeadline||item.closingDate;if(deadline&&new Date(deadline)<new Date())reasons.push("expired deadline ("+deadline+")");if(!reasons.length)reasons.push("score below the recommendation threshold");return{exists:true,match,missingCategories:missing.length>0,message:reasons.join("; ")+"."};}
+function recommendationIssueButtons(d,key=""){const s=d.match?.source||d.source,id=d.match?.id||"",title=d.match?recommendationItemTitle(d.match.item):"";let html='<div class="recommendation-test-actions">';if(d.exists)html+='<button class="btn btn-sm btn-info" data-section="'+s.section+'" data-focus-recommendation-record="'+escapeAttr(id)+'" data-recommendation-record-type="'+escapeAttr(d.match.type)+'">Open Record</button>';else html+='<button class="btn btn-sm btn-info" data-add-recommendation-record="'+escapeAttr(s.add)+'" data-section="'+s.section+'">Open Add New</button>';if(d.exists&&d.missingCategories)html+='<button class="btn btn-sm btn-secondary" data-category-review-record="'+escapeAttr(id)+'" data-category-review-title="'+escapeAttr(title)+'">Assign Categories</button><button class="btn btn-sm btn-secondary" data-category-review-record="'+escapeAttr(id)+'" data-category-review-title="'+escapeAttr(title)+'">Open Category Review</button>';if(key)html+='<button class="btn btn-sm btn-primary" data-recommendation-debug-key="'+escapeAttr(key)+'">View Debug Score</button>';return html+'</div>';}
+function recommendationButtons(c,key=""){return '<div class="recommendation-test-actions"><button class="btn btn-sm btn-info" data-section="'+c.section+'">Open Record</button>'+(key?'<button class="btn btn-sm btn-primary" data-recommendation-debug-key="'+escapeAttr(key)+'">View Debug Score</button>':'')+'</div>';}
+function renderRecommendationType(ti,type,rows,note,profile){const c=recommendationTypeConfig[type],expected=note?.expected?.length?note.expected:["No primary result required"],missing=[...new Set(note?.missingExpected||[])],wrong=note?.wrongRecommendations||[],pass=note?note.pass:true;const actual=rows.length?'<ol class="recommendation-actual-list">'+rows.slice(0,10).map((row,ri)=>{const key=ti+"-"+type+"-"+ri;recommendationDebugRows[key]=row;return '<li><div><strong>'+escapeHtml(recommendationItemTitle(row))+'</strong> <span class="badge badge-info">'+Number(row.matchScore||0)+'%</span></div><p>'+escapeHtml(row.recommendationReason||row.matchReasons?.[0]||"No explanation available")+'</p><small>Matched fields: '+escapeHtml((row.matchedFields||[]).join(", ")||"Text/category fallback")+'</small>'+recommendationButtons(c,key)+'</li>';}).join("")+'</ol>':'<p class="muted">No recommendations returned.</p>';const wrongHtml=wrong.length?'<div class="recommendation-warning"><h5>Wrong recommendations found</h5>'+wrong.map(r=>'<p><strong>'+escapeHtml(recommendationItemTitle(r))+'</strong>: no valid category relevance.</p>').join("")+'<p><strong>Suggested fix:</strong> '+escapeHtml(c.fix)+' Prevent generic fields from scoring alone.</p></div>':'';const missingHtml=missing.map(keyword=>{const d=diagnoseExpectedRecommendation(keyword,type,profile);return '<div class="recommendation-warning" data-problem-key="missing-'+escapeAttr(type+'-'+keyword)+'"><h5>Missing expected recommendation: '+escapeHtml(keyword)+'</h5><p><strong>'+(d.exists?'Record found but excluded:':'No record found:')+'</strong> '+escapeHtml(d.message)+'</p>'+(d.exists?'<p><strong>Matched record:</strong> '+escapeHtml(recommendationItemTitle(d.match.item))+' ('+escapeHtml(d.match.type)+')</p>':'')+'<p><strong>Suggested fix:</strong> '+escapeHtml(d.exists?c.fix:d.message)+'</p>'+recommendationIssueButtons(d)+'</div>';}).join("");return '<section class="recommendation-type-result '+(pass?"test-pass":"test-fail")+'"><header><h4>'+c.label+'</h4><span class="badge '+(pass?"badge-active":"badge-rejected")+'">'+(pass?"PASS":"FAIL")+'</span></header><div class="recommendation-compare-grid"><div><h5>Expected</h5><ul>'+expected.map(x=>'<li>'+escapeHtml(x)+'</li>').join("")+'</ul></div><div><h5>Actual</h5>'+actual+'</div></div>'+wrongHtml+missingHtml+(!pass?'<div class="recommendation-fix"><strong>What admin should fix:</strong> '+escapeHtml(c.fix)+'</div>':'')+'</section>';}
+
+function renderRecommendationTestResults(results){const root=document.getElementById("recommendation-test-results");if(!root)return;lastRecommendationTests=results;recommendationDebugRows={};const issues=recommendationDataIssues(),warnings=results.reduce((a,t)=>a+t.notes.reduce((b,n)=>b+(n.missingExpected?.length||0)+(n.wrongRecommendations?.length||0),0),0),passed=results.filter(t=>t.pass).length;const summary='<article class="panel-card glass recommendation-test-summary"><h3>Recommendation Testing Summary</h3><div class="recommendation-summary-grid"><div><strong>'+results.length+'</strong><span>Tests run</span></div><div><strong>'+passed+'</strong><span>Passed</span></div><div><strong>'+(results.length-passed)+'</strong><span>Failed</span></div><div><strong>'+warnings+'</strong><span>Warnings</span></div><div><strong>'+issues.length+'</strong><span>Records need review</span></div></div></article>';const tests=results.map((t,ti)=>{const notes=Object.fromEntries(t.notes.map(n=>[n.type,n]));return '<article class="panel-card glass recommendation-test-case"><header class="recommendation-test-case-header"><div><small>Test scenario</small><h3>'+escapeHtml(t.name)+'</h3></div><span class="badge '+(t.pass?"badge-active":"badge-rejected")+'">'+(t.pass?"PASS":"FAIL")+'</span></header>'+recommendationProfileSummary(t.results.profile)+Object.keys(recommendationTypeConfig).map(type=>renderRecommendationType(ti,type,t.results[type]||[],notes[type],t.results.profile)).join("")+'</article>';}).join("");const review='<article class="panel-card glass"><h3>Records needing category review ('+issues.length+')</h3>'+(issues.length?'<ul class="recommendation-issue-list">'+issues.slice(0,100).map(i=>'<li><div><strong>'+escapeHtml(i.type)+'</strong> '+escapeHtml(i.id)+'<p>'+escapeHtml(i.issue)+'</p></div><button class="btn btn-sm btn-secondary" data-section="category-review">Assign Categories</button></li>').join("")+'</ul>':'<p>No missing category fields detected.</p>')+'</article>';root.innerHTML=summary+tests+review;enhanceRecommendationQaView(root);}
+
+function enhanceRecommendationQaView(root){
+ root.querySelectorAll(".recommendation-test-case").forEach((card)=>{
+  const sections=[...card.querySelectorAll(".recommendation-type-result")];
+  if(!sections.length)return;
+  const tabs=document.createElement("div");tabs.className="recommendation-result-tabs";
+  sections.forEach((section,index)=>{
+   const title=section.querySelector("h4")?.textContent||"Results",status=section.classList.contains("test-fail")?"FAIL":section.querySelector(".recommendation-warning")?"WARN":"PASS";
+   const button=document.createElement("button");button.type="button";button.className=index===0?"active":"";const count=section.querySelectorAll(".recommendation-actual-list li").length,scores=[...section.querySelectorAll(".badge-info")].map(x=>Number(x.textContent.replace("%",""))||0),top=Math.max(0,...scores);button.innerHTML="<span>"+title+"</span><small class="+status.toLowerCase()+">"+status+" · "+count+" results · "+top+"%</small>";
+   section.classList.toggle("active",index===0);
+   button.addEventListener("click",()=>{tabs.querySelectorAll("button").forEach(x=>x.classList.remove("active"));button.classList.add("active");sections.forEach(x=>x.classList.remove("active"));section.classList.add("active");});
+   tabs.appendChild(button);
+  });
+  card.querySelector(".recommendation-profile-summary")?.after(tabs);
+ });
+ const seenProblems=new Set(),warnings=[...root.querySelectorAll(".recommendation-warning")].filter((warning)=>{const key=warning.dataset.problemKey||warning.textContent.replace(/\s+/g," ").trim();if(seenProblems.has(key))return false;seenProblems.add(key);return true;});
+ const problems=document.createElement("article");problems.className="panel-card glass qa-problems";problems.innerHTML="<h3>Problems Found</h3>"+(warnings.length?warnings.map((x,i)=>"<div class=qa-problem><strong>Problem "+(i+1)+"</strong>"+x.innerHTML+"</div>").join(""):"<p class=text-success>No recommendation problems were found in the selected tests.</p>");
+ root.querySelectorAll(".recommendation-warning").forEach((warning)=>warning.remove());
+ const review=[...root.querySelectorAll(".panel-card")].find(x=>x.querySelector("h3")?.textContent.startsWith("Records needing"));
+ if(review)review.before(problems);else root.appendChild(problems);
+ root.querySelectorAll(".recommendation-actual-list li").forEach((li)=>{
+  const debug=li.querySelector("[data-recommendation-debug-key]"),row=debug?recommendationDebugRows[debug.dataset.recommendationDebugKey]:null;
+  const categoryValues=row?[row.academicCategoryId,row.courseCategoryId,row.scholarshipCategoryId,row.expertiseCategoryIds,row.providerCategoryId,row.categoryId,row.opportunityCategoryId]:[];
+  const needs=row&&(row.needsCategoryReview===true||(row.categoryConfidence!=null&&row.categoryConfidence<.6)||!categoryValues.some(v=>Array.isArray(v)?v.length:Boolean(v)));
+  if(!needs)li.querySelectorAll('[data-section="category-review"]').forEach(x=>x.remove());
+  if(debug)debug.textContent="View Score Details";
+ });
+}
+
+function openRecommendationScoreDetails(row){
+ if(!row)return;let modal=document.getElementById("recommendation-score-details");
+ if(!modal){modal=document.createElement("div");modal.id="recommendation-score-details";modal.className="modal-overlay hidden";document.body.appendChild(modal);}
+ modal.innerHTML='<div class="modal-card"><div class="modal-header"><h3>Score Details: '+escapeHtml(recommendationItemTitle(row))+'</h3><button class="modal-close" data-close-score-details>&times;</button></div><div class="modal-body"><p><strong>Final score:</strong> '+Number(row.matchScore||0)+'%</p><p><strong>Included:</strong> '+escapeHtml(String(row.included??row.matchScore>=40))+'</p><p><strong>Matched fields:</strong> '+escapeHtml((row.matchedFields||[]).join(", ")||"None")+'</p><p><strong>Missing fields:</strong> '+escapeHtml((row.missingRequirements||[]).join(", ")||"None")+'</p><p><strong>Exclusion reason:</strong> '+escapeHtml(row.exclusionReason||"None")+'</p><pre>'+escapeHtml(JSON.stringify(row.debugBreakdown||{},null,2))+'</pre></div></div>';
+ modal.classList.remove("hidden");
+}
+document.addEventListener("click",(event)=>{const button=event.target.closest("[data-recommendation-debug-key]");if(button){event.stopImmediatePropagation();openRecommendationScoreDetails(recommendationDebugRows[button.dataset.recommendationDebugKey]);}if(event.target.closest("[data-close-score-details]"))document.getElementById("recommendation-score-details")?.classList.add("hidden");});

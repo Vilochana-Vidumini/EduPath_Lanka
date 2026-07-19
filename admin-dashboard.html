@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="theme.css?v=20260615-topbar-clock">
-    <link rel="stylesheet" href="admin-dashboard.css?v=20260624-image-path-fix">
+    <link rel="stylesheet" href="admin-dashboard.css?v=20260718-recommendation-problem-diagnostics8">
 </head>
 <body class="admin-dashboard-page">
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -40,6 +40,9 @@
             <li><a href="#manage-institutes" data-section="manage-institutes"><i class="fas fa-building-columns"></i><span class="sidebar-label">Institutes</span></a></li>
             <li><a href="#manage-admins" data-section="manage-admins"><i class="fas fa-user-shield"></i><span class="sidebar-label">Admins</span></a></li>
             <li class="sidebar-section-label">Content Management</li>
+            <li><a href="#manage-category-cms" data-section="manage-category-cms"><i class="fas fa-layer-group"></i><span class="sidebar-label">Category Management</span></a></li>
+            <li><a href="#category-review" data-section="category-review"><i class="fas fa-triangle-exclamation"></i><span class="sidebar-label">Category Review</span><span class="nav-badge" id="badge-category-review"></span></a></li>
+            <li><a href="#recommendation-testing" data-section="recommendation-testing"><i class="fas fa-vial-circle-check"></i><span class="sidebar-label">Recommendation Testing</span></a></li>
             <li><a href="#manage-courses" data-section="manage-courses"><i class="fas fa-book"></i><span class="sidebar-label">Courses</span></a></li>
             <li><a href="#manage-scholarships" data-section="manage-scholarships"><i class="fas fa-hand-holding-usd"></i><span class="sidebar-label">Scholarships</span></a></li>
             <li><a href="#pathway-results" data-section="pathway-results"><i class="fas fa-route"></i><span class="sidebar-label">Pathways</span></a></li>
@@ -104,7 +107,7 @@
                     <section class="admin-hero-card admin-hero admin-card">
                         <div class="admin-hero-main">
                             <span class="admin-hero-eyebrow">Platform Overview</span>
-                            <h1><span id="admin-greeting">Good Morning</span>, <span id="admin-first-name">Admin</span>! <span aria-hidden="true">👋</span></h1>
+                            <h1><span id="admin-greeting">Good Morning</span>, <span id="admin-first-name">Admin</span>! <span aria-hidden="true">ðŸ‘‹</span></h1>
                             <p>Here's what's happening on EduPath Lanka today.</p>
                             <div class="admin-hero-meta">
                                 <div class="admin-hero-meta-item"><i class="fas fa-calendar-day"></i><span id="admin-dashboard-date">Today</span></div>
@@ -199,13 +202,13 @@
             </section>
 
             <section id="manage-mentors" class="dashboard-section content-section">
-                <div class="section-header"><h2>Manage Mentors</h2></div>
+                <div class="section-header"><h2>Manage Mentors</h2><button id="show-manual-mentor-form" type="button" class="btn btn-primary"><i class="fas fa-plus"></i> Add Manual Mentor</button></div><div id="manual-mentor-form-card" class="form-card glass hidden"><h3>Add Manual Mentor (No Login)</h3><form id="manual-mentor-form" class="grid-form mt-3"><div class="form-group"><label>Full name *</label><input id="manual-mentor-name" class="form-control" required></div><div class="form-group"><label>Mentor type *</label><select id="manual-mentor-type" class="form-control" required><option value="">Select type</option><option>Academic Mentor</option><option>Career Mentor</option><option>Talent Coach</option><option>Industry Professional</option></select></div><div class="form-group"><label>Expertise categories *</label><select id="manual-mentor-expertise" class="form-control" multiple size="5" required></select></div><div class="form-group"><label>Related academic categories</label><select id="manual-mentor-academic" class="form-control" multiple size="4"></select></div><div class="form-group"><label>Related talent categories</label><select id="manual-mentor-talent" class="form-control" multiple size="4"></select></div><div class="form-group"><label>Field</label><input id="manual-mentor-field" class="form-control"></div><div class="form-group"><label>Role</label><input id="manual-mentor-role" class="form-control"></div><div class="form-group"><label>Organization</label><input id="manual-mentor-organization" class="form-control"></div><div class="form-group"><label>Email</label><input id="manual-mentor-email" type="email" class="form-control"></div><div class="form-group"><label>Phone</label><input id="manual-mentor-phone" class="form-control"></div><div class="form-group"><label>District / Location</label><input id="manual-mentor-location" class="form-control"></div><div class="form-group"><label>Languages</label><input id="manual-mentor-languages" class="form-control" placeholder="Comma separated"></div><div class="form-group"><label>Guidance areas</label><input id="manual-mentor-guidance" class="form-control" placeholder="Comma separated"></div><div class="form-group"><label>Supported student levels</label><input id="manual-mentor-student-levels" class="form-control" placeholder="Comma separated"></div><div class="form-group"><label>Supported skill levels</label><input id="manual-mentor-skill-levels" class="form-control" placeholder="Comma separated"></div><div class="form-group"><label>Mentoring modes</label><input id="manual-mentor-modes" class="form-control" placeholder="Online, Physical"></div><div class="form-group"><label>Experience years</label><input id="manual-mentor-experience" type="number" min="0" class="form-control"></div><div class="form-group full-width"><label>Bio</label><textarea id="manual-mentor-bio" class="form-control" rows="3"></textarea></div><div class="form-group full-width form-actions"><button type="submit" class="btn btn-primary">Create Manual Mentor</button><button id="manual-mentor-cancel" type="button" class="btn btn-secondary">Cancel</button></div></form></div>
                 <div class="section-toolbar"><input type="search" id="mentor-search" class="form-control" placeholder="Search mentors..."></div>
                 <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table mentors-table"><thead><tr><th scope="col" class="col-person">Mentor</th><th scope="col" class="col-medium">Field</th><th scope="col" class="col-long">Organization</th><th scope="col" class="col-status">Approval</th><th scope="col" class="col-medium">Availability</th><th scope="col" class="col-progress">Profile</th><th scope="col" class="col-short">Presence</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-mentors-tbody"><tr><td colspan="8" class="text-center py-4 data-loading">Loading mentors...</td></tr></tbody></table></div></div>
             </section>
 
             <section id="manage-institutes" class="dashboard-section content-section">
-                <div class="section-header"><h2>Manage Institutes</h2><p class="section-desc">All registered Institute accounts and their public profile status.</p></div>
+                <div class="section-header"><h2>Manage Institutes</h2><p class="section-desc">Registered and admin-managed providers with category relationships.</p><button id="show-admin-institute-form" type="button" class="btn btn-primary"><i class="fas fa-plus"></i> Add Institute</button></div><div id="admin-institute-form-card" class="form-card glass hidden"><h3>Add Institute / Provider</h3><form id="admin-institute-form" class="grid-form mt-3"><div class="form-group"><label>Institute name *</label><input id="admin-institute-name" class="form-control" required></div><div class="form-group"><label>Provider category *</label><select id="admin-institute-provider-category" class="form-control" required></select></div><div class="form-group"><label>Email</label><input id="admin-institute-email" type="email" class="form-control"></div><div class="form-group"><label>Phone</label><input id="admin-institute-phone" class="form-control"></div><div class="form-group"><label>District</label><input id="admin-institute-district" class="form-control"></div><div class="form-group"><label>Related course categories</label><select id="admin-institute-course-categories" class="form-control" multiple size="5"></select></div><div class="form-group"><label>Related talent categories</label><select id="admin-institute-talent-categories" class="form-control" multiple size="5"></select></div><div class="form-group"><label>Related opportunity categories</label><select id="admin-institute-opportunity-categories" class="form-control" multiple size="5"></select></div><div class="form-group full-width"><label>Description</label><textarea id="admin-institute-description" class="form-control" rows="3"></textarea></div><div class="form-group checkbox-group"><label><input id="admin-institute-public" type="checkbox" checked> Public</label><label><input id="admin-institute-featured" type="checkbox"> Featured</label><label><input id="admin-institute-home" type="checkbox" checked> Show on home page</label></div><div class="form-group"><label>Status</label><select id="admin-institute-status" class="form-control"><option value="active">Active</option><option value="inactive">Inactive</option></select></div><div class="form-group full-width form-actions"><button type="submit" class="btn btn-primary">Save Institute</button><button id="admin-institute-cancel" type="button" class="btn btn-secondary">Cancel</button></div></form></div>
                 <div class="section-toolbar"><input type="search" id="institute-search" class="form-control" placeholder="Search institutes..."></div>
                 <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table institutes-table"><thead><tr><th scope="col" class="col-person">Institute</th><th scope="col" class="col-contact">Contact</th><th scope="col" class="col-medium">District</th><th scope="col" class="col-status">Verification</th><th scope="col" class="col-short">Courses</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-institutes-tbody"><tr><td colspan="7" class="text-center py-4 data-loading">Loading institutes...</td></tr></tbody></table></div></div>
             </section>
@@ -220,6 +223,50 @@
                 <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table approvals-table"><thead><tr><th scope="col" class="col-person">Mentor</th><th scope="col" class="col-medium">Field</th><th scope="col" class="col-long">Organization</th><th scope="col" class="col-status">Status</th><th scope="col" class="col-medium">Availability</th><th scope="col" class="col-progress">Profile</th><th scope="col" class="col-actions">Actions</th></tr></thead><tbody id="admin-approvals-tbody"><tr><td colspan="7" class="text-center py-4 data-loading">Loading pending mentors...</td></tr></tbody></table></div></div>
             </section>
 
+            <section id="category-review" class="dashboard-section content-section">
+                <div class="section-header"><h2>Category Review</h2><p class="section-desc">Review migrated or uncategorized content and assign categories by name.</p></div>
+                <div class="section-toolbar"><select id="category-review-filter" class="form-control"><option value="needs-review">Needs Category Review</option><option value="missing-academic">Missing Academic Category</option><option value="missing-course">Missing Course Category</option><option value="missing-scholarship">Missing Scholarship Category</option><option value="missing-mentor">Missing Mentor Expertise Category</option><option value="missing-talent">Missing Talent Category</option><option value="missing-opportunity">Missing Opportunity Category</option><option value="all">All Content</option></select><input id="category-review-search" type="search" class="form-control" placeholder="Search review records"></div>
+                <div id="category-review-editor" class="form-card glass hidden"><h3 id="category-review-editor-title">Assign Categories</h3><form id="category-review-form" class="grid-form mt-3"><input id="category-review-path" type="hidden"><input id="category-review-id" type="hidden"><div class="form-group" data-review-field="academic"><label>Academic Category</label><select id="category-review-academic" class="form-control"></select></div><div class="form-group" data-review-field="course"><label>Course Category</label><select id="category-review-course" class="form-control"></select></div><div class="form-group" data-review-field="scholarship"><label>Scholarship Category</label><select id="category-review-scholarship" class="form-control"></select></div><div class="form-group" data-review-field="mentor"><label>Mentor Expertise Category</label><select id="category-review-mentor" class="form-control"></select></div><div class="form-group" data-review-field="talent"><label>Talent Category</label><select id="category-review-talent" class="form-control"></select></div><div class="form-group" data-review-field="opportunity"><label>Opportunity Category</label><select id="category-review-opportunity" class="form-control"></select></div><div class="form-group" data-review-field="provider"><label>Provider Category</label><select id="category-review-provider" class="form-control"></select></div><div class="form-group full-width form-actions"><button type="submit" class="btn btn-primary">Save Category Assignment</button><button id="category-review-cancel" type="button" class="btn btn-secondary">Cancel</button></div></form></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table wide-table"><thead><tr><th>Content Type</th><th>Record</th><th>Current Category</th><th>Missing / Review Reason</th><th>Actions</th></tr></thead><tbody id="category-review-tbody"><tr><td colspan="5" class="text-center p-4">Loading review queue...</td></tr></tbody></table></div></div>
+            </section>
+            <section id="recommendation-testing" class="dashboard-section content-section">
+                <div class="section-header"><h2>Recommendation Testing</h2><p class="section-desc">Test whether courses, mentors, scholarships, institutes, and opportunities are correctly recommended based on student pathway and categories.</p></div>
+                <div class="panel-card glass recommendation-scenario-selector"><div><h3>Scenario Selector</h3><p>Select one student profile or run the full QA suite.</p></div><div class="recommendation-scenario-buttons">
+                    <button type="button" class="recommendation-scenario-btn active" data-recommendation-test="all"><span>Run All Tests</span><small data-scenario-status="all">NOT RUN</small></button>
+                    <button type="button" class="recommendation-scenario-btn" data-recommendation-test="combined_business_dancing"><span>Combined Business + Dancing</span><small data-scenario-status="combined_business_dancing">NOT RUN</small></button>
+                    <button type="button" class="recommendation-scenario-btn" data-recommendation-test="talent_only_dancing"><span>Talent-only Dancing</span><small data-scenario-status="talent_only_dancing">NOT RUN</small></button>
+                    <button type="button" class="recommendation-scenario-btn" data-recommendation-test="academic_business"><span>Academic Business</span><small data-scenario-status="academic_business">NOT RUN</small></button>
+                    <button type="button" class="recommendation-scenario-btn" data-recommendation-test="academic_engineering"><span>Academic Engineering</span><small data-scenario-status="academic_engineering">NOT RUN</small></button>
+                    <button type="button" class="recommendation-scenario-btn" data-recommendation-test="undecided"><span>Undecided</span><small data-scenario-status="undecided">NOT RUN</small></button>
+                </div></div>
+                <div id="recommendation-test-loading" class="panel-card glass recommendation-test-loading hidden"><i class="fas fa-spinner fa-spin"></i> Running recommendation test...</div>
+                <div id="recommendation-test-results"><div class="panel-card glass"><p>Select a scenario to begin recommendation QA testing.</p></div></div>
+                <details class="panel-card glass recommendation-debug-control">
+                    <summary><strong>Recommendation Debug Mode</strong><span id="recommendation-debug-status">Debug Mode: Disabled</span></summary>
+                    <div><p>Enable this only when you want to inspect detailed scoring and matching reasons in the browser console.</p><div class="recommendation-test-actions"><button type="button" class="btn btn-primary" id="enable-recommendation-debug">Enable Debug Mode</button><button type="button" class="btn btn-secondary" id="disable-recommendation-debug">Disable Debug Mode</button></div><details class="recommendation-console-commands"><summary>Show Console Commands</summary><div><p>To enable:</p><code>localStorage.setItem("debugRecommendations", "true")</code><p>To disable:</p><code>localStorage.removeItem("debugRecommendations")</code></div></details></div>
+                </details>
+            </section>            <section id="manage-category-cms" class="dashboard-section content-section">
+                <div class="section-header"><h2>Category Management</h2><p class="section-desc">Define master classifications first, then select them by name in content forms.</p></div>
+                <div class="section-toolbar">
+                    <select id="category-cms-path" class="form-control"><option value="academicCategories">Academic Categories</option><option value="courseCategories">Course Categories</option><option value="scholarshipCategories">Scholarship Categories</option><option value="mentorExpertiseCategories">Mentor Expertise Categories</option><option value="talentCategories">Talent Categories</option><option value="opportunityCategories">Opportunity Categories</option><option value="providerCategories">Institute / Provider Categories</option></select>
+                    <input id="category-cms-search" type="search" class="form-control" placeholder="Search categories">
+                    <button id="category-cms-add" type="button" class="btn btn-primary"><i class="fas fa-plus"></i> Add Category</button>
+                </div>
+                <div id="category-cms-form-card" class="form-card glass hidden"><h3 id="category-cms-form-title">Add Category</h3><form id="category-cms-form" class="grid-form mt-3">
+                    <div class="form-group"><label>Title *</label><input id="category-cms-title" class="form-control" required maxlength="120"></div>
+                    <div class="form-group"><label>Category ID</label><input id="category-cms-id" class="form-control" maxlength="120" placeholder="Generated automatically"></div>
+                    <div class="form-group"><label>Main field / type</label><input id="category-cms-main-field" class="form-control" maxlength="120"></div>
+                    <div class="form-group"><label>Parent / related academic category</label><select id="category-cms-parent" class="form-control"><option value="">None</option></select></div>
+                    <div class="form-group full-width"><label>Description</label><textarea id="category-cms-description" class="form-control" rows="3"></textarea></div>
+                    <div class="form-group full-width"><label>Matching keywords</label><input id="category-cms-keywords" class="form-control" placeholder="Comma separated"></div>
+                    <div class="form-group full-width"><label>Advanced metadata (JSON)</label><textarea id="category-cms-metadata" class="form-control" rows="5" placeholder='{"relatedSkills":["Leadership"],"suitablePathways":["academic"]}'></textarea><small class="form-helper-text">Optional specialized arrays and flags for this category family.</small></div>
+                    <div class="form-group"><label>Sort order</label><input id="category-cms-sort" type="number" class="form-control" value="100"></div>
+                    <div class="form-group"><label>Status *</label><select id="category-cms-status" class="form-control" required><option value="active">Active</option><option value="inactive">Inactive</option><option value="archived">Archived</option></select></div>
+                    <div class="form-group checkbox-group"><label><input id="category-cms-public" type="checkbox" checked> Public visibility</label></div>
+                    <div class="form-group full-width form-actions"><button type="submit" class="btn btn-primary">Save Category</button><button id="category-cms-cancel" type="button" class="btn btn-secondary">Cancel</button></div>
+                </form></div>
+                <div class="table-card glass"><div class="table-responsive"><table class="data-table"><thead><tr><th>Order</th><th>Title</th><th>ID</th><th>Main Field</th><th>Status</th><th>Visibility</th><th>Actions</th></tr></thead><tbody id="category-cms-tbody"><tr><td colspan="7" class="text-center p-4">Loading categories...</td></tr></tbody></table></div></div>
+            </section>
             <section id="manage-courses" class="dashboard-section content-section">
                 <div class="section-header"><h2>Manage Courses</h2></div>
                 <div class="course-management-stack">
@@ -234,7 +281,7 @@
                             <div class="form-group full-width"><label>Course Name *</label><input type="text" id="course-name" class="form-control" required></div>
                             <div class="form-group"><label>Institute Name *</label><input type="text" id="course-institute" class="form-control" required></div>
                             <div class="form-group"><label>Institute Type</label><input type="text" id="course-institute-type" class="form-control"></div>
-                            <div class="form-group"><label>Category *</label><input type="text" id="course-category" class="form-control" required></div>
+                            <div class="form-group"><label>Academic Category *</label><select id="course-academic-category" class="form-control" required><option value="">Select academic category</option></select></div><div class="form-group"><label>Course Category *</label><select id="course-category" class="form-control" required><option value="">Select course category</option></select></div><div class="form-group"><label>Suitable Pathways</label><select id="course-pathways" class="form-control" multiple size="4"><option value="academic">Academic</option><option value="combined">Combined</option><option value="academic_improvement">Academic Improvement</option><option value="undecided">Undecided</option></select></div><div class="form-group"><label>Eligible Education Levels</label><input id="course-education-levels" class="form-control" placeholder="Comma separated"></div><div class="form-group"><label>Matching Keywords</label><input id="course-keywords" class="form-control" placeholder="Comma separated"></div>
                             <div class="form-group full-width"><label>Description</label><textarea id="course-description" class="form-control" rows="3"></textarea></div>
                             <div class="form-group"><label>Duration *</label><input type="text" id="course-duration" class="form-control" required></div>
                             <div class="form-group"><label>Mode *</label><select id="course-mode" class="form-control" required><option>Online</option><option>Physical</option><option>Hybrid</option></select></div>
@@ -284,7 +331,7 @@
                             <div class="form-group full-width"><label>Scholarship Name *</label><input type="text" id="schol-name" class="form-control" required></div>
                             <div class="form-group"><label>Provider *</label><input type="text" id="schol-provider" class="form-control" required></div>
                             <div class="form-group"><label>Provider Type</label><input type="text" id="schol-provider-type" class="form-control"></div>
-                            <div class="form-group"><label>Category</label><input type="text" id="schol-category" class="form-control"></div>
+                            <div class="form-group"><label>Scholarship Category *</label><select id="schol-category" class="form-control" required><option value="">Select scholarship category</option></select></div><div class="form-group"><label>Related Academic Categories</label><select id="schol-academic-categories" class="form-control" multiple size="4"></select></div><div class="form-group"><label>Related Talent Categories</label><select id="schol-talent-categories" class="form-control" multiple size="4"></select></div><div class="form-group"><label>Eligible Pathways</label><select id="schol-pathways" class="form-control" multiple size="4"><option value="academic">Academic</option><option value="talent">Talent</option><option value="combined">Combined</option><option value="undecided">Undecided</option></select></div><div class="form-group"><label>Eligible Education Levels</label><input id="schol-education-levels" class="form-control" placeholder="Comma separated"></div><div class="form-group checkbox-group"><label><input id="schol-financial-required" type="checkbox"> Financial need required</label><label><input id="schol-results-required" type="checkbox"> Academic results required</label><label><input id="schol-talent-required" type="checkbox"> Talent proof required</label></div>
                             <div class="form-group full-width"><label>Description</label><textarea id="schol-description" class="form-control" rows="3"></textarea></div>
                             <div class="form-group full-width"><label>Eligibility</label><textarea id="schol-eligibility" class="form-control" rows="2"></textarea></div>
                             <div class="form-group"><label>Support Type</label><input type="text" id="schol-support-type" class="form-control"></div>
@@ -315,54 +362,59 @@
                 </div>
             </section>
             <section id="manage-talent-categories" class="dashboard-section content-section">
-                <div class="section-header"><h2>Talent Categories</h2></div>
-                <div class="table-card glass">
-                    <div class="p-3 border-bottom" style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3>Categories</h3>
-                        <button class="btn btn-primary btn-sm" id="btn-add-talent-category"><i class="fas fa-plus"></i> Add Category</button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Category ID</th>
-                                    <th>Title</th>
-                                    <th>Description</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-talent-categories-tbody">
-                                <tr><td colspan="4" class="text-center py-4 data-loading">Loading talent categories...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="section-header"><h2>Talent Categories</h2><p class="section-desc">Master classifications used by talent profiles, opportunities, mentors, and recommendations.</p></div>
+                <div id="talent-category-form-card" class="form-card glass hidden">
+                    <h3 id="talent-category-form-title">Add Talent Category</h3>
+                    <form id="talent-category-form" class="grid-form mt-3">
+                        <div class="form-group"><label for="talent-category-title">Category title *</label><input id="talent-category-title" class="form-control" required maxlength="80"></div>
+                        <div class="form-group"><label for="talent-category-id">Category ID</label><input id="talent-category-id" class="form-control" maxlength="80" pattern="[A-Za-z0-9 _-]+" placeholder="Generated from title"></div>
+                        <div class="form-group"><label for="talent-category-main-type">Main type *</label><select id="talent-category-main-type" class="form-control" required><option value="">Select type</option><option>Arts</option><option>Sports</option><option>Technology</option><option>Leadership</option><option>Vocational</option><option>Other</option></select></div>
+                        <div class="form-group"><label for="talent-category-subcategories">Subcategories</label><input id="talent-category-subcategories" class="form-control" placeholder="Kandyan Dancing, Modern Dancing"></div>
+                        <div class="form-group full-width"><label for="talent-category-description">Description</label><textarea id="talent-category-description" class="form-control" rows="3" maxlength="500"></textarea></div>
+                        <div class="form-group"><label for="talent-category-status">Status</label><select id="talent-category-status" class="form-control"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+                        <div class="form-group checkbox-group"><label><input id="talent-category-public" type="checkbox" checked> Public visibility</label><label><input id="talent-category-filter" type="checkbox" checked> Show in opportunity filters</label></div>
+                        <div class="form-group full-width form-actions"><button type="submit" class="btn btn-primary"><span id="talent-category-submit-label">Save Category</span></button><button type="button" id="talent-category-cancel" class="btn btn-secondary">Cancel</button></div>
+                    </form>
                 </div>
+                <div class="table-card glass"><div class="p-3 border-bottom" style="display:flex;justify-content:space-between;align-items:center;"><h3>Categories</h3><button type="button" class="btn btn-primary btn-sm" id="btn-add-talent-category"><i class="fas fa-plus"></i> Add Category</button></div><div class="table-responsive"><table class="data-table"><thead><tr><th>Category ID</th><th>Title</th><th>Main Type</th><th>Subcategories</th><th>Status</th><th>Actions</th></tr></thead><tbody id="admin-talent-categories-tbody"><tr><td colspan="6" class="text-center py-4 data-loading">Loading talent categories...</td></tr></tbody></table></div></div>
             </section>
 
             <section id="manage-talent-opportunities" class="dashboard-section content-section">
-                <div class="section-header"><h2>Talent Opportunities</h2></div>
-                <div class="table-card glass">
-                    <div class="p-3 border-bottom" style="display:flex; justify-content:space-between; align-items:center;">
-                        <h3>Opportunities</h3>
-                        <button class="btn btn-primary btn-sm" id="btn-add-talent-opportunity"><i class="fas fa-plus"></i> Add Opportunity</button>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Title</th>
-                                    <th>Provider</th>
-                                    <th>Type</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="admin-talent-opportunities-tbody">
-                                <tr><td colspan="5" class="text-center py-4 data-loading">Loading talent opportunities...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="section-header"><h2>Talent Opportunities</h2><p class="section-desc">Actual competitions, workshops, training, auditions, programs, and scholarships.</p></div>
+                <div id="talent-opportunity-form-card" class="form-card glass hidden">
+                    <h3 id="talent-opportunity-form-title">Add Talent Opportunity</h3>
+                    <form id="talent-opportunity-form" class="grid-form mt-3">
+                        <div class="form-group"><label for="talent-opportunity-title">Title *</label><input id="talent-opportunity-title" class="form-control" required maxlength="120"></div>
+                        <div class="form-group"><label for="talent-opportunity-provider">Provider *</label><input id="talent-opportunity-provider" class="form-control" required maxlength="120"></div>
+                        <div class="form-group"><label for="talent-opportunity-organizer">Organizer</label><input id="talent-opportunity-organizer" class="form-control" maxlength="120"></div>
+                        <div class="form-group"><label for="talent-opportunity-category">Talent category *</label><select id="talent-opportunity-category" class="form-control" required><option value="">Select an active category</option></select></div>
+                        <div class="form-group"><label for="talent-opportunity-subcategory">Subcategory</label><select id="talent-opportunity-subcategory" class="form-control"><option value="">Select category first</option></select><input id="talent-opportunity-subcategory-manual" class="form-control hidden mt-2" maxlength="100" placeholder="Optional subcategory"></div>
+                        <div class="form-group"><label for="talent-opportunity-type">Opportunity type *</label><select id="talent-opportunity-type" class="form-control" required><option value="">Select type</option><option>Competition</option><option>Workshop</option><option>Training Program</option><option>Audition</option><option>Exhibition</option><option>Stage Performance</option><option>Academy Program</option><option>Club Membership</option><option>Coaching</option><option>Portfolio Showcase</option><option>Talent Scholarship</option><option>Trial</option><option>Tournament</option><option>Internship</option><option>Performance Opportunity</option></select></div>
+                        <div class="form-group full-width"><label for="talent-opportunity-description">Description</label><textarea id="talent-opportunity-description" class="form-control" rows="4" maxlength="1500"></textarea></div>
+                        <div class="form-group"><label for="talent-opportunity-skill-levels">Eligible skill levels</label><select id="talent-opportunity-skill-levels" class="form-control" multiple size="5"><option>Any</option><option>Beginner</option><option>School Level</option><option>District Level</option><option>Provincial Level</option><option>National Level</option><option>Intermediate</option><option>Advanced</option><option>Professional</option></select></div>
+                        <div class="form-group"><label for="talent-opportunity-education-levels">Eligible student levels</label><select id="talent-opportunity-education-levels" class="form-control" multiple size="5"><option>Any</option><option>School Student</option><option>After O/L</option><option>After A/L</option><option>Undergraduate</option><option>Career Starter</option></select></div>
+                        <div class="form-group"><label>Age range</label><div style="display:flex;gap:.5rem"><input id="talent-opportunity-age-min" type="number" min="0" max="100" class="form-control" placeholder="Min"><input id="talent-opportunity-age-max" type="number" min="0" max="100" class="form-control" placeholder="Max"></div></div>
+                        <div class="form-group"><label for="talent-opportunity-mode">Mode</label><select id="talent-opportunity-mode" class="form-control"><option value="">Select mode</option><option>Physical</option><option>Online</option><option>Hybrid</option></select></div>
+                        <div class="form-group"><label for="talent-opportunity-fee-type">Fee type</label><select id="talent-opportunity-fee-type" class="form-control"><option>Free</option><option>Paid</option><option>Scholarship Available</option></select></div>
+                        <div class="form-group"><label for="talent-opportunity-fee">Fee (LKR)</label><input id="talent-opportunity-fee" type="number" min="0" class="form-control"></div>
+                        <div class="form-group"><label for="talent-opportunity-location">Location</label><input id="talent-opportunity-location" class="form-control"></div>
+                        <div class="form-group"><label for="talent-opportunity-district">District</label><input id="talent-opportunity-district" class="form-control"></div>
+                        <div class="form-group"><label for="talent-opportunity-deadline">Deadline</label><input id="talent-opportunity-deadline" type="date" class="form-control"></div>
+                        <div class="form-group"><label for="talent-opportunity-event-date">Event date</label><input id="talent-opportunity-event-date" type="date" class="form-control"></div>
+                        <div class="form-group full-width"><label for="talent-opportunity-eligibility">Eligibility</label><textarea id="talent-opportunity-eligibility" class="form-control" rows="2"></textarea></div>
+                        <div class="form-group full-width"><label for="talent-opportunity-requirements">Requirements</label><textarea id="talent-opportunity-requirements" class="form-control" rows="2"></textarea></div>
+                        <div class="form-group"><label for="talent-opportunity-keywords">Matching keywords</label><input id="talent-opportunity-keywords" class="form-control" placeholder="dance, performance, youth"></div>
+                        <div class="form-group"><label for="talent-opportunity-talent-types">Related talent types</label><input id="talent-opportunity-talent-types" class="form-control" placeholder="Auto-filled; comma separated"></div>
+                        <div class="form-group"><label for="talent-opportunity-mentors">Related mentors</label><select id="talent-opportunity-mentors" class="form-control" multiple size="4"></select></div>
+                        <div class="form-group"><label for="talent-opportunity-institute">Related institute / academy</label><select id="talent-opportunity-institute" class="form-control"><option value="">None</option></select></div>
+                        <div class="form-group"><label for="talent-opportunity-link">Application URL</label><input id="talent-opportunity-link" type="url" class="form-control"></div>
+                        <div class="form-group"><label for="talent-opportunity-image">Image path or URL</label><input id="talent-opportunity-image" class="form-control"></div>
+                        <div class="form-group"><label for="talent-opportunity-status">Status</label><select id="talent-opportunity-status" class="form-control"><option value="draft">Draft</option><option value="active">Active</option><option value="closed">Closed</option><option value="archived">Archived</option></select></div>
+                        <div class="form-group checkbox-group"><label><input id="talent-opportunity-public" type="checkbox" checked> Public</label><label><input id="talent-opportunity-featured" type="checkbox"> Featured</label><label><input id="talent-opportunity-home" type="checkbox" checked> Home page</label><label><input id="talent-opportunity-dashboard" type="checkbox" checked> Student dashboard</label><label><input id="talent-opportunity-ongoing" type="checkbox"> Ongoing</label></div>
+                        <div class="form-group full-width form-actions"><button type="submit" class="btn btn-primary"><span id="talent-opportunity-submit-label">Save Opportunity</span></button><button type="button" id="talent-opportunity-cancel" class="btn btn-secondary">Cancel</button></div>
+                    </form>
                 </div>
+                <div class="table-card glass"><div class="p-3 border-bottom" style="display:flex;justify-content:space-between;align-items:center;"><h3>Opportunities</h3><button type="button" class="btn btn-primary btn-sm" id="btn-add-talent-opportunity"><i class="fas fa-plus"></i> Add Opportunity</button></div><div class="table-responsive"><table class="data-table wide-table"><thead><tr><th>Title</th><th>Provider</th><th>Category</th><th>Subcategory</th><th>Type</th><th>Deadline</th><th>Location</th><th>Mode</th><th>Status</th><th>Visibility</th><th>Actions</th></tr></thead><tbody id="admin-talent-opportunities-tbody"><tr><td colspan="11" class="text-center py-4 data-loading">Loading talent opportunities...</td></tr></tbody></table></div></div>
             </section>
 
             <section id="achievement-verifications" class="dashboard-section content-section">
@@ -527,6 +579,6 @@
     <script type="module" src="theme.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="admin-dashboard.js?v=20260705-mentor-profile-updates"></script>
+    <script type="module" src="admin-dashboard.js?v=20260718-recommendation-problem-diagnostics8"></script>
 </body>
 </html>

@@ -1,0 +1,267 @@
+{
+  "courses": {
+    "sample_business_management": {
+      "courseId": "sample_business_management",
+      "courseName": "Business Management",
+      "academicCategoryId": "academic_business_and_management",
+      "academicCategoryTitle": "Business and Management",
+      "courseCategoryId": "course_business_management",
+      "courseCategoryTitle": "Business Management",
+      "category": "Business Management",
+      "matchingKeywords": [
+        "business",
+        "management"
+      ],
+      "status": "active",
+      "publicVisibility": true
+    },
+    "sample_entrepreneurship": {
+      "courseId": "sample_entrepreneurship",
+      "courseName": "Entrepreneurship",
+      "academicCategoryId": "academic_business_and_management",
+      "courseCategoryId": "course_entrepreneurship",
+      "category": "Entrepreneurship",
+      "status": "active",
+      "publicVisibility": true
+    },
+    "sample_digital_marketing": {
+      "courseId": "sample_digital_marketing",
+      "courseName": "Digital Marketing",
+      "academicCategoryId": "academic_business_and_management",
+      "courseCategoryId": "course_digital_marketing",
+      "category": "Digital Marketing",
+      "status": "active",
+      "publicVisibility": true
+    },
+    "sample_event_management": {
+      "courseId": "sample_event_management",
+      "courseName": "Event Management",
+      "academicCategoryId": "academic_business_and_management",
+      "courseCategoryId": "course_event_management",
+      "category": "Event Management",
+      "status": "active",
+      "publicVisibility": true
+    },
+    "sample_electrical_engineering": {
+      "courseId": "sample_electrical_engineering",
+      "courseName": "Electrical Engineering",
+      "academicCategoryId": "academic_engineering_and_technology",
+      "courseCategoryId": "course_electrical_engineering",
+      "category": "Electrical Engineering",
+      "status": "active",
+      "publicVisibility": true
+    }
+  },
+  "scholarships": {
+    "sample_women_business": {
+      "scholarshipId": "sample_women_business",
+      "scholarshipName": "Women in Business Leadership",
+      "scholarshipCategoryId": "scholarship_women_leadership_scholarships",
+      "relatedAcademicCategoryIds": [
+        "academic_business_and_management"
+      ],
+      "eligiblePathways": [
+        "academic",
+        "combined"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "deadline": "2027-12-31"
+    },
+    "sample_creative_talent": {
+      "scholarshipId": "sample_creative_talent",
+      "scholarshipName": "Creative Talent Development",
+      "scholarshipCategoryId": "scholarship_talent_scholarships",
+      "relatedTalentCategoryIds": [
+        "talent_dancing"
+      ],
+      "eligiblePathways": [
+        "talent",
+        "combined"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "deadline": "2027-12-31"
+    },
+    "sample_engineering": {
+      "scholarshipId": "sample_engineering",
+      "scholarshipName": "Engineering Scholarship",
+      "relatedAcademicCategoryIds": [
+        "academic_engineering_and_technology"
+      ],
+      "status": "active",
+      "publicVisibility": true,
+      "deadline": "2027-12-31"
+    }
+  },
+  "mentors": {
+    "mentor_business_001": {
+      "uid": "mentor_business_001",
+      "mentorId": "mentor_business_001",
+      "fullName": "Manual Business Mentor",
+      "isManualProfile": true,
+      "loginEnabled": false,
+      "status": "approved",
+      "approvalStatus": "approved",
+      "accountStatus": "active",
+      "publicVisibility": true,
+      "mentoringEnabled": true,
+      "expertiseCategoryIds": [
+        "mentor_business_mentor"
+      ],
+      "relatedAcademicCategoryIds": [
+        "academic_business_and_management"
+      ],
+      "field": "Business Management"
+    },
+    "mentor_creative_business_001": {
+      "uid": "mentor_creative_business_001",
+      "fullName": "Manual Creative Business Mentor",
+      "isManualProfile": true,
+      "loginEnabled": false,
+      "status": "approved",
+      "approvalStatus": "approved",
+      "accountStatus": "active",
+      "publicVisibility": true,
+      "mentoringEnabled": true,
+      "expertiseCategoryIds": [
+        "mentor_creative_career_mentor"
+      ],
+      "relatedAcademicCategoryIds": [
+        "academic_business_and_management"
+      ],
+      "relatedTalentCategoryIds": [
+        "talent_dancing"
+      ],
+      "field": "Creative Entrepreneurship"
+    },
+    "mentor_dance_001": {
+      "uid": "mentor_dance_001",
+      "fullName": "Manual Dance Coach",
+      "isManualProfile": true,
+      "loginEnabled": false,
+      "status": "approved",
+      "approvalStatus": "approved",
+      "accountStatus": "active",
+      "publicVisibility": true,
+      "mentoringEnabled": true,
+      "expertiseCategoryIds": [
+        "mentor_dance_coach"
+      ],
+      "relatedTalentCategoryIds": [
+        "talent_dancing"
+      ],
+      "field": "Dancing"
+    },
+    "mentor_electrical_001": {
+      "uid": "mentor_electrical_001",
+      "fullName": "Manual Electrical Engineer",
+      "isManualProfile": true,
+      "loginEnabled": false,
+      "status": "approved",
+      "approvalStatus": "approved",
+      "accountStatus": "active",
+      "publicVisibility": true,
+      "mentoringEnabled": true,
+      "expertiseCategoryIds": [
+        "mentor_engineering_mentor"
+      ],
+      "relatedAcademicCategoryIds": [
+        "academic_engineering_and_technology"
+      ],
+      "field": "Electrical Engineering"
+    }
+  },
+  "talentOpportunities": {
+    "sample_dance_workshop": {
+      "opportunityId": "sample_dance_workshop",
+      "title": "Dance Workshop",
+      "categoryId": "talent_dancing",
+      "categoryTitle": "Dancing",
+      "subCategory": "Kandyan Dancing",
+      "opportunityCategoryId": "opportunity_workshop",
+      "opportunityType": "Workshop",
+      "status": "active",
+      "publicVisibility": true,
+      "deadline": "2027-12-31"
+    },
+    "sample_dance_competition": {
+      "opportunityId": "sample_dance_competition",
+      "title": "Dance Competition",
+      "categoryId": "talent_dancing",
+      "categoryTitle": "Dancing",
+      "opportunityCategoryId": "opportunity_competition",
+      "opportunityType": "Competition",
+      "status": "active",
+      "publicVisibility": true,
+      "deadline": "2027-12-31"
+    },
+    "sample_creative_entrepreneurship": {
+      "opportunityId": "sample_creative_entrepreneurship",
+      "title": "Creative Entrepreneurship Program",
+      "categoryId": "talent_dancing",
+      "categoryTitle": "Dancing",
+      "matchingKeywords": [
+        "creative",
+        "entrepreneurship",
+        "performance"
+      ],
+      "opportunityType": "Creative Entrepreneurship Program",
+      "status": "active",
+      "publicVisibility": true,
+      "deadline": "2027-12-31"
+    },
+    "sample_music_training": {
+      "opportunityId": "sample_music_training",
+      "title": "Music Training",
+      "categoryId": "talent_music",
+      "categoryTitle": "Music",
+      "opportunityType": "Training Program",
+      "status": "active",
+      "publicVisibility": true,
+      "deadline": "2027-12-31"
+    }
+  },
+  "institutes": {
+    "sample_colombo_business": {
+      "instituteId": "sample_colombo_business",
+      "name": "Colombo Business Institute",
+      "status": "active",
+      "publicVisibility": true,
+      "relatedCourseCategoryIds": [
+        "course_business_management",
+        "course_entrepreneurship"
+      ]
+    },
+    "sample_creative_arts": {
+      "instituteId": "sample_creative_arts",
+      "name": "Creative Arts Academy",
+      "status": "active",
+      "publicVisibility": true,
+      "relatedTalentCategoryIds": [
+        "talent_dancing"
+      ]
+    },
+    "sample_creative_business": {
+      "instituteId": "sample_creative_business",
+      "name": "Creative Business School",
+      "status": "active",
+      "publicVisibility": true,
+      "relatedCourseCategoryIds": [
+        "course_creative_entrepreneurship"
+      ],
+      "relatedTalentCategoryIds": [
+        "talent_dancing"
+      ]
+    },
+    "sample_engineering_college": {
+      "instituteId": "sample_engineering_college",
+      "name": "Engineering College",
+      "status": "active",
+      "publicVisibility": true,
+      "relatedCourseCategoryIds": [
+        "course_electrical_engineering"
+      ]
+    }
+  }
+}

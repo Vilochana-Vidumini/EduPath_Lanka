@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="theme.css?v=20260624-mentor-calendar-redesign">
-    <link rel="stylesheet" href="student-dashboard.css?v=20260624-image-path-fix">
+    <link rel="stylesheet" href="student-dashboard.css?v=20260718-topbar-icons-v2">
 </head>
 <body class="student-dashboard-page">
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -119,11 +119,25 @@
                         <div class="student-hero-illustration">
                             <img src="images/student-dashboard-group.png" alt="Students learning together">
                         </div>
-                        <div class="welcome-avatar" id="welcome-avatar"><span>ST</span></div>
                     </div>
                 </section>
 
-                <section class="student-kpi-grid">
+                <section class="student-current-path-card glass reveal-card" id="student-current-path-card" aria-live="polite">
+                    <div class="path-card-icon" id="student-current-path-icon"><i class="fas fa-compass" aria-hidden="true"></i></div>
+                    <div class="path-card-left">
+                        <span class="path-label">Current Future Path</span>
+                        <h3 id="student-current-path-title">Loading your path...</h3>
+                        <p id="student-current-path-desc">Your dashboard will adapt to your selected direction.</p>
+                    </div>
+                    <div class="path-card-right">
+                        <span id="student-current-path-badge" class="path-badge undecided">Undecided</span>
+                        <button type="button" id="edit-student-path-btn" class="btn btn-outline dashboard-jump" data-section="pathway-section">
+                            <i class="fas fa-pen" aria-hidden="true"></i> <span id="edit-student-path-label">Update Path</span>
+                        </button>
+                    </div>
+                </section>
+
+                <section class="student-kpi-grid" id="student-path-kpis">
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-blue"><i class="fas fa-user-check"></i></div><div class="stat-info"><h4>Profile Completion</h4><h2 id="overview-profile-completion-stat">0%</h2><p id="overview-profile-status">Getting started</p></div></article>
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-purple"><i class="fas fa-route"></i></div><div class="stat-info"><h4>Pathway Results</h4><h2 id="pathway-results-stat">0</h2><p>Latest pathway ready</p></div></article>
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-cyan"><i class="fas fa-bookmark"></i></div><div class="stat-info"><h4>Saved Courses</h4><h2 id="saved-courses-stat">0</h2><p>Shortlisted options</p></div></article>
@@ -147,6 +161,14 @@
                     <article class="best-matches-card glass reveal-card">
                         <div class="card-heading"><div><h3><i class="fas fa-medal text-success"></i> Best Matches for You</h3><p>Top course, scholarship, and mentor picks</p></div><button class="btn btn-outline btn-sm dashboard-jump" data-section="recommended-courses-section">View All</button></div>
                         <div id="overview-best-matches" class="overview-match-grid"></div>
+                    </article>
+                    <article class="extended-recommendation-card glass reveal-card">
+                        <div class="card-heading"><div><h3><i class="fas fa-building-columns text-primary"></i> Suggested Institutes</h3><p>Institutes with matching courses and programs</p></div><a class="btn btn-outline btn-sm" href="institutes.html">View All</a></div>
+                        <div id="overview-institute-recommendations" class="extended-rec-list"></div>
+                    </article>
+                    <article class="extended-recommendation-card glass reveal-card">
+                        <div class="card-heading"><div><h3><i class="fas fa-star text-warning"></i> Talent-Based Opportunities</h3><p>Workshops, competitions, training, and performance options</p></div><a class="btn btn-outline btn-sm" href="talent-opportunities.html">View All</a></div>
+                        <div id="overview-talent-recommendations" class="extended-rec-list"></div>
                     </article>
                     <article class="skill-growth-card glass reveal-card">
                         <div class="card-heading"><div><h3><i class="fas fa-chart-line text-primary"></i> Skill Growth</h3></div><button class="btn btn-outline btn-sm dashboard-jump" data-section="skills-section">View All</button></div>
@@ -470,6 +492,7 @@
                                 <h3>Study Interests</h3>
                             </div>
                             <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-academic-academicCategoryId" style="display:block;margin-bottom:.5rem;font-weight:500;">Primary Academic Category</label><select id="field-academic-academicCategoryId" class="form-input" style="width:100%;padding:.75rem;border-radius:8px;border:1px solid var(--border-color);"><option value="">Select Academic Category</option></select></div><div class="form-group full-width" style="grid-column:1 / -1;">
                                 <label for="field-academic-preferredFields" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Preferred Study Fields</label>
                                 <input type="text" id="field-academic-preferredFields" name="preferredFields" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
                             </div>
@@ -552,13 +575,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="field-talent-primaryTalentCategory" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Primary Talent Category</label>
-                                <select id="field-talent-primaryTalentCategory" name="primaryTalentCategory" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                                    <option value="">Select Category</option>
-                                    <option value="Sports">Sports</option>
-                                    <option value="Arts & Design">Arts & Design</option>
-                                    <option value="Music & Performing Arts">Music & Performing Arts</option>
-                                    <option value="Practical Skills">Practical Skills</option>
-                                </select>
+                                <select id="field-talent-primaryTalentCategory" name="primaryTalentCategory" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);"><option value="">Select Talent Category</option></select>
                             </div>
                             <div class="form-group">
                                 <label for="field-talent-specificTalent" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Specific Skill/Sport/Art</label>
@@ -781,7 +798,7 @@
             </section>
 
             <section id="mentors-section" class="dashboard-section">
-                <div class="section-header"><h2>Mentors I Can Connect With</h2></div>
+                <div class="section-header"><h2>Mentors I Can Connect With</h2><a class="btn btn-outline" href="mentors.html"><i class="fas fa-users" aria-hidden="true"></i> See Other Mentors</a></div>
                 <div class="section-tabs">
                     <button type="button" class="active dashboard-jump" data-section="mentors-section">Find Mentors</button>
                     <button type="button" class="dashboard-jump" data-section="mentor-requests-section">My Requests</button>
@@ -980,7 +997,7 @@
 
     <script type="module" src="theme.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
-    <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="student-dashboard.js?v=20260624-mentor-application"></script>
+    <script type="module" src="dashboard-topbar.js?v=20260718-topbar-icons"></script>
+    <script type="module" src="student-dashboard.js?v=20260718-future-path-fix"></script>
 </body>
 </html>

@@ -4,9 +4,10 @@ import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gsta
 import { ref, get, set, update, push, remove, serverTimestamp, onValue, off, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast, preserveThemeOnClear } from "./auth-nav.js?v=20260614-brand";
 import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
-import { ensureDashboardTopbarLayout, initDashboardNotifications, updateDashboardGreetingName } from "./dashboard-topbar.js";
+import { ensureDashboardTopbarLayout, initDashboardNotifications, updateDashboardGreetingName } from "./dashboard-topbar.js?v=20260718-topbar-icons";
 import { calculateMentorRatingSummary, toRatingInt } from "./ratings.js";
 import { requiredText, validateNumberRange, showFieldError, clearFieldError, escapeHtml as escapeSharedHtml } from "./validation.js";
+import { buildStudentRecommendationProfile as buildSharedRecommendationProfile, scoreCourseRecommendation, scoreScholarshipRecommendation, scoreMentorRecommendation, recommendCourses as sharedRecommendCourses, recommendScholarships as sharedRecommendScholarships, recommendMentors as sharedRecommendMentors, recommendInstitutes, recommendTalentOpportunities, debugStudentProfile } from "./recommendation-engine.js";
 
 const state = {
     uid: null,
@@ -15,11 +16,17 @@ const state = {
     personalProfile: {},
     academicProfile: {},
     talentProfile: {},
+    academicCategories: {},
+    talentCategories: {},
     discoveryProfile: {},
     pathwayResults: {},
     currentResult: null,
     currentResultId: null,
     courses: {},
+    institutes: {},
+    talentOpportunities: {},
+    artsOpportunities: {},
+    sportsOpportunities: {},
     savedCourses: {},
     scholarships: {},
     savedScholarships: {},
@@ -159,6 +166,35 @@ function getFieldValue(fieldId) {
     return el ? el.value.trim() : "";
 }
 
+const editableProfileFormIds = [
+    "personal-profile-form",
+    "academic-profile-form",
+    "talent-profile-form",
+    "discovery-profile-form",
+    "future-path-form"
+];
+
+function isProfileFormBeingEdited(formId) {
+    const form = document.getElementById(formId);
+    return !!form && (form.dataset.dirty === "true" || form.contains(document.activeElement));
+}
+
+function setProfileFormSaved(formId) {
+    const form = document.getElementById(formId);
+    if (form) form.dataset.dirty = "false";
+}
+
+function protectProfileFormsFromRealtimeReset() {
+    editableProfileFormIds.forEach((formId) => {
+        const form = document.getElementById(formId);
+        if (!form || form.dataset.editGuardReady === "true") return;
+        form.dataset.editGuardReady = "true";
+        const markDirty = () => { form.dataset.dirty = "true"; };
+        form.addEventListener("input", markDirty);
+        form.addEventListener("change", markDirty);
+    });
+}
+
 function getLatestPathwayResult() {
     let latest = {};
     if (state.pathwayResults) {
@@ -244,6 +280,8 @@ function bindStaticActions() {
         const isHidden = panel.classList.toggle("hidden");
         button.textContent = isHidden ? "Expand Details" : "Hide Details";
     });
+
+    protectProfileFormsFromRealtimeReset();
 
     document.getElementById("future-path-form")?.addEventListener("submit", saveFuturePath);
     document.getElementById("personal-profile-form")?.addEventListener("submit", savePersonalProfile);
@@ -417,6 +455,25 @@ function setupRealtime(uid) {
         renderAll();
     });
 
+    onValue(ref(database, "academicCategories"), (snap) => { state.academicCategories = snap.val() || {}; populateStudentCategorySelects(); renderAcademicProfile(); });
+    onValue(ref(database, "talentCategories"), (snap) => { state.talentCategories = snap.val() || {}; populateStudentCategorySelects(); renderTalentProfile(); });
+
+    onValue(ref(database, "institutes"), (snap) => {
+        state.institutes = snap.val() || {};
+        renderExtendedRecommendationsOverview();
+    });
+    onValue(ref(database, "talentOpportunities"), (snap) => {
+        state.talentOpportunities = snap.val() || {};
+        renderExtendedRecommendationsOverview();
+    });
+    onValue(ref(database, "artsOpportunities"), (snap) => {
+        state.artsOpportunities = snap.val() || {};
+        renderExtendedRecommendationsOverview();
+    }, () => {});
+    onValue(ref(database, "sportsOpportunities"), (snap) => {
+        state.sportsOpportunities = snap.val() || {};
+        renderExtendedRecommendationsOverview();
+    }, () => {});
     onValue(ref(database, "courses"), (snap) => {
         state.courses = snap.val() || {};
         renderCourses();
@@ -537,10 +594,14 @@ function checkPathwayPreference() {
 
 document.getElementById("pathway-selection-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const preference = document.querySelector('input[name="pathwayPreference"]:checked')?.value;
+    const preference = e.currentTarget.querySelector('input[name="pathwayPreference"]:checked')?.value;
     if (preference && state.uid) {
         try {
-            await update(ref(database, `students/${state.uid}`), { pathwayPreference: preference });
+            await update(ref(database, `students/${state.uid}`), {
+                pathwayPreference: preference,
+                pathwayPreferenceUpdatedAt: serverTimestamp()
+            });
+            state.student.pathwayPreference = preference;
             document.getElementById("pathway-selection-modal")?.classList.add("hidden");
             showToast("Pathway preference updated successfully.", "success");
         } catch (error) {
@@ -591,6 +652,8 @@ function renderAll() {
     renderTalentProfile();
     renderDiscoveryProfile();
     renderFuturePath();
+    renderFuturePathSummaryState();
+    renderAllProfileSubmissionResults();
     renderPathway();
     renderPathwayHistory();
     renderCourses();
@@ -673,7 +736,6 @@ function renderIdentity() {
     const fullName = state.user.fullName || state.student.fullName || "Student";
     const firstName = fullName.split(" ")[0] || "Student";
     const photoURL = state.user.photoURL || state.student.photoURL || "";
-    const initials = getInitials(fullName);
 
     updateSidebarUser({ fullName, role: "student", photoURL });
     updateDashboardGreetingName(fullName);
@@ -686,10 +748,6 @@ function renderIdentity() {
     setText("welcome-last-updated", formatDate(state.student.pathwayLastUpdatedAt || state.currentResult?.createdAt));
     setText("hero-pathway-name", state.currentResult?.recommendedPathway || "Complete Pathway Finder");
 
-    const avatar = document.getElementById("welcome-avatar");
-    if (avatar) {
-        avatar.innerHTML = photoURL ? `<img src="${escapeAttr(photoURL)}" alt="${escapeAttr(fullName)}">` : `<span>${initials}</span>`;
-    }
 }
 
 function renderWelcome() {
@@ -922,17 +980,17 @@ function compareResult(resultId) {
 function renderCourses() {
     const container = document.getElementById("courses-list");
     if (!container) return;
-    if (!state.currentResult) {
+    if (!hasStudentRecommendationContext()) {
         container.innerHTML = emptyState("fa-route", "Complete Pathway Finder first to see course recommendations.", "Start Pathway Finder", "pathway.html?mode=first-time");
         return;
     }
-    const active = Object.entries(state.courses || {}).filter(([, course]) => normalize(course.status) === "active");
+    const active = Object.entries(state.courses || {});
     if (!active.length) {
         container.innerHTML = emptyBlock("No active courses available yet.");
         return;
     }
 
-    const allMatches = active.map(([id, course]) => ({ ...courseMatch(id, course), raw: course }));
+    const allMatches = sharedRecommendCourses(buildSharedStudentRecommendationProfile(), state.courses).map((course) => ({ ...course, raw: state.courses[course.courseId] || course }));
     const strong = allMatches.filter((course) => course.matchScore >= 40);
     const source = strong.length >= 3 ? strong : allMatches.map((course) => ({ ...course, matchLevel: course.matchScore >= 40 ? course.matchLevel : "Alternative Option" }));
     const visible = applyCourseFilters(source);
@@ -972,7 +1030,7 @@ function renderSavedCourses() {
                 <div class="list-thumb"><img src="${escapeAttr(getCourseImage(course))}" alt="${escapeAttr(course.courseName || course.name || "Saved course image")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/course-placeholder.png';"></div>
                 <div class="list-content">
                     <h4>${escapeHtml(course.courseName || course.name || "Saved Course")}</h4>
-                    <p>${escapeHtml(course.instituteName || course.institute || "Institute")} • Saved ${formatDate(savedData.savedAt)}</p>
+                    <p>${escapeHtml(course.instituteName || course.institute || "Institute")} Ã¢â‚¬Â¢ Saved ${formatDate(savedData.savedAt)}</p>
                     <span class="badge badge-primary">${escapeHtml(savedData.matchScore ?? "--")}% match</span>
                     ${savedData.applyStatus ? `<span class="badge badge-cyan">${escapeHtml(savedData.applyStatus)}</span>` : ""}
                 </div>
@@ -1040,11 +1098,11 @@ async function saveCourse(courseId, matchScore) {
 function renderScholarships() {
     const container = document.getElementById("scholarships-list");
     if (!container) return;
-    if (!state.currentResult) {
+    if (!hasStudentRecommendationContext()) {
         container.innerHTML = emptyState("fa-route", "Complete Pathway Finder first to see scholarship recommendations.", "Start Pathway Finder", "pathway.html?mode=first-time");
         return;
     }
-    const active = Object.entries(state.scholarships || {}).filter(([, item]) => normalize(item.status) === "active");
+    const active = Object.entries(state.scholarships || {});
     const supportBadge = document.getElementById("scholarship-support-badge");
     if (supportBadge) supportBadge.classList.toggle("hidden", !needsFinancialHelp());
 
@@ -1053,7 +1111,7 @@ function renderScholarships() {
         return;
     }
 
-    const allMatches = active.map(([id, item]) => ({ ...scholarshipMatch(id, item), raw: item }));
+    const allMatches = sharedRecommendScholarships(buildSharedStudentRecommendationProfile(), state.scholarships).map((item) => ({ ...item, raw: state.scholarships[item.scholarshipId] || item }));
     const source = allMatches.filter((item) => item.matchScore >= 40);
     const visible = applyScholarshipFilters(source.length ? source : allMatches);
     const best = Math.max(0, ...allMatches.map((item) => item.matchScore));
@@ -1141,7 +1199,7 @@ async function saveScholarship(id, matchScore) {
 function renderMentors() {
     const container = document.getElementById("mentors-list");
     if (!container) return;
-    if (!state.currentResult) {
+    if (!hasStudentRecommendationContext()) {
         container.innerHTML = emptyState("fa-route", "Complete Pathway Finder first to see suitable mentors.", "Start Pathway Finder", "pathway.html?mode=first-time");
         return;
     }
@@ -1151,13 +1209,13 @@ function renderMentors() {
         return;
     }
 
-    const allMatches = approved.map(([id, mentor]) => ({ ...mentorMatch(id, mentor), raw: mentor }));
+    const allMatches = sharedRecommendMentors(buildSharedStudentRecommendationProfile(), Object.fromEntries(approved), state.uid).map((mentor) => ({ ...mentor, raw: state.mentors[mentor.mentorUid] || mentor }));
     const source = allMatches.filter((mentor) => mentor.matchScore >= 40);
-    const visible = applyMentorFilters(source.length ? source : allMatches);
+    const visible = applyMentorFilters(source);
     const best = Math.max(0, ...allMatches.map((mentor) => mentor.matchScore));
 
     container.innerHTML = `
-        ${recommendationSummary("Mentors", `${source.length || allMatches.length} approved mentors match your pathway. Best match: ${best}%.`)}
+        ${recommendationSummary("Mentors", `${source.length} approved mentors match your interests. Best match: ${best}%.`)}
         ${mentorFilterBar(allMatches)}
         ${filterChips("mentors")}
         <div class="cards-grid recommendation-results">
@@ -1168,9 +1226,6 @@ function renderMentors() {
     container.querySelectorAll("[data-mentor-uid]").forEach((button) => {
         if (button.disabled) return;
         button.addEventListener("click", () => requestMentor(button.dataset.mentorUid));
-    });
-    container.querySelectorAll("[data-view-mentor-detail]").forEach((button) => {
-        button.addEventListener("click", () => openRecommendationDetail("Mentor Profile", mentorDetailHtml(button.dataset.viewMentorDetail)));
     });
     bindRecommendationFilters(container, "mentors");
 }
@@ -1184,14 +1239,14 @@ function buildStudentRecommendationProfile() {
     const student = state.student || {};
 
     return {
-        currentEducationLevel: result.basicProfile?.currentEducationLevel || result.educationLevel || academic.educationLevel || student.educationLevel,
-        educationLevel: result.educationLevel || result.basicProfile?.currentEducationLevel || academic.educationLevel || student.educationLevel,
-        alStream: result.academicBackground?.alStream || result.examStream || academic.examStream,
+        currentEducationLevel: result.basicProfile?.currentEducationLevel || result.educationLevel || academic.currentEducationLevel || academic.educationLevel || student.educationLevel,
+        educationLevel: result.educationLevel || result.basicProfile?.currentEducationLevel || academic.currentEducationLevel || academic.educationLevel || student.educationLevel,
+        alStream: result.academicBackground?.alStream || result.examStream || academic.alStream || academic.examStream,
         olStatus: result.academicBackground?.olStatus,
         alStatus: result.academicBackground?.alStatus,
-        interestAreas: result.interests?.interestAreas || arrayValue(result.interestArea || academic.subjectInterests || student.interestArea),
+        interestAreas: result.interests?.interestAreas || arrayValue(result.interestArea || academic.preferredFields || academic.subjectInterests || talent.primaryTalentCategory || talent.specificTalent || student.interestArea),
         enjoyableWorkTypes: result.interests?.enjoyableWorkTypes || [],
-        skills: result.skillsAndStrengths?.skills || arrayValue(result.skills || talent.specificSkill || student.skills),
+        skills: result.skillsAndStrengths?.skills || arrayValue(result.skills || talent.specificTalent || talent.specificSkill || talent.preferredTrainingModes || student.skills),
         strengths: result.skillsAndStrengths?.strengths || [],
         futurePreference: result.goals?.futurePreference || [],
         dreamCareer: result.goals?.dreamCareer || result.futureGoal || discovery.preferredRoles || student.futureGoal,
@@ -1212,161 +1267,15 @@ function buildStudentRecommendationProfile() {
 }
 
 function courseMatch(id, course) {
-    const profile = buildStudentRecommendationProfile();
-    const reasons = [];
-    const missing = [];
-    const fields = [];
-    let score = 0;
-    if (profile.isTalentOnly) {
-        addScore(includesAny([course.category, course.subcategory, course.description, course.skillsCovered, course.careerOpportunities], [...profile.interestAreas, profile.recommendedPathway]), 35, "Matches your interest/pathway", "category");
-        addScore(includesAny([course.careerOpportunities, course.description, course.category], [profile.dreamCareer, ...profile.futurePreference]), 20, "Aligns with your future goal", "career");
-        addScore(includesAny([course.skillsCovered, course.description], [...profile.skills, ...profile.strengths]), 25, "Covers your selected skills", "skills");
-        addScore(modeMatches(profile.learningMode, course.mode || course.learningMode), 10, "Matches your learning mode", "mode");
-        addScore(locationMatches([profile.district, ...profile.preferredDistricts], course.district || course.location || course.mode), 10, "Fits your location preference", "district");
-    } else {
-        addScore(includesAny([course.category, course.subcategory, course.description, course.skillsCovered, course.careerOpportunities], [...profile.interestAreas, profile.recommendedPathway]), 25, "Matches your interest/pathway", "category");
-        addScore(educationMatches(profile.currentEducationLevel, course), 20, `Suitable for ${profile.currentEducationLevel || "your education level"}`, "education");
-        addScore(includesAny([course.careerOpportunities, course.description, course.category], [profile.dreamCareer, ...profile.futurePreference]), 15, "Aligns with your future goal", "career");
-        addScore(includesAny([course.skillsCovered, course.description], [...profile.skills, ...profile.strengths]), 10, "Covers your selected skills", "skills");
-        addScore(modeMatches(profile.learningMode, course.mode || course.learningMode), 10, "Matches your learning mode", "mode");
-        addScore(locationMatches([profile.district, ...profile.preferredDistricts], course.district || course.location || course.mode), 10, "Fits your location preference", "district");
-        addScore(budgetMatches(profile, course), 10, "Fits your budget preference", "budget");
-    }
-    if (!hasValue(course.qualificationLevel) && !hasValue(course.eligibility)) missing.push("Check entry requirements with institute");
-    if (!hasValue(course.applicationDeadline)) missing.push("Verify application deadline");
-    const matchScore = Math.min(score, 100);
-    return {
-        courseId: id,
-        courseName: course.courseName || course.name || "Untitled Course",
-        instituteName: course.instituteName || course.institute || "Institute not specified",
-        category: course.category || "N/A",
-        subcategory: course.subcategory || "",
-        duration: course.duration || "N/A",
-        mode: course.mode || course.learningMode || "N/A",
-        feeType: course.feeType || "N/A",
-        feeAmount: course.feeAmount || "",
-        district: course.district || "N/A",
-        qualificationLevel: course.qualificationLevel || course.educationLevel || "N/A",
-        eligibility: course.eligibility || "N/A",
-        applicationDeadline: course.applicationDeadline || course.deadline || "",
-        applyLink: course.applyLink || "",
-        imageURL: course.imageURL || "",
-        description: course.description || "",
-        matchScore,
-        matchLevel: getMatchLevel(matchScore),
-        matchReasons: reasons.length ? reasons : ["Useful alternative based on your pathway."],
-        missingRequirements: missing,
-        matchedFields: fields,
-        isBestMatch: false,
-        createdAt: course.createdAt || course.updatedAt || ""
-    };
-
-    function addScore(condition, points, reason, field) {
-        if (condition) {
-            score += points;
-            reasons.push(reason);
-            fields.push(field);
-        }
-    }
+    return scoreCourseRecommendation(buildSharedStudentRecommendationProfile(), course, id);
 }
 
 function scholarshipMatch(id, item) {
-    const profile = buildStudentRecommendationProfile();
-    const reasons = [];
-    const warnings = [];
-    let score = 0;
-    addScore(needsFinancialHelp() || textIncludesAny(`${item.supportType} ${item.description} ${item.eligibility}`, ["bursary", "financial aid", "scholarship", "free", "monthly support", "tuition support"]), 30, "Matches your financial support need");
-    
-    if (profile.isTalentOnly) {
-        addScore(includesAny([item.category, item.description], [...profile.interestAreas, profile.recommendedPathway]), 25, "Category matches your pathway");
-        addScore(includesAny([item.qualificationLevel, item.eligibility], [...profile.skills, ...profile.strengths, "Talent", "Skill", "Sports", "Arts"]), 25, "Eligibility matches your skills");
-    } else {
-        addScore(includesAny([item.educationLevel, item.qualificationLevel, item.eligibility], [profile.currentEducationLevel]), 25, "Suitable for your education level");
-        addScore(includesAny([item.qualificationLevel, item.eligibility], [profile.currentEducationLevel, profile.alStream, profile.olStatus, profile.alStatus, "O/L", "A/L", "Diploma", "Undergraduate", "Vocational"]), 15, "Eligibility matches your background");
-        addScore(includesAny([item.category, item.description], [...profile.interestAreas, profile.recommendedPathway]), 10, "Category matches your pathway");
-    }
-    
-    addScore(locationMatches([profile.district, ...profile.preferredDistricts], item.district || item.coverage), 15, "Available in your district or islandwide");
-    const deadlineState = deadlineStatus(item.deadline);
-    addScore(deadlineState.active, 5, "Deadline appears active");
-    if (deadlineState.warning) warnings.push(deadlineState.warning);
-    if (!hasValue(item.amountBenefit || item.amount || item.benefit)) warnings.push("Amount may change by official notice.");
-    const matchScore = Math.min(score, 100);
-    return {
-        scholarshipId: id,
-        scholarshipName: item.scholarshipName || item.name || "Scholarship",
-        provider: item.provider || "Provider not specified",
-        providerType: item.providerType || "",
-        category: item.category || "N/A",
-        supportType: item.supportType || "N/A",
-        amountBenefit: item.amountBenefit || item.amount || item.benefit || "N/A",
-        district: item.district || item.coverage || "Islandwide / Check notice",
-        qualificationLevel: item.qualificationLevel || item.educationLevel || "N/A",
-        eligibility: item.eligibility || "Confirm from provider",
-        deadline: item.deadline || "",
-        applyLink: item.applyLink || "",
-        imageURL: item.imageURL || "",
-        description: item.description || "",
-        matchScore,
-        matchLevel: getMatchLevel(matchScore),
-        matchReasons: reasons.length ? reasons : ["Review eligibility and provider details."],
-        warningNotes: warnings.length ? warnings : ["Eligibility must be confirmed from provider."]
-    };
-
-    function addScore(condition, points, reason) {
-        if (condition) {
-            score += points;
-            reasons.push(reason);
-        }
-    }
+    return scoreScholarshipRecommendation(buildSharedStudentRecommendationProfile(), item, id);
 }
 
 function mentorMatch(uid, mentor) {
-    const profile = buildStudentRecommendationProfile();
-    const reasons = [];
-    let score = 0;
-    if (profile.isTalentOnly) {
-        addScore(includesAny([mentor.field, mentor.expertise, mentor.mentoringField, mentor.shortBio, mentor.bio], [...profile.interestAreas, profile.recommendedPathway, profile.dreamCareer, ...profile.skills]), 35, "Mentor expertise matches your pathway");
-        addScore(includesAny(mentor.guidanceAreas, [...profile.supportNeeded, ...profile.biggestChallenge, ...profile.futurePreference, ...profile.skills]), 30, "Guidance area fits your current need");
-        addScore(includesAny(mentor.languages || mentor.language || mentor.preferredLanguage || mentor.preferredLanguages, [profile.preferredLanguage]), 10, "Language preference match");
-    } else {
-        addScore(includesAny([mentor.field, mentor.expertise, mentor.mentoringField, mentor.shortBio, mentor.bio], [...profile.interestAreas, profile.recommendedPathway, profile.dreamCareer]), 30, "Mentor expertise matches your pathway");
-        addScore(includesAny(mentor.guidanceAreas, [...profile.supportNeeded, ...profile.biggestChallenge, ...profile.futurePreference]), 20, "Guidance area fits your current need");
-        addScore(includesAny(mentor.supportedStudentLevels || mentor.studentLevelsSupported, [profile.currentEducationLevel]), 15, "Supports your education level");
-        addScore(includesAny(mentor.languages || mentor.language || mentor.preferredLanguage || mentor.preferredLanguages, [profile.preferredLanguage]), 10, "Language preference match");
-    }
-    addScore(availabilityMatches(profile.timeAvailability, mentor), 10, "Availability matches your schedule");
-    addScore(modeMatches(profile.learningMode, mentor.mentoringMode || mentor.availability), 10, "Mentoring mode match");
-    addScore(hasValue(mentor.yearsOfExperience || mentor.experience) || hasValue(mentor.organization || mentor.universityOrCompany) || hasValue(mentor.highestQualification) || hasValue(mentor.shortBio || mentor.bio) || hasValue(mentor.photoURL), 5, "Strong mentor profile");
-    const matchScore = Math.min(score, 100);
-    return {
-        mentorUid: uid,
-        mentorName: mentor.fullName || "Mentor",
-        mentorField: mentor.field || mentor.expertise || mentor.mentoringField || "N/A",
-        mentorType: mentor.mentorType || "Mentor",
-        currentRole: mentor.currentRole || "",
-        organization: mentor.organization || mentor.universityOrCompany || "",
-        yearsOfExperience: mentor.yearsOfExperience || mentor.experience || "",
-        languages: mentor.languages || mentor.language || mentor.preferredLanguage || "",
-        guidanceAreas: mentor.guidanceAreas || "",
-        mentoringMode: mentor.mentoringMode || "N/A",
-        availabilityStatus: mentor.availabilityStatus || mentor.availability || "N/A",
-        availableDays: mentor.availableDays || "",
-        availableTime: mentor.availableTime || "",
-        shortBio: mentor.shortBio || mentor.bio || "",
-        photoURL: mentor.photoURL || "",
-        matchScore,
-        matchLevel: mentorAvailabilityLevel(matchScore, mentor),
-        matchReasons: reasons.length ? reasons : ["Approved mentor available for guidance."],
-        availabilityNote: mentor.availableTime || mentor.availableDays || mentor.availabilityStatus || "Check availability"
-    };
-
-    function addScore(condition, points, reason) {
-        if (condition) {
-            score += points;
-            reasons.push(reason);
-        }
-    }
+    return scoreMentorRecommendation(buildSharedStudentRecommendationProfile(), mentor, uid);
 }
 
 function isApprovedActiveMentor(mentor = {}) {
@@ -1538,7 +1447,7 @@ function courseCard(course) {
                 <img src="${escapeAttr(getCourseImage(course))}" alt="${escapeAttr(course.courseName || "Course image")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/course-placeholder.png';">
                 <span class="course-card-category">${escapeHtml(course.category || "Course")}</span>
             </div>
-            <span class="badge ${course.matchScore >= 75 ? "badge-success" : "badge-primary"}">${course.matchScore}% • ${escapeHtml(course.matchLevel)}</span>
+            <span class="badge ${course.matchScore >= 75 ? "badge-success" : "badge-primary"}">${course.matchScore}% Ã¢â‚¬Â¢ ${escapeHtml(course.matchLevel)}</span>
             <h4>${escapeHtml(course.courseName)}</h4>
             <p class="institute"><i class="fas fa-university"></i> ${escapeHtml(course.instituteName)}</p>
             <div class="detail-list">
@@ -1550,7 +1459,7 @@ function courseCard(course) {
                 ${mini("Qualification", course.qualificationLevel)}
             </div>
             <div class="why-matched"><strong>Why matched</strong><div class="tag-list">${tags(course.matchReasons)}</div></div>
-            ${course.missingRequirements?.length ? `<p class="text-sm text-muted">${escapeHtml(course.missingRequirements.join(" • "))}</p>` : ""}
+            ${course.missingRequirements?.length ? `<p class="text-sm text-muted">${escapeHtml(course.missingRequirements.join(" Ã¢â‚¬Â¢ "))}</p>` : ""}
             <div class="card-actions">
                 <button class="btn btn-outline btn-sm" data-view-course-detail="${escapeAttr(course.courseId)}">View Details</button>
                 <button class="btn btn-primary btn-sm" data-save-course="${escapeAttr(course.courseId)}" data-score="${course.matchScore}">Save Course</button>
@@ -1567,8 +1476,9 @@ function scholarshipCard(item) {
                 <img src="${escapeAttr(getScholarshipImage(item))}" alt="${escapeAttr(item.scholarshipName || "Scholarship image")}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='images/scholarship-placeholder.png';">
             </div>
             <div class="list-content">
-                <h4>${escapeHtml(item.scholarshipName)} <span class="badge ${item.matchScore >= 75 ? "badge-success" : "badge-primary"}">${item.matchScore}% • ${escapeHtml(item.matchLevel)}</span></h4>
-                <p>${escapeHtml(item.provider)} • Deadline ${escapeHtml(item.deadline || "Check official notice")}</p>
+                <h4>${escapeHtml(item.scholarshipName)} <span class="badge ${item.matchScore >= 75 ? "badge-success" : "badge-primary"}">${item.matchScore}% Ã¢â‚¬Â¢ ${escapeHtml(item.matchLevel)}</span></h4>
+                <p><span class="badge ${item.eligibilityStatus === "eligible" ? "badge-success" : "badge-warning"}">${escapeHtml(formatStatus(item.eligibilityStatus || "more_information_needed"))}</span></p>
+                <p>${escapeHtml(item.provider)} Ã¢â‚¬Â¢ Deadline ${escapeHtml(item.deadline || "Check official notice")}</p>
                 <div class="detail-list compact">
                     ${mini("Support", item.supportType)}
                     ${mini("Benefit", item.amountBenefit)}
@@ -1576,7 +1486,7 @@ function scholarshipCard(item) {
                     ${mini("District", item.district)}
                 </div>
                 <div class="why-matched"><strong>Why matched</strong><div class="tag-list">${tags(item.matchReasons)}</div></div>
-                ${item.warningNotes?.length ? `<p class="text-sm text-muted">${escapeHtml(item.warningNotes.join(" • "))}</p>` : ""}
+                ${item.warningNotes?.length ? `<p class="text-sm text-muted">${escapeHtml(item.warningNotes.join(" Ã¢â‚¬Â¢ "))}</p>` : ""}
             </div>
             <button class="btn btn-outline btn-sm" data-view-scholarship-detail="${escapeAttr(item.scholarshipId)}">View Details</button>
             <button class="btn btn-outline btn-sm" data-save-scholarship="${escapeAttr(item.scholarshipId)}" data-score="${item.matchScore}">Save Scholarship</button>
@@ -1593,7 +1503,7 @@ function mentorCard(mentor) {
                 ${mentor.photoURL ? `<img class="avatar-sm" src="${escapeAttr(mentor.photoURL)}" alt="">` : `<div class="avatar-sm avatar-fallback">${getInitials(mentor.mentorName)}</div>`}
                 <div>
                     <h4>${escapeHtml(mentor.mentorName)}</h4>
-                    <span class="badge badge-purple">${escapeHtml(mentor.matchLevel)} • ${mentor.matchScore}%</span>
+                    <span class="badge badge-purple">${escapeHtml(mentor.matchLevel)} - ${mentor.matchScore}%</span>
                 </div>
             </div>
             <div class="detail-list">
@@ -1606,7 +1516,7 @@ function mentorCard(mentor) {
             </div>
             <div class="why-matched"><strong>Why matched</strong><div class="tag-list">${tags(mentor.matchReasons)}</div></div>
             <div class="card-actions">
-                <button class="btn btn-outline btn-sm" data-view-mentor-detail="${escapeAttr(mentor.mentorUid)}">View Profile</button>
+                <a class="btn btn-outline btn-sm" href="mentor-profile.html?uid=${encodeURIComponent(mentor.mentorUid)}">View Profile</a>
                 <button class="btn btn-primary btn-sm req-mentor-btn" data-mentor-uid="${escapeAttr(mentor.mentorUid)}" ${status.disabled ? "disabled" : ""}>${escapeHtml(status.label)}</button>
             </div>
         </article>
@@ -1646,9 +1556,10 @@ function scheduleRecommendationSave() {
 
 async function saveCurrentRecommendations() {
     if (!state.uid || !state.currentResultId || !state.currentResult) return;
-    const courses = Object.entries(state.courses || {}).filter(([, item]) => normalize(item.status) === "active").map(([id, item]) => courseMatch(id, item)).sort((a, b) => b.matchScore - a.matchScore).slice(0, 10);
-    const scholarships = Object.entries(state.scholarships || {}).filter(([, item]) => normalize(item.status) === "active").map(([id, item]) => scholarshipMatch(id, item)).sort((a, b) => b.matchScore - a.matchScore).slice(0, 8);
-    const mentors = Object.entries(state.mentors || {}).filter(([, item]) => isApprovedActiveMentor(item)).map(([id, item]) => mentorMatch(id, item)).sort((a, b) => b.matchScore - a.matchScore).slice(0, 8);
+    const profile = buildSharedStudentRecommendationProfile();
+    const courses = sharedRecommendCourses(profile, state.courses).slice(0, 10);
+    const scholarships = sharedRecommendScholarships(profile, state.scholarships).slice(0, 8);
+    const mentors = sharedRecommendMentors(profile, state.mentors, state.uid).slice(0, 8);
     const nextSignature = recommendationSignature(courses, scholarships, mentors);
     const currentSignature = recommendationSignature(state.currentResult.courseMatches || [], state.currentResult.scholarshipMatches || [], state.currentResult.mentorMatches || []);
     if (nextSignature === currentSignature) return;
@@ -2017,11 +1928,11 @@ function renderMentorRequests() {
                 ${mentor.photoURL ? `<img class="avatar-sm" src="${escapeAttr(mentor.photoURL)}" alt="">` : `<div class="list-icon bg-purple"><i class="fas fa-user-tie"></i></div>`}
                 <div class="list-content">
                     <h4>${escapeHtml(request.mentorName || mentor.fullName || "Mentor")}</h4>
-                    <p>${escapeHtml(request.mentorField || mentor.field || "Field not specified")} • ${formatDate(request.createdAt)}</p>
+                    <p>${escapeHtml(request.mentorField || mentor.field || "Field not specified")} Ã¢â‚¬Â¢ ${formatDate(request.createdAt)}</p>
                     <span class="badge badge-primary">${escapeHtml(request.status || "pending")}</span>
                     <p>${escapeHtml(request.message || "")}</p>
                 </div>
-                ${mentor.uid || request.mentorUid ? `<a class="btn btn-outline btn-sm" href="mentors.html?mentor=${encodeURIComponent(request.mentorUid || "")}">View Mentor</a>` : ""}
+                ${mentor.uid || request.mentorUid ? `<a class="btn btn-outline btn-sm" href="mentor-profile.html?uid=${encodeURIComponent(request.mentorUid || "")}">View Mentor</a>` : ""}
                 ${mentorRequestAction(id, request)}
             </article>
         `;
@@ -2063,7 +1974,7 @@ function renderConnectedMentors() {
                     ${connection.mentorPhotoURL || mentor.photoURL ? `<img class="avatar-sm" src="${escapeAttr(connection.mentorPhotoURL || mentor.photoURL)}" alt="">` : `<div class="avatar-sm avatar-fallback">${getInitials(name)}</div>`}
                     <div>
                         <h4>${escapeHtml(name)}</h4>
-                        <span class="badge badge-success">Connected${unread ? ` • ${unread} new` : ""}</span>
+                        <span class="badge badge-success">Connected${unread ? ` Ã¢â‚¬Â¢ ${unread} new` : ""}</span>
                     </div>
                 </div>
                 <div class="detail-list">
@@ -2076,7 +1987,7 @@ function renderConnectedMentors() {
                 <div class="card-actions">
                     <button class="btn btn-primary btn-sm" data-message-mentor="${escapeAttr(mentorUid)}">Message Mentor</button>
                     <button class="btn btn-secondary btn-sm" data-book-session="${escapeAttr(mentorUid)}">Book Session</button>
-                    <a class="btn btn-outline btn-sm" href="mentors.html?mentor=${encodeURIComponent(mentorUid)}">View Profile</a>
+                    <a class="btn btn-outline btn-sm" href="mentor-profile.html?uid=${encodeURIComponent(mentorUid)}">View Profile</a>
                 </div>
             </article>
         `;
@@ -2174,7 +2085,7 @@ function renderMentorSessionHero(connected = []) {
         <div class="session-mentor-head">
             ${connection.mentorPhotoURL || mentor.photoURL ? `<img src="${escapeAttr(connection.mentorPhotoURL || mentor.photoURL)}" alt="${escapeAttr(name)}">` : `<div class="mentor-photo"><i class="fas fa-user-tie"></i></div>`}
             <div><span>Your Mentor</span><strong>${escapeHtml(name)}</strong><small>${escapeHtml(connection.mentorField || mentor.field || mentor.mentoringField || "Mentor guidance")}</small></div>
-            <a class="btn btn-outline btn-sm" href="mentors.html?mentor=${encodeURIComponent(mentorUid)}">View Profile</a>
+            <a class="btn btn-outline btn-sm" href="mentor-profile.html?uid=${encodeURIComponent(mentorUid)}">View Profile</a>
         </div>
         <div class="session-mentor-meta">
             <span><i class="far fa-clock"></i><strong>60 min</strong><small>Session Duration</small></span>
@@ -2304,7 +2215,7 @@ async function openRatingModal(appointmentId) {
     modal.querySelector("#rating-mentor-photo").src = appointment.mentorPhotoURL || mentor.photoURL || "images/default-mentor-avatar.png";
     modal.querySelector("#rating-mentor-name").textContent = appointment.mentorName || mentor.fullName || "Mentor";
     modal.querySelector("#rating-mentor-field").textContent = mentor.field || mentor.mentoringField || "Mentor guidance";
-    modal.querySelector("#rating-session-meta").textContent = `${formatDate(appointment.date)} • ${appointment.topic || "Mentor Session"} • ${formatTimeLabel(appointment.startTime)} - ${formatTimeLabel(appointment.endTime)}`;
+    modal.querySelector("#rating-session-meta").textContent = `${formatDate(appointment.date)} Ã¢â‚¬Â¢ ${appointment.topic || "Mentor Session"} Ã¢â‚¬Â¢ ${formatTimeLabel(appointment.startTime)} - ${formatTimeLabel(appointment.endTime)}`;
     modal.querySelector("form").reset();
     modal.querySelector("#rating-review-counter").textContent = "0/1000";
     modal.querySelector("#rating-inline-error").textContent = "";
@@ -2385,7 +2296,7 @@ function starField(name, legend, required = false) {
             <div class="star-rating" role="radiogroup" aria-label="${escapeAttr(legend)}">
                 ${[5, 4, 3, 2, 1].map((value) => `
                     <input type="radio" id="${name}-${value}" name="${name}" value="${value}">
-                    <label for="${name}-${value}" aria-label="${value} stars">★</label>
+                    <label for="${name}-${value}" aria-label="${value} stars">Ã¢Ëœâ€¦</label>
                 `).join("")}
             </div>
             <small id="${name}-error" class="field-error" aria-live="polite"></small>
@@ -3451,11 +3362,13 @@ function renderStudentOverview() {
     renderJourneyProgress();
     renderFocusToday();
     renderBestMatchesOverview();
+    renderExtendedRecommendationsOverview();
     renderSkillGrowthOverview();
     renderConnectedMentorOverview();
     renderUpcomingCalendarOverview();
     renderAchievementsOverview();
     renderKeepGrowingOverview();
+    renderPathAdaptiveDashboard();
     bindJumpButtons();
     observeRevealCards();
 }
@@ -3646,18 +3559,18 @@ function getProfileCompletionPercentage() {
 }
 
 function getBestCourseMatch() {
-    if (!state.currentResult) return null;
-    return Object.entries(state.courses || {}).filter(([, course]) => normalize(course.status) === "active").map(([id, course]) => courseMatch(id, course)).sort((a, b) => b.matchScore - a.matchScore)[0] || null;
+    if (!hasStudentRecommendationContext()) return null;
+    return sharedRecommendCourses(buildSharedStudentRecommendationProfile(), state.courses)[0] || null;
 }
 
 function getBestScholarshipMatch() {
-    if (!state.currentResult) return null;
-    return Object.entries(state.scholarships || {}).filter(([, item]) => normalize(item.status) === "active").map(([id, item]) => scholarshipMatch(id, item)).sort((a, b) => b.matchScore - a.matchScore)[0] || null;
+    if (!hasStudentRecommendationContext()) return null;
+    return sharedRecommendScholarships(buildSharedStudentRecommendationProfile(), state.scholarships)[0] || null;
 }
 
 function getBestMentorMatch() {
-    if (!state.currentResult) return null;
-    return Object.entries(state.mentors || {}).filter(([, mentor]) => isApprovedActiveMentor(mentor)).map(([uid, mentor]) => mentorMatch(uid, mentor)).sort((a, b) => b.matchScore - a.matchScore)[0] || null;
+    if (!hasStudentRecommendationContext()) return null;
+    return sharedRecommendMentors(buildSharedStudentRecommendationProfile(), state.mentors, state.uid)[0] || null;
 }
 
 function overviewCourseCard(course) {
@@ -3669,7 +3582,8 @@ function overviewCourseCard(course) {
 function overviewScholarshipCard(item) {
     if (!item) return "";
     const saved = !!state.savedScholarships?.[item.scholarshipId];
-    return `<article class="overview-match-card scholarship"><div class="match-media"><i class="fas fa-graduation-cap"></i><span>${item.matchScore}% Match</span></div><small>Scholarship</small><h4>${escapeHtml(item.scholarshipName)}</h4><p>${escapeHtml(item.provider)}</p><div class="match-meta"><span>${escapeHtml(item.deadline || "Verify deadline")}</span></div><button class="btn btn-outline btn-sm" data-overview-save-scholarship="${escapeAttr(item.scholarshipId)}" data-score="${item.matchScore}" ${saved ? "disabled" : ""}>${saved ? "Saved" : "Save"}</button></article>`;
+    return `<article class="overview-match-card scholarship"><div class="match-media"><i class="fas fa-graduation-cap"></i><span>${item.matchScore}% Match</span></div><small>Scholarship</small><h4>${escapeHtml(item.scholarshipName)}</h4><p><span class="badge ${item.eligibilityStatus === "eligible" ? "badge-success" : "badge-warning"}">${escapeHtml(formatStatus(item.eligibilityStatus || "more_information_needed"))}</span></p>
+                <p>${escapeHtml(item.provider)}</p><div class="match-meta"><span>${escapeHtml(item.deadline || "Verify deadline")}</span></div><button class="btn btn-outline btn-sm" data-overview-save-scholarship="${escapeAttr(item.scholarshipId)}" data-score="${item.matchScore}" ${saved ? "disabled" : ""}>${saved ? "Saved" : "Save"}</button></article>`;
 }
 
 function overviewMentorCard(mentor) {
@@ -4045,6 +3959,7 @@ function buildPersonalProfileForDisplay() {
 }
 
 function renderPersonalProfile() {
+    if (isProfileFormBeingEdited("personal-profile-form")) return;
     const data = buildPersonalProfileForDisplay();
     
     document.getElementById("personal-avatar-preview").src = data.photoURL || "images/default-avatar.png";
@@ -4102,28 +4017,41 @@ async function savePersonalProfile(e) {
         const updates = {};
         updates[`studentProfiles/${state.uid}/personal`] = data;
         
-        // Also update core nodes to ensure sync
-        const studentUpdates = { fullName: data.fullName, phone: data.phone, district: data.district, bio: data.bio };
-        if (data.displayName) studentUpdates.displayName = data.displayName;
-        updates[`students/${state.uid}`] = studentUpdates;
-        
-        updates[`users/${state.uid}`] = { fullName: data.fullName, phone: data.phone };
-        if (data.displayName) updates[`users/${state.uid}`].displayName = data.displayName;
+        // Sync individual core fields without replacing the student's existing account data.
+        updates[`students/${state.uid}/fullName`] = data.fullName;
+        updates[`students/${state.uid}/phone`] = data.phone;
+        updates[`students/${state.uid}/district`] = data.district;
+        updates[`students/${state.uid}/bio`] = data.bio;
+        updates[`users/${state.uid}/fullName`] = data.fullName;
+        updates[`users/${state.uid}/phone`] = data.phone;
+        if (data.displayName) {
+            updates[`students/${state.uid}/displayName`] = data.displayName;
+            updates[`users/${state.uid}/displayName`] = data.displayName;
+        }
         
         await update(ref(database), updates);
         
+        setProfileFormSaved("personal-profile-form");
+        document.getElementById("personal-profile-section")?.removeAttribute("data-editing-profile");
+        renderAllProfileSubmissionResults();
         showToast("Personal Profile saved successfully.", "success");
     } catch (err) {
         showToast("Failed to save personal profile.", "error");
     }
 }
 
+function populateStudentCategorySelects() {
+    const fill = (id, records, placeholder) => { const select=document.getElementById(id);if(!select)return;const old=select.value;select.innerHTML=`<option value="">${placeholder}</option>`+Object.entries(records||{}).filter(([,c])=>String(c.status||"active").toLowerCase()==="active"&&c.publicVisibility!==false&&(id.includes("Talent")?c.showInTalentProfile!==false:true)).sort(([,a],[,b])=>(Number(a.sortOrder)||100)-(Number(b.sortOrder)||100)).map(([key,c])=>`<option value="${escapeAttr(c.categoryId||key)}">${escapeHtml(c.title||c.name||key)}</option>`).join("");select.value=old; };
+    fill("field-academic-academicCategoryId",state.academicCategories,"Select Academic Category");
+    fill("field-talent-primaryTalentCategory",state.talentCategories,"Select Talent Category");
+}
 function buildAcademicProfileForDisplay() {
     const profile = state.academicProfile || {};
     const pathway = getLatestPathwayResult();
     const fallback = state.student || {};
 
     return {
+        academicCategoryId: getFirstNonEmpty(profile.academicCategoryId, fallback.academicCategoryId, pathway.academicCategoryId),
         currentEducationLevel: getFirstNonEmpty(profile.currentEducationLevel, profile.educationLevel, fallback.educationLevel, pathway.educationLevel),
         highestCompletedEducation: getFirstNonEmpty(profile.highestCompletedEducation, pathway.highestCompletedEducation),
         currentInstitution: getFirstNonEmpty(profile.currentInstitution, profile.school, fallback.school, pathway.school),
@@ -4163,8 +4091,11 @@ function buildAcademicProfileForDisplay() {
 }
 
 function renderAcademicProfile() {
+    if (isProfileFormBeingEdited("academic-profile-form")) return;
     const data = buildAcademicProfileForDisplay();
     
+    populateStudentCategorySelects();
+    setFieldValue("field-academic-academicCategoryId", data.academicCategoryId);
     setFieldValue("field-academic-currentEducationLevel", data.currentEducationLevel);
     setFieldValue("field-academic-highestCompletedEducation", data.highestCompletedEducation);
     setFieldValue("field-academic-currentInstitution", data.currentInstitution);
@@ -4207,6 +4138,8 @@ async function saveAcademicProfile(e) {
     if (!state.uid) return;
     
     const data = {
+        academicCategoryId: getFieldValue("field-academic-academicCategoryId"),
+        academicCategoryTitle: state.academicCategories[getFieldValue("field-academic-academicCategoryId")]?.title || "",
         currentEducationLevel: getFieldValue("field-academic-currentEducationLevel"),
         highestCompletedEducation: getFieldValue("field-academic-highestCompletedEducation"),
         currentInstitution: getFieldValue("field-academic-currentInstitution"),
@@ -4258,11 +4191,14 @@ async function saveAcademicProfile(e) {
         if (data.financialSupportNeeded) studentUpdates.financialSupport = data.financialSupportNeeded;
         if (data.careerGoals) studentUpdates.futureGoal = data.careerGoals;
         
-        if (Object.keys(studentUpdates).length > 0) {
-            updates[`students/${state.uid}`] = studentUpdates;
-        }
+        Object.entries(studentUpdates).forEach(([field, value]) => {
+            updates[`students/${state.uid}/${field}`] = value;
+        });
 
         await update(ref(database), updates);
+        setProfileFormSaved("academic-profile-form");
+        document.getElementById("academic-profile-section")?.removeAttribute("data-editing-profile");
+        renderAllProfileSubmissionResults();
         showToast("Academic Profile saved successfully.", "success");
         recalculateStudentRecommendations({ updateCourses: true, updateScholarships: true, updateMentors: true });
     } catch (err) {
@@ -4276,7 +4212,8 @@ function buildTalentProfileForDisplay() {
 
     return {
         talentPathStatus: getFirstNonEmpty(profile.talentPathStatus, pathway.talentPathStatus),
-        primaryTalentCategory: getFirstNonEmpty(profile.primaryTalentCategory, profile.category, pathway.primaryTalentCategory),
+        categoryId: getFirstNonEmpty(profile.categoryId, profile.talentCategoryId, pathway.talentCategoryId),
+        primaryTalentCategory: getFirstNonEmpty(profile.primaryTalentCategory, profile.categoryTitle, profile.category, pathway.primaryTalentCategory),
         specificTalent: getFirstNonEmpty(profile.specificTalent, profile.specificSkill, pathway.specificTalent),
         
         trainingLevel: getFirstNonEmpty(profile.trainingLevel, pathway.trainingLevel),
@@ -4299,6 +4236,7 @@ function buildTalentProfileForDisplay() {
 }
 
 function renderTalentProfile() {
+    if (isProfileFormBeingEdited("talent-profile-form")) return;
     const data = buildTalentProfileForDisplay();
     
     setFieldValue("field-talent-talentPathStatus", data.talentPathStatus);
@@ -4329,7 +4267,10 @@ async function saveTalentProfile(e) {
     
     const data = {
         talentPathStatus: getFieldValue("field-talent-talentPathStatus"),
-        primaryTalentCategory: getFieldValue("field-talent-primaryTalentCategory"),
+        categoryId: getFieldValue("field-talent-primaryTalentCategory"),
+        talentCategoryId: getFieldValue("field-talent-primaryTalentCategory"),
+        categoryTitle: state.talentCategories[getFieldValue("field-talent-primaryTalentCategory")]?.title || "",
+        primaryTalentCategory: state.talentCategories[getFieldValue("field-talent-primaryTalentCategory")]?.title || getFieldValue("field-talent-primaryTalentCategory"),
         specificTalent: getFieldValue("field-talent-specificTalent"),
         
         trainingLevel: getFieldValue("field-talent-trainingLevel"),
@@ -4352,6 +4293,9 @@ async function saveTalentProfile(e) {
     
     try {
         await update(ref(database, `talentProfiles/${state.uid}`), data);
+        setProfileFormSaved("talent-profile-form");
+        document.getElementById("talent-profile-section")?.removeAttribute("data-editing-profile");
+        renderAllProfileSubmissionResults();
         showToast("Talent Profile saved successfully.", "success");
         recalculateStudentRecommendations({ updateCourses: false, updateScholarships: true, updateMentors: true });
     } catch (err) {
@@ -4388,6 +4332,9 @@ async function saveDiscoveryProfile(e) {
     
     try {
         await update(ref(database, `discoveryProfiles/${state.uid}`), data);
+        setProfileFormSaved("discovery-profile-form");
+        document.getElementById("discovery-profile-section")?.removeAttribute("data-editing-profile");
+        renderAllProfileSubmissionResults();
         showToast("Discovery Profile saved successfully.", "success");
     } catch (err) {
         showToast("Failed to save discovery profile.", "error");
@@ -4395,8 +4342,10 @@ async function saveDiscoveryProfile(e) {
 }
 
 function renderFuturePath() {
+    if (isProfileFormBeingEdited("future-path-form")) return;
     const path = state.student.pathwayPreference || "undecided";
-    const radio = document.querySelector(`input[name="pathwayPreference"][value="${path}"]`);
+    const form = document.getElementById("future-path-form");
+    const radio = form?.querySelector(`input[name="pathwayPreference"][value="${path}"]`);
     if (radio) radio.checked = true;
     setText("pathway-last-updated", formatDate(state.student.pathwayPreferenceUpdatedAt));
 }
@@ -4405,7 +4354,7 @@ async function saveFuturePath(e) {
     e.preventDefault();
     if (!state.uid) return;
     
-    const radio = document.querySelector('input[name="pathwayPreference"]:checked');
+    const radio = e.currentTarget.querySelector('input[name="pathwayPreference"]:checked');
     if (!radio) return showToast("Please select a path.", "error");
     
     try {
@@ -4413,6 +4362,12 @@ async function saveFuturePath(e) {
             pathwayPreference: radio.value,
             pathwayPreferenceUpdatedAt: serverTimestamp()
         });
+        state.student.pathwayPreference = radio.value;
+        setProfileFormSaved("future-path-form");
+        document.getElementById("pathway-section")?.removeAttribute("data-editing-path");
+        renderFuturePath();
+        renderFuturePathSummaryState();
+    renderAllProfileSubmissionResults();
         showToast("Future Path updated.", "success");
     } catch (err) {
         showToast("Failed to update Future Path.", "error");
@@ -4517,3 +4472,355 @@ function recalculateStudentRecommendations({ updateCourses, updateScholarships, 
     if (typeof scheduleRecommendationSave === "function") scheduleRecommendationSave();
 }
 
+
+// Path-adaptive student dashboard presentation. Uses existing live Firebase state and actions.
+const studentPathDashboardModes = {
+    academic: {
+        label: "Academic",
+        title: "Academic Path",
+        description: "You are building your future through education, qualifications, and academic opportunities.",
+        icon: "fa-graduation-cap",
+        heroTitle: "Build your future through education",
+        heroSubtitle: "Explore courses, scholarships, institutes, and mentors based on your academic journey.",
+        primaryLabel: "View My Recommendations",
+        primarySection: "recommended-courses-section",
+        secondaryLabel: "Update Academic Profile",
+        secondarySection: "academic-profile-section",
+        opportunityTitle: "Academic Opportunities",
+        opportunityText: "Recommended courses, scholarships, and mentors for your study path.",
+        journeyTitle: "Academic Goals & Next Steps",
+        journeyText: "A focused roadmap for your education journey.",
+        growthTitle: "Academic Skill Growth",
+        kpis: ["Academic Profile", "Pathway Matches", "Saved Courses", "Mentor Requests", "Saved Scholarships", "Unread Messages"]
+    },
+    talent: {
+        label: "Talent",
+        title: "Talent Path",
+        description: "You are growing your future through arts, sports, performance, practical skills, and creativity.",
+        icon: "fa-star",
+        heroTitle: "Grow your future through your talents",
+        heroSubtitle: "Find mentors, training, skill-building courses, and opportunities based on your talents.",
+        primaryLabel: "Explore Talent Opportunities",
+        primarySection: "mentors-section",
+        secondaryLabel: "Update Talent Profile",
+        secondarySection: "talent-profile-section",
+        opportunityTitle: "Talent Growth Opportunities",
+        opportunityText: "Recommended coaches, skill courses, scholarships, and practical opportunities.",
+        journeyTitle: "Talent Goals & Portfolio Growth",
+        journeyText: "Build your skills, experience, portfolio, and connections.",
+        growthTitle: "Talent & Skill Growth",
+        kpis: ["Talent Profile", "Talent Matches", "Saved Courses", "Mentor Requests", "Saved Scholarships", "Unread Messages"]
+    },
+    combined: {
+        label: "Combined",
+        title: "Combined Path",
+        description: "You are building your future through both academics and personal talents.",
+        icon: "fa-layer-group",
+        heroTitle: "Build your future through academics and talent",
+        heroSubtitle: "Get balanced opportunities from your education, skills, interests, and personal talents.",
+        primaryLabel: "View My Opportunities",
+        primarySection: "recommended-courses-section",
+        secondaryLabel: "Update My Path",
+        secondarySection: "pathway-section",
+        opportunityTitle: "Academic + Talent Growth",
+        opportunityText: "Balanced opportunities recommended from both sides of your profile.",
+        journeyTitle: "My Balanced Growth Plan",
+        journeyText: "Progress across academic goals, talents, mentorship, and experience.",
+        growthTitle: "Balanced Skill Growth",
+        kpis: ["Combined Profile", "Balanced Matches", "Saved Courses", "Mentor Requests", "Saved Scholarships", "Unread Messages"]
+    },
+    undecided: {
+        label: "Undecided",
+        title: "Exploring My Options",
+        description: "You are exploring different ways to build your future while refining your interests and goals.",
+        icon: "fa-compass",
+        heroTitle: "Explore the best path for your future",
+        heroSubtitle: "Discover mentors, beginner courses, scholarships, and guidance while you refine your goals.",
+        primaryLabel: "Discover Opportunities",
+        primarySection: "recommended-courses-section",
+        secondaryLabel: "Refine My Path",
+        secondarySection: "pathway-section",
+        opportunityTitle: "Suggested Starting Points",
+        opportunityText: "Broad, exploration-friendly options to help you discover what fits.",
+        journeyTitle: "Explore Your Options",
+        journeyText: "Simple next steps to understand your interests and possible directions.",
+        growthTitle: "Discovery & Skill Growth",
+        kpis: ["Profile Discovery", "Options Explored", "Saved Courses", "Mentor Requests", "Saved Scholarships", "Unread Messages"]
+    }
+};
+
+function getStudentPathMode() {
+    const candidates = [
+        state.student?.pathwayPreference,
+        state.student?.futurePath,
+        state.currentResult?.futurePath,
+        state.currentResult?.pathwayPreference
+    ];
+    const value = candidates.map(normalize).find((item) => Object.hasOwn(studentPathDashboardModes, item));
+    return value || "undecided";
+}
+
+function hasSavedStudentPath() {
+    return [state.student?.pathwayPreference, state.student?.futurePath, state.currentResult?.futurePath, state.currentResult?.pathwayPreference]
+        .some((value) => Object.hasOwn(studentPathDashboardModes, normalize(value)));
+}
+
+function renderPathAdaptiveDashboard() {
+    const overview = document.getElementById("overview-section");
+    if (!overview) return;
+    const path = getStudentPathMode();
+    const mode = studentPathDashboardModes[path];
+    const saved = hasSavedStudentPath();
+
+    overview.dataset.pathMode = path;
+    document.body.dataset.studentPath = path;
+
+    setText("student-current-path-title", saved ? mode.title : "Choose Your Future Path");
+    setText("student-current-path-desc", saved ? mode.description : "Choose how you want to build your future so EduPath Lanka can personalize this dashboard for you.");
+    setText("student-current-path-badge", saved ? mode.label : "Not Set");
+    setText("edit-student-path-label", saved ? "Update Path" : "Set My Future Path");
+
+    const badge = document.getElementById("student-current-path-badge");
+    if (badge) badge.className = `path-badge ${path}`;
+    const icon = document.querySelector("#student-current-path-icon i");
+    if (icon) icon.className = `fas ${mode.icon}`;
+
+    setText("welcome-name", mode.heroTitle);
+    setText("welcome-flow-message", mode.heroSubtitle);
+    setText("hero-pathway-name", saved ? mode.title : "Choose a Future Path");
+
+    const actions = document.getElementById("welcome-actions");
+    if (actions) {
+        actions.innerHTML = `
+            <button type="button" class="btn btn-primary dashboard-jump" data-section="${mode.primarySection}">${mode.primaryLabel} <i class="fas fa-arrow-right"></i></button>
+            <button type="button" class="btn btn-outline dashboard-jump" data-section="${mode.secondarySection}">${mode.secondaryLabel}</button>
+        `;
+    }
+
+    const bestHeading = overview.querySelector(".best-matches-card .card-heading h3");
+    const bestText = overview.querySelector(".best-matches-card .card-heading p");
+    if (bestHeading) bestHeading.innerHTML = `<i class="fas fa-medal text-success"></i> ${mode.opportunityTitle}`;
+    if (bestText) bestText.textContent = mode.opportunityText;
+
+    const journeyHeading = overview.querySelector(".journey-card .card-heading h3");
+    const journeyText = overview.querySelector(".journey-card .card-heading p");
+    if (journeyHeading) journeyHeading.innerHTML = `<i class="fas fa-map-signs text-primary"></i> ${mode.journeyTitle}`;
+    if (journeyText) journeyText.textContent = mode.journeyText;
+
+    const growthHeading = overview.querySelector(".skill-growth-card .card-heading h3");
+    if (growthHeading) growthHeading.innerHTML = `<i class="fas fa-chart-line text-primary"></i> ${mode.growthTitle}`;
+
+    overview.querySelectorAll("#student-path-kpis .student-kpi-card .stat-info h4").forEach((heading, index) => {
+        if (mode.kpis[index]) heading.textContent = mode.kpis[index];
+    });
+}
+
+function hasStudentRecommendationContext() {
+    // A completed pathway improves precision, but every signed-in student should receive suggestions.
+    return !!state.uid;
+}
+
+function renderFuturePathSummaryState() {
+    const section = document.getElementById("pathway-section");
+    const form = document.getElementById("future-path-form");
+    const editorCard = form?.closest(".glass-card");
+    if (!section || !form || !editorCard) return;
+
+    let summary = document.getElementById("future-path-section-summary");
+    if (!summary) {
+        summary = document.createElement("section");
+        summary.id = "future-path-section-summary";
+        summary.className = "future-path-section-summary glass-card";
+        editorCard.insertAdjacentElement("beforebegin", summary);
+    }
+
+    const saved = hasSavedStudentPath();
+    const editing = section.dataset.editingPath === "true";
+    if (!saved || editing) {
+        summary.classList.add("hidden");
+        editorCard.classList.remove("hidden");
+        return;
+    }
+
+    const path = getStudentPathMode();
+    const mode = studentPathDashboardModes[path];
+    summary.classList.remove("hidden");
+    editorCard.classList.add("hidden");
+    summary.innerHTML = `
+        <div class="path-card-icon"><i class="fas ${mode.icon}" aria-hidden="true"></i></div>
+        <div class="path-card-left">
+            <span class="path-label">Current Future Path</span>
+            <h3>${mode.title}</h3>
+            <p>${mode.description}</p>
+            <small>Last updated: ${formatDate(state.student.pathwayPreferenceUpdatedAt)}</small>
+        </div>
+        <div class="path-card-right">
+            <span class="path-badge ${path}">${mode.label}</span>
+            <button type="button" class="btn btn-outline" id="show-future-path-editor"><i class="fas fa-pen"></i> Update Path</button>
+        </div>
+    `;
+    summary.querySelector("#show-future-path-editor")?.addEventListener("click", () => {
+        section.dataset.editingPath = "true";
+        renderFuturePathSummaryState();
+    renderAllProfileSubmissionResults();
+        form.querySelector('input[name="pathwayPreference"]:checked')?.focus();
+    });
+}
+
+function renderAllProfileSubmissionResults() {
+    renderProfileSubmissionResult({
+        sectionId: "personal-profile-section",
+        formId: "personal-profile-form",
+        title: "Personal Profile Details",
+        icon: "fa-user-check",
+        savedData: state.personalProfile,
+        updatedAt: state.personalProfile?.updatedAt,
+        fields: () => {
+            const data = buildPersonalProfileForDisplay();
+            return [
+                ["Full Name", data.fullName], ["Display Name", data.displayName], ["Email", data.email],
+                ["Phone", data.phone], ["WhatsApp", data.whatsapp], ["Date of Birth", data.dateOfBirth],
+                ["Age", data.age], ["Gender", data.gender], ["District", data.district], ["City", data.city],
+                ["Address", data.address], ["Preferred Languages", data.preferredLanguages], ["Bio", data.bio],
+                ["Guardian Name", data.guardianName], ["Guardian Phone", data.guardianPhone], ["Emergency Contact", data.emergencyContact]
+            ];
+        }
+    });
+    renderProfileSubmissionResult({
+        sectionId: "academic-profile-section",
+        formId: "academic-profile-form",
+        title: "Academic Profile Results",
+        icon: "fa-graduation-cap",
+        savedData: state.academicProfile,
+        updatedAt: state.academicProfile?.updatedAt,
+        fields: () => {
+            const data = buildAcademicProfileForDisplay();
+            return [
+                ["Education Level", data.currentEducationLevel], ["Highest Education", data.highestCompletedEducation],
+                ["Institution", data.currentInstitution], ["Qualification", data.currentQualification], ["Current Grade", data.currentGrade],
+                ["O/L Year", data.olYear], ["O/L Results", data.olResults], ["O/L Subjects", data.olSubjects],
+                ["A/L Stream", data.alStream], ["A/L Year", data.alYear], ["A/L Results", data.alResults],
+                ["Z-Score", data.zScore], ["District Rank", data.districtRank], ["A/L Subjects", data.alSubjects],
+                ["Other Qualifications", data.otherQualifications], ["Academic Achievements", data.academicAchievements],
+                ["Preferred Fields", data.preferredFields], ["Career Goals", data.careerGoals], ["Skills to Improve", data.skillsToImprove],
+                ["Study Modes", data.preferredStudyModes], ["Preferred Locations", data.preferredLocations],
+                ["Budget", data.budgetMin || data.budgetMax ? `${data.budgetMin || "0"} - ${data.budgetMax || "No maximum"}` : ""],
+                ["Financial Support", data.financialSupportNeeded], ["Preferred Duration", data.preferredDuration],
+                ["Study Abroad", data.willingToStudyAbroad], ["Preferred Countries", data.preferredCountries]
+            ];
+        }
+    });
+    renderProfileSubmissionResult({
+        sectionId: "talent-profile-section",
+        formId: "talent-profile-form",
+        title: "Talent Profile Results",
+        icon: "fa-star",
+        savedData: state.talentProfile,
+        updatedAt: state.talentProfile?.updatedAt,
+        fields: () => {
+            const data = buildTalentProfileForDisplay();
+            return [
+                ["Talent Path Status", data.talentPathStatus], ["Talent Category", data.primaryTalentCategory],
+                ["Specific Talent", data.specificTalent], ["Training Level", data.trainingLevel],
+                ["Years of Experience", data.yearsOfExperience], ["Coach / Academy", data.currentCoachOrAcademy],
+                ["Highest Achievement", data.highestAchievement], ["Awards & Recognition", data.awardsAndRecognitions],
+                ["Portfolio", data.portfolioLink], ["Video Showcase", data.videoShowcaseLink],
+                ["Talent Goals", data.talentGoals], ["Support Needed", data.supportNeededTalent],
+                ["Training Modes", data.preferredTrainingModes], ["Willing to Relocate", data.willingToRelocateForTraining]
+            ];
+        }
+    });
+    renderProfileSubmissionResult({
+        sectionId: "discovery-profile-section",
+        formId: "discovery-profile-form",
+        title: "Discovery Profile Results",
+        icon: "fa-compass",
+        savedData: state.discoveryProfile,
+        updatedAt: state.discoveryProfile?.updatedAt,
+        fields: () => {
+            const data = state.discoveryProfile || {};
+            return [
+                ["Hobbies", data.hobbies], ["Personality Traits", data.personalityTraits], ["Preferred Work Environment", data.workEnv],
+                ["Preferred Roles", data.preferredRoles], ["Enjoyed Subjects", data.enjoyedSubjects], ["Subjects to Avoid", data.hatedSubjects]
+            ];
+        }
+    });
+}
+
+function renderProfileSubmissionResult(config) {
+    const section = document.getElementById(config.sectionId);
+    const form = document.getElementById(config.formId);
+    const editorCard = form?.closest(".glass-card");
+    if (!section || !form || !editorCard) return;
+
+    const resultId = `${config.formId}-saved-result`;
+    let result = document.getElementById(resultId);
+    if (!result) {
+        result = document.createElement("article");
+        result.id = resultId;
+        result.className = "profile-submission-result glass-card";
+        editorCard.insertAdjacentElement("beforebegin", result);
+    }
+
+    const saved = profileRecordHasData(config.savedData);
+    const editing = section.dataset.editingProfile === "true";
+    result.classList.toggle("hidden", !saved || editing);
+    editorCard.classList.toggle("hidden", saved && !editing);
+    if (!saved || editing) return;
+
+    const fields = config.fields().filter(([, value]) => hasValue(value));
+    result.innerHTML = `
+        <div class="profile-result-header">
+            <div class="profile-result-title"><span><i class="fas ${config.icon}"></i></span><div><small>Saved successfully</small><h3>${escapeHtml(config.title)}</h3><p>Last updated: ${escapeHtml(formatDate(config.updatedAt))}</p></div></div>
+            <button type="button" class="btn btn-outline profile-result-edit"><i class="fas fa-pen"></i> Edit Details</button>
+        </div>
+        <div class="profile-result-grid">
+            ${fields.map(([label, value]) => `<div class="profile-result-item"><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(value))}</strong></div>`).join("")}
+        </div>
+    `;
+    result.querySelector(".profile-result-edit")?.addEventListener("click", () => {
+        section.dataset.editingProfile = "true";
+        renderAllProfileSubmissionResults();
+        form.querySelector("input:not([readonly]), select, textarea")?.focus();
+    });
+}
+
+function profileRecordHasData(record) {
+    if (!record || typeof record !== "object") return false;
+    return Object.entries(record).some(([key, value]) => key !== "updatedAt" && key !== "createdAt" && hasValue(value));
+}
+
+function buildSharedStudentRecommendationProfile() {
+    const profile = buildSharedRecommendationProfile({
+        uid: state.uid,
+        user: state.user,
+        student: state.student,
+        personalProfile: state.personalProfile,
+        learningProfile: state.academicProfile,
+        talentProfile: state.talentProfile,
+        discoveryProfile: state.discoveryProfile,
+        pathwayResult: state.currentResult || {}
+    });
+    debugStudentProfile(profile);
+    return profile;
+}
+
+function renderExtendedRecommendationsOverview() {
+    const instituteRoot = document.getElementById("overview-institute-recommendations");
+    const opportunityRoot = document.getElementById("overview-talent-recommendations");
+    if (!instituteRoot && !opportunityRoot) return;
+    const profile = buildSharedStudentRecommendationProfile();
+    if (instituteRoot) {
+        const rows = recommendInstitutes(profile, state.institutes, state.courses, state.talentOpportunities, state.scholarships).slice(0, 3);
+        instituteRoot.innerHTML = rows.length ? rows.map((item) => `
+            <div class="extended-rec-row"><span class="extended-rec-icon"><i class="fas fa-building-columns"></i></span><div><strong>${escapeHtml(item.name || item.instituteName || "Institute")}</strong><p>${escapeHtml(item.matchReasons[0])}</p></div><span class="badge badge-primary">${item.matchScore}%</span></div>
+        `).join("") : modernEmpty("fa-building-columns", "No institute matches yet.", "More verified institute and program data is needed.", "Explore Institutes", "institutes.html");
+    }
+    if (opportunityRoot) {
+        const combined = { ...state.talentOpportunities, ...state.artsOpportunities, ...state.sportsOpportunities };
+        const rows = recommendTalentOpportunities(profile, combined).slice(0, 3);
+        opportunityRoot.innerHTML = rows.length ? rows.map((item) => `
+            <div class="extended-rec-row"><span class="extended-rec-icon talent"><i class="fas fa-star"></i></span><div><strong>${escapeHtml(item.opportunityName)}</strong><p>${escapeHtml([item.categoryTitle || item.category, item.opportunityType, item.deadline ? `Deadline ${item.deadline}` : item.ongoing ? "Ongoing" : "", item.location].filter(Boolean).join(" � "))}</p><p>${escapeHtml(item.matchReasons[0])}</p><a class="btn btn-sm btn-outline" href="${escapeAttr(item.applicationUrl || "talent-opportunities.html")}" ${item.applicationUrl ? "target=\"_blank\" rel=\"noopener\"" : ""}>${item.applicationUrl ? "Apply / View" : "View Opportunity"}</a></div><span class="badge badge-purple">${item.matchScore}%</span></div>
+        `).join("") : modernEmpty("fa-star", "No relevant talent opportunities yet.", profile.talentInterests.length ? "No active opportunity currently matches your talent details." : "Add talent details to receive accurate opportunities.", "Explore Opportunities", "talent-opportunities.html");
+    }
+}

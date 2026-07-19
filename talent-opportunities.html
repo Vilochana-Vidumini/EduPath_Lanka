@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="courses.css?v=20260624-image-path-fix">
     <link rel="stylesheet" href="theme.css?v=20260614-softglass">
     <link rel="stylesheet" href="guest-help.css?v=20260614-2">
+    <link rel="stylesheet" href="public-directory.css?v=20260719">
 </head>
 <body>
     <!-- Navbar (Will be dynamically hydrated by auth-nav.js) -->
@@ -80,7 +81,7 @@
             
             <div class="search-bar-wrapper glass">
                 <i class="fas fa-search search-icon"></i>
-                <input type="text" id="course-search" placeholder="Search for sports, arts, competitions...">
+                <input type="text" id="opportunity-search" placeholder="Search for sports, arts, competitions...">
             </div>
         </div>
     </main>
@@ -88,17 +89,18 @@
     <!-- Content Section -->
     <section class="courses-section section">
         <div class="container">
-            <!-- Category Chips -->
-            <div class="category-filters">
-                <button class="chip active" data-category="all">All Opportunities</button>
-                <button class="chip" data-category="sports">Sports</button>
-                <button class="chip" data-category="arts">Arts & Culture</button>
-                <button class="chip" data-category="technology">Technology</button>
-                <button class="chip" data-category="leadership">Leadership</button>
+            <div class="directory-filters" aria-label="Talent opportunity filters">
+                <select id="talent-category-filter"><option value="">All talent categories</option></select>
+                <select id="opportunity-type-filter"><option value="">All opportunity types</option></select>
+                <select id="location-filter"><option value="">All locations</option></select>
+                <select id="mode-filter"><option value="">All modes</option></select>
+                <select id="fee-filter"><option value="">All fee types</option></select>
+                <select id="skill-filter"><option value="">All skill levels</option></select>
+                <select id="deadline-filter"><option value="">All valid deadlines</option><option value="closing">Closing within 30 days</option><option value="ongoing">Ongoing</option></select>
             </div>
 
             <!-- Grid Layout -->
-            <div class="courses-grid" id="courses-grid">
+            <div class="public-card-grid" id="courses-grid">
                 <!-- Opportunity Cards will be rendered dynamically by JavaScript -->
             </div>
         </div>
@@ -146,8 +148,8 @@
 
     <!-- Firebase SDK Config & App Logic -->
     <script type="module" src="theme.js"></script>
-    <script type="module" src="talent-opportunities.js"></script>
-    <script type="module" src="auth-nav.js?v=20260614-brand"></script>
+    <script type="module" src="public-talent-opportunities.js?v=20260719"></script>
+    <script type="module" src="auth-nav.js?v=20260719-home-redesign"></script>
     <script type="module" src="guest-help.js?v=20260614-2"></script>
 </body>
 </html>
