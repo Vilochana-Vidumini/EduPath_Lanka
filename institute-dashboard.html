@@ -369,7 +369,17 @@
                                     <label>Government Registration Number<input id="profileRegNumber" placeholder="HEI/2026/001"></label>
                                     <label>Established Year<input id="profileEstablished" type="number" min="1800" max="2026" placeholder="2010"></label>
                                 </div>
-                                <label>Institute Logo URL<input id="profileLogo" placeholder="https://example.com/logo.png"></label>
+                                <div class="input-group">
+                                    <label>Institute Logo URL</label>
+                                    <div class="image-input-container">
+                                        <input type="url" id="profileLogo" class="image-url-input form-input" placeholder="https://example.com/logo.png">
+                                        <small class="helper-text">Paste a public image link. GitHub raw image links are supported.</small>
+                                        <div class="image-url-preview-card">
+                                            <img class="image-url-preview" src="" style="display:none;" alt="Preview">
+                                            <span class="image-url-error" style="display:none;"></span>
+                                        </div>
+                                    </div>
+                                </div>
                                 <label>Institute Description*<textarea id="profileDescription" rows="4" required placeholder="Describe your institute, values, degree paths, and history..."></textarea></label>
                                 
                                 <div class="form-section-title">Contact & Location Details</div>
@@ -507,7 +517,17 @@
                             <label>Intake Start Date<input id="startDate" type="date"></label>
                             <label>Inquiry Contact Number*<input id="contactNumber" required placeholder="+94 77 123 4567"></label>
                         </div>
-                        <label>Course Display Image URL (optional)<input id="courseImage" placeholder="https://images.unsplash.com/photo-1541339907198-e08756dedf3f"></label>
+                        <div class="input-group">
+                            <label>Course Display Image URL (optional)</label>
+                            <div class="image-input-container">
+                                <input type="url" id="courseImage" class="image-url-input form-input" placeholder="https://images.unsplash.com/photo-1541339907198-e08756dedf3f">
+                                <small class="helper-text">Paste a public image link. GitHub raw image links are supported.</small>
+                                <div class="image-url-preview-card">
+                                    <img class="image-url-preview" src="" style="display:none;" alt="Preview">
+                                    <span class="image-url-error" style="display:none;"></span>
+                                </div>
+                            </div>
+                        </div>
                         <label>Detailed Course Description*<textarea id="courseDescription" rows="5" required placeholder="Outline key subjects covered, opportunities, credit structures, and objectives..."></textarea></label>
                         <label>Minimum Entry Requirements*<textarea id="entryRequirements" rows="3" required placeholder="E.g., 3 passes in GCE A/L Physical Science stream with C or above, or recognized Edexcel diploma..."></textarea></label>
                         
@@ -864,7 +884,17 @@
                     <label>Contact Email<input id="schol-contact-email" type="email" placeholder="scholarship@sliit.lk"></label>
                     <label>Contact Phone<input id="schol-contact-phone" placeholder="+94 11 234 5678"></label>
                 </div>
-                <label>Display Banner Image URL (optional)<input id="schol-image-url" placeholder="https://example.com/scholarship-banner.png"></label>
+                <div class="input-group">
+                    <label>Display Banner Image URL (optional)</label>
+                    <div class="image-input-container">
+                        <input type="url" id="schol-image-url" class="image-url-input form-input" placeholder="https://example.com/scholarship-banner.png">
+                        <small class="helper-text">Paste a public image link. GitHub raw image links are supported.</small>
+                        <div class="image-url-preview-card">
+                            <img class="image-url-preview" src="" style="display:none;" alt="Preview">
+                            <span class="image-url-error" style="display:none;"></span>
+                        </div>
+                    </div>
+                </div>
                 <label>Scholarship Description*<textarea id="schol-description" rows="3" required placeholder="Provide program structure, target audiences, key courses eligible..."></textarea></label>
                 <label>Eligibility & Selection Criteria*<textarea id="schol-eligibility" rows="3" required placeholder="List minimum GPA, family financial background thresholds, research portfolios..."></textarea></label>
                 <div class="modal-footer">
@@ -904,7 +934,17 @@
                     <label>Venue Location / Stream URL*<input id="event-location" required placeholder="Main Auditorium, Malabe / Zoom Meeting"></label>
                     <label>Registration URL Link<input id="event-registration-link" type="url" placeholder="https://zoom.us/webinar/register/..."></label>
                 </div>
-                <label>Banner Poster Image URL (optional)<input id="event-image-url" placeholder="https://example.com/event-flyer.png"></label>
+                <div class="input-group">
+                    <label>Banner Poster Image URL (optional)</label>
+                    <div class="image-input-container">
+                        <input type="url" id="event-image-url" class="image-url-input form-input" placeholder="https://example.com/event-flyer.png">
+                        <small class="helper-text">Paste a public image link. GitHub raw image links are supported.</small>
+                        <div class="image-url-preview-card">
+                            <img class="image-url-preview" src="" style="display:none;" alt="Preview">
+                            <span class="image-url-error" style="display:none;"></span>
+                        </div>
+                    </div>
+                </div>
                 <label>Event Overview & Key Outcomes*<textarea id="event-description" rows="4" required placeholder="Outline program agendas, special speakers, campus tour details..."></textarea></label>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-light" id="btn-cancel-event">Cancel</button>
@@ -933,6 +973,7 @@
     <div id="toast" class="toast"></div>
 
     <script type="module" src="theme.js"></script>
+    <script src="image-utils.js"></script>
     <script type="module" src="institute-dashboard.js?v=20260718-institute-approval-fix2"></script>
 </body>
 </html>

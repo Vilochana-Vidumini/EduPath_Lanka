@@ -49,6 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function sanitizeImageURL(value, fallback = '', defaultLocalFolder = 'images') {
         const raw = String(value || '').trim();
+        if (window.EduPathImageUtils?.normalizeImageUrl) {
+            const normalized = window.EduPathImageUtils.normalizeImageUrl(raw);
+            if (normalized) return normalized;
+        }
         let url = raw.replace(/\\/g, '/');
         const imagesIndex = url.toLowerCase().lastIndexOf('/images/');
         if (imagesIndex >= 0) url = url.slice(imagesIndex + 1);

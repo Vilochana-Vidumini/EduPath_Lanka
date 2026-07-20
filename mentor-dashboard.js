@@ -9,6 +9,15 @@ import { calculateMentorRatingSummary, normalizeRatingStatus, publicReviewRows }
 document.addEventListener('DOMContentLoaded', () => {
     initDashboardSidebar();
     normalizeMentorApplicationSection();
+    
+    if (window.EduPathImageUtils) {
+        const input = document.getElementById('mentor-app-photoURL');
+        const container = input ? input.closest('.image-input-container') : null;
+        const errorElement = container ? container.querySelector('.image-url-error') : null;
+        if (input && container) {
+            window.EduPathImageUtils.previewImageFromUrl(input, container, errorElement);
+        }
+    }
 
     let currentUid = null;
     let requestDetailCache = {};
@@ -99,6 +108,26 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mentor-application-form')?.addEventListener('submit', submitMentorApplication);
     document.getElementById('save-mentor-draft-btn')?.addEventListener('click', saveMentorApplicationDraft);
     document.addEventListener('click', handleApprovedProfileClick);
+
+    // Live preview for profile photo URL
+    if (window.EduPathImageUtils) {
+        const photoInput = document.getElementById('mentor-app-photoURL');
+        const previewContainer = photoInput ? photoInput.closest('.image-input-container') : null;
+        const errorElement = previewContainer ? previewContainer.querySelector('.image-url-error') : null;
+        if (photoInput && previewContainer) {
+            window.EduPathImageUtils.previewImageFromUrl(photoInput, previewContainer, errorElement);
+            
+            // Also update the modern avatar
+            photoInput.addEventListener('input', (e) => {
+                const modernAvatar = document.getElementById('mentor-home-photo');
+                if (modernAvatar) {
+                    let url = e.target.value.trim();
+                    url = window.EduPathImageUtils.normalizeImageUrl(url);
+                    window.EduPathImageUtils.applyImageFallback(modernAvatar, url, 'images/mentor-dashboard-illustration.png');
+                }
+            });
+        }
+    }
     document.addEventListener('click', handleLearningRequestAction);
     document.addEventListener('change', handleApprovedProfileChange);
     document.addEventListener('submit', handleApprovedProfileSubmit);
@@ -719,6 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function canAccessMentorSection(sectionId) {
         if (mentorAccessApproved && sectionId === 'complete-profile') return false;
+        if (['submitted', 'under_review'].includes(mentorApprovalStatus()) && sectionId === 'complete-profile') return false;
         if (mentorAccessApproved) return true;
         return ['dashboard-overview', 'my-profile', 'complete-profile', 'availability', 'support'].includes(sectionId);
     }
@@ -756,7 +786,16 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('mentorActiveSection', 'my-profile');
         }
         document.querySelectorAll('.sidebar-links a[data-section]').forEach((link) => {
-            const locked = !canAccessMentorSection(link.dataset.section);
+            const section = link.dataset.section;
+            const locked = !canAccessMentorSection(section);
+            
+            // Hide the 'complete-profile' link entirely if it's submitted, under review, or approved
+            if (section === 'complete-profile' && (mentorAccessApproved || ['submitted', 'under_review'].includes(mentorApprovalStatus()))) {
+                link.style.display = 'none';
+            } else {
+                link.style.display = '';
+            }
+            
             link.classList.toggle('locked-section', locked);
             if (locked) link.title = 'Available after admin approval';
         });
@@ -784,7 +823,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const status = mentorApprovalStatus(mentor).replace(/\s+/g, '_');
         const statusInfo = getMentorHeroStatusInfo(status);
         const fullName = mentor.fullName || user.fullName || 'Mentor';
-        const photo = mentor.photoURL || user.photoURL || 'images/mentor-dashboard-illustration.png';
+        let photo = mentor.photoURL || user.photoURL;
+        if (window.EduPathImageUtils) {
+            photo = window.EduPathImageUtils.getBestImageUrl(photo, 'images/mentor-dashboard-illustration.png');
+        } else {
+            photo = photo || 'images/mentor-dashboard-illustration.png';
+        }
         const field = mentor.field || mentor.expertise || mentor.mentoringField || 'Field not set';
         const type = mentor.mentorType || 'Complete your mentor details';
         const approved = mentorAccessApproved;
@@ -859,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 notice: 'You will be notified when the review begins.',
                 bannerTitle: 'Your mentor profile was submitted successfully.',
                 bannerText: 'Our admin team is reviewing your profile. You will be notified when there is an update.',
-                primary: { label: 'View Submitted Profile', icon: 'fa-file-lines', section: 'complete-profile' }
+                primary: null
             },
             under_review: {
                 title: 'Application under review',
@@ -869,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 notice: 'You will be notified when the review begins.',
                 bannerTitle: 'Your mentor profile was submitted successfully.',
                 bannerText: 'Our admin team is reviewing your profile. You will receive a notification when there is an update.',
-                primary: { label: 'View Application', icon: 'fa-file-lines', section: 'complete-profile' }
+                primary: null
             },
             changes_requested: {
                 title: 'Updates required',
@@ -1034,8 +1078,17 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     function collectMentorApplicationPayload() {
+        let rawPhotoURL = appValue('photoURL');
+        if (window.EduPathImageUtils && rawPhotoURL) {
+            rawPhotoURL = window.EduPathImageUtils.normalizeImageUrl(rawPhotoURL);
+        }
+        if (rawPhotoURL && window.EduPathImageUtils && !window.EduPathImageUtils.isValidImageUrl(rawPhotoURL)) {
+            showToast('Please enter a valid public image URL. For GitHub images, use the raw image link.', 'error');
+            return null;
+        }
+
         const payload = {
-            photoURL: appValue('photoURL'),
+            photoURL: rawPhotoURL,
             fullName: appValue('fullName'),
             email: appValue('email'),
             phone: appValue('phone'),
@@ -1106,6 +1159,27 @@ document.addEventListener('DOMContentLoaded', () => {
             feedback.innerHTML = note ? `<strong>Admin feedback</strong><p>${escapeHtml(note)}</p>` : '';
         }
         renderApplicationMissingFields();
+        
+        // Keep the form visible but hide the submit buttons and make it readonly
+        const hideFormActions = ['submitted', 'under_review', 'approved'].includes(status);
+        const formContainer = document.getElementById('mentor-application-form');
+        if (formContainer) {
+            const formActions = formContainer.querySelector('.form-actions');
+            if (formActions) formActions.style.display = hideFormActions ? 'none' : 'flex';
+            
+            // Make fields readonly if submitted/approved
+            const elements = formContainer.querySelectorAll('input, select, textarea');
+            elements.forEach(el => {
+                if (hideFormActions) {
+                    el.setAttribute('disabled', 'true');
+                } else {
+                    el.removeAttribute('disabled');
+                }
+            });
+        }
+        document.querySelectorAll('.mentor-complete-profile-nav').forEach(el => {
+            el.classList.toggle('hidden', hideFormActions);
+        });
     }
 
     function populateMentorApplicationForm(mentor = {}, user = {}) {
@@ -1335,7 +1409,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function appValue(key) {
-        return document.getElementById(`mentor-app-${key}`)?.value.trim() || '';
+        let val = document.getElementById(`mentor-app-${key}`)?.value.trim() || '';
+        if (key === 'photoURL' && window.EduPathImageUtils) {
+            val = window.EduPathImageUtils.normalizeImageUrl(val);
+        }
+        return val;
     }
 
     function setAppValue(key, value) {

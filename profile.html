@@ -628,12 +628,15 @@
             </div>
             <form id="avatar-update-form">
                 <div class="form-group" style="margin-top: 15px;">
-                    <label for="input-photoURL">Paste Profile Photo Image URL</label>
-                    <input type="url" id="input-photoURL" class="form-input" placeholder="https://example.com/photo.jpg" required>
-                    <span class="helper-text">
-                        <!-- Firebase Storage can be added later for real image file upload -->
-                        💡 Provide an image URL. Support for direct image uploads (via Firebase Storage) will be added in a future update.
-                    </span>
+                    <label for="input-photoURL">Profile Photo Image URL</label>
+                    <div class="image-input-container">
+                        <input type="url" id="input-photoURL" class="image-url-input form-input" placeholder="https://example.com/photo.jpg" required>
+                        <small class="helper-text">Paste a public image link. GitHub raw image links are supported.</small>
+                        <div class="image-url-preview-card">
+                            <img class="image-url-preview" src="" style="display:none;" alt="Preview">
+                            <span class="image-url-error" style="display:none;"></span>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
                     <button type="button" class="btn btn-danger" id="cancel-avatar-btn">Cancel</button>
@@ -672,6 +675,7 @@
 
     <!-- Firebase Script Loader -->
     <script type="module" src="theme.js"></script>
+    <script src="image-utils.js"></script>
     <script type="module" src="firebase-config.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="profile.js?v=20260625-mentor-submit-feedback"></script>

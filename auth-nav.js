@@ -863,11 +863,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (snapshot.exists()) {
                     const data = snapshot.val();
+                    photoURL = data.photoURL || photoURL;
                     const rawType = data.userType || data.role || 'student';
                     role = normalizeRole(rawType) || 'student';
                     currentUserType = role;
-                    fullName = data.fullName || fullName;
-                    photoURL = data.photoURL || photoURL;
+                    fullName = data.fullName || data.name || data.displayName || fullName;
+                }
+
+                if (typeof photoURL === 'string' && photoURL.includes('github.com') && photoURL.includes('/blob/')) {
+                    photoURL = photoURL.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
                 }
 
                 dashboardUrl = getDashboardDestination(role);

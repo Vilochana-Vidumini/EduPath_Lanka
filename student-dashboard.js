@@ -170,7 +170,12 @@ function setFieldValue(fieldId, value) {
 
 function getFieldValue(fieldId) {
     const el = document.getElementById(fieldId);
-    return el ? el.value.trim() : "";
+    if (!el) return "";
+    let val = el.value.trim();
+    if (typeof val === 'string' && val.includes('github.com') && val.includes('/blob/')) {
+        val = val.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+    }
+    return val;
 }
 
 const editableProfileFormIds = [
@@ -237,6 +242,15 @@ document.addEventListener("DOMContentLoaded", () => {
     initDashboardSidebar();
     bindStaticActions();
 
+    if (window.EduPathImageUtils) {
+        const input = document.getElementById('personal-avatar-url');
+        const container = input ? input.closest('.image-input-container') : null;
+        const errorElement = container ? container.querySelector('.image-url-error') : null;
+        if (input && container) {
+            window.EduPathImageUtils.previewImageFromUrl(input, container, errorElement);
+        }
+    }
+
     onAuthStateChanged(auth, async (user) => {
         if (!user) {
             window.location.href = "login.html";
@@ -296,7 +310,6 @@ function bindStaticActions() {
     document.getElementById("talent-profile-form")?.addEventListener("submit", saveTalentProfile);
     document.getElementById("discovery-profile-form")?.addEventListener("submit", saveDiscoveryProfile);
 
-    document.getElementById("personal-avatar-upload")?.addEventListener("change", handleAvatarUpload);
     document.getElementById("personal-password-form")?.addEventListener("submit", handlePasswordChange);
     document.getElementById("field-personal-bio")?.addEventListener("input", (e) => {
         const countEl = document.getElementById("personal-bio-count");
@@ -3995,7 +4008,12 @@ function renderPersonalProfile() {
     if (isProfileFormBeingEdited("personal-profile-form")) return;
     const data = buildPersonalProfileForDisplay();
     
-    document.getElementById("personal-avatar-preview").src = data.photoURL || "images/default-avatar.png";
+    const urlInput = document.getElementById("personal-avatar-url");
+    if (urlInput) {
+        urlInput.value = data.photoURL || "";
+        urlInput.dispatchEvent(new Event("input"));
+    }
+    
     setFieldValue("field-personal-fullName", data.fullName);
     setFieldValue("field-personal-displayName", data.displayName);
     setFieldValue("field-personal-email", data.email);
@@ -4045,6 +4063,18 @@ async function savePersonalProfile(e) {
         emergencyContact: getFieldValue("field-personal-emergencyContact"),
         updatedAt: serverTimestamp()
     };
+
+    let rawPhotoURL = document.getElementById('personal-avatar-url')?.value.trim();
+    if (window.EduPathImageUtils && rawPhotoURL) {
+        rawPhotoURL = window.EduPathImageUtils.normalizeImageUrl(rawPhotoURL);
+    }
+    if (rawPhotoURL) {
+        data.photoURL = rawPhotoURL;
+    }
+    if (rawPhotoURL && window.EduPathImageUtils && !window.EduPathImageUtils.isValidImageUrl(rawPhotoURL)) {
+        showToast("Please enter a valid public image URL. For GitHub images, use the raw image link.", "error");
+        return;
+    }
     
     try {
         const updates = {};
@@ -4055,6 +4085,11 @@ async function savePersonalProfile(e) {
         updates[`students/${state.uid}/phone`] = data.phone;
         updates[`students/${state.uid}/district`] = data.district;
         updates[`students/${state.uid}/bio`] = data.bio;
+        
+        if (data.photoURL) {
+            updates[`students/${state.uid}/photoURL`] = data.photoURL;
+            updates[`users/${state.uid}/photoURL`] = data.photoURL;
+        }
         updates[`users/${state.uid}/fullName`] = data.fullName;
         updates[`users/${state.uid}/phone`] = data.phone;
         if (data.displayName) {
@@ -4404,50 +4439,6 @@ async function saveFuturePath(e) {
         showToast("Future Path updated.", "success");
     } catch (err) {
         showToast("Failed to update Future Path.", "error");
-    }
-}
-
-async function handleAvatarUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const allowed = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowed.includes(file.type)) {
-        showToast("Invalid file type. Only JPG, PNG, WEBP allowed.", "error");
-        return;
-    }
-    if (file.size > 2 * 1024 * 1024) {
-        showToast("File is too large. Max 2MB.", "error");
-        return;
-    }
-    const uid = state.uid;
-    if (!uid) return;
-    
-    document.getElementById("personal-avatar-preview").style.opacity = "0.5";
-    try {
-        const fileRef = storageRef(storage, `avatars/${uid}_${Date.now()}`);
-        await uploadBytes(fileRef, file);
-        const url = await getDownloadURL(fileRef);
-        
-        await update(ref(database), {
-            [`users/${uid}/photoURL`]: url,
-            [`students/${uid}/photoURL`]: url,
-            [`studentProfiles/${uid}/personal/photoURL`]: url
-        });
-        
-        document.getElementById("personal-avatar-preview").src = url;
-        if (state.personalProfile) state.personalProfile.photoURL = url;
-        if (state.student) state.student.photoURL = url;
-        if (state.user) state.user.photoURL = url;
-        
-        if (typeof updateSidebarUser === "function") {
-            updateSidebarUser(state.user.fullName || "User", "student", url);
-        }
-        showToast("Profile picture updated.", "success");
-    } catch (err) {
-        console.error("Avatar upload error:", err);
-        showToast("Failed to upload image.", "error");
-    } finally {
-        document.getElementById("personal-avatar-preview").style.opacity = "1";
     }
 }
 

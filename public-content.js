@@ -12,11 +12,46 @@ export function isDeadlineValid(record = {}) {
   return Number.isNaN(date.getTime()) || date >= new Date();
 }
 export const getRecordTitle = (record = {}, fallback = "Untitled") => record.instituteName || record.title || record.name || record.opportunityName || fallback;
+function normalizePublicImageUrl(value = "") {
+  if (!value) return "";
+  let cleanUrl = String(value).trim().replace(/\\/g, "/");
+  if (!cleanUrl) return "";
+  if (cleanUrl.startsWith("blob:")) return "";
+  if (/^\s*(c:\\|\/)/i.test(cleanUrl)) return "";
+  if (cleanUrl.includes("github.com") && cleanUrl.includes("/blob/")) {
+    cleanUrl = cleanUrl.replace("github.com", "raw.githubusercontent.com").replace("/blob/", "/");
+  }
+  if (cleanUrl.includes("raw.githubusercontent.com") && cleanUrl.includes("?raw=true")) {
+    cleanUrl = cleanUrl.replace("?raw=true", "");
+  }
+  if (cleanUrl.includes("raw.githubusercontent.com") && cleanUrl.includes("?")) {
+    const [base] = cleanUrl.split("?");
+    cleanUrl = base;
+  }
+  return cleanUrl;
+}
 export function getRecordImage(record = {}, fallback = "images/course-placeholder.png") {
   const value = String(record.logoURL || record.logoUrl || record.logo || record.imageURL || record.imagePath || record.image || "").trim().replace(/\\/g, "/");
   if (!value) return fallback;
+  const normalizedValue = typeof window !== "undefined" && window.EduPathImageUtils?.normalizeImageUrl
+    ? window.EduPathImageUtils.normalizeImageUrl(value)
+    : normalizePublicImageUrl(value);
+  if (normalizedValue) return normalizedValue;
   if (/^data:image\/(png|jpe?g|webp|gif);base64,/i.test(value) || /^https?:\/\//i.test(value) || /^(\.\.\/|\.\/)?images\//i.test(value)) return value;
   return `images/${value.replace(/^\/+/, "")}`;
+}
+
+export function getPublicImageFallback(type = "default") {
+  const fallbackMap = {
+    institute: "images/institute-placeholder.png",
+    mentor: "images/mentor-dashboard-illustration.png",
+    student: "images/default-avatar.png",
+    course: "images/course-placeholder.png",
+    scholarship: "images/scholarship-placeholder.png",
+    opportunity: "images/course-placeholder.png",
+    event: "images/event-placeholder.png"
+  };
+  return fallbackMap[type] || "images/course-placeholder.png";
 }
 export function formatDate(value) { const date = new Date(value); return value && !Number.isNaN(date.getTime()) ? date.toLocaleDateString("en-LK", { year: "numeric", month: "short", day: "numeric" }) : "Not specified"; }
 export const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);

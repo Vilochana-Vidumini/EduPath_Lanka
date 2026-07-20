@@ -156,11 +156,25 @@
                     <div class="form-grid">
                         <div class="input-group">
                             <label for="logoUrl">Logo URL <span class="optional">(optional)</span></label>
-                            <input type="url" id="logoUrl" class="form-input" placeholder="https://">
+                            <div class="image-input-container">
+                                <input type="url" id="logoUrl" class="image-url-input form-input" placeholder="https://">
+                                <small class="helper-text">Paste a public image link. GitHub raw image links are supported.</small>
+                                <div class="image-url-preview-card">
+                                    <img class="image-url-preview" src="" style="display:none;" alt="Preview">
+                                    <span class="image-url-error" style="display:none;"></span>
+                                </div>
+                            </div>
                         </div>
                         <div class="input-group">
                             <label for="coverImageUrl">Cover Image URL <span class="optional">(optional)</span></label>
-                            <input type="url" id="coverImageUrl" class="form-input" placeholder="https://">
+                            <div class="image-input-container">
+                                <input type="url" id="coverImageUrl" class="image-url-input form-input" placeholder="https://">
+                                <small class="helper-text">Paste a public image link. GitHub raw image links are supported.</small>
+                                <div class="image-url-preview-card">
+                                    <img class="image-url-preview" src="" style="display:none;" alt="Preview">
+                                    <span class="image-url-error" style="display:none;"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </fieldset>
@@ -201,6 +215,7 @@
         </div>
     </main>
 
+    <script src="image-utils.js"></script>
     <script type="module" src="institute-onboarding.js"></script>
 </body>
 </html>

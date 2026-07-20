@@ -40,8 +40,28 @@ const DISTRICT_PROVINCES = {
     "ratnapura": "Sabaragamuwa", "kegalle": "Sabaragamuwa"
 };
 
+const normalizedImageValue = (id) => {
+    let val = value(id);
+    if (window.EduPathImageUtils) {
+        val = window.EduPathImageUtils.normalizeImageUrl(val);
+    }
+    return val;
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     initDashboardSidebar();
+    
+    if (window.EduPathImageUtils) {
+        ['profileLogo', 'courseImage', 'schol-image-url', 'event-image-url'].forEach(id => {
+            const input = document.getElementById(id);
+            const container = input ? input.closest('.image-input-container') : null;
+            const errorElement = container ? container.querySelector('.image-url-error') : null;
+            if (input && container) {
+                window.EduPathImageUtils.previewImageFromUrl(input, container, errorElement);
+            }
+        });
+    }
+
     wireUi();
     onAuthStateChanged(auth, initDashboard);
 });
@@ -613,7 +633,7 @@ async function saveProfile(event) {
         websiteUrl: value("profileWebsite"),
         facebookPage: value("profileFacebook"),
         linkedInPage: value("profileLinkedIn"),
-        instituteLogoUrl: value("profileLogo"),
+        instituteLogoUrl: normalizedImageValue("profileLogo"),
         instituteDescription: value("profileDescription"),
         governmentRegistrationNumber: value("profileRegNumber"),
         establishedYear: value("profileEstablished"),
@@ -774,7 +794,7 @@ async function saveCourse(event) {
         entryRequirements: value("entryRequirements"),
         contactPhone: value("contactNumber"),
         contactNumber: value("contactNumber"),
-        imageURL: value("courseImage") || "images/course-placeholder.png",
+        imageURL: normalizedImageValue("courseImage") || "images/course-placeholder.png",
         sourceType: "institute",
         status: editingId ? (
             ["active", "rejected"].includes(normalize(state.courses[editingId]?.status)) ? "pending" : (state.courses[editingId]?.status || "pending")
@@ -915,7 +935,7 @@ async function saveScholarship(event) {
         applyLink: value("schol-apply-link") || "",
         contactEmail: value("schol-contact-email") || "",
         contactPhone: value("schol-contact-phone") || "",
-        imageURL: value("schol-image-url") || "images/schol-placeholder.png",
+        imageURL: normalizedImageValue("schol-image-url") || "images/schol-placeholder.png",
         status: editingId ? (
             ["active", "rejected"].includes(normalize(state.scholarships[editingId]?.status)) ? "pending" : (state.scholarships[editingId]?.status || "pending")
         ) : "pending",
@@ -1025,7 +1045,7 @@ async function saveEvent(event) {
         time: value("event-time"),
         location: value("event-location"),
         registrationLink: value("event-registration-link") || "",
-        imageURL: value("event-image-url") || "images/event-placeholder.png",
+        imageURL: normalizedImageValue("event-image-url") || "images/event-placeholder.png",
         description: value("event-description"),
         status: "active",
         updatedAt: serverTimestamp()

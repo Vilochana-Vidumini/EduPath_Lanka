@@ -56,6 +56,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (form) {
         form.addEventListener('submit', handleOnboardingSubmit);
     }
+
+    if (window.EduPathImageUtils) {
+        ['logoUrl', 'coverImageUrl'].forEach(id => {
+            const input = document.getElementById(id);
+            const container = input ? input.closest('.image-input-container') : null;
+            const errorElement = container ? container.querySelector('.image-url-error') : null;
+            if (input && container) {
+                window.EduPathImageUtils.previewImageFromUrl(input, container, errorElement);
+            }
+        });
+    }
 });
 
 async function handleOnboardingSubmit(e) {
@@ -95,8 +106,22 @@ async function handleOnboardingSubmit(e) {
     const languages = parseCommaSeparated(document.getElementById('languages').value);
 
     // Media
-    const logoUrl = document.getElementById('logoUrl').value.trim();
-    const coverImageUrl = document.getElementById('coverImageUrl').value.trim();
+    let logoUrl = document.getElementById('logoUrl').value.trim();
+    let coverImageUrl = document.getElementById('coverImageUrl').value.trim();
+    
+    if (window.EduPathImageUtils) {
+        logoUrl = window.EduPathImageUtils.normalizeImageUrl(logoUrl);
+        coverImageUrl = window.EduPathImageUtils.normalizeImageUrl(coverImageUrl);
+        
+        if (logoUrl && !window.EduPathImageUtils.isValidImageUrl(logoUrl)) {
+            showAlert("Please enter a valid public image URL for the Logo.", "error");
+            return;
+        }
+        if (coverImageUrl && !window.EduPathImageUtils.isValidImageUrl(coverImageUrl)) {
+            showAlert("Please enter a valid public image URL for the Cover Image.", "error");
+            return;
+        }
+    }
     
     // Visibility
     const publicVisibility = document.getElementById('publicVisibility').checked;

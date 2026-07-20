@@ -3241,7 +3241,11 @@ function getConversationRole(convo = {}) {
 }
 
 function value(id) {
-    return document.getElementById(id)?.value.trim() || "";
+    let val = document.getElementById(id)?.value.trim() || "";
+    if (typeof val === 'string' && val.includes('github.com') && val.includes('/blob/')) {
+        val = val.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+    }
+    return val;
 }
 
 function setValue(id, val) {
