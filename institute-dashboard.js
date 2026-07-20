@@ -59,6 +59,31 @@ async function initDashboard(user) {
         return;
     }
 
+    if (!state.user.instituteId) {
+        const institutesSnap = await get(ref(database, 'institutes'));
+        const allInstitutes = institutesSnap.val() || {};
+        let foundInstitute = null;
+        
+        for (const [id, inst] of Object.entries(allInstitutes)) {
+            if (inst.ownerUid === state.uid || inst.representativeUid === state.uid || inst.uid === state.uid || id === state.uid) {
+                foundInstitute = { id, ...inst };
+                break;
+            }
+        }
+        
+        if (foundInstitute) {
+            state.user.instituteId = foundInstitute.id;
+            state.user.instituteName = foundInstitute.instituteName || foundInstitute.name || foundInstitute.title || "";
+            state.user.instituteOnboardingCompleted = true;
+            
+            await update(ref(database, `users/${state.uid}`), {
+                instituteId: state.user.instituteId,
+                instituteName: state.user.instituteName,
+                instituteOnboardingCompleted: true
+            });
+        }
+    }
+
     // Initialize clock, notifications, and theme settings from shared dashboard layout
     ensureDashboardTopbarLayout();
     initDashboardNotifications(user.uid, "institute");
@@ -139,6 +164,17 @@ function wireUi() {
         renderScholarships();
     });
 
+    // Profile View/Edit Toggle
+    document.getElementById("edit-institute-profile-btn")?.addEventListener("click", () => {
+        document.getElementById("profile-section")?.setAttribute("data-editing-profile", "true");
+        document.getElementById("edit-institute-profile-btn").style.display = "none";
+    });
+    document.getElementById("cancel-profile-btn")?.addEventListener("click", () => {
+        document.getElementById("profile-section")?.removeAttribute("data-editing-profile");
+        document.getElementById("edit-institute-profile-btn").style.display = "inline-block";
+        renderProfile();
+    });
+
     // Events
     document.getElementById("open-add-event-btn")?.addEventListener("click", () => openEventModal());
     document.getElementById("quick-add-event-btn")?.addEventListener("click", () => openEventModal());
@@ -202,7 +238,8 @@ function bindRealtimeData() {
         enforceInstituteApproval();
     });
     // 1. Institute Info
-    onValue(ref(database, `institutes/${state.uid}`), (snapshot) => {
+    const instKey = state.user.instituteId || state.uid;
+    onValue(ref(database, `institutes/${instKey}`), (snapshot) => {
         state.institute = snapshot.val() || {};
         renderProfile();
         renderIdentity();
@@ -339,10 +376,16 @@ function showSection(sectionId) {
 }
 
 function renderIdentity() {
-    const name = state.institute.instituteName || state.user.fullName || "Institute";
+    const isCompleted = state.user.instituteOnboardingCompleted;
+    const name = state.institute.instituteName || state.user.instituteName || (isCompleted ? "Institute" : "Institute Setup Required");
 
     updateDashboardGreetingName(name);
-    text("welcome-name", name);
+    text("welcome-name", isCompleted ? name : "Complete Your Institute Profile");
+    
+    if (!isCompleted) {
+        text("welcome-subtitle", "Add your official institute details to submit your profile for admin review.");
+    }
+
     text("top-user-name", name.split(" ")[0]);
 
     updateSidebarUser({
@@ -350,6 +393,13 @@ function renderIdentity() {
         role: "Institute",
         photoURL: state.institute.logoURL || ""
     });
+
+    const repName = state.user.fullName || "";
+    const repSpan = document.getElementById("sidebar-user-rep");
+    if (repSpan && repName) {
+        repSpan.textContent = `Representative: ${repName}`;
+        repSpan.classList.remove("hidden");
+    }
 
     const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
     const logoCircle = document.getElementById("welcome-logo-circle");
@@ -374,8 +424,17 @@ function renderIdentity() {
 }
 
 function enforceInstituteApproval() {
+    const isCompleted = state.user.instituteOnboardingCompleted;
+    document.getElementById("onboarding-notice")?.classList.toggle("hidden", isCompleted);
+
     const approved = isInstituteApproved();
-    document.getElementById("approval-notice")?.classList.toggle("hidden", approved);
+    document.getElementById("approval-notice")?.classList.toggle("hidden", approved || !isCompleted);
+
+    const actionBtns = ["quick-add-course-btn", "quick-add-schol-btn", "quick-add-event-btn", "open-add-course-btn", "open-add-schol-btn", "open-add-event-btn", "action-create-course", "action-create-schol", "action-create-event"];
+    actionBtns.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = !isCompleted;
+    });
 
     const statuses = [state.institute.verificationStatus, state.institute.approvalStatus, state.institute.status, state.user.instituteStatus].map(normalize).filter(Boolean); if (!statuses.length && state.user.accountStatus) statuses.push(normalize(state.user.accountStatus));
     const statusText = statuses.includes("approved") || statuses.includes("active") ? "Approved" : statuses[0] || "Pending";
@@ -493,55 +552,149 @@ function getMissingProfileFields() {
     return missing;
 }
 
+// ----------------- PROFILE -----------------
 function renderProfile() {
-    setValue("profileInstituteName", state.institute.instituteName || state.user.fullName || "");
-    setValue("profilePhone", state.institute.phone || state.user.phone || "");
-    setValue("profileAddress", state.institute.address || "");
+    if (state.user.instituteOnboardingCompleted && !document.getElementById("profile-section")?.hasAttribute("data-editing-profile")) {
+        document.getElementById("profile-section")?.removeAttribute("data-editing-profile");
+        const editBtn = document.getElementById("edit-institute-profile-btn");
+        if (editBtn) editBtn.style.display = "inline-block";
+    } else if (!state.user.instituteOnboardingCompleted) {
+        document.getElementById("profile-section")?.setAttribute("data-editing-profile", "true");
+        const editBtn = document.getElementById("edit-institute-profile-btn");
+        if (editBtn) editBtn.style.display = "none";
+    }
+
+    setValue("repName", state.user.fullName || "");
+    setValue("repEmail", state.user.email || "");
+    setValue("repPhone", state.user.phone || "");
+    setValue("repDesignation", state.institute.representativeDesignation || state.user.designation || "");
+
+    setValue("profileInstituteName", state.institute.instituteName || state.institute.name || "");
+    setValue("profileType", state.institute.instituteType || "");
+    setValue("profilePhone", state.institute.contactPhone || state.institute.phone || "");
+    setValue("profileAddress", state.institute.streetAddress || state.institute.address || "");
     setValue("profileDistrict", state.institute.district || "");
     setValue("profileProvince", state.institute.province || "");
-    setValue("profileWebsite", state.institute.websiteURL || "");
+    setValue("profileWebsite", state.institute.websiteUrl || state.institute.websiteURL || "");
     setValue("profileFacebook", state.institute.facebookPage || "");
-    setValue("profileLinkedIn", state.institute.linkedinPage || "");
-    setValue("profileLogo", state.institute.logoURL || state.user.photoURL || "");
-    setValue("profileDescription", state.institute.description || "");
-    setValue("profileRegNumber", state.institute.regNumber || "");
+    setValue("profileLinkedIn", state.institute.linkedInPage || state.institute.linkedinPage || "");
+    setValue("profileLogo", state.institute.instituteLogoUrl || state.institute.logoURL || "");
+    setValue("profileDescription", state.institute.instituteDescription || state.institute.description || "");
+    setValue("profileRegNumber", state.institute.governmentRegistrationNumber || state.institute.regNumber || "");
     setValue("profileEstablished", state.institute.establishedYear || "");
-    setValue("profileAccreditation", state.institute.accreditation || "");
-    setValue("profileFacilities", state.institute.facilities || "");
-    setValue("profileEmail", state.institute.email || state.user.email || "");
+    setValue("profileAccreditation", state.institute.accreditationDetails || state.institute.accreditation || "");
+    
+    let facilities = state.institute.facilitiesAvailable || state.institute.facilities || [];
+    if (Array.isArray(facilities)) facilities = facilities.join(", ");
+    setValue("profileFacilities", facilities);
+    
+    setValue("profileEmail", state.institute.officialEmail || state.institute.email || "");
 }
 
 async function saveProfile(event) {
     event.preventDefault();
-    const data = {
+    const btn = document.getElementById("save-profile-btn") || event.submitter;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Saving Profile...`;
+    }
+
+    const instKey = state.user.instituteId || state.uid;
+
+    let facilities = value("profileFacilities").split(',').map(f => f.trim()).filter(Boolean);
+
+    const instituteData = {
         instituteName: value("profileInstituteName"),
-        phone: value("profilePhone"),
-        address: value("profileAddress"),
+        instituteType: value("profileType"),
+        contactPhone: value("profilePhone"),
+        streetAddress: value("profileAddress"),
         district: value("profileDistrict"),
         province: value("profileProvince"),
-        websiteURL: value("profileWebsite"),
+        websiteUrl: value("profileWebsite"),
         facebookPage: value("profileFacebook"),
-        linkedinPage: value("profileLinkedIn"),
-        logoURL: value("profileLogo"),
-        description: value("profileDescription"),
-        regNumber: value("profileRegNumber"),
+        linkedInPage: value("profileLinkedIn"),
+        instituteLogoUrl: value("profileLogo"),
+        instituteDescription: value("profileDescription"),
+        governmentRegistrationNumber: value("profileRegNumber"),
         establishedYear: value("profileEstablished"),
-        accreditation: value("profileAccreditation"),
-        facilities: value("profileFacilities"),
-        email: value("profileEmail"),
+        accreditationDetails: value("profileAccreditation"),
+        facilitiesAvailable: facilities.length > 0 ? facilities : null,
+        officialEmail: value("profileEmail"),
+        
+        representativeName: value("repName"),
+        representativeEmail: value("repEmail"),
+        representativePhone: value("repPhone"),
+        representativeDesignation: value("repDesignation"),
+
+        approvalStatus: "pending",
+        status: "pending",
+        publicVisibility: false,
+        ownerUid: state.uid,
+        updatedAt: serverTimestamp()
+    };
+    
+    // Fallbacks for older dashboard usages
+    instituteData.name = instituteData.instituteName;
+    instituteData.phone = instituteData.contactPhone;
+    instituteData.address = instituteData.streetAddress;
+    instituteData.description = instituteData.instituteDescription;
+    instituteData.logoURL = instituteData.instituteLogoUrl;
+    instituteData.facilities = facilities.length > 0 ? facilities : null;
+
+    const repData = {
+        representativeName: value("repName"),
+        representativeEmail: value("repEmail"),
+        representativePhone: value("repPhone"),
+        representativeDesignation: value("repDesignation"),
+        instituteId: instKey,
+        onboardingCompleted: true,
         updatedAt: serverTimestamp()
     };
 
-    await Promise.all([
-        update(ref(database, `institutes/${state.uid}`), data),
-        update(ref(database, `users/${state.uid}`), {
-            fullName: data.instituteName,
-            phone: data.phone,
-            photoURL: data.logoURL,
-            updatedAt: serverTimestamp()
-        })
-    ]);
-    toast("Institute profile updated successfully.");
+    const userData = {
+        fullName: value("repName"),
+        phone: value("repPhone"),
+        instituteName: instituteData.instituteName,
+        instituteId: instKey,
+        instituteOnboardingCompleted: true,
+        approvalStatus: "pending",
+        accountStatus: "pending",
+        updatedAt: serverTimestamp()
+    };
+
+    try {
+        const notifRef = push(ref(database, 'notifications/admin'));
+        const notificationPayload = {
+            title: 'New Institute Approval Request',
+            body: `${userData.instituteName} has submitted their profile for admin approval.`,
+            type: 'INSTITUTE_APPROVAL',
+            relatedId: instKey,
+            createdAt: serverTimestamp(),
+            isRead: false
+        };
+
+        await Promise.all([
+            update(ref(database, `institutes/${instKey}`), instituteData),
+            update(ref(database, `users/${state.uid}`), userData),
+            update(ref(database, `instituteRepresentatives/${state.uid}`), repData),
+            update(notifRef, notificationPayload)
+        ]);
+        toast("Institute profile submitted for admin approval.", "success");
+        state.user.instituteOnboardingCompleted = true;
+        enforceInstituteApproval();
+        renderIdentity();
+        document.getElementById("profile-section")?.removeAttribute("data-editing-profile");
+        const editBtn = document.getElementById("edit-institute-profile-btn");
+        if (editBtn) editBtn.style.display = "inline-block";
+    } catch (e) {
+        toast("Could not submit institute profile. Please try again.", "error");
+        console.error(e);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-save"></i> Save & Submit for Admin Approval`;
+        }
+    }
 }
 
 // ----------------- COURSES -----------------

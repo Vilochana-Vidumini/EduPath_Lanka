@@ -26,26 +26,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const phone = value('phone');
         const password = document.getElementById('password').value;
         const confirmPassword = document.getElementById('confirm-password').value;
-        const instituteName = value('institute-name');
-        const address = value('address');
-        const district = value('district');
-        const websiteURL = value('website');
-        const logoURL = value('logo-url');
-        const description = value('institute-description');
-
+        
         let isValid = true;
+        
+        if (!['student', 'mentor', 'institute'].includes(role)) { 
+            showRoleError('Please choose Student, Mentor, or Institute'); 
+            isValid = false; 
+        }
+        
         if (!fullName) { showError('fullname', 'Full name is required'); isValid = false; }
         if (!isValidEmail(email)) { showError('email', 'Please enter a valid email address'); isValid = false; }
         if (!isValidSriLankanPhone(phone)) { showError('phone', 'Use a valid Sri Lankan mobile number'); isValid = false; }
         if (!password || password.length < 8 || !/(?=.*[A-Za-z])(?=.*\d)/.test(password)) { showError('password', 'Use 8+ characters with a letter and number'); isValid = false; }
         if (password !== confirmPassword) { showError('confirm-password', 'Passwords do not match'); isValid = false; }
-        if (!['student', 'mentor', 'institute'].includes(role)) { showRoleError('Please choose Student, Mentor, or Institute'); isValid = false; }
-        if (role === 'institute') {
-            if (!instituteName) { showError('institute-name', 'Institute name is required'); isValid = false; }
-            if (!address) { showError('address', 'Address is required'); isValid = false; }
-            if (!district) { showError('district', 'District is required'); isValid = false; }
-            if (!description) { showError('institute-description', 'Institute description is required'); isValid = false; }
-        }
+        
         if (termsCheckbox && !termsCheckbox.checked) {
             termsError.textContent = 'You must agree to the Terms & Conditions';
             termsError.classList.add('visible');
@@ -66,18 +60,25 @@ document.addEventListener('DOMContentLoaded', () => {
             const uid = userCredential.user.uid;
             const userData = {
                 uid,
-                fullName: role === 'institute' ? instituteName : fullName,
+                fullName,
                 email,
                 phone,
                 userType: role,
                 accountStatus: role === 'institute' ? 'pending' : 'active',
-                photoURL: role === 'institute' ? logoURL : '',
+                photoURL: '',
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             };
 
             if (role === 'mentor') {
                 userData.mentorStatus = 'draft';
+            }
+            if (role === 'institute') {
+                userData.role = 'institute';
+                userData.accountType = 'institute';
+                userData.approvalStatus = 'pending';
+                userData.instituteOnboardingCompleted = false;
+                userData.instituteId = '';
             }
 
             const writes = [set(ref(database, `users/${uid}`), userData)];
@@ -115,23 +116,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     updatedAt: serverTimestamp()
                 }));
             } else {
-                const completion = calculateInstituteCompletion({ instituteName, email, phone, address, district, websiteURL, logoURL, description });
-                writes.push(set(ref(database, `institutes/${uid}`), {
+                writes.push(set(ref(database, `instituteRepresentatives/${uid}`), {
                     uid,
-                    instituteName,
-                    contactPerson: fullName,
-                    email,
-                    phone,
-                    address,
-                    district,
-                    websiteURL,
-                    facebookPage: websiteURL,
-                    description,
-                    logoURL,
-                    status: 'pending',
-                    verificationStatus: 'pending',
-                    approvalStatus: 'pending',
-                    profileCompletion: completion,
+                    representativeName: fullName,
+                    representativeEmail: email,
+                    representativePhone: phone,
+                    roleInInstitute: '',
+                    instituteId: '',
+                    onboardingCompleted: false,
                     createdAt: serverTimestamp(),
                     updatedAt: serverTimestamp()
                 }));
@@ -157,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('userType', role);
             showAlert('Account created successfully! Redirecting...', 'success');
             setTimeout(() => {
-                window.location.href = role === 'institute' ? 'institute-dashboard.html' : role === 'mentor' ? 'mentor-dashboard.html?section=complete-profile' : 'student-dashboard.html';
+                window.location.href = role === 'institute' ? 'institute-onboarding.html' : role === 'mentor' ? 'mentor-dashboard.html?section=complete-profile' : 'student-dashboard.html';
             }, 1000);
         } catch (error) {
             console.error(error);
@@ -181,7 +173,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setupRoleCards() {
         const roleInput = document.getElementById('usertype');
-        const instituteFields = document.getElementById('institute-fields');
+        const formBody = document.getElementById('form-body');
+        const formInputs = document.querySelectorAll('.auth-input, .toggle-password, #terms, #submit-btn');
+        const titleEl = document.getElementById('dynamic-form-title');
+        const descEl = document.getElementById('dynamic-form-desc');
+        const infoBanner = document.getElementById('dynamic-info-banner');
+        const infoText = document.getElementById('dynamic-info-text');
+        const fullnameLabel = document.getElementById('fullname-label');
+        
         document.querySelectorAll('.role-card').forEach((card) => {
             card.addEventListener('click', () => selectRole(card));
             card.addEventListener('keydown', (event) => {
@@ -191,15 +190,41 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         });
+
         function selectRole(selectedCard) {
             roleInput.value = selectedCard.dataset.role;
+            const role = roleInput.value;
+            
             document.querySelectorAll('.role-card').forEach((card) => {
                 const selected = card === selectedCard;
                 card.classList.toggle('selected', selected);
                 card.setAttribute('aria-checked', String(selected));
             });
-            instituteFields.classList.toggle('hidden', roleInput.value !== 'institute');
+            
             document.getElementById('usertype-error').classList.remove('visible');
+            
+            // Enable form interactions
+            formBody.classList.remove('disabled-overlay');
+            formInputs.forEach(input => input.disabled = false);
+            
+            // Update UI based on role
+            if (role === 'student') {
+                titleEl.textContent = 'Create Your Student Account';
+                descEl.textContent = 'Fill in your details to start learning.';
+                fullnameLabel.textContent = 'Full Name';
+                infoBanner.classList.add('hidden');
+            } else if (role === 'mentor') {
+                titleEl.textContent = 'Create Your Mentor Account';
+                descEl.textContent = 'Fill in your details to guide others.';
+                fullnameLabel.textContent = 'Full Name';
+                infoBanner.classList.add('hidden');
+            } else if (role === 'institute') {
+                titleEl.textContent = 'Create Your Institute Representative Account';
+                descEl.textContent = 'Create an account as the authorized contact person.';
+                fullnameLabel.textContent = 'Representative Full Name';
+                infoText.textContent = 'Institute details will be added in the next step.';
+                infoBanner.classList.remove('hidden');
+            }
         }
     }
 
@@ -247,8 +272,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function calculateInstituteCompletion(data) {
-        const fields = ['instituteName', 'email', 'phone', 'address', 'district', 'description', 'websiteURL', 'logoURL'];
-        return Math.round((fields.filter((field) => data[field]).length / fields.length) * 100);
+        return 25; // Dummy fallback since institute fields were moved to next step
     }
 
     function getSignupErrorMessage(error) {

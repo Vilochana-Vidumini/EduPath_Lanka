@@ -1012,7 +1012,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function validateRoute(role) {
         const protectedRoutes = {
             'student-dashboard.html': 'student',
-            'pathway.html': 'student',
             'mentor-dashboard.html': 'mentor',
             'institute-dashboard.html': 'institute',
             'admin-dashboard.html': 'admin'

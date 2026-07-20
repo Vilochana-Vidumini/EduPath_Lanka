@@ -109,6 +109,7 @@ const adminSections = {
     "manage-talent-categories": { title: "Talent Categories" },
     "manage-talent-opportunities": { title: "Talent Opportunities" },
     "achievement-verifications": { title: "Achievement Verifications" },
+    "institute-approvals": { title: "Institute Approvals" },
     "mentor-approvals": { title: "Mentor Approvals" },
     "mentor-profile-updates": { title: "Mentor Profile Updates" },
     "mentor-requests": { title: "Mentor Requests" },
@@ -279,6 +280,7 @@ function runSectionRender(sectionId) {
     }
     if (sectionId === "admin-notifications") renderAdminNotifications();
     if (sectionId === "manage-admins") renderAdmins();
+    if (sectionId === "institute-approvals") renderInstituteApprovals();
     if (sectionId === "mentor-reviews") renderMentorReviews();
     if (sectionId === "mentor-profile-updates") renderMentorProfileUpdates();
     if (sectionId === "system-status") renderSystemStatus();
@@ -486,7 +488,7 @@ function initRealtimeListeners() {
         ["users", "users", () => { renderAdminIdentity(); renderOverview(); renderStudents(); renderMentors(); renderInstitutes(); renderAdmins(); renderUserDirectory(); renderPathwayResults(); renderReports(); renderActivity(); renderSystemStatus(); }],
         ["students", "students", () => { renderOverview(); renderStudents(); renderPathwayResults(); renderReports(); }],
         ["mentors", "mentors", () => { renderOverview(); renderMentors(); renderMentorApprovals(); renderReports(); updateSidebarBadges(); }],
-        ["institutes", "institutes", () => { renderOverview(); renderInstitutes(); renderReports(); }],
+        ["institutes", "institutes", () => { renderOverview(); renderInstitutes(); renderInstituteApprovals(); renderReports(); updateSidebarBadges(); }],
         ["courses", "courses", () => { renderOverview(); renderCourses(); renderInstitutes(); renderReports(); renderSystemStatus(); }],
         ["scholarships", "scholarships", () => { renderOverview(); renderScholarships(); renderReports(); renderSystemStatus(); }],
         ["academicCategories", "academicCategories", () => { renderCategoryCms(); populateMasterCategorySelects(); }],
@@ -597,13 +599,14 @@ function calculateStats() {
     const pathwayResults = flattenPathwayResults().length;
     const mentorRequests = Object.keys(adminState.mentorRequests).length;
     const pendingMentorRequests = countWhere(adminState.mentorRequests, (r) => normalize(r.status || "pending") === "pending");
+    const pendingInstitutes = countWhere(adminState.institutes, (i) => normalize(i.approvalStatus || i.status || "pending") === "pending");
     const acceptedMentorConnections = flattenMentorConnections().length;
     const unreadSupport = getUnreadSupportCount();
     const guestInquiries = Object.keys({ ...adminState.contactMessages, ...adminState.guestMessages }).length;
     return {
         "kpi-total-users-summary": students + mentors + institutes + admins,
         "kpi-active-content-summary": activeCourses + activeScholarships,
-        "kpi-pending-actions-summary": pendingMentors + pendingMentorRequests,
+        "kpi-pending-actions-summary": pendingMentors + pendingMentorRequests + pendingInstitutes,
         "kpi-support-summary": unreadSupport + guestInquiries,
         "kpi-students": students,
         "kpi-mentors": mentors,
@@ -628,7 +631,7 @@ function calculateStats() {
         "kpi-guest-inquiries": guestInquiries,
         "admin-open-conversations": Object.keys(adminState.conversations || {}).length,
         "admin-hero-pending": pendingMentors,
-        "admin-hero-pending-approvals": pendingMentors,
+        "admin-hero-pending-approvals": pendingMentors + pendingInstitutes,
         "admin-notification-count": unreadSupport
     };
 }
@@ -960,6 +963,31 @@ function getInstituteRows() {
             return { uid, ...user, ...institute, fullName: user.fullName || institute.instituteName, instituteName: institute.instituteName || user.fullName, email: user.email || institute.email, phone: user.phone || institute.phone, photoURL: user.photoURL || institute.logoURL, accountStatus: user.accountStatus || institute.accountStatus || institute.status || "active" };
         })
         .sort((a, b) => getTime(b.createdAt) - getTime(a.createdAt));
+}
+
+function renderInstituteApprovals() {
+    const tbody = document.getElementById("admin-institute-approvals-tbody");
+    if (!tbody) return;
+    const rows = getInstituteRows().filter((i) => ["pending", "under_review", "submitted"].includes(normalize(i.verificationStatus || i.approvalStatus || i.status || "pending")));
+    const result = paginateRows(rows, "instituteApprovals");
+    renderTablePagination("instituteApprovals", result, tbody);
+    if (!rows.length) return showTableEmpty(tbody, 6, "No pending institute approvals.");
+
+    tbody.innerHTML = result.rows.map((i) => `
+        <tr>
+            <td>${avatarCell({ ...i, fullName: i.instituteName || i.fullName }, "IN")}</td>
+            <td>${escapeHtml(display(i.instituteType || "Institute"))}</td>
+            <td>${contactCell(i.email, i.phone)}<br><small>${escapeHtml(display(i.district))}</small></td>
+            <td><span class="badge ${statusBadgeClass(i.verificationStatus || i.approvalStatus || i.status || "pending")}">${escapeHtml(normalize(i.verificationStatus || i.approvalStatus || i.status || "pending"))}</span></td>
+            <td>${progressMini(i.profileCompletion || 100)}</td>
+            <td class="action-btns">
+                <button class="btn btn-sm btn-info" data-view-institute="${i.uid}">View</button>
+                <button class="btn btn-sm btn-success" data-approve-institute="${i.uid}">Approve</button>
+                <button class="btn btn-sm btn-danger" data-reject-institute="${i.uid}">Reject</button>
+            </td>
+        </tr>
+    `).join("");
+    bindRowActions(tbody);
 }
 
 function renderMentorApprovals() {
@@ -2123,9 +2151,9 @@ function renderMiniChart(containerId, totalId, days, values, color) {
 }
 
 function bindRowActions(root) {
-    root.querySelectorAll("[data-view-student]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Student Details", studentDetails(btn.dataset.viewStudent))));
-    root.querySelectorAll("[data-view-mentor]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Mentor Details", mentorDetails(btn.dataset.viewMentor))));
-    root.querySelectorAll("[data-view-institute]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Institute Details", instituteDetails(btn.dataset.viewInstitute))));
+    root.querySelectorAll("[data-view-student]").forEach((btn) => btn.addEventListener("click", () => openStudentDetailModal(btn.dataset.viewStudent)));
+    root.querySelectorAll("[data-view-mentor]").forEach((btn) => btn.addEventListener("click", () => openMentorDetailModal(btn.dataset.viewMentor)));
+    root.querySelectorAll("[data-view-institute]").forEach((btn) => btn.addEventListener("click", () => openInstituteDetailModal(btn.dataset.viewInstitute)));
     root.querySelectorAll("[data-approve-institute]").forEach((btn) => btn.addEventListener("click", () => updateInstituteApproval(btn.dataset.approveInstitute, "approved")));
     root.querySelectorAll("[data-reject-institute]").forEach((btn) => btn.addEventListener("click", () => updateInstituteApproval(btn.dataset.rejectInstitute, "rejected")));
     root.querySelectorAll("[data-view-result]").forEach((btn) => btn.addEventListener("click", () => {
@@ -2147,10 +2175,10 @@ function bindRowActions(root) {
     root.querySelectorAll("[data-changes-mentor]").forEach((btn) => btn.addEventListener("click", () => requestMentorChanges(btn.dataset.changesMentor)));
     root.querySelectorAll("[data-reject-mentor]").forEach((btn) => btn.addEventListener("click", () => rejectMentor(btn.dataset.rejectMentor)));
     root.querySelectorAll("[data-edit-course]").forEach((btn) => btn.addEventListener("click", () => editCourse(btn.dataset.editCourse)));
-    root.querySelectorAll("[data-view-course]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Course Details", objectDetails(adminState.courses[btn.dataset.viewCourse]))));
+    root.querySelectorAll("[data-view-course]").forEach((btn) => btn.addEventListener("click", () => openCourseDetailModal(adminState.courses[btn.dataset.viewCourse])));
     root.querySelectorAll("[data-course-status]").forEach((btn) => btn.addEventListener("click", () => updateCourseStatus(btn.dataset.courseStatus, btn.dataset.status)));
     root.querySelectorAll("[data-edit-scholarship]").forEach((btn) => btn.addEventListener("click", () => editScholarship(btn.dataset.editScholarship)));
-    root.querySelectorAll("[data-view-scholarship]").forEach((btn) => btn.addEventListener("click", () => openDetailDrawer("Scholarship Details", objectDetails(adminState.scholarships[btn.dataset.viewScholarship]))));
+    root.querySelectorAll("[data-view-scholarship]").forEach((btn) => btn.addEventListener("click", () => openScholarshipDetailModal(adminState.scholarships[btn.dataset.viewScholarship])));
     root.querySelectorAll("[data-scholarship-status]").forEach((btn) => btn.addEventListener("click", () => updateScholarshipStatus(btn.dataset.scholarshipStatus, btn.dataset.status)));
     root.querySelectorAll("[data-request-status]").forEach((btn) => btn.addEventListener("click", () => updateRequestStatus(btn.dataset.requestStatus, btn.dataset.status)));
     root.querySelectorAll("[data-view-guest]").forEach((btn) => btn.addEventListener("click", () => viewGuestInquiry(btn.dataset.viewGuest)));
@@ -2332,6 +2360,7 @@ async function updateInstituteApproval(uid, status) {
         [`institutes/${uid}/status`]: status,
         [`institutes/${uid}/verificationStatus`]: status,
         [`institutes/${uid}/approvalStatus`]: status,
+        [`institutes/${uid}/publicVisibility`]: approved,
         [`institutes/${uid}/updatedAt`]: serverTimestamp(),
         [`users/${uid}/accountStatus`]: approved ? "active" : "rejected",
         [`users/${uid}/instituteStatus`]: status,
@@ -2950,6 +2979,7 @@ async function logActivity(actionType, description, relatedEntityType = "", rela
 
 function updateSidebarBadges() {
     setText("badge-mentor-approvals", countWhere(adminState.mentors, (m) => normalize(m.status || "pending") === "pending") || "");
+    setText("badge-institute-approvals", countWhere(adminState.institutes, (i) => ["pending", "under_review", "submitted"].includes(normalize(i.verificationStatus || i.approvalStatus || i.status || "pending"))) || "");
     setText("badge-support", getUnreadSupportCount() || "");
     setText("badge-mentor-requests", countWhere(adminState.mentorRequests, (r) => normalize(r.status || "pending") === "pending") || "");
     setText("badge-mentor-reviews", flattenMentorReviews().filter((review) => normalizeRatingStatus(review.reviewStatus || "pending") === "pending").length || "");
@@ -3478,10 +3508,650 @@ function enhanceRecommendationQaView(root){
  });
 }
 
+function openCourseDetailModal(course) {
+    if (!course) return;
+    let modal = document.getElementById('admin-course-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-course-modal';
+        modal.className = 'admin-course-modal-overlay';
+        document.body.appendChild(modal);
+    }
+
+    const courseId = course.courseId || course.id || '';
+    const name = course.courseName || 'Unknown Course';
+    const status = course.approvalStatus || 'pending';
+    const categoryName = course.academicCategoryName || course.category || 'N/A';
+    const subcategory = course.courseCategoryName || course.subcategory || 'N/A';
+    const eduLevels = Array.isArray(course.eligibleEducationLevels) ? course.eligibleEducationLevels.join(', ') : (course.eligibleEducationLevels || course.educationLevels || 'N/A');
+    
+    let keywordsHtml = '';
+    const kwds = course.matchingKeywords || course.keywords || [];
+    if (Array.isArray(kwds) && kwds.length > 0) {
+        keywordsHtml = kwds.map(k => '<span class=\"acm-pill\">' + escapeHtml(k) + '</span>').join('');
+    } else {
+        keywordsHtml = '<span style=\"color:#94a3b8;font-size:0.8rem;\">No keywords</span>';
+    }
+
+    const createdBy = course.createdBy || course.provider || 'System Admin';
+    const role = course.creatorRole || 'admin';
+    const createdAt = course.createdAt || Date.now();
+    const adminUid = course.adminUid || course.creatorUid || 'seed_admin';
+
+    const categoryBackfill = escapeHtml(JSON.stringify({ backfilled: true, source: 'safe-course-scholarship-backfill-v1' }, null, 2));
+    const isSeed = typeof course.isSeed !== 'undefined' ? course.isSeed : true;
+    const dispStatus = status ? status.charAt(0).toUpperCase() + status.slice(1) : '';
+
+    modal.innerHTML = `
+    <div class=\"admin-course-modal-card\">
+        <div class=\"acm-header\">
+            <div class=\"icon-wrap\"><i class=\"fas fa-book-open\"></i></div>
+            <h2>Course Details</h2>
+            <span class=\"acm-badge ${status === 'approved' ? 'approved' : status === 'rejected' ? 'rejected' : 'pending'}\">
+                <i class=\"fas ${status === 'approved' ? 'fa-check-circle' : status === 'rejected' ? 'fa-times-circle' : 'fa-clock'}\"></i> 
+                ${dispStatus}
+            </span>
+            <button class=\"acm-close\" id=\"acm-close-top\"><i class=\"fas fa-times\"></i></button>
+        </div>
+        
+        <div class=\"acm-body\">
+            <div class=\"acm-main-card\">
+                <div class=\"lbl\">Course Name</div>
+                <h1>${escapeHtml(name)}</h1>
+                <div class=\"acm-meta-row\">
+                    <div class=\"acm-meta-item\">
+                        <i class=\"fas fa-folder acm-meta-icon\"></i>
+                        <div class=\"acm-meta-text\"><span>Category</span><strong>${escapeHtml(categoryName)}</strong></div>
+                    </div>
+                    <div class=\"acm-divider\"></div>
+                    <div class=\"acm-meta-item\">
+                        <i class=\"fas fa-tags acm-meta-icon\"></i>
+                        <div class=\"acm-meta-text\"><span>Subcategory</span><strong>${escapeHtml(subcategory)}</strong></div>
+                    </div>
+                    <div class=\"acm-divider\"></div>
+                    <div class=\"acm-meta-item\">
+                        <i class=\"fas fa-graduation-cap acm-meta-icon\"></i>
+                        <div class=\"acm-meta-text\"><span>Education Levels</span><strong>${escapeHtml(eduLevels)}</strong></div>
+                    </div>
+                </div>
+                <div class=\"acm-keywords\">
+                    <span class=\"lbl\">Keywords</span>
+                    <div class=\"acm-pills\">${keywordsHtml}</div>
+                </div>
+            </div>
+
+            <div class=\"acm-stats-strip\">
+                <div class=\"acm-stat\">
+                    <div class=\"acm-stat-icon blue\"><i class=\"fas fa-hashtag\"></i></div>
+                    <div class=\"acm-stat-info\"><span>Course ID</span><strong>${escapeHtml(courseId)}</strong></div>
+                </div>
+                <div class=\"acm-stat\">
+                    <div class=\"acm-stat-icon green\"><i class=\"fas fa-shield-check\"></i></div>
+                    <div class=\"acm-stat-info\"><span>Approval Status</span><span class=\"acm-stat-badge\" style=\"${status === 'approved' ? '' : 'color:#d97706;background:#fffbeb;'}\">${dispStatus}</span></div>
+                </div>
+                <div class=\"acm-stat\">
+                    <div class=\"acm-stat-icon purple\"><i class=\"fas fa-user\"></i></div>
+                    <div class=\"acm-stat-info\"><span>Created By</span><strong>${escapeHtml(createdBy)}</strong></div>
+                </div>
+                <div class=\"acm-stat\">
+                    <div class=\"acm-stat-icon orange\"><i class=\"fas fa-shield-alt\"></i></div>
+                    <div class=\"acm-stat-info\"><span>Created Role</span><strong>${escapeHtml(role)}</strong></div>
+                </div>
+                <div class=\"acm-stat\">
+                    <div class=\"acm-stat-icon blue\"><i class=\"fas fa-calendar-alt\"></i></div>
+                    <div class=\"acm-stat-info\"><span>Created At</span><strong>${createdAt}</strong></div>
+                </div>
+            </div>
+
+            <div class=\"acm-section\">
+                <div class=\"acm-section-header\">
+                    <div class=\"acm-section-icon blue\"><i class=\"fas fa-info-circle\"></i></div>
+                    <h3>1. Basic Information</h3>
+                </div>
+                <div class=\"acm-grid\">
+                    <div class=\"acm-field\"><span>Course Name</span><strong>${escapeHtml(name)}</strong></div>
+                    <div class=\"acm-field\"><span>Approval Status</span><span class=\"acm-stat-badge\" style=\"width:fit-content;${status === 'approved' ? '' : 'color:#d97706;background:#fffbeb;'}\"><i class=\"fas ${status === 'approved' ? 'fa-check-circle' : 'fa-clock'}\" style=\"margin-right:4px;\"></i>${dispStatus}</span></div>
+                    <div class=\"acm-field\"><span>Course ID</span><strong>${escapeHtml(courseId)}</strong></div>
+                    <div class=\"acm-field\"><span>Created At (Timestamp)</span><strong>${createdAt}</strong></div>
+                </div>
+            </div>
+
+            <div class=\"acm-section\">
+                <div class=\"acm-section-header\">
+                    <div class=\"acm-section-icon slate\"><i class=\"fas fa-folder\"></i></div>
+                    <h3>2. Category Information</h3>
+                </div>
+                <div class=\"acm-grid\">
+                    <div class=\"acm-field\"><span>Academic Category (Title)</span><strong>${escapeHtml(categoryName)}</strong></div>
+                    <div class=\"acm-field\"><span>Course Category (Title)</span><strong>${escapeHtml(subcategory)}</strong></div>
+                    <div class=\"acm-field\"><span>Academic Category ID</span><strong>${escapeHtml(course.academicCategory || 'academic_foundation_information_technology')}</strong></div>
+                    <div class=\"acm-field\"><span>Course Category ID</span><strong>${escapeHtml(course.courseCategory || 'course_foundation_software_development')}</strong></div>
+                </div>
+            </div>
+
+            <div class=\"acm-section\">
+                <div class=\"acm-section-header\">
+                    <div class=\"acm-section-icon blue\"><i class=\"fas fa-graduation-cap\"></i></div>
+                    <h3>3. Eligibility</h3>
+                </div>
+                <div class=\"acm-grid\">
+                    <div class=\"acm-field\"><span>Eligible Education Levels</span><strong>${escapeHtml(eduLevels)}</strong></div>
+                    <div class=\"acm-field\">
+                        <span>Matching Keywords</span>
+                        <div class=\"acm-pills\" style=\"margin-top:6px;\">${keywordsHtml}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class=\"acm-section\">
+                <div class=\"acm-section-header\">
+                    <div class=\"acm-section-icon slate\"><i class=\"fas fa-shield-alt\"></i></div>
+                    <h3>4. Admin / System Metadata</h3>
+                </div>
+                <div class=\"acm-grid\">
+                    <div class=\"acm-field\"><span>Created By (Name)</span><strong>${escapeHtml(createdBy)}</strong></div>
+                    <div class=\"acm-field\" style=\"grid-row: span 4;\">
+                        <span>Category Backfill (JSON)</span>
+                        <div class=\"acm-code-block\">${categoryBackfill}
+                            <button class=\"acm-code-copy\" onclick=\"navigator.clipboard.writeText(this.parentElement.textContent.replace('Copy',''))\"><i class=\"far fa-copy\"></i></button>
+                        </div>
+                    </div>
+                    <div class=\"acm-field\"><span>Created By (Admin UID)</span><strong>${escapeHtml(adminUid)}</strong></div>
+                    <div class=\"acm-field\"><span>Created By (Role)</span><strong>${escapeHtml(role)}</strong></div>
+                    <div class=\"acm-field\"><span>Is Seed Data</span><span class=\"acm-stat-badge\" style=\"width:fit-content;\"><i class=\"fas fa-check-circle\" style=\"margin-right:4px;\"></i>${isSeed ? 'True' : 'False'}</span></div>
+                </div>
+            </div>
+        </div>
+        <div class=\"acm-footer\">
+            <button id=\"acm-close-btn\">Close</button>
+        </div>
+    </div>
+    `;
+
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
+
+    const closeModal = () => {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            if (modal.parentElement) modal.parentElement.removeChild(modal);
+        }, 300);
+    };
+
+    document.getElementById('acm-close-top')?.addEventListener('click', closeModal);
+    document.getElementById('acm-close-btn')?.addEventListener('click', closeModal);
+}
+
 function openRecommendationScoreDetails(row){
  if(!row)return;let modal=document.getElementById("recommendation-score-details");
  if(!modal){modal=document.createElement("div");modal.id="recommendation-score-details";modal.className="modal-overlay hidden";document.body.appendChild(modal);}
  modal.innerHTML='<div class="modal-card"><div class="modal-header"><h3>Score Details: '+escapeHtml(recommendationItemTitle(row))+'</h3><button class="modal-close" data-close-score-details>&times;</button></div><div class="modal-body"><p><strong>Final score:</strong> '+Number(row.matchScore||0)+'%</p><p><strong>Included:</strong> '+escapeHtml(String(row.included??row.matchScore>=40))+'</p><p><strong>Matched fields:</strong> '+escapeHtml((row.matchedFields||[]).join(", ")||"None")+'</p><p><strong>Missing fields:</strong> '+escapeHtml((row.missingRequirements||[]).join(", ")||"None")+'</p><p><strong>Exclusion reason:</strong> '+escapeHtml(row.exclusionReason||"None")+'</p><pre>'+escapeHtml(JSON.stringify(row.debugBreakdown||{},null,2))+'</pre></div></div>';
  modal.classList.remove("hidden");
 }
-document.addEventListener("click",(event)=>{const button=event.target.closest("[data-recommendation-debug-key]");if(button){event.stopImmediatePropagation();openRecommendationScoreDetails(recommendationDebugRows[button.dataset.recommendationDebugKey]);}if(event.target.closest("[data-close-score-details]"))document.getElementById("recommendation-score-details")?.classList.add("hidden");});
+document.addEventListener("click",(event)=>{const button=event.target.closest("[data-recommendation-debug-key]");if(button){event.stopImmediatePropagation();openRecommendationScoreDetails(recommendationDebugRows[button.dataset.recommendationDebugKey]);}if(event.target.closest("[data-close-score-details]"))document.getElementById("recommendation-score-details")?.classList.add("hidden");});function openScholarshipDetailModal(scholarship) {
+    if (!scholarship) return;
+    let modal = document.getElementById('admin-course-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-course-modal';
+        modal.className = 'admin-course-modal-overlay';
+        document.body.appendChild(modal);
+    }
+
+    const id = scholarship.scholarshipId || scholarship.id || '';
+    const name = scholarship.scholarshipName || scholarship.title || 'Unknown Scholarship';
+    const status = scholarship.approvalStatus || scholarship.status || 'pending';
+    const provider = scholarship.provider || scholarship.organization || 'N/A';
+    const amountBenefit = scholarship.amountBenefit || scholarship.amount || 'N/A';
+    const eduLevels = Array.isArray(scholarship.eligibleEducationLevels) ? scholarship.eligibleEducationLevels.join(', ') : (scholarship.eligibleEducationLevels || scholarship.educationLevels || 'N/A');
+    
+    let keywordsHtml = '';
+    const kwds = scholarship.matchingKeywords || scholarship.keywords || [];
+    if (Array.isArray(kwds) && kwds.length > 0) {
+        keywordsHtml = kwds.map(k => '<span class="acm-pill">' + escapeHtml(k) + '</span>').join('');
+    } else {
+        keywordsHtml = '<span style="color:#94a3b8;font-size:0.8rem;">No keywords</span>';
+    }
+
+    const createdBy = scholarship.createdBy || 'System Admin';
+    const role = scholarship.creatorRole || 'admin';
+    const createdAt = scholarship.createdAt || Date.now();
+    const adminUid = scholarship.adminUid || scholarship.creatorUid || 'seed_admin';
+
+    const dispStatus = status ? status.charAt(0).toUpperCase() + status.slice(1) : '';
+
+    modal.innerHTML = `
+    <div class="admin-course-modal-card">
+        <div class="acm-header">
+            <div class="icon-wrap"><i class="fas fa-award"></i></div>
+            <h2>Scholarship Details</h2>
+            <span class="acm-badge ${status === 'approved' || status === 'active' ? 'approved' : status === 'rejected' ? 'rejected' : 'pending'}">
+                <i class="fas ${status === 'approved' || status === 'active' ? 'fa-check-circle' : status === 'rejected' ? 'fa-times-circle' : 'fa-clock'}"></i> 
+                ${dispStatus}
+            </span>
+            <button class="acm-close" id="acm-close-top"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="acm-body">
+            <div class="acm-main-card">
+                <div class="lbl">Scholarship Name</div>
+                <h1>${escapeHtml(name)}</h1>
+                <div class="acm-meta-row">
+                    <div class="acm-meta-item">
+                        <i class="fas fa-building acm-meta-icon"></i>
+                        <div class="acm-meta-text"><span>Provider</span><strong>${escapeHtml(provider)}</strong></div>
+                    </div>
+                    <div class="acm-divider"></div>
+                    <div class="acm-meta-item">
+                        <i class="fas fa-gift acm-meta-icon"></i>
+                        <div class="acm-meta-text"><span>Benefit</span><strong>${escapeHtml(amountBenefit)}</strong></div>
+                    </div>
+                    <div class="acm-divider"></div>
+                    <div class="acm-meta-item">
+                        <i class="fas fa-graduation-cap acm-meta-icon"></i>
+                        <div class="acm-meta-text"><span>Education Levels</span><strong>${escapeHtml(eduLevels)}</strong></div>
+                    </div>
+                </div>
+                <div class="acm-keywords">
+                    <span class="lbl">Keywords</span>
+                    <div class="acm-pills">${keywordsHtml}</div>
+                </div>
+            </div>
+
+            <div class="acm-stats-strip">
+                <div class="acm-stat">
+                    <div class="acm-stat-icon blue"><i class="fas fa-hashtag"></i></div>
+                    <div class="acm-stat-info"><span>Scholarship ID</span><strong>${escapeHtml(id)}</strong></div>
+                </div>
+                <div class="acm-stat">
+                    <div class="acm-stat-icon green"><i class="fas fa-shield-check"></i></div>
+                    <div class="acm-stat-info"><span>Approval Status</span><span class="acm-stat-badge" style="${status === 'approved' || status === 'active' ? '' : 'color:#d97706;background:#fffbeb;'}">${dispStatus}</span></div>
+                </div>
+                <div class="acm-stat">
+                    <div class="acm-stat-icon purple"><i class="fas fa-user"></i></div>
+                    <div class="acm-stat-info"><span>Created By</span><strong>${escapeHtml(createdBy)}</strong></div>
+                </div>
+            </div>
+
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon blue"><i class="fas fa-info-circle"></i></div>
+                    <h3>Information</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field"><span>Deadline</span><strong>${escapeHtml(scholarship.deadline || 'N/A')}</strong></div>
+                    <div class="acm-field"><span>Eligibility</span><strong>${escapeHtml(scholarship.eligibility || 'N/A')}</strong></div>
+                </div>
+            </div>
+        </div>
+        <div class="acm-footer">
+            <button id="acm-close-btn">Close</button>
+        </div>
+    </div>
+    `;
+
+    setTimeout(() => modal.classList.add('show'), 10);
+    const closeModal = () => {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            if (modal.parentElement) modal.parentElement.removeChild(modal);
+        }, 300);
+    };
+
+    document.getElementById('acm-close-top')?.addEventListener('click', closeModal);
+    document.getElementById('acm-close-btn')?.addEventListener('click', closeModal);
+}
+
+function openInstituteDetailModal(instituteId) {
+    const institute = adminState.institutes[instituteId];
+    if (!institute) return;
+    let modal = document.getElementById('admin-course-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-course-modal';
+        modal.className = 'admin-course-modal-overlay';
+        document.body.appendChild(modal);
+    }
+
+    const name = institute.name || institute.instituteName || 'Unknown Institute';
+    const status = institute.approvalStatus || institute.status || 'pending';
+    const district = institute.district || 'N/A';
+    const type = institute.instituteType || institute.type || 'N/A';
+    const dispStatus = status ? status.charAt(0).toUpperCase() + status.slice(1) : '';
+
+    modal.innerHTML = `
+    <div class="admin-course-modal-card">
+        <div class="acm-header">
+            <div class="icon-wrap"><i class="fas fa-building-columns"></i></div>
+            <h2>Institute Details</h2>
+            <span class="acm-badge ${status === 'approved' || status === 'active' ? 'approved' : status === 'rejected' ? 'rejected' : 'pending'}">
+                ${dispStatus}
+            </span>
+            <button class="acm-close" id="acm-close-top"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="acm-body">
+            <div class="acm-main-card">
+                <div class="lbl">Institute Name</div>
+                <h1>${escapeHtml(name)}</h1>
+                <div class="acm-meta-row">
+                    <div class="acm-meta-item">
+                        <i class="fas fa-map-marker-alt acm-meta-icon"></i>
+                        <div class="acm-meta-text"><span>District</span><strong>${escapeHtml(district)}</strong></div>
+                    </div>
+                    <div class="acm-divider"></div>
+                    <div class="acm-meta-item">
+                        <i class="fas fa-building acm-meta-icon"></i>
+                        <div class="acm-meta-text"><span>Type</span><strong>${escapeHtml(type)}</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon blue"><i class="fas fa-info-circle"></i></div>
+                    <h3>Contact & Info</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field"><span>Address</span><strong>${escapeHtml(institute.address || institute.streetAddress || 'N/A')}</strong></div>
+                    <div class="acm-field"><span>Email</span><strong>${escapeHtml(institute.email || institute.officialEmail || 'N/A')}</strong></div>
+                    <div class="acm-field"><span>Phone</span><strong>${escapeHtml(institute.phone || 'N/A')}</strong></div>
+                    <div class="acm-field"><span>Website</span><strong>${escapeHtml(institute.website || 'N/A')}</strong></div>
+                </div>
+            </div>
+
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon green"><i class="fas fa-building"></i></div>
+                    <h3>Institute Details</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field" style="grid-column: span 2;"><span>Description</span><strong>${escapeHtml(institute.description || institute.instituteDescription || 'N/A')}</strong></div>
+                    <div class="acm-field"><span>Established Year</span><strong>${escapeHtml(institute.establishedYear || 'N/A')}</strong></div>
+                    <div class="acm-field"><span>Reg No.</span><strong>${escapeHtml(institute.governmentRegistrationNumber || 'N/A')}</strong></div>
+                    <div class="acm-field"><span>Accreditation</span><strong>${escapeHtml(institute.accreditationDetails || 'N/A')}</strong></div>
+                    <div class="acm-field" style="grid-column: span 2;"><span>Facilities</span><strong>${escapeHtml(Array.isArray(institute.facilities || institute.facilitiesAvailable) ? (institute.facilities || institute.facilitiesAvailable).join(', ') : (institute.facilities || institute.facilitiesAvailable || 'N/A'))}</strong></div>
+                </div>
+            </div>
+
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon purple"><i class="fas fa-user-tie"></i></div>
+                    <h3>Representative</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field"><span>Name</span><strong>${escapeHtml(institute.representativeName || 'N/A')}</strong></div>
+                    <div class="acm-field"><span>Designation</span><strong>${escapeHtml(institute.representativeDesignation || 'N/A')}</strong></div>
+                    <div class="acm-field"><span>Email</span><strong>${escapeHtml(institute.representativeEmail || 'N/A')}</strong></div>
+                    <div class="acm-field"><span>Phone</span><strong>${escapeHtml(institute.representativePhone || 'N/A')}</strong></div>
+                </div>
+            </div>
+        </div>
+        <div class="acm-footer">
+            <button id="acm-close-btn">Close</button>
+        </div>
+    </div>
+    `;
+
+    setTimeout(() => modal.classList.add('show'), 10);
+    const closeModal = () => {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            if (modal.parentElement) modal.parentElement.removeChild(modal);
+        }, 300);
+    };
+
+    document.getElementById('acm-close-top')?.addEventListener('click', closeModal);
+    document.getElementById('acm-close-btn')?.addEventListener('click', closeModal);
+}
+function openStudentDetailModal(uid) {
+    const student = getStudentRows().find((row) => row.uid === uid) || {};
+    let modal = document.getElementById('admin-course-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-course-modal';
+        modal.className = 'admin-course-modal-overlay';
+        document.body.appendChild(modal);
+    }
+
+    const name = student.fullName || 'Unknown Student';
+    const email = student.email || 'N/A';
+    const district = student.district || 'N/A';
+    const status = student.accountStatus || 'active';
+    const photo = student.photoURL || 'images/default-avatar.png';
+    const dispStatus = status ? status.charAt(0).toUpperCase() + status.slice(1) : '';
+
+    modal.innerHTML = `
+    <div class="admin-course-modal-card">
+        <div class="acm-header">
+            <div class="icon-wrap"><i class="fas fa-user-graduate"></i></div>
+            <h2>Student Details</h2>
+            <span class="acm-badge ${status === 'active' ? 'approved' : status === 'suspended' ? 'rejected' : 'pending'}">
+                ${dispStatus}
+            </span>
+            <button class="acm-close" id="acm-close-top"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="acm-body">
+            <div class="acm-main-card">
+                <div class="lbl">Student Name</div>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+                    <img src="${escapeAttr(photo)}" alt="${escapeAttr(name)}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">
+                    <h1 style="margin: 0;">${escapeHtml(name)}</h1>
+                </div>
+                <div class="acm-meta-row">
+                    <div class="acm-meta-item">
+                        <i class="fas fa-envelope acm-meta-icon"></i>
+                        <div class="acm-meta-text"><span>Email</span><strong>${escapeHtml(email)}</strong></div>
+                    </div>
+                    <div class="acm-divider"></div>
+                    <div class="acm-meta-item">
+                        <i class="fas fa-map-marker-alt acm-meta-icon"></i>
+                        <div class="acm-meta-text"><span>District</span><strong>${escapeHtml(district)}</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon blue"><i class="fas fa-info-circle"></i></div>
+                    <h3>Personal Information</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field"><span>Phone</span><strong>${escapeHtml(student.phone || 'N/A')}</strong></div>
+                    <div class="acm-field"><span>Account Status</span><span class="acm-stat-badge" style="width:fit-content;${status === 'active' ? '' : 'color:#d97706;background:#fffbeb;'}">${dispStatus}</span></div>
+                    <div class="acm-field"><span>Created At</span><strong>${escapeHtml(display(student.createdAt))}</strong></div>
+                    <div class="acm-field"><span>Last Active At</span><strong>${escapeHtml(display(student.lastActiveAt))}</strong></div>
+                </div>
+            </div>
+
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon slate"><i class="fas fa-graduation-cap"></i></div>
+                    <h3>Education Information</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field"><span>Education Level</span><strong>${escapeHtml(display(student.educationLevel))}</strong></div>
+                    <div class="acm-field"><span>Exam Stream</span><strong>${escapeHtml(display(student.examStream))}</strong></div>
+                    <div class="acm-field"><span>Result Status</span><strong>${escapeHtml(display(student.resultStatus))}</strong></div>
+                </div>
+            </div>
+
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon purple"><i class="fas fa-bullseye"></i></div>
+                    <h3>Guidance & Goals</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field"><span>Interest Area</span><strong>${escapeHtml(display(student.interestArea))}</strong></div>
+                    <div class="acm-field"><span>Skills</span><strong>${escapeHtml(display(student.skills))}</strong></div>
+                    <div class="acm-field"><span>Future Goal</span><strong>${escapeHtml(display(student.futureGoal))}</strong></div>
+                    <div class="acm-field"><span>Financial Support</span><strong>${escapeHtml(display(student.financialSupport))}</strong></div>
+                    <div class="acm-field"><span>Learning Mode</span><strong>${escapeHtml(display(student.learningMode))}</strong></div>
+                </div>
+            </div>
+            
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon green"><i class="fas fa-chart-line"></i></div>
+                    <h3>Platform Progress</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field"><span>Profile Completion</span><strong>${escapeHtml(display(student.profileCompletion))}</strong></div>
+                    <div class="acm-field"><span>Pathway Completed</span><strong>${escapeHtml(display(student.pathwayCompleted))}</strong></div>
+                    <div class="acm-field"><span>Saved Courses</span><strong>${escapeHtml(display(student.savedCoursesCount))}</strong></div>
+                    <div class="acm-field"><span>Saved Scholarships</span><strong>${escapeHtml(display(student.savedScholarshipsCount))}</strong></div>
+                    <div class="acm-field"><span>Mentor Requests</span><strong>${escapeHtml(display(student.mentorRequestsCount))}</strong></div>
+                </div>
+            </div>
+        </div>
+        <div class="acm-footer">
+            <button id="acm-close-btn">Close</button>
+        </div>
+    </div>
+    `;
+
+    setTimeout(() => modal.classList.add('show'), 10);
+    const closeModal = () => {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            if (modal.parentElement) modal.parentElement.removeChild(modal);
+        }, 300);
+    };
+
+    document.getElementById('acm-close-top')?.addEventListener('click', closeModal);
+    document.getElementById('acm-close-btn')?.addEventListener('click', closeModal);
+}
+
+function openMentorDetailModal(uid) {
+    const m = getMentorRows().find((row) => row.uid === uid) || {};
+    const requests = Object.values(adminState.mentorRequests).filter((r) => r.mentorUid === uid);
+    const pendingRequestsCount = requests.filter((r) => normalize(r.status) === "pending").length;
+    const acceptedRequestsCount = requests.filter((r) => normalize(r.status) === "accepted").length;
+
+    let modal = document.getElementById('admin-course-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'admin-course-modal';
+        modal.className = 'admin-course-modal-overlay';
+        document.body.appendChild(modal);
+    }
+
+    const name = m.fullName || 'Unknown Mentor';
+    const email = m.email || 'N/A';
+    const role = m.currentRole || 'N/A';
+    const status = m.status || m.approvalStatus || 'pending';
+    const photo = m.photoURL || 'images/default-avatar.png';
+    const dispStatus = status ? status.charAt(0).toUpperCase() + status.slice(1) : '';
+
+    modal.innerHTML = `
+    <div class="admin-course-modal-card">
+        <div class="acm-header">
+            <div class="icon-wrap"><i class="fas fa-chalkboard-teacher"></i></div>
+            <h2>Mentor Details</h2>
+            <span class="acm-badge ${status === 'approved' || status === 'active' ? 'approved' : status === 'rejected' ? 'rejected' : 'pending'}">
+                <i class="fas ${status === 'approved' || status === 'active' ? 'fa-check-circle' : status === 'rejected' ? 'fa-times-circle' : 'fa-clock'}"></i> 
+                ${dispStatus}
+            </span>
+            <button class="acm-close" id="acm-close-top"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="acm-body">
+            <div class="acm-main-card">
+                <div class="lbl">Mentor Name</div>
+                <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+                    <img src="${escapeAttr(photo)}" alt="${escapeAttr(name)}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid var(--border-color);">
+                    <h1 style="margin: 0;">${escapeHtml(name)}</h1>
+                </div>
+                <div class="acm-meta-row">
+                    <div class="acm-meta-item">
+                        <i class="fas fa-envelope acm-meta-icon"></i>
+                        <div class="acm-meta-text"><span>Email</span><strong>${escapeHtml(email)}</strong></div>
+                    </div>
+                    <div class="acm-divider"></div>
+                    <div class="acm-meta-item">
+                        <i class="fas fa-briefcase acm-meta-icon"></i>
+                        <div class="acm-meta-text"><span>Role</span><strong>${escapeHtml(role)}</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon blue"><i class="fas fa-info-circle"></i></div>
+                    <h3>Personal Information</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field"><span>Phone</span><strong>${escapeHtml(display(m.phone))}</strong></div>
+                    <div class="acm-field"><span>District</span><strong>${escapeHtml(display(m.district))}</strong></div>
+                    <div class="acm-field"><span>City</span><strong>${escapeHtml(display(m.city))}</strong></div>
+                    <div class="acm-field"><span>Languages</span><strong>${escapeHtml(display(m.preferredLanguages))}</strong></div>
+                </div>
+            </div>
+
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon slate"><i class="fas fa-briefcase"></i></div>
+                    <h3>Professional Information</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field"><span>Mentor Type</span><strong>${escapeHtml(display(m.mentorType))}</strong></div>
+                    <div class="acm-field"><span>Field</span><strong>${escapeHtml(display(m.field))}</strong></div>
+                    <div class="acm-field"><span>Current Role</span><strong>${escapeHtml(display(m.currentRole))}</strong></div>
+                    <div class="acm-field"><span>University / Company</span><strong>${escapeHtml(display(m.universityOrCompany))}</strong></div>
+                    <div class="acm-field"><span>Highest Qualification</span><strong>${escapeHtml(display(m.highestQualification))}</strong></div>
+                    <div class="acm-field"><span>Degree Area</span><strong>${escapeHtml(display(m.degreeArea))}</strong></div>
+                    <div class="acm-field"><span>Experience</span><strong>${escapeHtml(display(m.experience))}</strong></div>
+                    <div class="acm-field" style="grid-column: span 2;"><span>Bio</span><strong>${escapeHtml(display(m.bio))}</strong></div>
+                </div>
+            </div>
+
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon purple"><i class="fas fa-hands-helping"></i></div>
+                    <h3>Guidance Details</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field"><span>Guidance Areas</span><strong>${escapeHtml(display(m.guidanceAreas))}</strong></div>
+                    <div class="acm-field"><span>Student Levels</span><strong>${escapeHtml(display(m.studentLevelsSupported))}</strong></div>
+                    <div class="acm-field"><span>Available Days</span><strong>${escapeHtml(display(m.availableDays))}</strong></div>
+                    <div class="acm-field"><span>Available Time</span><strong>${escapeHtml(display(m.availableTime))}</strong></div>
+                    <div class="acm-field"><span>Mentoring Mode</span><strong>${escapeHtml(display(m.mentoringMode))}</strong></div>
+                    <div class="acm-field"><span>Max Students/Week</span><strong>${escapeHtml(display(m.maximumStudentsPerWeek))}</strong></div>
+                </div>
+            </div>
+
+            <div class="acm-section">
+                <div class="acm-section-header">
+                    <div class="acm-section-icon green"><i class="fas fa-check-circle"></i></div>
+                    <h3>Approval & Platform Stats</h3>
+                </div>
+                <div class="acm-grid">
+                    <div class="acm-field"><span>Status</span><span class="acm-stat-badge" style="width:fit-content;${status === 'approved' || status === 'active' ? '' : 'color:#d97706;background:#fffbeb;'}">${dispStatus}</span></div>
+                    <div class="acm-field"><span>Approved At</span><strong>${escapeHtml(display(m.approvedAt))}</strong></div>
+                    <div class="acm-field"><span>Approved By</span><strong>${escapeHtml(display(m.approvedBy))}</strong></div>
+                    <div class="acm-field"><span>Profile Completion</span><strong>${escapeHtml(display(m.profileCompletion))}</strong></div>
+                    <div class="acm-field"><span>Pending Requests</span><strong>${escapeHtml(display(pendingRequestsCount))}</strong></div>
+                    <div class="acm-field"><span>Accepted Requests</span><strong>${escapeHtml(display(acceptedRequestsCount))}</strong></div>
+                    <div class="acm-field"><span>Last Active At</span><strong>${escapeHtml(display(m.lastActiveAt))}</strong></div>
+                </div>
+            </div>
+        </div>
+        <div class="acm-footer">
+            <button id="acm-close-btn">Close</button>
+        </div>
+    </div>
+    `;
+
+    setTimeout(() => modal.classList.add('show'), 10);
+    const closeModal = () => {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            if (modal.parentElement) modal.parentElement.removeChild(modal);
+        }, 300);
+    };
+
+    document.getElementById('acm-close-top')?.addEventListener('click', closeModal);
+    document.getElementById('acm-close-btn')?.addEventListener('click', closeModal);
+}

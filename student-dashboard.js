@@ -108,7 +108,14 @@ const sectionTitles = {
     "skills-section": "Skill Development",
     "career-guide-section": "Career Guidance",
     "support-section": "EduPath Support",
-    "notifications-section": "Notifications"
+    "notifications-section": "Notifications",
+    "talent-opportunities-recommendations-section": "My Talent Opportunities",
+    "talent-mentors-recommendations-section": "My Talent Mentors",
+    "skill-courses-recommendations-section": "My Skill Courses",
+    "talent-scholarships-recommendations-section": "My Talent Scholarships",
+    "recommended-institutes-section": "My Institutes",
+    "talent-institutes-recommendations-section": "My Institutes",
+    "talent-recommendations-section": "Talent Recommendations"
 };
 
 const dashboardActions = {
@@ -3371,6 +3378,9 @@ function renderStudentOverview() {
     renderPathAdaptiveDashboard();
     bindJumpButtons();
     observeRevealCards();
+    if (typeof window.renderPersonalizedRecommendations === "function") {
+        window.renderPersonalizedRecommendations();
+    }
 }
 
 function renderStudentHero() {
@@ -3554,8 +3564,31 @@ function renderKeepGrowingOverview() {
 }
 
 function getProfileCompletionPercentage() {
-    const completed = profileFields.filter(([key, , source]) => hasValue(source === "user" ? state.user[key] : state.student[key]));
-    return Math.round((completed.length / profileFields.length) * 100);
+    const path = (state.currentResult && state.currentResult.recommendedPathway) ? state.currentResult.recommendedPathway : (state.student.pathwayPreference || "undecided");
+    
+    let requiredProfiles = ["personal"];
+    if (path === "talent") requiredProfiles = ["personal", "talent"];
+    else if (path === "academic" || path === "academic_improvement") requiredProfiles = ["personal", "academic"];
+    else if (path === "combined") requiredProfiles = ["personal", "academic", "talent"];
+    else requiredProfiles = ["personal", "discovery"];
+
+    // Count how many keys from required profiles have data
+    let totalKeys = 0;
+    let filledKeys = 0;
+
+    // Use profileFields array mapping which has ['key', 'Label', 'source']
+    // Wait, profileFields doesn't distinguish between academic vs talent fields. 
+    // Instead we can just check state.personalProfile, state.academicProfile, etc directly.
+    const profiles = {
+        "personal": Object.keys(state.personalProfile || {}).length > 2,
+        "academic": Object.keys(state.academicProfile || {}).length > 2,
+        "talent": Object.keys(state.talentProfile || {}).length > 2,
+        "discovery": Object.keys(state.discoveryProfile || {}).length > 2
+    };
+
+    let completed = 0;
+    requiredProfiles.forEach(p => { if (profiles[p]) completed++; });
+    return requiredProfiles.length ? Math.round((completed / requiredProfiles.length) * 100) : 0;
 }
 
 function getBestCourseMatch() {
@@ -4465,9 +4498,11 @@ async function handlePasswordChange(e) {
 }
 
 function recalculateStudentRecommendations({ updateCourses, updateScholarships, updateMentors }) {
-    if (updateCourses && typeof renderCourses === "function") renderCourses();
-    if (updateScholarships && typeof renderScholarships === "function") renderScholarships();
-    if (updateMentors && typeof renderMentors === "function") renderMentors();
+    if (updateCourses && typeof recommendCourses === "function") recommendCourses();
+    if (updateScholarships && typeof recommendScholarships === "function") recommendScholarships();
+    if (updateMentors && typeof recommendMentors === "function") recommendMentors();
+
+    if (typeof window.renderPersonalizedRecommendations === "function") window.renderPersonalizedRecommendations();
     if (typeof renderStudentOverview === "function") renderStudentOverview();
     if (typeof scheduleRecommendationSave === "function") scheduleRecommendationSave();
 }
@@ -4820,7 +4855,348 @@ function renderExtendedRecommendationsOverview() {
         const combined = { ...state.talentOpportunities, ...state.artsOpportunities, ...state.sportsOpportunities };
         const rows = recommendTalentOpportunities(profile, combined).slice(0, 3);
         opportunityRoot.innerHTML = rows.length ? rows.map((item) => `
-            <div class="extended-rec-row"><span class="extended-rec-icon talent"><i class="fas fa-star"></i></span><div><strong>${escapeHtml(item.opportunityName)}</strong><p>${escapeHtml([item.categoryTitle || item.category, item.opportunityType, item.deadline ? `Deadline ${item.deadline}` : item.ongoing ? "Ongoing" : "", item.location].filter(Boolean).join(" • "))}</p><p>${escapeHtml(item.matchReasons[0])}</p><a class="btn btn-sm btn-outline" href="${escapeAttr(item.applicationUrl || "talent-opportunities.html")}" ${item.applicationUrl ? "target=\"_blank\" rel=\"noopener\"" : ""}>${item.applicationUrl ? "Apply / View" : "View Opportunity"}</a></div><span class="badge badge-purple">${item.matchScore}%</span></div>
+            <div class="extended-rec-row"><span class="extended-rec-icon talent"><i class="fas fa-star"></i></span><div><strong>${escapeHtml(item.opportunityName)}</strong><p>${escapeHtml([item.categoryTitle || item.category, item.opportunityType, item.deadline ? `Deadline ${item.deadline}` : item.ongoing ? "Ongoing" : "", item.location].filter(Boolean).join("  "))}</p><p>${escapeHtml(item.matchReasons[0])}</p><a class="btn btn-sm btn-outline" href="${escapeAttr(item.applicationUrl || "talent-opportunities.html")}" ${item.applicationUrl ? "target=\"_blank\" rel=\"noopener\"" : ""}>${item.applicationUrl ? "Apply / View" : "View Opportunity"}</a></div><span class="badge badge-purple">${item.matchScore}%</span></div>
         `).join("") : modernEmpty("fa-star", "No relevant talent opportunities yet.", profile.talentInterests.length ? "No active opportunity currently matches your talent details." : "Add talent details to receive accurate opportunities.", "Explore Opportunities", "talent-opportunities.html");
     }
+}
+
+
+
+
+function talentEmptyStateHtml(title, text, primaryLabel, primarySection, secondaryLabel, secondaryHref) {
+    return `
+        <div class="empty-state glass" style="width: 100%; grid-column: 1 / -1; text-align: center; padding: 3rem 2rem;">
+            <i class="fas fa-search" style="font-size: 3rem; color: var(--border-color); margin-bottom: 1rem;"></i>
+            <h3 style="margin-bottom: 0.5rem; font-size: 1.25rem;">${escapeHtml(title)}</h3>
+            <p style="margin-bottom: 1.5rem; color: var(--text-secondary); max-width: 500px; margin-left: auto; margin-right: auto;">${escapeHtml(text)}</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-primary dashboard-jump" data-section="${escapeAttr(primarySection)}" onclick="if(typeof showDashboardSection==='function') showDashboardSection('${escapeAttr(primarySection)}')">${escapeHtml(primaryLabel)}</button>
+                <a href="${escapeAttr(secondaryHref)}" class="btn btn-outline">${escapeHtml(secondaryLabel)}</a>
+            </div>
+        </div>
+    `;
+}
+
+window.renderPersonalizedRecommendations = function() {
+    try {
+
+    const profile = buildSharedRecommendationProfile({
+        user: state.user,
+        student: state.student,
+        personal: state.personalProfile,
+        academic: state.academicProfile,
+        talent: state.talentProfile,
+        discovery: state.discoveryProfile,
+        latestPathwayResult: state.currentResult
+    });
+
+    const allTalentOpportunities = {
+        ...state.talentOpportunities,
+        ...state.artsOpportunities,
+        ...state.sportsOpportunities
+    };
+
+    let recommendedCourses = sharedRecommendCourses(profile, state.courses);
+    let recommendedScholarships = sharedRecommendScholarships(profile, state.scholarships);
+    let recommendedMentors = sharedRecommendMentors(profile, state.mentors, state.uid);
+    let recommendedTalentOpportunities = recommendTalentOpportunities(profile, allTalentOpportunities);
+    let recommendedInstitutes = [];
+
+    const path = profile.pathwayPreference || "undecided";
+
+    if (path !== "talent") {
+        recommendedInstitutes = recommendInstitutes(
+            profile,
+            state.institutes,
+            state.courses,
+            allTalentOpportunities,
+            state.scholarships
+        );
+    } else {
+        // Strict Talent Path Filtering
+        recommendedTalentOpportunities = recommendedTalentOpportunities.filter(o => o.matchScore >= 20);
+        
+        const isTalentMentor = (m) => /coach|talent|arts|sports|performing|creative/i.test(m.mentorType || m.type || m.mentorField) || (m.relatedTalentCategoryIds && m.relatedTalentCategoryIds.some(id => profile.talentCategoryIds && profile.talentCategoryIds.includes(id)));
+        recommendedMentors = recommendedMentors.filter(isTalentMentor);
+        
+        const isTalentCourse = (c) => /creative|practical|performance|design|media|art|sports|music|portfolio|vocational|short|training|workshop/i.test([c.category, c.courseName, c.title].join(" "));
+        recommendedCourses = recommendedCourses.filter(isTalentCourse);
+        
+        const isTalentScholarship = (s) => /talent|creative|art|sport|performance|youth|financial|coaching/i.test([s.category, s.scholarshipName, s.title].join(" ")) || (s.relatedTalentCategoryIds && s.relatedTalentCategoryIds.length > 0);
+        recommendedScholarships = recommendedScholarships.filter(isTalentScholarship);
+    }
+
+    if (localStorage.getItem("debugRecommendations") === "true") {
+        console.log("=== DEBUG RECOMMENDATIONS ===");
+        console.log("Selected Pathway:", path);
+        console.log("Normalized Profile:", profile);
+        console.log("Counts - Courses:", recommendedCourses.length, "Scholarships:", recommendedScholarships.length, "Mentors:", recommendedMentors.length, "Institutes:", recommendedInstitutes.length, "Talent:", recommendedTalentOpportunities.length);
+        console.log("Top 5 Courses:", recommendedCourses.slice(0, 5));
+        console.log("Top 5 Talent Opps:", recommendedTalentOpportunities.slice(0, 5));
+    }
+    
+    // HIDE UNNECESSARY SIDEBAR PROFILE SECTIONS
+    const navAcademic = document.getElementById("nav-academic-profile");
+    const navTalent = document.getElementById("nav-talent-profile");
+    const navDiscovery = document.getElementById("nav-discovery-profile");
+    
+    if (navAcademic && navAcademic.parentElement) navAcademic.parentElement.style.display = (path === "talent" || path === "undecided") ? "none" : "";
+    if (navTalent && navTalent.parentElement) navTalent.parentElement.style.display = (path === "academic" || path === "academic_improvement" || path === "undecided") ? "none" : "";
+    if (navDiscovery && navDiscovery.parentElement) navDiscovery.parentElement.style.display = (path !== "undecided") ? "none" : "";
+
+    if (localStorage.getItem("debugRecommendations") === "true") {
+        console.log("Hidden Sidebar items:");
+        if (navAcademic && navAcademic.parentElement.style.display === "none") console.log("- Academic Profile");
+        if (navTalent && navTalent.parentElement.style.display === "none") console.log("- Talent Profile");
+        if (navDiscovery && navDiscovery.parentElement.style.display === "none") console.log("- Discovery Profile");
+    }
+
+    // ALSO HIDE THE ACTUAL SECTIONS FROM THE DOM TO PREVENT DIRECT ACCESS
+    const secAcademic = document.getElementById("academic-profile-section");
+    const secTalent = document.getElementById("talent-profile-section");
+    const secDiscovery = document.getElementById("discovery-profile-section");
+    
+    if (secAcademic) secAcademic.style.display = (path === "talent" || path === "undecided") ? "none" : "";
+    if (secTalent) secTalent.style.display = (path === "academic" || path === "academic_improvement" || path === "undecided") ? "none" : "";
+    if (secDiscovery) secDiscovery.style.display = (path !== "undecided") ? "none" : "";
+
+    // UPDATE SIDEBAR RECOMMENDATIONS
+    let sidebarHtml = "";
+    if (path === "talent") {
+        sidebarHtml = `
+            <li class="sidebar-section-label"><span>MY RECOMMENDATIONS</span></li>
+            <li><a href="#talent-opportunities-recommendations" data-section="talent-opportunities-recommendations-section" class="student-nav-item"><i class="fas fa-star"></i><span class="sidebar-label">My Talent Opportunities</span></a></li>
+            <li><a href="#talent-mentors-recommendations" data-section="talent-mentors-recommendations-section" class="student-nav-item"><i class="fas fa-user-group"></i><span class="sidebar-label">My Talent Mentors</span></a></li>
+            <li><a href="#skill-courses-recommendations" data-section="skill-courses-recommendations-section" class="student-nav-item"><i class="fas fa-book-open"></i><span class="sidebar-label">My Skill Courses</span></a></li>
+            <li><a href="#talent-scholarships-recommendations" data-section="talent-scholarships-recommendations-section" class="student-nav-item"><i class="fas fa-award"></i><span class="sidebar-label">My Talent Scholarships</span></a></li>
+        `;
+    } else if (path === "academic") {
+        sidebarHtml = `
+            <li class="sidebar-section-label"><span>MY RECOMMENDATIONS</span></li>
+            <li><a href="#recommended-courses" data-section="recommended-courses-section" class="student-nav-item"><i class="fas fa-book-open"></i><span class="sidebar-label">My Recommended Courses</span></a></li>
+            <li><a href="#scholarships" data-section="scholarships-section" class="student-nav-item"><i class="fas fa-award"></i><span class="sidebar-label">My Scholarships</span></a></li>
+            <li><a href="#mentors" data-section="mentors-section" class="student-nav-item"><i class="fas fa-user-group"></i><span class="sidebar-label">My Mentors</span></a></li>
+            <li><a href="#recommended-institutes" data-section="recommended-institutes-section" class="student-nav-item"><i class="fas fa-university"></i><span class="sidebar-label">My Institutes</span></a></li>
+        `;
+    } else if (path === "combined") {
+        sidebarHtml = `
+            <li class="sidebar-section-label"><span>MY RECOMMENDATIONS</span></li>
+            <li><a href="#recommended-courses" data-section="recommended-courses-section" class="student-nav-item"><i class="fas fa-book-open"></i><span class="sidebar-label">My Academic Recommendations</span></a></li>
+            <li><a href="#talent-opportunities-recommendations" data-section="talent-opportunities-recommendations-section" class="student-nav-item"><i class="fas fa-star"></i><span class="sidebar-label">My Talent Recommendations</span></a></li>
+            <li><a href="#mentors" data-section="mentors-section" class="student-nav-item"><i class="fas fa-user-group"></i><span class="sidebar-label">My Mentors</span></a></li>
+            <li><a href="#recommended-institutes" data-section="recommended-institutes-section" class="student-nav-item"><i class="fas fa-university"></i><span class="sidebar-label">My Institutes</span></a></li>
+        `;
+    } else if (path === "academic_improvement") {
+        sidebarHtml = `
+            <li class="sidebar-section-label"><span>MY RECOMMENDATIONS</span></li>
+            <li><a href="#recommended-courses" data-section="recommended-courses-section" class="student-nav-item"><i class="fas fa-book-open"></i><span class="sidebar-label">Support Courses</span></a></li>
+            <li><a href="#scholarships" data-section="scholarships-section" class="student-nav-item"><i class="fas fa-award"></i><span class="sidebar-label">Support Scholarships</span></a></li>
+            <li><a href="#mentors" data-section="mentors-section" class="student-nav-item"><i class="fas fa-user-group"></i><span class="sidebar-label">Study Mentors</span></a></li>
+            <li><a href="#recommended-institutes" data-section="recommended-institutes-section" class="student-nav-item"><i class="fas fa-university"></i><span class="sidebar-label">Support Institutes</span></a></li>
+        `;
+    } else {
+        sidebarHtml = `
+            <li class="sidebar-section-label"><span>MY RECOMMENDATIONS</span></li>
+            <li><a href="#recommended-courses" data-section="recommended-courses-section" class="student-nav-item"><i class="fas fa-search"></i><span class="sidebar-label">Explore Suggestions</span></a></li>
+            <li><a href="#mentors" data-section="mentors-section" class="student-nav-item"><i class="fas fa-user-group"></i><span class="sidebar-label">Guidance Mentors</span></a></li>
+            <li><a href="#recommended-courses" data-section="recommended-courses-section" class="student-nav-item"><i class="fas fa-book-open"></i><span class="sidebar-label">Beginner Courses</span></a></li>
+            <li><a href="#scholarships" data-section="scholarships-section" class="student-nav-item"><i class="fas fa-award"></i><span class="sidebar-label">Scholarships</span></a></li>
+        `;
+    }
+    
+    const sb = document.getElementById("dynamic-recommendations-sidebar");
+    if (sb) {
+        sb.innerHTML = sidebarHtml;
+        sb.querySelectorAll('.student-nav-item').forEach(link => {
+            link.addEventListener('click', (e) => {
+                if (link.dataset.section) {
+                    e.preventDefault();
+                    if (typeof showDashboardSection === 'function') {
+                        showDashboardSection(link.dataset.section);
+                    }
+                }
+            });
+        });
+    }
+
+    // UPDATE OVERVIEW HERO AND KPI
+    const heroTitle = document.getElementById("hero-pathway-name");
+    const heroSubtitle = document.getElementById("hero-pathway-score-label");
+    const primaryBtn = document.querySelector(".dashboard-hero-actions .btn-primary");
+    const secondaryBtn = document.querySelector(".dashboard-hero-actions .btn-outline");
+    const progressList = document.getElementById("journey-progress-list");
+
+    if (path === "talent") {
+        if (heroTitle) heroTitle.textContent = "Grow your future through your talents";
+        if (heroSubtitle) heroSubtitle.textContent = "Talent development path";
+        if (primaryBtn) {
+            primaryBtn.textContent = "View My Talent Recommendations";
+            primaryBtn.onclick = () => showDashboardSection("talent-opportunities-recommendations-section");
+        }
+        if (secondaryBtn) {
+            secondaryBtn.textContent = "Update Talent Profile";
+            secondaryBtn.onclick = () => showDashboardSection("talent-profile-section");
+        }
+        
+        // Update KPI/Journey steps for Talent Path
+        if (progressList) {
+            const completion = getProfileCompletionPercentage();
+            const saved = Object.keys(state.savedOpportunities || {}).length;
+            const requests = Object.keys(state.mentorRequests || {}).length;
+            const steps = [
+                { title: "Complete Talent Profile", date: "Profile", done: completion >= 80 },
+                { title: "Save Talent Opportunity", date: `${saved} saved`, done: saved > 0 },
+                { title: "Request Talent Mentor", date: `${requests} requests`, done: requests > 0 },
+                { title: "Apply / Register", date: "Upcoming", done: false },
+                { title: "Build Portfolio", date: "Upcoming", done: false },
+                { title: "Track Progress", date: "Upcoming", done: false }
+            ];
+            progressList.innerHTML = steps.map((step, index) => `
+                <button type="button" class="journey-step ${step.done ? 'completed' : (index === Math.max(0, steps.findIndex(s => !s.done)) ? 'current' : 'upcoming')}">
+                    <span>${step.done ? '<i class="fas fa-check"></i>' : index + 1}</span>
+                    <strong>${escapeHtml(step.title)}</strong>
+                    <small>${escapeHtml(step.date)}</small>
+                </button>
+            `).join("");
+        }
+    }
+
+    // UPDATE OVERVIEW RECOMMENDATION CARDS
+    // Hide standard overview grids for Talent Path, replace with customized ones
+    const bestMatches = document.getElementById("best-matches-overview-grid");
+    const extendedRecs = document.getElementById("extended-recommendations-grid");
+    const talentDynamicSummary = document.getElementById("dynamic-recommendation-summary");
+
+    if (path === "talent") {
+        if (bestMatches && bestMatches.parentElement) bestMatches.parentElement.style.display = "none";
+        if (extendedRecs && extendedRecs.parentElement) extendedRecs.parentElement.style.display = "none";
+        
+        let summaryHtml = `
+            <div class="dashboard-section" style="padding-top:0;">
+                <div class="section-header"><h2>My Talent Opportunities</h2><button class="btn btn-outline btn-sm" onclick="showDashboardSection('talent-opportunities-recommendations-section')">View All</button></div>
+                <div class="cards-grid" style="margin-bottom:2rem;">
+                    ${recommendedTalentOpportunities.slice(0,3).map(i => personalizedCardHtml(i, "talent")).join('') || talentEmptyStateHtml("No matching talent opportunities yet", "Complete your Talent Profile with talent category, skill level, preferred opportunity types and location to improve your matches.", "Update Talent Profile", "talent-profile-section", "talent-opportunities.html", "Browse Public Talent Opportunities")}
+                </div>
+                
+                <div class="section-header"><h2>My Talent Mentors & Coaches</h2><button class="btn btn-outline btn-sm" onclick="showDashboardSection('talent-mentors-recommendations-section')">View All</button></div>
+                <div class="cards-grid" style="margin-bottom:2rem;">
+                    ${recommendedMentors.slice(0,3).map(i => personalizedCardHtml(i, "mentor")).join('') || talentEmptyStateHtml("No matching talent mentors yet", "Add your talent category and preferred mentor type, or wait until more mentors are added.", "Update Talent Profile", "talent-profile-section", "mentors.html", "Browse Mentors")}
+                </div>
+
+                <div class="section-header"><h2>My Skill Courses</h2><button class="btn btn-outline btn-sm" onclick="showDashboardSection('skill-courses-recommendations-section')">View All</button></div>
+                <div class="cards-grid" style="margin-bottom:2rem;">
+                    ${recommendedCourses.slice(0,3).map(i => personalizedCardHtml(i, "course")).join('') || talentEmptyStateHtml("No matching skill courses yet", "Add specific skills and talent goals to receive practical course suggestions.", "Update Talent Profile", "talent-profile-section", "courses.html", "Browse Courses")}
+                </div>
+                
+                <div class="section-header"><h2>My Talent Scholarships</h2><button class="btn btn-outline btn-sm" onclick="showDashboardSection('talent-scholarships-recommendations-section')">View All</button></div>
+                <div class="cards-grid" style="margin-bottom:2rem;">
+                    ${recommendedScholarships.slice(0,3).map(i => personalizedCardHtml(i, "scholarship")).join('') || talentEmptyStateHtml("No matching talent scholarships yet", "Add achievements, financial support need and talent category to improve scholarship matches.", "Update Talent Profile", "talent-profile-section", "scholarships.html", "Browse Scholarships")}
+                </div>
+            </div>
+        `;
+        if (talentDynamicSummary) talentDynamicSummary.innerHTML = summaryHtml;
+    } else {
+        if (bestMatches && bestMatches.parentElement) bestMatches.parentElement.style.display = "";
+        if (extendedRecs && extendedRecs.parentElement) extendedRecs.parentElement.style.display = "";
+        if (talentDynamicSummary) talentDynamicSummary.innerHTML = "";
+    }
+
+    // POPULATE ALL LISTS FOR TALENT PATH
+    setTimeout(() => {
+        if (path === "talent") {
+            const listOpp = document.getElementById("talent-opportunities-recommendations-list");
+            if (listOpp) listOpp.innerHTML = recommendedTalentOpportunities.length ? recommendedTalentOpportunities.map(i => personalizedCardHtml(i, "talent")).join('') : talentEmptyStateHtml("No matching talent opportunities yet", "Complete your Talent Profile with talent category, skill level, preferred opportunity types and location to improve your matches.", "Update Talent Profile", "talent-profile-section", "talent-opportunities.html", "Browse Public Talent Opportunities");
+            
+            const listMen = document.getElementById("talent-mentors-recommendations-list");
+            if (listMen) listMen.innerHTML = recommendedMentors.length ? recommendedMentors.map(i => personalizedCardHtml(i, "mentor")).join('') : talentEmptyStateHtml("No matching talent mentors yet", "Add your talent category and preferred mentor type, or wait until more mentors are added.", "Update Talent Profile", "talent-profile-section", "mentors.html", "Browse Mentors");
+            
+            const listCou = document.getElementById("skill-courses-recommendations-list");
+            if (listCou) listCou.innerHTML = recommendedCourses.length ? recommendedCourses.map(i => personalizedCardHtml(i, "course")).join('') : talentEmptyStateHtml("No matching skill courses yet", "Add specific skills and talent goals to receive practical course suggestions.", "Update Talent Profile", "talent-profile-section", "courses.html", "Browse Courses");
+            
+            const listSch = document.getElementById("talent-scholarships-recommendations-list");
+            if (listSch) listSch.innerHTML = recommendedScholarships.length ? recommendedScholarships.map(i => personalizedCardHtml(i, "scholarship")).join('') : talentEmptyStateHtml("No matching talent scholarships yet", "Add achievements, financial support need and talent category to improve scholarship matches.", "Update Talent Profile", "talent-profile-section", "scholarships.html", "Browse Scholarships");
+        } else {
+            // Populate generic path lists as fallback
+            const listC = document.getElementById("recommended-courses-list");
+            if (listC) listC.innerHTML = recommendedCourses.length ? recommendedCourses.map(c => personalizedCardHtml(c, "course")).join('') : emptyStateHtml("No recommendations found.", "#academic-profile");
+        }
+    }, 50);
+    } catch (e) {
+        console.error("RECOMMENDATION ENGINE ERROR:", e);
+        const errDiv = document.createElement("div");
+        errDiv.style.color = "red";
+        errDiv.style.background = "#fee";
+        errDiv.style.padding = "20px";
+        errDiv.innerHTML = "<h3>Error in renderPersonalizedRecommendations</h3><pre>" + e.stack + "</pre>";
+        const header = document.querySelector(".dashboard-header");
+        if (header) header.parentNode.insertBefore(errDiv, header.nextSibling);
+    }
+}
+
+function personalizedCardHtml(item, type) {
+    const reasons = item.matchReasons && item.matchReasons.length > 0 ? item.matchReasons : ["Matched with your selected pathway and profile information."];
+    const missingHtml = item.missingRequirements && item.missingRequirements.length > 0 ? `<li class="missing-req"><i class="fas fa-exclamation-triangle"></i> <span>Missing: ${escapeHtml(item.missingRequirements.join(', '))}</span></li>` : '';
+    
+    let typeLabel = "Opportunity";
+    let title = item.title || item.name || "Opportunity";
+    let primaryAction = "View Details";
+    let secondaryAction = "Save";
+    
+    if (type === "course") { typeLabel = "Skill Course"; title = item.courseName || title; }
+    else if (type === "scholarship") { typeLabel = "Talent Scholarship"; title = item.scholarshipName || title; }
+    else if (type === "mentor") { typeLabel = "Coach / Mentor"; title = item.mentorName || title; secondaryAction = "Request Mentor"; }
+    else if (type === "institute") { typeLabel = "Academy / Institute"; title = item.instituteName || title; secondaryAction = "Visit"; }
+    else if (type === "talent") { typeLabel = "Talent Opportunity"; primaryAction = "Apply / View"; secondaryAction = "Save Opportunity"; }
+
+    let imgHtml = '';
+    const url = item.imageUrl || item.image || item.photoUrl || item.photoURL;
+    if (url) {
+        imgHtml = `
+        <div class="premium-card-image">
+            <img src="${escapeHtml(url)}" alt="${escapeHtml(title)}" onerror="this.style.display='none'">
+            <div class="premium-card-type-badge">${escapeHtml(typeLabel)}</div>
+        </div>`;
+    } else {
+         imgHtml = `
+         <div class="premium-card-header-fallback">
+             <div class="premium-card-type-badge">${escapeHtml(typeLabel)}</div>
+         </div>`;
+    }
+
+    return `
+    <div class="premium-recommendation-card hover-lift">
+        ${imgHtml}
+        <div class="premium-card-body">
+            <h3 class="premium-card-title">${escapeHtml(title)}</h3>
+            <div class="premium-card-match">
+                <div class="match-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="match-details">
+                    <span class="match-level">${escapeHtml(item.matchLevel || 'Match')}</span>
+                    <span class="match-score">&middot; ${item.matchScore || 0}%</span>
+                </div>
+            </div>
+            <div class="premium-card-reasons">
+                <strong>Why this matches:</strong>
+                <ul>
+                    ${reasons.map(r => `<li><i class="fas fa-check"></i> <span>${escapeHtml(r)}</span></li>`).join('')}
+                    ${missingHtml}
+                </ul>
+            </div>
+        </div>
+        <div class="premium-card-actions">
+            <button class="btn btn-outline premium-btn-secondary" onclick="alert('View Details clicked')">${escapeHtml(primaryAction)}</button>
+            <button class="btn btn-primary premium-btn-primary" onclick="alert('${escapeHtml(secondaryAction)} clicked')">${escapeHtml(secondaryAction)}</button>
+        </div>
+    </div>
+    `;
+}
+
+function emptyStateHtml(msg, link, btnLabel="Update Profile") {
+    return `
+        <div class="empty-state glass" style="width: 100%; grid-column: 1 / -1;">
+            <i class="fas fa-search" style="font-size: 3rem; color: var(--border-color); margin-bottom: 1rem;"></i>
+            <p>${escapeHtml(msg).replace(/\n/g, '<br>')}</p>
+            <button class="btn btn-primary" onclick="showDashboardSection('${link.replace('#', '')}-section')" style="margin-top: 1rem;">${escapeHtml(btnLabel)}</button>
+        </div>
+    `;
 }

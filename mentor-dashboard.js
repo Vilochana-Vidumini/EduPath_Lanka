@@ -2149,23 +2149,54 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderIncomingLearningRequests() {
         const grid = document.getElementById('learning-requests-grid');
         if (!grid) return;
-        const rows = Object.values(learningRequestDetails).filter(({ request }) => normalizeMentorshipStatus(request.status) === 'pending' && request.targetMentorUid === currentUid);
-        const count = document.getElementById('learning-req-count');
-        if (count) count.textContent = String(rows.length);
-        if (!rows.length) { grid.innerHTML = '<div class="empty-state"><i class="fas fa-user-graduate"></i><p>No incoming mentor learning requests.</p></div>'; return; }
-        grid.innerHTML = rows.map(({ requestId, request, user, mentor }) => {
-            const name = request.requesterName || mentor.fullName || user.fullName || 'Approved Mentor';
-            const photo = request.requesterPhotoURL || mentor.photoURL || user.photoURL || '';
-            return `<article class="student-card request-card glass"><div class="request-card-header"><div style="display:flex;gap:12px;align-items:center;">${photo ? `<img class="avatar-sm" src="${escapeHtml(photo)}" alt="">` : `<span class="mini-avatar">${escapeHtml(getInitials(name))}</span>`}<div><h4>${escapeHtml(name)}</h4><div><span class="badge badge-approved">Approved Mentor</span> <span class="badge badge-warning">Requesting as Mentee</span></div></div></div></div><p><strong>Topic:</strong> ${escapeHtml(request.topic || 'General Mentorship')}</p><p><strong>Goal:</strong> ${escapeHtml(request.goal || 'Not provided')}</p><p><strong>Message:</strong> ${escapeHtml(request.message || 'No message')}</p><p class="text-sm"><strong>Preferred:</strong> ${escapeHtml(request.preferredMode || 'Flexible')} ${request.preferredDays ? `- ${escapeHtml(request.preferredDays)}` : ''}</p><p class="text-sm text-muted">${escapeHtml(formatSupportDate(request.createdAt))}</p><div class="request-card-actions"><button class="btn btn-secondary btn-sm" data-view-learning-request="${escapeHtml(requestId)}">View Details</button><button class="btn btn-success btn-sm" data-accept-learning-request="${escapeHtml(requestId)}">Accept</button><button class="btn btn-danger btn-sm" data-reject-learning-request="${escapeHtml(requestId)}">Reject</button></div></article>`;
-        }).join('');
+        try {
+            const rows = Object.values(learningRequestDetails).filter(({ request }) => normalizeMentorshipStatus(request.status) === 'pending').sort((a, b) => (b.request.createdAt || 0) - (a.request.createdAt || 0));
+            const count = document.getElementById('learning-req-count');
+            if (count) count.textContent = String(rows.length);
+            if (!rows.length) { grid.innerHTML = '<tr><td colspan="7" class="text-muted text-center p-4">No incoming mentor learning requests.</td></tr>'; return; }
+            
+            grid.innerHTML = rows.map(({ requestId, request, user, mentor }) => {
+                const name = request.requesterName || mentor.fullName || user.fullName || 'Approved Mentor';
+                const photo = request.requesterPhotoURL || mentor.photoURL || user.photoURL || 'images/avatar-placeholder.png';
+                const date = request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'N/A';
+                return `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="${escapeHtml(photo)}" alt="${escapeHtml(name)}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                <div>
+                                    <h6 class="mb-0" style="color: #0f1b3d; margin:0;">${escapeHtml(name)}</h6>
+                                    <small class="text-muted" style="font-size: 0.8rem;">Mentor account · Seeking guidance</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.guidancePurpose || request.category || 'Mentorship')}</td>
+                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.academicLevel || 'N/A')}</td>
+                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.studyArea || request.topic || 'N/A')}</td>
+                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(date)}</td>
+                        <td><span class="badge badge-warning">Pending</span></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-primary" data-view-learning-request="${escapeHtml(requestId)}">View Details</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (e) {
+            console.error("Error in renderIncomingLearningRequests:", e);
+            grid.innerHTML = `<tr><td colspan="7" class="text-danger text-center p-4">Error loading requests: ${escapeHtml(e.message)}</td></tr>`;
+        }
     }
 
     function normalizeMentorshipStatus(value) { return String(value || 'pending').trim().toLowerCase().replace(/[ -]+/g, '_'); }
 
     function handleLearningRequestAction(event) {
-        const view = event.target.closest('[data-view-learning-request]'); if (view) return openLearningRequestDetails(view.dataset.viewLearningRequest);
-        const accept = event.target.closest('[data-accept-learning-request]'); if (accept) return acceptMentorshipRequest(accept.dataset.acceptLearningRequest);
-        const reject = event.target.closest('[data-reject-learning-request]'); if (reject) { const note = prompt('Optional response note:', '') || ''; return rejectMentorshipRequest(reject.dataset.rejectLearningRequest, note); }
+        const view = event.target.closest('[data-view-learning-request]'); if (view) {
+            const reqId = view.dataset.viewLearningRequest;
+            if (reqId && learningRequestDetails[reqId]) return openLearningRequestModal(learningRequestDetails[reqId]);
+            return;
+        }
+        const accept = event.target.closest('[data-accept-learning-request]'); if (accept) return acceptLearningRequest(accept.dataset.acceptLearningRequest);
+        const reject = event.target.closest('[data-reject-learning-request]'); if (reject) { const note = prompt('Optional response note:', '') || ''; return rejectLearningRequest(reject.dataset.rejectLearningRequest, note); }
     }
 
     function openLearningRequestDetails(requestId) {
@@ -2179,23 +2210,45 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.querySelector('[data-close-learning-request]')?.addEventListener('click', () => modal.classList.add('hidden'));
     }
 
-    async function acceptMentorshipRequest(requestId) {
+    async function acceptLearningRequest(requestId) {
         const snap = await get(ref(database, `mentorshipRequests/${requestId}`));
         const request = snap.val();
         if (!request || request.targetMentorUid !== currentUid || normalizeMentorshipStatus(request.status) !== 'pending') return showToast('This learning request is no longer available.', 'error');
         const connectionRef = push(ref(database, 'mentorshipConnections'));
         const notificationRef = push(ref(database, `notifications/${request.requesterUid}`));
         const learningConversationId = `mentor_${currentUid}_${request.requesterUid}`;
-        const connection = { connectionId: connectionRef.key, requestId, mentorUid: currentUid, mentorName: request.targetMentorName || currentMentorData.fullName || currentUserData.fullName || 'Mentor', mentorPhotoURL: request.targetMentorPhotoURL || currentMentorData.photoURL || currentUserData.photoURL || '', menteeUid: request.requesterUid, menteeName: request.requesterName || 'Mentor', menteePhotoURL: request.requesterPhotoURL || '', menteeAccountRole: request.requesterAccountRole || 'mentor', mentorRelationshipRole: 'mentor', menteeRelationshipRole: 'mentee', topic: request.topic || 'General Mentorship', category: request.category || 'General Guidance', goal: request.goal || '', status: 'active', conversationId: learningConversationId, createdAt: serverTimestamp(), updatedAt: serverTimestamp(), endedAt: null };
+        const connection = { 
+            connectionId: connectionRef.key, 
+            requestId, 
+            mentorUid: currentUid, 
+            mentorName: request.targetMentorName || currentMentorData.fullName || currentUserData.fullName || 'Mentor', 
+            mentorPhotoURL: request.targetMentorPhotoURL || currentMentorData.photoURL || currentUserData.photoURL || '', 
+            menteeUid: request.requesterUid, 
+            menteeName: request.requesterName || 'Mentor', 
+            menteePhotoURL: request.requesterPhotoURL || '', 
+            menteeAccountRole: request.requesterAccountRole || 'mentor', 
+            mentorRelationshipRole: 'mentor', 
+            menteeRelationshipRole: 'mentee', 
+            guidancePurpose: request.guidancePurpose || request.category || 'General Guidance',
+            academicLevel: request.academicLevel || 'N/A',
+            studyArea: request.studyArea || request.topic || 'General Mentorship',
+            researchArea: request.researchArea || request.topic || 'General Mentorship',
+            learningGoal: request.learningGoal || request.goal || '', 
+            status: 'active', 
+            conversationId: learningConversationId, 
+            createdAt: serverTimestamp(), 
+            updatedAt: serverTimestamp(), 
+            endedAt: null 
+        };
         const updates = {};
         updates[`mentorshipConnections/${connectionRef.key}`] = connection;
-        updates[`conversations/${learningConversationId}`] = { conversationId: learningConversationId, mentorUid: currentUid, menteeUid: request.requesterUid, participantIds: { [currentUid]: true, [request.requesterUid]: true }, topic: connection.topic, lastMessage: "", unreadByMentor: 0, unreadByMentee: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+        updates[`conversations/${learningConversationId}`] = { conversationId: learningConversationId, mentorUid: currentUid, menteeUid: request.requesterUid, participantIds: { [currentUid]: true, [request.requesterUid]: true }, topic: connection.guidancePurpose, lastMessage: "", unreadByMentor: 0, unreadByMentee: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
         updates[`mentorshipRequests/${requestId}/status`] = 'accepted'; updates[`mentorshipRequests/${requestId}/respondedAt`] = serverTimestamp(); updates[`mentorshipRequests/${requestId}/updatedAt`] = serverTimestamp();
         updates[`notifications/${request.requesterUid}/${notificationRef.key}`] = { notificationId: notificationRef.key, type: 'mentorship_request_accepted', title: 'Mentorship Request Accepted', message: `${connection.mentorName} accepted your learning request.`, targetUserUid: request.requesterUid, senderUid: currentUid, relatedEntityType: 'mentorship_connection', relatedEntityId: connectionRef.key, targetPage: 'mentor-learning.html', targetSection: 'connected-mentors', read: false, status: 'unread', createdAt: serverTimestamp() };
         await update(ref(database), updates); document.getElementById('learning-request-detail-modal')?.classList.add('hidden'); showToast('Mentorship request accepted.', 'success');
     }
 
-    async function rejectMentorshipRequest(requestId, note = '') {
+    async function rejectLearningRequest(requestId, note = '') {
         const snap = await get(ref(database, `mentorshipRequests/${requestId}`)); const request = snap.val();
         if (!request || request.targetMentorUid !== currentUid || normalizeMentorshipStatus(request.status) !== 'pending') return showToast('This learning request is no longer available.', 'error');
         await update(ref(database, `mentorshipRequests/${requestId}`), { status: 'rejected', respondedAt: serverTimestamp(), updatedAt: serverTimestamp(), responseNote: String(note || '').slice(0, 500) }); document.getElementById('learning-request-detail-modal')?.classList.add('hidden'); showToast('Mentorship request rejected.', 'success');
@@ -2217,7 +2270,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (snapshot.exists()) {
                 const data = snapshot.val();
-                const filtered = Object.entries(data || {}).filter(([, req]) => req && req.mentorUid === uid);
+                const filtered = Object.entries(data || {}).filter(([, req]) => req && req.mentorUid === uid && req.requestSource !== 'mentor_to_mentor');
 
                 const rows = await Promise.all(filtered.map(async ([reqId, req]) => {
                     const studentUid = req.studentUid || '';

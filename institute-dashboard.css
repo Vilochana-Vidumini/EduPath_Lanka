@@ -1594,6 +1594,42 @@ td select {
     min-height: 200px;
 }
 
+.institute-svg-chart {
+    height: 300px;
+    width: 100%;
+}
+
+/* -------------------------------------
+ * PROFILE SECTION VIEW MODE
+ * ------------------------------------- */
+#profile-section:not([data-editing-profile]) input,
+#profile-section:not([data-editing-profile]) textarea,
+#profile-section:not([data-editing-profile]) select {
+    pointer-events: none;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--text-dark) !important;
+    padding-left: 0;
+    resize: none;
+}
+
+[data-theme="dark"] #profile-section:not([data-editing-profile]) input,
+[data-theme="dark"] #profile-section:not([data-editing-profile]) textarea,
+[data-theme="dark"] #profile-section:not([data-editing-profile]) select {
+    color: var(--text-light) !important;
+}
+
+#profile-section:not([data-editing-profile]) select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: none !important;
+}
+
+#profile-section:not([data-editing-profile]) .form-submit-row {
+    display: none !important;
+}
+
 .institute-svg-chart svg {
     width: 100%;
     height: 100%;

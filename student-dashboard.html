@@ -40,20 +40,18 @@
 
             <li class="sidebar-section-label"><span>MY PROFILE</span></li>
             <li><a href="#personal-profile" data-section="personal-profile-section" class="student-nav-item" title="Personal Profile"><i class="fas fa-user" aria-hidden="true"></i><span class="sidebar-label">Personal Profile</span></a></li>
-            <li><a href="#academic-profile" data-section="academic-profile-section" class="student-nav-item" title="Academic Profile"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span class="sidebar-label">Academic Profile</span></a></li>
-            <li><a href="#talent-profile" data-section="talent-profile-section" class="student-nav-item" title="Talent Profile"><i class="fas fa-star" aria-hidden="true"></i><span class="sidebar-label">Talent Profile</span></a></li>
-            <li><a href="#discovery-profile" data-section="discovery-profile-section" class="student-nav-item" title="Discovery Profile"><i class="fas fa-search" aria-hidden="true"></i><span class="sidebar-label">Discovery Profile</span></a></li>
+            <li><a id="nav-academic-profile" href="#academic-profile" data-section="academic-profile-section" class="student-nav-item" title="Academic Profile"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span class="sidebar-label">Academic Profile</span></a></li>
+            <li><a id="nav-talent-profile" href="#talent-profile" data-section="talent-profile-section" class="student-nav-item" title="Talent Profile"><i class="fas fa-star" aria-hidden="true"></i><span class="sidebar-label">Talent Profile</span></a></li>
+            <li><a id="nav-discovery-profile" href="#discovery-profile" data-section="discovery-profile-section" class="student-nav-item" title="Discovery Profile"><i class="fas fa-search" aria-hidden="true"></i><span class="sidebar-label">Discovery Profile</span></a></li>
 
-            <li class="sidebar-section-label"><span>EXPLORE</span></li>
-            <li><a href="#recommended-courses" data-section="recommended-courses-section" class="student-nav-item" title="Courses"><i class="fas fa-book-open" aria-hidden="true"></i><span class="sidebar-label">Courses</span></a></li>
-            <li><a href="#scholarships" data-section="scholarships-section" class="student-nav-item" title="Scholarships"><i class="fas fa-award" aria-hidden="true"></i><span class="sidebar-label">Scholarships</span></a></li>
-            <li><a href="institutes.html" class="student-nav-item" title="Institutes"><i class="fas fa-university" aria-hidden="true"></i><span class="sidebar-label">Institutes</span></a></li>
-            <li><a href="#mentors" data-section="mentors-section" class="student-nav-item" title="Mentors"><i class="fas fa-user-group" aria-hidden="true"></i><span class="sidebar-label">Mentors</span></a></li>
-            <li><a href="talent-opportunities.html#arts" class="student-nav-item" title="Arts Opportunities"><i class="fas fa-palette" aria-hidden="true"></i><span class="sidebar-label">Arts Opportunities</span></a></li>
-            <li><a href="talent-opportunities.html#sports" class="student-nav-item" title="Sports Opportunities"><i class="fas fa-running" aria-hidden="true"></i><span class="sidebar-label">Sports Opportunities</span></a></li>
+            <div id="dynamic-recommendations-sidebar">
+                <!-- Dynamically populated by student-dashboard.js -->
+            </div>
+
+            
 
             <li class="sidebar-section-label"><span>MY JOURNEY</span></li>
-            <li><a href="#saved-courses" data-section="saved-courses-section" class="student-nav-item" title="Saved Opportunities"><i class="fas fa-bookmark" aria-hidden="true"></i><span class="sidebar-label">Saved Opportunities</span></a></li>
+            <li><a href="#saved-opportunities" data-section="saved-opportunities-section" class="student-nav-item" title="Saved Opportunities"><i class="fas fa-bookmark" aria-hidden="true"></i><span class="sidebar-label">Saved Opportunities</span></a></li>
             <li><a href="#applied-scholarships" data-section="applied-scholarships-section" class="student-nav-item" title="Applications"><i class="fas fa-paper-plane" aria-hidden="true"></i><span class="sidebar-label">Applications</span></a></li>
             <li><a href="#mentor-requests" data-section="mentor-requests-section" class="student-nav-item" title="Mentor Requests"><i class="fas fa-envelope-open-text" aria-hidden="true"></i><span class="sidebar-label">Mentor Requests</span></a></li>
             <li><a href="#connected-mentors" data-section="connected-mentors-section" class="student-nav-item" title="Connected Mentors"><i class="fas fa-hands-helping" aria-hidden="true"></i><span class="sidebar-label">Connected Mentors</span></a></li>
@@ -121,6 +119,10 @@
                         </div>
                     </div>
                 </section>
+                
+                <div id="dynamic-recommendation-summary">
+                    <!-- Populated by JS renderPersonalizedRecommendations -->
+                </div>
 
                 <section class="student-current-path-card glass reveal-card" id="student-current-path-card" aria-live="polite">
                     <div class="path-card-icon" id="student-current-path-icon"><i class="fas fa-compass" aria-hidden="true"></i></div>
@@ -141,8 +143,9 @@
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-blue"><i class="fas fa-user-check"></i></div><div class="stat-info"><h4>Profile Completion</h4><h2 id="overview-profile-completion-stat">0%</h2><p id="overview-profile-status">Getting started</p></div></article>
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-purple"><i class="fas fa-route"></i></div><div class="stat-info"><h4>Pathway Results</h4><h2 id="pathway-results-stat">0</h2><p>Latest pathway ready</p></div></article>
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-cyan"><i class="fas fa-bookmark"></i></div><div class="stat-info"><h4>Saved Courses</h4><h2 id="saved-courses-stat">0</h2><p>Shortlisted options</p></div></article>
-                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-orange"><i class="fas fa-user-clock"></i></div><div class="stat-info"><h4>Mentor Requests</h4><h2 id="mentor-requests-stat">0</h2><p>Guidance status</p></div></article>
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-green"><i class="fas fa-award"></i></div><div class="stat-info"><h4>Saved Scholarships</h4><h2 id="saved-scholarships-stat">0</h2><p>Funding options</p></div></article>
+                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-purple"><i class="fas fa-star"></i></div><div class="stat-info"><h4>Saved Opportunities</h4><h2 id="saved-opportunities-stat">0</h2><p>Talent & Extracurricular</p></div></article>
+                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-orange"><i class="fas fa-user-clock"></i></div><div class="stat-info"><h4>Mentor Requests</h4><h2 id="mentor-requests-stat">0</h2><p>Guidance status</p></div></article>
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-pink"><i class="fas fa-envelope"></i></div><div class="stat-info"><h4>Unread Messages</h4><h2 id="unread-messages-stat">0</h2><p>Messages and alerts</p></div></article>
                 </section>
 
@@ -229,6 +232,7 @@
                                 <label class="pathway-radio-label"><input type="radio" name="pathwayPreference" value="talent"> <strong>Talent:</strong> Through arts, sports, and practical skills</label>
                                 <label class="pathway-radio-label"><input type="radio" name="pathwayPreference" value="combined"> <strong>Combined:</strong> Through both education and talents</label>
                                 <label class="pathway-radio-label"><input type="radio" name="pathwayPreference" value="undecided"> <strong>Undecided:</strong> I want to explore my options</label>
+                                <label class="pathway-radio-label"><input type="radio" name="pathwayPreference" value="academic_improvement"> <strong>Academic Improvement:</strong> Build foundation, English, ICT, or study skills</label>
                             </div>
                         </div>
                         <div class="section-actions mt-3" style="align-items: center;">
@@ -734,6 +738,49 @@
                 </div>
             </section>
 
+            
+            <section id="talent-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Talent Path Recommendations</h2></div>
+                <div class="list-card glass">
+                    <div class="empty-state"><p>Check your specialized talent recommendations.</p></div>
+                </div>
+            </section>
+
+            <section id="talent-opportunities-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Talent Opportunities</h2></div>
+                <div id="talent-opportunities-recommendations-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading talent opportunities...</p></div>
+                </div>
+            </section>
+
+            <section id="talent-mentors-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Talent Mentors & Coaches</h2></div>
+                <div id="talent-mentors-recommendations-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading mentors...</p></div>
+                </div>
+            </section>
+
+            <section id="skill-courses-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Skill Courses</h2></div>
+                <div id="skill-courses-recommendations-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading skill courses...</p></div>
+                </div>
+            </section>
+
+            <section id="talent-scholarships-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Talent Scholarships</h2></div>
+                <div id="talent-scholarships-recommendations-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading talent scholarships...</p></div>
+                </div>
+            </section>
+
+            <section id="talent-institutes-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Institutes & Academies</h2></div>
+                <div id="talent-institutes-recommendations-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading institutes...</p></div>
+                </div>
+            </section>
+
             <section id="saved-courses-section" class="dashboard-section">
                 <div class="section-header"><h2>Saved Courses</h2></div>
                 <div class="section-tabs">
@@ -785,6 +832,13 @@
                 </div>
             </section>
 
+            <section id="saved-opportunities-section" class="dashboard-section">
+                <div class="section-header"><h2>Saved Opportunities</h2></div>
+                <div id="saved-opportunities-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-inbox"></i><p>You have not saved any talent opportunities yet.</p></div>
+                </div>
+            </section>
+
             <section id="applied-scholarships-section" class="dashboard-section">
                 <div class="section-header"><h2>Applied Scholarships / Progress</h2></div>
                 <div class="section-tabs">
@@ -808,6 +862,27 @@
                     <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading mentors...</p></div>
                 </div>
             </section>
+
+            <section id="recommended-institutes-section" class="dashboard-section">
+                <div class="section-header"><h2 id="recommended-institutes-title">My Suggested Institutes</h2></div>
+                <div id="recommended-institutes-list" class="cards-grid"></div>
+            </section>
+
+            <section id="recommended-talent-opportunities-section" class="dashboard-section">
+                <div class="section-header"><h2 id="recommended-talent-opportunities-title">My Talent Opportunities</h2></div>
+                <div id="recommended-talent-opportunities-list" class="cards-grid"></div>
+            </section>
+
+            <section id="combined-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2 id="combined-recommendations-title">My Academic + Talent Recommendations</h2></div>
+                <div id="combined-recommendations-list"></div>
+            </section>
+
+            <section id="explore-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2 id="explore-recommendations-title">Explore Suggestions for You</h2></div>
+                <div id="explore-recommendations-list" class="cards-grid"></div>
+            </section>
+
 
             <section id="mentor-requests-section" class="dashboard-section">
                 <div class="section-header"><h2>My Mentor Requests</h2></div>
@@ -986,6 +1061,14 @@
                             <p>Complete a short discovery process to explore suitable options.</p>
                         </div>
                     </label>
+                    <label class="pathway-option">
+                        <input type="radio" name="pathwayPreference" value="academic_improvement">
+                        <div class="pathway-option-content">
+                            <i class="fas fa-arrow-trend-up"></i>
+                            <h4>Improve my academic foundation first</h4>
+                            <p>Find foundation, English, ICT, study support, financial aid, and guidance.</p>
+                        </div>
+                    </label>
                 </div>
                 <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
                     <button type="button" class="btn btn-outline" id="skip-pathway-btn">Skip for Now</button>
@@ -998,6 +1081,6 @@
     <script type="module" src="theme.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="dashboard-topbar.js?v=20260718-topbar-icons"></script>
-    <script type="module" src="student-dashboard.js?v=20260718-future-path-fix"></script>
+    <script type="module" src="student-dashboard.js?v=20260720-talent-path-fix-v2"></script>
 </body>
 </html>

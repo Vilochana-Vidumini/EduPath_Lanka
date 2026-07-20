@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
             ensureDashboardTopbarLayout();
             initDashboardSidebar();
             if (cachedUserData) {
-                updateSidebarUser(cachedUserData.fullName || 'User', userRole, cachedUserData.photoURL);
+                updateSidebarUser({ fullName: cachedUserData.fullName || 'User', role: userRole, photoURL: cachedUserData.photoURL });
             }
 
             populateFormData();

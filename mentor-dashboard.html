@@ -454,8 +454,28 @@
             </section>
 
             <section id="learning-requests" class="dashboard-section content-section">
-                <div class="section-header"><h2>Mentor-to-Mentor Learning Requests</h2><p class="section-desc">Review requests from approved mentors who want to learn from you while acting as mentees.</p></div>
-                <div id="learning-requests-grid" class="cards-grid"><div class="text-muted p-4">Loading learning requests...</div></div>
+                <div class="section-header">
+                    <h2>Learning Requests</h2>
+                    <p class="section-desc">Review requests from other mentors who are seeking guidance for their academic studies, research, professional growth, career development, or mentoring skills.</p>
+                </div>
+                <div class="table-responsive">
+                    <table class="table w-100 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Mentor Learner</th>
+                                <th>Guidance Purpose</th>
+                                <th>Academic / Professional Level</th>
+                                <th>Topic / Study Area</th>
+                                <th>Requested Date</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="learning-requests-grid">
+                            <tr><td colspan="7" class="text-muted text-center p-4">Loading learning requests...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </section>
             <!-- 5. Accepted Students -->
             <section id="accepted" class="dashboard-section content-section">
@@ -507,6 +527,37 @@
                         <div class="modal-row"><strong>Request Message:</strong> <span id="modal-message"></span></div>
                         <div class="modal-row"><strong>Latest Pathway Match:</strong> <span id="modal-pathway-result"></span></div>
                         <div class="modal-row"><strong>Requested On:</strong> <span id="modal-requested-at"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Learning Request Details Modal -->
+            <div id="learning-request-detail-modal" class="modal-overlay hidden" aria-hidden="true">
+                <div class="modal-card request-modal-card">
+                    <div class="modal-header">
+                        <h3 id="lr-modal-title">Learning Request Details</h3>
+                        <button type="button" class="modal-close" id="lr-modal-close-btn" aria-label="Close">&times;</button>
+                    </div>
+                    <div class="modal-body" id="lr-modal-body">
+                        <div class="modal-row"><strong>Mentor Learner:</strong> <span id="lr-modal-name"></span></div>
+                        <div class="modal-row"><strong>Status:</strong> <span id="lr-modal-status"></span></div>
+                        <hr style="border-top:1px solid #dfe7f3; margin: 12px 0;">
+                        <div class="modal-row"><strong>Guidance Purpose:</strong> <span id="lr-modal-purpose"></span></div>
+                        <div class="modal-row"><strong>Academic/Professional Level:</strong> <span id="lr-modal-level"></span></div>
+                        <div class="modal-row"><strong>Study / Research Area:</strong> <span id="lr-modal-area"></span></div>
+                        <div class="modal-row"><strong>Current Challenge:</strong> <span id="lr-modal-challenge"></span></div>
+                        <div class="modal-row"><strong>Learning Goal:</strong> <span id="lr-modal-goal"></span></div>
+                        <div class="modal-row"><strong>Message:</strong> <span id="lr-modal-message"></span></div>
+                        <hr style="border-top:1px solid #dfe7f3; margin: 12px 0;">
+                        <div class="modal-row"><strong>Preferred Mode:</strong> <span id="lr-modal-mode"></span></div>
+                        <div class="modal-row"><strong>Session Type:</strong> <span id="lr-modal-session"></span></div>
+                        <div class="modal-row"><strong>Preferred Days:</strong> <span id="lr-modal-days"></span></div>
+                        <div class="modal-row"><strong>Duration:</strong> <span id="lr-modal-duration"></span></div>
+                        <div class="modal-row"><strong>Requested On:</strong> <span id="lr-modal-date"></span></div>
+                    </div>
+                    <div class="modal-actions" id="lr-modal-actions">
+                        <button class="btn btn-outline" id="lr-modal-reject-btn">Reject</button>
+                        <button class="btn btn-primary" id="lr-modal-accept-btn">Accept</button>
                     </div>
                 </div>
             </div>
