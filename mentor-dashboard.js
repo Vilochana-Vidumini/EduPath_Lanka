@@ -2228,15 +2228,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const grid = document.getElementById('learning-requests-grid');
         if (!grid) return;
         try {
-            const rows = Object.values(learningRequestDetails).filter(({ request }) => normalizeMentorshipStatus(request.status) === 'pending').sort((a, b) => (b.request.createdAt || 0) - (a.request.createdAt || 0));
+            const allRows = Object.values(learningRequestDetails).filter(({ request }) => request.requestSource === 'mentor_to_mentor' && request.targetMentorUid === currentUid);
+            const pendingRows = allRows.filter(({ request }) => normalizeMentorshipStatus(request.status) === 'pending').sort((a, b) => (b.request.createdAt || 0) - (a.request.createdAt || 0));
+            const closedRows = allRows.filter(({ request }) => normalizeMentorshipStatus(request.status) !== 'pending').sort((a, b) => (b.request.updatedAt || 0) - (a.request.updatedAt || 0));
+            const rows = [...pendingRows, ...closedRows];
+            
             const count = document.getElementById('learning-req-count');
-            if (count) count.textContent = String(rows.length);
+            if (count) count.textContent = String(pendingRows.length);
+            
             if (!rows.length) { grid.innerHTML = '<tr><td colspan="7" class="text-muted text-center p-4">No incoming mentor learning requests.</td></tr>'; return; }
             
             grid.innerHTML = rows.map(({ requestId, request, user, mentor }) => {
-                const name = request.requesterName || mentor.fullName || user.fullName || 'Approved Mentor';
+                const name = request.requesterName || request.name || request.learnerName || mentor.fullName || user.fullName || 'Mentor Learner';
                 const photo = request.requesterPhotoURL || mentor.photoURL || user.photoURL || 'images/avatar-placeholder.png';
-                const date = request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'N/A';
+                const date = request.createdAt || request.requestedAt ? new Date(request.createdAt || request.requestedAt).toLocaleDateString() : 'Not provided';
+                const status = normalizeMentorshipStatus(request.status);
+                let badgeClass = 'badge-warning';
+                let statusLabel = 'Pending';
+                if (status === 'accepted') { badgeClass = 'badge-approved'; statusLabel = 'Accepted'; }
+                else if (status === 'rejected') { badgeClass = 'badge-rejected'; statusLabel = 'Rejected'; }
+                
+                const actionButtons = status === 'pending' ? `
+                    <button class="btn btn-sm btn-outline-primary" data-view-learning-request="${escapeHtml(requestId)}">View Details</button>
+                    <button class="btn btn-sm btn-success" data-accept-learning-request="${escapeHtml(requestId)}">Accept</button>
+                    <button class="btn btn-sm btn-danger" data-reject-learning-request="${escapeHtml(requestId)}">Reject</button>
+                ` : `
+                    <button class="btn btn-sm btn-outline-primary" data-view-learning-request="${escapeHtml(requestId)}">View Details</button>
+                `;
+
                 return `
                     <tr>
                         <td>
@@ -2244,17 +2263,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <img src="${escapeHtml(photo)}" alt="${escapeHtml(name)}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
                                 <div>
                                     <h6 class="mb-0" style="color: #0f1b3d; margin:0;">${escapeHtml(name)}</h6>
-                                    <small class="text-muted" style="font-size: 0.8rem;">Mentor account · Seeking guidance</small>
+                                    <small class="text-muted" style="font-size: 0.8rem;">Mentor account &middot; Seeking guidance</small>
                                 </div>
                             </div>
                         </td>
-                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.guidancePurpose || request.category || 'Mentorship')}</td>
-                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.academicLevel || 'N/A')}</td>
-                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.studyArea || request.topic || 'N/A')}</td>
+                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.guidancePurpose || request.purpose || request.category || 'Mentorship')}</td>
+                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.academicLevel || request.professionalLevel || request.level || 'Not provided')}</td>
+                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.studyArea || request.topic || request.category || 'Not provided')}</td>
                         <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(date)}</td>
-                        <td><span class="badge badge-warning">Pending</span></td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-primary" data-view-learning-request="${escapeHtml(requestId)}">View Details</button>
+                        <td><span class="badge ${badgeClass}">${escapeHtml(statusLabel)}</span></td>
+                        <td class="text-end" style="white-space: nowrap;">
+                            ${actionButtons}
                         </td>
                     </tr>
                 `;
@@ -2270,22 +2289,78 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleLearningRequestAction(event) {
         const view = event.target.closest('[data-view-learning-request]'); if (view) {
             const reqId = view.dataset.viewLearningRequest;
-            if (reqId && learningRequestDetails[reqId]) return openLearningRequestModal(learningRequestDetails[reqId]);
+            if (reqId && learningRequestDetails[reqId]) return openLearningRequestDetails(reqId);
             return;
         }
         const accept = event.target.closest('[data-accept-learning-request]'); if (accept) return acceptLearningRequest(accept.dataset.acceptLearningRequest);
-        const reject = event.target.closest('[data-reject-learning-request]'); if (reject) { const note = prompt('Optional response note:', '') || ''; return rejectLearningRequest(reject.dataset.rejectLearningRequest, note); }
+        const reject = event.target.closest('[data-reject-learning-request]'); if (reject) { const note = prompt('Optional rejection reason:', '') || ''; return rejectLearningRequest(reject.dataset.rejectLearningRequest, note); }
     }
 
     function openLearningRequestDetails(requestId) {
         const row = learningRequestDetails[requestId]; if (!row) return;
         const { request, user, mentor, learning } = row;
-        let modal = document.getElementById('learning-request-detail-modal');
-        if (!modal) { modal = document.createElement('div'); modal.id = 'learning-request-detail-modal'; modal.className = 'modal-overlay hidden'; document.body.appendChild(modal); }
-        const name = request.requesterName || mentor.fullName || user.fullName || 'Approved Mentor';
-        modal.innerHTML = `<div class="modal-card request-modal-card"><div class="modal-header"><h3>${escapeHtml(name)} - Learning Request</h3><button class="modal-close" data-close-learning-request>&times;</button></div><div class="modal-body"><div class="modal-row"><strong>Role / Title:</strong><span>${escapeHtml(mentor.currentRole || mentor.currentPosition || mentor.mentorType || 'Mentor')}</span></div><div class="modal-row"><strong>Organization:</strong><span>${escapeHtml(mentor.organization || mentor.universityOrCompany || 'Not provided')}</span></div><div class="modal-row"><strong>Field / Expertise:</strong><span>${escapeHtml(displayVal(mentor.field || mentor.expertise || 'Not provided'))}</span></div><div class="modal-row"><strong>Experience:</strong><span>${escapeHtml(displayVal(mentor.yearsOfExperience || mentor.experience || 'Not provided'))}</span></div><div class="modal-row"><strong>Languages:</strong><span>${escapeHtml(displayVal(mentor.languages || 'Not provided'))}</span></div><div class="modal-row"><strong>Learning Interests:</strong><span>${escapeHtml(displayVal(learning.preferredFields || learning.skillsToImprove || 'Not provided'))}</span></div><div class="modal-row"><strong>Topic:</strong><span>${escapeHtml(request.topic || 'General Mentorship')}</span></div><div class="modal-row"><strong>Goal:</strong><span>${escapeHtml(request.goal || 'Not provided')}</span></div><div class="modal-row"><strong>Message:</strong><span>${escapeHtml(request.message || 'No message')}</span></div><div class="request-card-actions"><button class="btn btn-success" data-accept-learning-request="${escapeHtml(requestId)}">Accept</button><button class="btn btn-danger" data-reject-learning-request="${escapeHtml(requestId)}">Reject</button></div></div></div>`;
+        
+        const modal = document.getElementById('learning-request-detail-modal');
+        if (!modal) return;
+        
+        const name = request.requesterName || request.name || request.learnerName || mentor.fullName || user.fullName || 'Mentor Learner';
+        const photo = request.requesterPhotoURL || mentor.photoURL || user.photoURL || 'images/avatar-placeholder.png';
+        const status = normalizeMentorshipStatus(request.status);
+        
+        document.getElementById('lr-modal-name').textContent = name;
+        document.getElementById('lr-modal-avatar').src = photo;
+        
+        let badgeClass = 'badge-warning';
+        let statusLabel = 'Pending';
+        if (status === 'accepted') { badgeClass = 'badge-approved'; statusLabel = 'Accepted'; }
+        else if (status === 'rejected') { badgeClass = 'badge-rejected'; statusLabel = 'Rejected'; }
+        document.getElementById('lr-modal-status').innerHTML = `<span class="badge ${badgeClass}">${escapeHtml(statusLabel)}</span>`;
+
+        document.getElementById('lr-modal-email').textContent = request.requesterEmail || user.email || 'Not provided';
+        document.getElementById('lr-modal-phone').textContent = request.requesterPhone || user.phoneNumber || 'Not provided';
+        document.getElementById('lr-modal-type').textContent = mentor.mentorType || 'Not provided';
+        document.getElementById('lr-modal-position').textContent = mentor.currentPosition || mentor.designation || 'Not provided';
+        document.getElementById('lr-modal-org').textContent = mentor.organization || mentor.universityOrCompany || 'Not provided';
+        
+        document.getElementById('lr-modal-purpose').textContent = request.guidancePurpose || request.purpose || request.category || 'Not provided';
+        document.getElementById('lr-modal-level').textContent = request.academicLevel || request.professionalLevel || request.level || 'Not provided';
+        document.getElementById('lr-modal-area').textContent = request.studyArea || request.topic || request.category || 'Not provided';
+        document.getElementById('lr-modal-research').textContent = request.researchArea || 'Not provided';
+        document.getElementById('lr-modal-challenge').textContent = request.currentChallenge || 'Not provided';
+        document.getElementById('lr-modal-goal').textContent = request.learningGoal || request.goal || 'Not provided';
+        
+        document.getElementById('lr-modal-mode').textContent = request.preferredMode || 'Not provided';
+        document.getElementById('lr-modal-session').textContent = request.preferredSessionType || 'Not provided';
+        document.getElementById('lr-modal-days').textContent = request.preferredDays || 'Not provided';
+        document.getElementById('lr-modal-time').textContent = request.preferredTime || 'Not provided';
+        document.getElementById('lr-modal-duration').textContent = request.preferredSessionDuration ? request.preferredSessionDuration + ' mins' : 'Not provided';
+        
+        const reqDate = request.createdAt || request.requestedAt ? new Date(request.createdAt || request.requestedAt).toLocaleString() : 'Not provided';
+        const resDate = request.respondedAt ? new Date(request.respondedAt).toLocaleString() : 'Not provided';
+        document.getElementById('lr-modal-date').textContent = reqDate;
+        document.getElementById('lr-modal-responded').textContent = status !== 'pending' ? resDate : 'Not responded yet';
+        
+        document.getElementById('lr-modal-message').textContent = request.message || 'No message provided.';
+        
+        const acceptBtn = document.getElementById('lr-modal-accept-btn');
+        const rejectBtn = document.getElementById('lr-modal-reject-btn');
+        const closeActionBtn = document.getElementById('lr-modal-close-action-btn');
+        
+        if (status === 'pending') {
+            acceptBtn.style.display = 'inline-block';
+            rejectBtn.style.display = 'inline-block';
+            
+            acceptBtn.onclick = () => { acceptLearningRequest(requestId); };
+            rejectBtn.onclick = () => { const note = prompt('Optional rejection reason:', '') || ''; rejectLearningRequest(requestId, note); };
+        } else {
+            acceptBtn.style.display = 'none';
+            rejectBtn.style.display = 'none';
+        }
+        
+        closeActionBtn.onclick = () => { modal.classList.add('hidden'); };
+        document.getElementById('lr-modal-close-btn').onclick = () => { modal.classList.add('hidden'); };
+        
         modal.classList.remove('hidden');
-        modal.querySelector('[data-close-learning-request]')?.addEventListener('click', () => modal.classList.add('hidden'));
     }
 
     async function acceptLearningRequest(requestId) {
@@ -2300,18 +2375,19 @@ document.addEventListener('DOMContentLoaded', () => {
             requestId, 
             mentorUid: currentUid, 
             mentorName: request.targetMentorName || currentMentorData.fullName || currentUserData.fullName || 'Mentor', 
-            mentorPhotoURL: request.targetMentorPhotoURL || currentMentorData.photoURL || currentUserData.photoURL || '', 
             menteeUid: request.requesterUid, 
-            menteeName: request.requesterName || 'Mentor', 
-            menteePhotoURL: request.requesterPhotoURL || '', 
-            menteeAccountRole: request.requesterAccountRole || 'mentor', 
+            menteeName: request.requesterName || 'Mentor Learner', 
+            menteeAccountRole: 'mentor', 
             mentorRelationshipRole: 'mentor', 
             menteeRelationshipRole: 'mentee', 
             guidancePurpose: request.guidancePurpose || request.category || 'General Guidance',
-            academicLevel: request.academicLevel || 'N/A',
+            academicLevel: request.academicLevel || request.professionalLevel || 'Not provided',
             studyArea: request.studyArea || request.topic || 'General Mentorship',
-            researchArea: request.researchArea || request.topic || 'General Mentorship',
+            researchArea: request.researchArea || 'Not provided',
             learningGoal: request.learningGoal || request.goal || '', 
+            message: request.message || '',
+            preferredMode: request.preferredMode || '',
+            preferredSessionType: request.preferredSessionType || '',
             status: 'active', 
             conversationId: learningConversationId, 
             createdAt: serverTimestamp(), 
@@ -2321,15 +2397,22 @@ document.addEventListener('DOMContentLoaded', () => {
         const updates = {};
         updates[`mentorshipConnections/${connectionRef.key}`] = connection;
         updates[`conversations/${learningConversationId}`] = { conversationId: learningConversationId, mentorUid: currentUid, menteeUid: request.requesterUid, participantIds: { [currentUid]: true, [request.requesterUid]: true }, topic: connection.guidancePurpose, lastMessage: "", unreadByMentor: 0, unreadByMentee: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
-        updates[`mentorshipRequests/${requestId}/status`] = 'accepted'; updates[`mentorshipRequests/${requestId}/respondedAt`] = serverTimestamp(); updates[`mentorshipRequests/${requestId}/updatedAt`] = serverTimestamp();
-        updates[`notifications/${request.requesterUid}/${notificationRef.key}`] = { notificationId: notificationRef.key, type: 'mentorship_request_accepted', title: 'Mentorship Request Accepted', message: `${connection.mentorName} accepted your learning request.`, targetUserUid: request.requesterUid, senderUid: currentUid, relatedEntityType: 'mentorship_connection', relatedEntityId: connectionRef.key, targetPage: 'mentor-learning.html', targetSection: 'connected-mentors', read: false, status: 'unread', createdAt: serverTimestamp() };
-        await update(ref(database), updates); document.getElementById('learning-request-detail-modal')?.classList.add('hidden'); showToast('Mentorship request accepted.', 'success');
+        updates[`mentorshipRequests/${requestId}/status`] = 'accepted'; 
+        updates[`mentorshipRequests/${requestId}/acceptedAt`] = serverTimestamp(); 
+        updates[`mentorshipRequests/${requestId}/respondedAt`] = serverTimestamp(); 
+        updates[`mentorshipRequests/${requestId}/updatedAt`] = serverTimestamp();
+        updates[`notifications/${request.requesterUid}/${notificationRef.key}`] = { notificationId: notificationRef.key, type: 'mentorship_request_accepted', title: 'Learning Request Accepted', message: `${connection.mentorName} accepted your learning request.`, targetUserUid: request.requesterUid, senderUid: currentUid, relatedEntityType: 'mentorship_connection', relatedEntityId: connectionRef.key, targetPage: 'mentor-learning.html', targetSection: 'connected-mentors', read: false, status: 'unread', createdAt: serverTimestamp() };
+        await update(ref(database), updates); 
+        document.getElementById('learning-request-detail-modal')?.classList.add('hidden'); 
+        showToast('Learning request accepted successfully.', 'success');
     }
 
     async function rejectLearningRequest(requestId, note = '') {
         const snap = await get(ref(database, `mentorshipRequests/${requestId}`)); const request = snap.val();
         if (!request || request.targetMentorUid !== currentUid || normalizeMentorshipStatus(request.status) !== 'pending') return showToast('This learning request is no longer available.', 'error');
-        await update(ref(database, `mentorshipRequests/${requestId}`), { status: 'rejected', respondedAt: serverTimestamp(), updatedAt: serverTimestamp(), responseNote: String(note || '').slice(0, 500) }); document.getElementById('learning-request-detail-modal')?.classList.add('hidden'); showToast('Mentorship request rejected.', 'success');
+        await update(ref(database, `mentorshipRequests/${requestId}`), { status: 'rejected', rejectedAt: serverTimestamp(), respondedAt: serverTimestamp(), updatedAt: serverTimestamp(), rejectionReason: String(note || '').slice(0, 500) }); 
+        document.getElementById('learning-request-detail-modal')?.classList.add('hidden'); 
+        showToast('Learning request rejected.', 'success');
     }
     function listenForRequests(uid, mentorName) {
         const reqRef = query(ref(database, 'mentorRequests'), orderByChild('mentorUid'), equalTo(uid));

@@ -1,4 +1,4 @@
-﻿import { auth, database } from "./firebase-config.js";
+import { auth, database } from "./firebase-config.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
 import { ref, get, update, push, onValue, off, query, orderByChild, equalTo, serverTimestamp, remove } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 import { showToast, preserveThemeOnClear } from "./auth-nav.js?v=20260614-brand";
@@ -273,8 +273,8 @@ function setupRealtime(uid) {
     onValue(ref(database, "scholarships"), (snap) => { state.scholarships = snap.val() || {}; renderAllIfActive(["overview", "scholarships"]); });
     onValue(ref(database, "institutes"), (snap) => { state.institutes = snap.val() || {}; renderAllIfActive(["overview", "institutes"]); });
 
-    onValue(query(ref(database, "mentorshipRequests"), orderByChild("requesterUid"), equalTo(uid)), (snap) => { state.requests = snap.val() || {}; renderAllIfActive(["my-requests"]); });
-    onValue(query(ref(database, "mentorRequests"), orderByChild("studentUid"), equalTo(uid)), (snap) => { state.legacyRequests = snap.val() || {}; renderAllIfActive(["my-requests"]); });
+    onValue(query(ref(database, "mentorshipRequests"), orderByChild("requesterUid"), equalTo(uid)), (snap) => { state.requests = snap.val() || {}; renderAllIfActive(["my-requests", "find-mentor"]); });
+    onValue(query(ref(database, "mentorRequests"), orderByChild("studentUid"), equalTo(uid)), (snap) => { state.legacyRequests = snap.val() || {}; renderAllIfActive(["my-requests", "find-mentor"]); });
 
     onValue(ref(database, `studentRatings/${uid}`), (snap) => { state.reviews = snap.val() || {}; renderAllIfActive(["reviews-submitted", "overview"]); });
     onValue(ref(database, `opportunityApplications/${uid}`), (snap) => { state.opportunityApplications = snap.val() || {}; renderAllIfActive(["applications"]); });
@@ -798,8 +798,16 @@ async function submitMentorshipRequest(event) {
         "request-session-type": !preferredSessionType ? "Choose a preferred session type." : "",
         "request-duration": duration < 15 || duration > 240 ? "Duration must be 15 to 240 minutes." : ""
     };
-    Object.entries(errors).forEach(([id, error]) => setText(`${id}-error`, error));
-    if (Object.values(errors).some(Boolean)) return showToast("Please fix the highlighted request fields.", "warning");
+    Object.entries(errors).forEach(([id, error]) => {
+        setText(`${id}-error`, error);
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle("is-invalid", Boolean(error));
+    });
+    const firstErrorId = Object.keys(errors).find(id => errors[id]);
+    if (firstErrorId) {
+        document.getElementById(firstErrorId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return showToast("Please fix the highlighted request fields.", "warning");
+    }
     if (mentorUid === state.uid) return showToast("You cannot request mentorship from yourself.", "error");
     if (!isAccountActive(state.user) || !isAvailablePublicMentor({ ...mentorUser, ...mentor, uid: mentorUid }, state.uid)) return showToast("This mentor is not currently available.", "error");
     const existingSnap = await get(query(ref(database, "mentorshipRequests"), orderByChild("requesterUid"), equalTo(state.uid))).catch(() => null);
@@ -837,18 +845,41 @@ async function submitMentorshipRequest(event) {
         preferredSessionDuration: duration,
         preferredDays,
         
+        // Legacy fields for Firebase rules compatibility
+        topic: guidancePurpose,
+        category: guidancePurpose,
+        goal: goal,
+        
         requestSource: "mentor_to_mentor",
         status: "pending",
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         respondedAt: null
     };
-    const updates = {};
-    updates[`mentorshipRequests/${requestRef.key}`] = requestRecord;
-    updates[`notifications/${mentorUid}/${notificationRef.key}`] = { notificationId: notificationRef.key, type: "mentorship_request_received", title: "New Mentorship Request", message: `${requesterName} sent you a request for ${guidancePurpose}.`, targetUserUid: mentorUid, senderUid: state.uid, senderRole: "mentor", relatedEntityType: "mentorship_request", relatedEntityId: requestRef.key, requestId: requestRef.key, targetPage: "mentor-dashboard.html", targetSection: "requests", read: false, status: "unread", createdAt: serverTimestamp() };
-    await update(ref(database), updates);
-    closeRequestModal();
-    showToast("Mentorship request sent.", "success");
+
+    const btn = document.getElementById("submit-learning-request-btn");
+    const originalText = btn?.innerHTML || "Send Request";
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        btn.disabled = true;
+    }
+
+    try {
+        const updates = {};
+        updates[`mentorshipRequests/${requestRef.key}`] = requestRecord;
+        updates[`notifications/${mentorUid}/${notificationRef.key}`] = { notificationId: notificationRef.key, type: "mentorship_request_received", title: "New Mentorship Request", message: `${requesterName} sent you a request for ${guidancePurpose}.`, targetUserUid: mentorUid, senderUid: state.uid, senderRole: "mentor", relatedEntityType: "mentorship_request", relatedEntityId: requestRef.key, requestId: requestRef.key, targetPage: "mentor-dashboard.html", targetSection: "requests", read: false, status: "unread", createdAt: serverTimestamp() };
+        await update(ref(database), updates);
+        closeRequestModal();
+        showToast("Mentorship request sent.", "success");
+    } catch (error) {
+        console.error("Firebase write error:", error);
+        showToast("Failed to send request. Database permission denied.", "error");
+    } finally {
+        if (btn) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
 }
 
 async function cancelRequest(requestId) {
@@ -937,7 +968,7 @@ function normalizedRequests() { return Object.values({ ...state.requests, ...sta
 function activeConnections() { return Object.values(state.connections || {}).map(normalizeConnection).filter((item) => item.menteeUid === state.uid && ["active", "connected"].includes(normalizeStatus(item.status))); }
 function value(id) { return String(document.getElementById(id)?.value || "").trim(); }
 function setText(id, value) { const el = document.getElementById(id); if (el) el.textContent = value ?? ""; }
-function clearRequestErrors() { ["request-topic", "request-category", "request-goal", "request-message", "request-mode", "request-duration"].forEach((id) => setText(`${id}-error`, "")); }
+function clearRequestErrors() { ["request-purpose", "request-level", "request-study-area", "request-challenge", "request-goal", "request-message", "request-mode", "request-session-type", "request-duration", "request-days"].forEach((id) => { setText(`${id}-error`, ""); document.getElementById(id)?.classList.remove("is-invalid"); }); }
 function escapeHtml(value) { const div = document.createElement("div"); div.textContent = value == null ? "" : String(value); return div.innerHTML; }
 function escapeAttr(value) { return escapeHtml(value).replace(/"/g, "&quot;"); }
 function displayValue(value) { const list = normalizeList(value); return list.length ? list.join(", ") : (value || "N/A"); }

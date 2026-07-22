@@ -478,7 +478,7 @@
                                 <th>Topic / Study Area</th>
                                 <th>Requested Date</th>
                                 <th>Status</th>
-                                <th class="text-end">Actions</th>
+                                <th class="text-end" style="min-width: 250px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="learning-requests-grid">
@@ -543,31 +543,66 @@
 
             <!-- Learning Request Details Modal -->
             <div id="learning-request-detail-modal" class="modal-overlay hidden" aria-hidden="true">
-                <div class="modal-card request-modal-card">
+                <div class="modal-card request-modal-card" style="max-width: 600px;">
                     <div class="modal-header">
                         <h3 id="lr-modal-title">Learning Request Details</h3>
                         <button type="button" class="modal-close" id="lr-modal-close-btn" aria-label="Close">&times;</button>
                     </div>
-                    <div class="modal-body" id="lr-modal-body">
-                        <div class="modal-row"><strong>Mentor Learner:</strong> <span id="lr-modal-name"></span></div>
-                        <div class="modal-row"><strong>Status:</strong> <span id="lr-modal-status"></span></div>
-                        <hr style="border-top:1px solid #dfe7f3; margin: 12px 0;">
-                        <div class="modal-row"><strong>Guidance Purpose:</strong> <span id="lr-modal-purpose"></span></div>
-                        <div class="modal-row"><strong>Academic/Professional Level:</strong> <span id="lr-modal-level"></span></div>
-                        <div class="modal-row"><strong>Study / Research Area:</strong> <span id="lr-modal-area"></span></div>
-                        <div class="modal-row"><strong>Current Challenge:</strong> <span id="lr-modal-challenge"></span></div>
-                        <div class="modal-row"><strong>Learning Goal:</strong> <span id="lr-modal-goal"></span></div>
-                        <div class="modal-row"><strong>Message:</strong> <span id="lr-modal-message"></span></div>
-                        <hr style="border-top:1px solid #dfe7f3; margin: 12px 0;">
-                        <div class="modal-row"><strong>Preferred Mode:</strong> <span id="lr-modal-mode"></span></div>
-                        <div class="modal-row"><strong>Session Type:</strong> <span id="lr-modal-session"></span></div>
-                        <div class="modal-row"><strong>Preferred Days:</strong> <span id="lr-modal-days"></span></div>
-                        <div class="modal-row"><strong>Duration:</strong> <span id="lr-modal-duration"></span></div>
-                        <div class="modal-row"><strong>Requested On:</strong> <span id="lr-modal-date"></span></div>
+                    
+                    <div class="modal-body" id="lr-modal-body" style="max-height: 70vh; overflow-y: auto;">
+                        <div class="mentor-learner-summary" style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #dfe7f3;">
+                            <img id="lr-modal-avatar" src="images/avatar-placeholder.png" alt="Avatar" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
+                            <div>
+                                <h4 id="lr-modal-name" style="margin: 0; color: #0f1b3d; font-size: 1.1rem;"></h4>
+                                <small class="text-muted" style="font-size: 0.85rem;" id="lr-modal-subtitle">Mentor account &middot; Seeking guidance</small>
+                            </div>
+                        </div>
+
+                        <section style="margin-bottom: 20px;">
+                            <h4 style="font-size: 1rem; color: #0f1b3d; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Mentor Details</h4>
+                            <div class="modal-row"><strong>Email:</strong> <span id="lr-modal-email"></span></div>
+                            <div class="modal-row"><strong>Phone:</strong> <span id="lr-modal-phone"></span></div>
+                            <div class="modal-row"><strong>Mentor Type:</strong> <span id="lr-modal-type"></span></div>
+                            <div class="modal-row"><strong>Position:</strong> <span id="lr-modal-position"></span></div>
+                            <div class="modal-row"><strong>Organization:</strong> <span id="lr-modal-org"></span></div>
+                        </section>
+
+                        <section style="margin-bottom: 20px;">
+                            <h4 style="font-size: 1rem; color: #0f1b3d; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Guidance Request</h4>
+                            <div class="modal-row"><strong>Guidance Purpose:</strong> <span id="lr-modal-purpose"></span></div>
+                            <div class="modal-row"><strong>Academic / Professional Level:</strong> <span id="lr-modal-level"></span></div>
+                            <div class="modal-row"><strong>Topic / Study Area:</strong> <span id="lr-modal-area"></span></div>
+                            <div class="modal-row"><strong>Research Area:</strong> <span id="lr-modal-research"></span></div>
+                            <div class="modal-row"><strong>Current Challenge:</strong> <span id="lr-modal-challenge"></span></div>
+                            <div class="modal-row"><strong>Learning Goal:</strong> <span id="lr-modal-goal"></span></div>
+                        </section>
+
+                        <section style="margin-bottom: 20px;">
+                            <h4 style="font-size: 1rem; color: #0f1b3d; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Preferences</h4>
+                            <div class="modal-row"><strong>Preferred Mode:</strong> <span id="lr-modal-mode"></span></div>
+                            <div class="modal-row"><strong>Session Type:</strong> <span id="lr-modal-session"></span></div>
+                            <div class="modal-row"><strong>Preferred Days:</strong> <span id="lr-modal-days"></span></div>
+                            <div class="modal-row"><strong>Preferred Time:</strong> <span id="lr-modal-time"></span></div>
+                            <div class="modal-row"><strong>Duration:</strong> <span id="lr-modal-duration"></span></div>
+                        </section>
+
+                        <section style="margin-bottom: 20px;">
+                            <h4 style="font-size: 1rem; color: #0f1b3d; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Request Status</h4>
+                            <div class="modal-row"><strong>Status:</strong> <span id="lr-modal-status"></span></div>
+                            <div class="modal-row"><strong>Requested On:</strong> <span id="lr-modal-date"></span></div>
+                            <div class="modal-row"><strong>Responded On:</strong> <span id="lr-modal-responded"></span></div>
+                        </section>
+
+                        <section>
+                            <h4 style="font-size: 1rem; color: #0f1b3d; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Message</h4>
+                            <div id="lr-modal-message" style="background: #f8f9fc; padding: 10px; border-radius: 6px; font-size: 0.9rem; color: #536783;"></div>
+                        </section>
                     </div>
-                    <div class="modal-actions" id="lr-modal-actions">
-                        <button class="btn btn-outline" id="lr-modal-reject-btn">Reject</button>
-                        <button class="btn btn-primary" id="lr-modal-accept-btn">Accept</button>
+
+                    <div class="modal-actions" id="lr-modal-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                        <button class="btn btn-outline" id="lr-modal-close-action-btn">Close</button>
+                        <button class="btn btn-danger" id="lr-modal-reject-btn">Reject Request</button>
+                        <button class="btn btn-success" id="lr-modal-accept-btn">Accept Request</button>
                     </div>
                 </div>
             </div>

@@ -90,6 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (studentSnap.exists()) {
                             currentStudentData = studentSnap.val();
                         }
+                    } else if (currentUserType === 'mentor') {
+                        const mentorUserSnap = await get(ref(database, 'mentors/' + user.uid));
+                        if (mentorUserSnap.exists()) {
+                            currentStudentData = mentorUserSnap.val();
+                        }
                     }
                 }
             } catch (error) {
@@ -728,8 +733,8 @@ document.addEventListener('DOMContentLoaded', () => {
         requestForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (!currentUser || currentUserType !== 'student') {
-                showToast("Only logged in students can submit requests.", "error");
+            if (!currentUser || !['student', 'mentor'].includes(currentUserType)) {
+                showToast("Only logged in students or mentors can submit requests.", "error");
                 return;
             }
 
@@ -795,11 +800,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const payload = {
                     requestId: requestId,
                     studentUid: currentUser.uid,
-                    studentName: currentStudentData?.fullName || currentUserData?.fullName || currentUser.displayName || 'Student',
+                    studentName: currentStudentData?.fullName || currentUserData?.fullName || currentUser.displayName || (currentUserType === 'mentor' ? 'Mentor' : 'Student'),
                     studentEmail: currentUserData?.email || currentUser.email || '',
                     studentPhone: currentStudentData?.phone || currentUserData?.phone || '',
-                    educationLevel: currentStudentData?.educationLevel || currentStudentData?.education || '',
-                    interestArea: currentStudentData?.interestArea || currentStudentData?.interest || '',
+                    educationLevel: currentStudentData?.educationLevel || currentStudentData?.education || currentStudentData?.expertise || '',
+                    interestArea: currentStudentData?.interestArea || currentStudentData?.interest || currentStudentData?.industry || '',
                     futureGoal: goal,
                     mentorUid: mentorUid,
                     mentorName: mentorProfile.fullName || 'Mentor',
@@ -822,9 +827,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     targetUserUid: mentorUid,
                     targetRole: 'mentor',
                     senderUid: currentUser.uid,
-                    senderRole: 'student',
+                    senderRole: currentUserType,
                     type: 'mentorship_request_received',
-                    title: 'New student mentor request',
+                    title: `New ${currentUserType === 'mentor' ? 'mentor' : 'student'} mentor request`,
                     message: `${payload.studentName} requested your mentorship.`,
                     messagePreview: `New request from ${payload.studentName}`,
                     relatedEntityType: 'mentorRequest',
