@@ -9,6 +9,15 @@ import { calculateMentorRatingSummary, normalizeRatingStatus, publicReviewRows }
 document.addEventListener('DOMContentLoaded', () => {
     initDashboardSidebar();
     normalizeMentorApplicationSection();
+    
+    if (window.EduPathImageUtils) {
+        const input = document.getElementById('mentor-app-photoURL');
+        const container = input ? input.closest('.image-input-container') : null;
+        const errorElement = container ? container.querySelector('.image-url-error') : null;
+        if (input && container) {
+            window.EduPathImageUtils.previewImageFromUrl(input, container, errorElement);
+        }
+    }
 
     let currentUid = null;
     let requestDetailCache = {};
@@ -19,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeConversationId = null;
     let currentUserData = {};
     let currentRequestRows = [];
+    let incomingLearningRequests = {};
+    let learningRequestDetails = {};
     let mentorAvailability = {};
     let currentMentorData = {};
     let mentorAccessApproved = false;
@@ -30,6 +41,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let selectedAppointmentDate = dateKeyLocal(new Date());
     let activeAppointmentTab = 'pending';
     let mentorDateTimer = null;
+    let initialMentorProfileLoaded = false;
+    let availabilityListenerStarted = false;
+    let approvedDataListenersStarted = false;
     const weekDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
     function normalizeMentorApplicationSection() {
@@ -94,6 +108,27 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('mentor-application-form')?.addEventListener('submit', submitMentorApplication);
     document.getElementById('save-mentor-draft-btn')?.addEventListener('click', saveMentorApplicationDraft);
     document.addEventListener('click', handleApprovedProfileClick);
+
+    // Live preview for profile photo URL
+    if (window.EduPathImageUtils) {
+        const photoInput = document.getElementById('mentor-app-photoURL');
+        const previewContainer = photoInput ? photoInput.closest('.image-input-container') : null;
+        const errorElement = previewContainer ? previewContainer.querySelector('.image-url-error') : null;
+        if (photoInput && previewContainer) {
+            window.EduPathImageUtils.previewImageFromUrl(photoInput, previewContainer, errorElement);
+            
+            // Also update the modern avatar
+            photoInput.addEventListener('input', (e) => {
+                const modernAvatar = document.getElementById('mentor-home-photo');
+                if (modernAvatar) {
+                    let url = e.target.value.trim();
+                    url = window.EduPathImageUtils.normalizeImageUrl(url);
+                    window.EduPathImageUtils.applyImageFallback(modernAvatar, url, 'images/mentor-dashboard-illustration.png');
+                }
+            });
+        }
+    }
+    document.addEventListener('click', handleLearningRequestAction);
     document.addEventListener('change', handleApprovedProfileChange);
     document.addEventListener('submit', handleApprovedProfileSubmit);
     document.getElementById('save-availability-btn')?.addEventListener('click', saveAvailability);
@@ -142,17 +177,19 @@ document.addEventListener('DOMContentLoaded', () => {
         updateDashboardGreetingName(userData.fullName || 'Mentor');
         updateMentorHeroName(userData.fullName || 'Mentor');
 
-        // Load Mentor Specific Data from /mentors/{uid}
-        get(ref(database, 'mentors/' + uid)).then((snapshot) => {
-            let mentorData = { status: "pending" };
-            if (snapshot.exists()) {
-                mentorData = snapshot.val();
-            }
-            currentMentorData = { ...mentorData, email: mentorData.email || userData.email, fullName: mentorData.fullName || userData.fullName, phone: mentorData.phone || userData.phone };
+        // Keep approval, profile edits, and admin changes synchronized while the dashboard is open.
+        onValue(ref(database, `mentors/${uid}`), (snapshot) => {
+            const mentorData = snapshot.exists() ? snapshot.val() : { status: 'pending' };
+            currentMentorData = {
+                ...mentorData,
+                email: mentorData.email || userData.email,
+                fullName: mentorData.fullName || userData.fullName,
+                phone: mentorData.phone || userData.phone
+            };
             mentorAccessApproved = isApprovedMentor(currentMentorData, userData);
             updateStatusUI(mentorApprovalStatus(currentMentorData));
-            calculateProfileCompletion(uid, userData, mentorData);
-            renderAvailability(mentorData);
+            if (!initialMentorProfileLoaded) calculateProfileCompletion(uid, userData, mentorData);
+            renderAvailability(Object.keys(mentorAvailability || {}).length ? mentorAvailability : mentorData);
             populateMentorApplicationForm(currentMentorData, userData);
             renderMentorApplicationStatus(currentMentorData);
             applyMentorAccessGate();
@@ -160,23 +197,25 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMentorHero();
 
             if (mentorAccessApproved) {
-                listenForRequests(uid, userData.fullName);
-                listenForConnectedStudents(uid);
-                listenForAppointments(uid);
-                listenForRatings(uid);
+                if (!approvedDataListenersStarted) {
+                    approvedDataListenersStarted = true;
+                    listenForRequests(uid, userData.fullName);
+                    listenForConnectedStudents(uid);
+                    listenForAppointments(uid);
+                    listenForRatings(uid);
+                    listenForLearningRequests(uid);
+                }
             } else {
                 showApplicationFirst();
             }
-        }).catch((error) => {
+            initialMentorProfileLoaded = true;
+        }, (error) => {
             console.error('Mentor profile load failed:', error);
             const root = document.getElementById('approved-mentor-profile-root');
-            if (root) {
-                root.innerHTML = `<div class="mentor-profile-readonly-card glass"><h3>Profile could not load</h3><p>${escapeHtml(friendlyFirebaseError(error))}</p></div>`;
-            }
+            if (root) root.innerHTML = `<div class="mentor-profile-readonly-card glass"><h3>Profile could not load</h3><p>${escapeHtml(friendlyFirebaseError(error))}</p></div>`;
             showToast(friendlyFirebaseError(error), 'error');
         });
     }
-
     function listenForAdminSupport(uid) {
         onValue(ref(database, `conversations/${supportConversationId(uid)}`), (snapshot) => {
             supportConversation = snapshot.val() || {};
@@ -322,6 +361,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function appointmentSortTime(item = {}) {
         return new Date(`${item.date || '2099-12-31'}T${item.startTime || '23:59'}`).getTime() || getTimeValue(item.createdAt);
+    }
+    function isFutureAppointment(item = {}, now = Date.now()) {
+        const scheduledTime = appointmentSortTime(item);
+        return Number.isFinite(scheduledTime) && scheduledTime >= now;
     }
     function formatDay(dateValue = '') {
         const date = new Date(`${dateValue}T00:00:00`);
@@ -558,6 +601,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function listenForAvailability(uid) {
+        if (availabilityListenerStarted) return;
+        availabilityListenerStarted = true;
         onValue(ref(database, `mentorAvailability/${uid}`), (snapshot) => {
             mentorAvailability = snapshot.val() || {};
             renderAvailability(mentorAvailability);
@@ -703,6 +748,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function canAccessMentorSection(sectionId) {
         if (mentorAccessApproved && sectionId === 'complete-profile') return false;
+        if (['submitted', 'under_review'].includes(mentorApprovalStatus()) && sectionId === 'complete-profile') return false;
         if (mentorAccessApproved) return true;
         return ['dashboard-overview', 'my-profile', 'complete-profile', 'availability', 'support'].includes(sectionId);
     }
@@ -740,7 +786,16 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('mentorActiveSection', 'my-profile');
         }
         document.querySelectorAll('.sidebar-links a[data-section]').forEach((link) => {
-            const locked = !canAccessMentorSection(link.dataset.section);
+            const section = link.dataset.section;
+            const locked = !canAccessMentorSection(section);
+            
+            // Hide the 'complete-profile' link entirely if it's submitted, under review, or approved
+            if (section === 'complete-profile' && (mentorAccessApproved || ['submitted', 'under_review'].includes(mentorApprovalStatus()))) {
+                link.style.display = 'none';
+            } else {
+                link.style.display = '';
+            }
+            
             link.classList.toggle('locked-section', locked);
             if (locked) link.title = 'Available after admin approval';
         });
@@ -755,7 +810,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateMentorHeroName(fullName) {
         const welcomeNameEl = document.getElementById('mentor-home-name');
         if (!welcomeNameEl) return;
-        welcomeNameEl.innerHTML = `${escapeHtml(fullName || 'Mentor')} <span class="mentor-home-wave" aria-hidden="true">👋</span>`;
+        welcomeNameEl.innerHTML = `${escapeHtml(fullName || 'Mentor')} <span class="mentor-home-wave" aria-hidden="true">&#128075;</span>`;
         
         const len = (fullName || '').length;
         welcomeNameEl.classList.toggle('is-long-name', len > 15 && len <= 25);
@@ -768,7 +823,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const status = mentorApprovalStatus(mentor).replace(/\s+/g, '_');
         const statusInfo = getMentorHeroStatusInfo(status);
         const fullName = mentor.fullName || user.fullName || 'Mentor';
-        const photo = mentor.photoURL || user.photoURL || 'images/mentor-dashboard-illustration.png';
+        let photo = mentor.photoURL || user.photoURL;
+        if (window.EduPathImageUtils) {
+            photo = window.EduPathImageUtils.getBestImageUrl(photo, 'images/mentor-dashboard-illustration.png');
+        } else {
+            photo = photo || 'images/mentor-dashboard-illustration.png';
+        }
         const field = mentor.field || mentor.expertise || mentor.mentoringField || 'Field not set';
         const type = mentor.mentorType || 'Complete your mentor details';
         const approved = mentorAccessApproved;
@@ -843,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 notice: 'You will be notified when the review begins.',
                 bannerTitle: 'Your mentor profile was submitted successfully.',
                 bannerText: 'Our admin team is reviewing your profile. You will be notified when there is an update.',
-                primary: { label: 'View Submitted Profile', icon: 'fa-file-lines', section: 'complete-profile' }
+                primary: null
             },
             under_review: {
                 title: 'Application under review',
@@ -853,7 +913,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 notice: 'You will be notified when the review begins.',
                 bannerTitle: 'Your mentor profile was submitted successfully.',
                 bannerText: 'Our admin team is reviewing your profile. You will receive a notification when there is an update.',
-                primary: { label: 'View Application', icon: 'fa-file-lines', section: 'complete-profile' }
+                primary: null
             },
             changes_requested: {
                 title: 'Updates required',
@@ -973,8 +1033,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateHeroNextSessionMetric() {
+        const now = Date.now();
         const upcoming = Object.values(mentorAppointments || {})
-            .filter((item) => String(item.status || '').toLowerCase() === 'accepted')
+            .filter((item) => String(item.status || '').toLowerCase() === 'accepted' && isFutureAppointment(item, now))
             .sort((a, b) => appointmentSortTime(a) - appointmentSortTime(b));
         if (!mentorAccessApproved) {
             setTextSafe('mentor-modern-next-session', 'Locked until approval');
@@ -1017,8 +1078,17 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     function collectMentorApplicationPayload() {
+        let rawPhotoURL = appValue('photoURL');
+        if (window.EduPathImageUtils && rawPhotoURL) {
+            rawPhotoURL = window.EduPathImageUtils.normalizeImageUrl(rawPhotoURL);
+        }
+        if (rawPhotoURL && window.EduPathImageUtils && !window.EduPathImageUtils.isValidImageUrl(rawPhotoURL)) {
+            showToast('Please enter a valid public image URL. For GitHub images, use the raw image link.', 'error');
+            return null;
+        }
+
         const payload = {
-            photoURL: appValue('photoURL'),
+            photoURL: rawPhotoURL,
             fullName: appValue('fullName'),
             email: appValue('email'),
             phone: appValue('phone'),
@@ -1089,6 +1159,27 @@ document.addEventListener('DOMContentLoaded', () => {
             feedback.innerHTML = note ? `<strong>Admin feedback</strong><p>${escapeHtml(note)}</p>` : '';
         }
         renderApplicationMissingFields();
+        
+        // Keep the form visible but hide the submit buttons and make it readonly
+        const hideFormActions = ['submitted', 'under_review', 'approved'].includes(status);
+        const formContainer = document.getElementById('mentor-application-form');
+        if (formContainer) {
+            const formActions = formContainer.querySelector('.form-actions');
+            if (formActions) formActions.style.display = hideFormActions ? 'none' : 'flex';
+            
+            // Make fields readonly if submitted/approved
+            const elements = formContainer.querySelectorAll('input, select, textarea');
+            elements.forEach(el => {
+                if (hideFormActions) {
+                    el.setAttribute('disabled', 'true');
+                } else {
+                    el.removeAttribute('disabled');
+                }
+            });
+        }
+        document.querySelectorAll('.mentor-complete-profile-nav').forEach(el => {
+            el.classList.toggle('hidden', hideFormActions);
+        });
     }
 
     function populateMentorApplicationForm(mentor = {}, user = {}) {
@@ -1318,7 +1409,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function appValue(key) {
-        return document.getElementById(`mentor-app-${key}`)?.value.trim() || '';
+        let val = document.getElementById(`mentor-app-${key}`)?.value.trim() || '';
+        if (key === 'photoURL' && window.EduPathImageUtils) {
+            val = window.EduPathImageUtils.normalizeImageUrl(val);
+        }
+        return val;
     }
 
     function setAppValue(key, value) {
@@ -2081,10 +2176,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (progressMsg) {
             if (percentage < 80) {
-                progressMsg.textContent = "⚠️ Please complete your profile to at least 80% strength to ensure your application gets approved quickly by our admins!";
+                progressMsg.textContent = "Please complete your profile to at least 80% strength to help your application get reviewed quickly.";
                 progressMsg.style.color = '#f59e0b';
             } else {
-                progressMsg.textContent = "🎉 Excellent! Your profile strength is optimized for immediate admin approval and student matching.";
+                progressMsg.textContent = "Excellent! Your profile is complete and ready for student matching.";
                 progressMsg.style.color = '#10b981';
             }
         }
@@ -2106,6 +2201,219 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 
+    function listenForLearningRequests(uid) {
+        const incomingQuery = query(ref(database, 'mentorshipRequests'), orderByChild('targetMentorUid'), equalTo(uid));
+        onValue(incomingQuery, async (snapshot) => {
+            incomingLearningRequests = snapshot.val() || {};
+            const rows = await Promise.all(Object.entries(incomingLearningRequests).map(async ([requestId, request]) => {
+                const requesterUid = request.requesterUid || '';
+                const [userSnap, mentorSnap, learningSnap, personalSnap] = await Promise.all([
+                    requesterUid ? safeGet(ref(database, `users/${requesterUid}`)) : Promise.resolve(null),
+                    requesterUid ? safeGet(ref(database, `mentors/${requesterUid}`)) : Promise.resolve(null),
+                    requesterUid ? safeGet(ref(database, `learningProfiles/${requesterUid}`)) : Promise.resolve(null),
+                    requesterUid ? safeGet(ref(database, `studentProfiles/${requesterUid}/personal`)) : Promise.resolve(null)
+                ]);
+                return { requestId, request, user: userSnap?.val?.() || {}, mentor: mentorSnap?.val?.() || {}, learning: learningSnap?.val?.() || {}, personal: personalSnap?.val?.() || {} };
+            }));
+            learningRequestDetails = Object.fromEntries(rows.map((row) => [row.requestId, row]));
+            renderIncomingLearningRequests();
+        }, (error) => {
+            console.error('Incoming learning requests failed:', error);
+            const grid = document.getElementById('learning-requests-grid');
+            if (grid) grid.innerHTML = `<div class="text-muted p-4">${escapeHtml(friendlyFirebaseError(error))}</div>`;
+        });
+    }
+
+    function renderIncomingLearningRequests() {
+        const grid = document.getElementById('learning-requests-grid');
+        if (!grid) return;
+        try {
+            const allRows = Object.values(learningRequestDetails).filter(({ request }) => request.requestSource === 'mentor_to_mentor' && request.targetMentorUid === currentUid);
+            const pendingRows = allRows.filter(({ request }) => normalizeMentorshipStatus(request.status) === 'pending').sort((a, b) => (b.request.createdAt || 0) - (a.request.createdAt || 0));
+            const closedRows = allRows.filter(({ request }) => normalizeMentorshipStatus(request.status) !== 'pending').sort((a, b) => (b.request.updatedAt || 0) - (a.request.updatedAt || 0));
+            const rows = [...pendingRows, ...closedRows];
+            
+            const count = document.getElementById('learning-req-count');
+            if (count) count.textContent = String(pendingRows.length);
+            
+            if (!rows.length) { grid.innerHTML = '<tr><td colspan="7" class="text-muted text-center p-4">No incoming mentor learning requests.</td></tr>'; return; }
+            
+            grid.innerHTML = rows.map(({ requestId, request, user, mentor }) => {
+                const name = request.requesterName || request.name || request.learnerName || mentor.fullName || user.fullName || 'Mentor Learner';
+                const photo = request.requesterPhotoURL || mentor.photoURL || user.photoURL || 'images/avatar-placeholder.png';
+                const date = request.createdAt || request.requestedAt ? new Date(request.createdAt || request.requestedAt).toLocaleDateString() : 'Not provided';
+                const status = normalizeMentorshipStatus(request.status);
+                let badgeClass = 'badge-warning';
+                let statusLabel = 'Pending';
+                if (status === 'accepted') { badgeClass = 'badge-approved'; statusLabel = 'Accepted'; }
+                else if (status === 'rejected') { badgeClass = 'badge-rejected'; statusLabel = 'Rejected'; }
+                
+                const actionButtons = status === 'pending' ? `
+                    <button class="btn btn-sm btn-outline-primary" data-view-learning-request="${escapeHtml(requestId)}">View Details</button>
+                    <button class="btn btn-sm btn-success" data-accept-learning-request="${escapeHtml(requestId)}">Accept</button>
+                    <button class="btn btn-sm btn-danger" data-reject-learning-request="${escapeHtml(requestId)}">Reject</button>
+                ` : `
+                    <button class="btn btn-sm btn-outline-primary" data-view-learning-request="${escapeHtml(requestId)}">View Details</button>
+                `;
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <img src="${escapeHtml(photo)}" alt="${escapeHtml(name)}" class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
+                                <div>
+                                    <h6 class="mb-0" style="color: #0f1b3d; margin:0;">${escapeHtml(name)}</h6>
+                                    <small class="text-muted" style="font-size: 0.8rem;">Mentor account &middot; Seeking guidance</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.guidancePurpose || request.purpose || request.category || 'Mentorship')}</td>
+                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.academicLevel || request.professionalLevel || request.level || 'Not provided')}</td>
+                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(request.studyArea || request.topic || request.category || 'Not provided')}</td>
+                        <td class="text-muted" style="font-size:0.9rem;">${escapeHtml(date)}</td>
+                        <td><span class="badge ${badgeClass}">${escapeHtml(statusLabel)}</span></td>
+                        <td class="text-end" style="white-space: nowrap;">
+                            ${actionButtons}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (e) {
+            console.error("Error in renderIncomingLearningRequests:", e);
+            grid.innerHTML = `<tr><td colspan="7" class="text-danger text-center p-4">Error loading requests: ${escapeHtml(e.message)}</td></tr>`;
+        }
+    }
+
+    function normalizeMentorshipStatus(value) { return String(value || 'pending').trim().toLowerCase().replace(/[ -]+/g, '_'); }
+
+    function handleLearningRequestAction(event) {
+        const view = event.target.closest('[data-view-learning-request]'); if (view) {
+            const reqId = view.dataset.viewLearningRequest;
+            if (reqId && learningRequestDetails[reqId]) return openLearningRequestDetails(reqId);
+            return;
+        }
+        const accept = event.target.closest('[data-accept-learning-request]'); if (accept) return acceptLearningRequest(accept.dataset.acceptLearningRequest);
+        const reject = event.target.closest('[data-reject-learning-request]'); if (reject) { const note = prompt('Optional rejection reason:', '') || ''; return rejectLearningRequest(reject.dataset.rejectLearningRequest, note); }
+    }
+
+    function openLearningRequestDetails(requestId) {
+        const row = learningRequestDetails[requestId]; if (!row) return;
+        const { request, user, mentor, learning } = row;
+        
+        const modal = document.getElementById('learning-request-detail-modal');
+        if (!modal) return;
+        
+        const name = request.requesterName || request.name || request.learnerName || mentor.fullName || user.fullName || 'Mentor Learner';
+        const photo = request.requesterPhotoURL || mentor.photoURL || user.photoURL || 'images/avatar-placeholder.png';
+        const status = normalizeMentorshipStatus(request.status);
+        
+        document.getElementById('lr-modal-name').textContent = name;
+        document.getElementById('lr-modal-avatar').src = photo;
+        
+        let badgeClass = 'badge-warning';
+        let statusLabel = 'Pending';
+        if (status === 'accepted') { badgeClass = 'badge-approved'; statusLabel = 'Accepted'; }
+        else if (status === 'rejected') { badgeClass = 'badge-rejected'; statusLabel = 'Rejected'; }
+        document.getElementById('lr-modal-status').innerHTML = `<span class="badge ${badgeClass}">${escapeHtml(statusLabel)}</span>`;
+
+        document.getElementById('lr-modal-email').textContent = request.requesterEmail || user.email || 'Not provided';
+        document.getElementById('lr-modal-phone').textContent = request.requesterPhone || user.phoneNumber || 'Not provided';
+        document.getElementById('lr-modal-type').textContent = mentor.mentorType || 'Not provided';
+        document.getElementById('lr-modal-position').textContent = mentor.currentPosition || mentor.designation || 'Not provided';
+        document.getElementById('lr-modal-org').textContent = mentor.organization || mentor.universityOrCompany || 'Not provided';
+        
+        document.getElementById('lr-modal-purpose').textContent = request.guidancePurpose || request.purpose || request.category || 'Not provided';
+        document.getElementById('lr-modal-level').textContent = request.academicLevel || request.professionalLevel || request.level || 'Not provided';
+        document.getElementById('lr-modal-area').textContent = request.studyArea || request.topic || request.category || 'Not provided';
+        document.getElementById('lr-modal-research').textContent = request.researchArea || 'Not provided';
+        document.getElementById('lr-modal-challenge').textContent = request.currentChallenge || 'Not provided';
+        document.getElementById('lr-modal-goal').textContent = request.learningGoal || request.goal || 'Not provided';
+        
+        document.getElementById('lr-modal-mode').textContent = request.preferredMode || 'Not provided';
+        document.getElementById('lr-modal-session').textContent = request.preferredSessionType || 'Not provided';
+        document.getElementById('lr-modal-days').textContent = request.preferredDays || 'Not provided';
+        document.getElementById('lr-modal-time').textContent = request.preferredTime || 'Not provided';
+        document.getElementById('lr-modal-duration').textContent = request.preferredSessionDuration ? request.preferredSessionDuration + ' mins' : 'Not provided';
+        
+        const reqDate = request.createdAt || request.requestedAt ? new Date(request.createdAt || request.requestedAt).toLocaleString() : 'Not provided';
+        const resDate = request.respondedAt ? new Date(request.respondedAt).toLocaleString() : 'Not provided';
+        document.getElementById('lr-modal-date').textContent = reqDate;
+        document.getElementById('lr-modal-responded').textContent = status !== 'pending' ? resDate : 'Not responded yet';
+        
+        document.getElementById('lr-modal-message').textContent = request.message || 'No message provided.';
+        
+        const acceptBtn = document.getElementById('lr-modal-accept-btn');
+        const rejectBtn = document.getElementById('lr-modal-reject-btn');
+        const closeActionBtn = document.getElementById('lr-modal-close-action-btn');
+        
+        if (status === 'pending') {
+            acceptBtn.style.display = 'inline-block';
+            rejectBtn.style.display = 'inline-block';
+            
+            acceptBtn.onclick = () => { acceptLearningRequest(requestId); };
+            rejectBtn.onclick = () => { const note = prompt('Optional rejection reason:', '') || ''; rejectLearningRequest(requestId, note); };
+        } else {
+            acceptBtn.style.display = 'none';
+            rejectBtn.style.display = 'none';
+        }
+        
+        closeActionBtn.onclick = () => { modal.classList.add('hidden'); };
+        document.getElementById('lr-modal-close-btn').onclick = () => { modal.classList.add('hidden'); };
+        
+        modal.classList.remove('hidden');
+    }
+
+    async function acceptLearningRequest(requestId) {
+        const snap = await get(ref(database, `mentorshipRequests/${requestId}`));
+        const request = snap.val();
+        if (!request || request.targetMentorUid !== currentUid || normalizeMentorshipStatus(request.status) !== 'pending') return showToast('This learning request is no longer available.', 'error');
+        const connectionRef = push(ref(database, 'mentorshipConnections'));
+        const notificationRef = push(ref(database, `notifications/${request.requesterUid}`));
+        const learningConversationId = `mentor_${currentUid}_${request.requesterUid}`;
+        const connection = { 
+            connectionId: connectionRef.key, 
+            requestId, 
+            mentorUid: currentUid, 
+            mentorName: request.targetMentorName || currentMentorData.fullName || currentUserData.fullName || 'Mentor', 
+            menteeUid: request.requesterUid, 
+            menteeName: request.requesterName || 'Mentor Learner', 
+            menteeAccountRole: 'mentor', 
+            mentorRelationshipRole: 'mentor', 
+            menteeRelationshipRole: 'mentee', 
+            guidancePurpose: request.guidancePurpose || request.category || 'General Guidance',
+            academicLevel: request.academicLevel || request.professionalLevel || 'Not provided',
+            studyArea: request.studyArea || request.topic || 'General Mentorship',
+            researchArea: request.researchArea || 'Not provided',
+            learningGoal: request.learningGoal || request.goal || '', 
+            message: request.message || '',
+            preferredMode: request.preferredMode || '',
+            preferredSessionType: request.preferredSessionType || '',
+            status: 'active', 
+            conversationId: learningConversationId, 
+            createdAt: serverTimestamp(), 
+            updatedAt: serverTimestamp(), 
+            endedAt: null 
+        };
+        const updates = {};
+        updates[`mentorshipConnections/${connectionRef.key}`] = connection;
+        updates[`conversations/${learningConversationId}`] = { conversationId: learningConversationId, mentorUid: currentUid, menteeUid: request.requesterUid, participantIds: { [currentUid]: true, [request.requesterUid]: true }, topic: connection.guidancePurpose, lastMessage: "", unreadByMentor: 0, unreadByMentee: 0, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+        updates[`mentorshipRequests/${requestId}/status`] = 'accepted'; 
+        updates[`mentorshipRequests/${requestId}/acceptedAt`] = serverTimestamp(); 
+        updates[`mentorshipRequests/${requestId}/respondedAt`] = serverTimestamp(); 
+        updates[`mentorshipRequests/${requestId}/updatedAt`] = serverTimestamp();
+        updates[`notifications/${request.requesterUid}/${notificationRef.key}`] = { notificationId: notificationRef.key, type: 'mentorship_request_accepted', title: 'Learning Request Accepted', message: `${connection.mentorName} accepted your learning request.`, targetUserUid: request.requesterUid, senderUid: currentUid, relatedEntityType: 'mentorship_connection', relatedEntityId: connectionRef.key, targetPage: 'mentor-learning.html', targetSection: 'connected-mentors', read: false, status: 'unread', createdAt: serverTimestamp() };
+        await update(ref(database), updates); 
+        document.getElementById('learning-request-detail-modal')?.classList.add('hidden'); 
+        showToast('Learning request accepted successfully.', 'success');
+    }
+
+    async function rejectLearningRequest(requestId, note = '') {
+        const snap = await get(ref(database, `mentorshipRequests/${requestId}`)); const request = snap.val();
+        if (!request || request.targetMentorUid !== currentUid || normalizeMentorshipStatus(request.status) !== 'pending') return showToast('This learning request is no longer available.', 'error');
+        await update(ref(database, `mentorshipRequests/${requestId}`), { status: 'rejected', rejectedAt: serverTimestamp(), respondedAt: serverTimestamp(), updatedAt: serverTimestamp(), rejectionReason: String(note || '').slice(0, 500) }); 
+        document.getElementById('learning-request-detail-modal')?.classList.add('hidden'); 
+        showToast('Learning request rejected.', 'success');
+    }
     function listenForRequests(uid, mentorName) {
         const reqRef = query(ref(database, 'mentorRequests'), orderByChild('mentorUid'), equalTo(uid));
         onValue(reqRef, async (snapshot) => {
@@ -2123,7 +2431,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (snapshot.exists()) {
                 const data = snapshot.val();
-                const filtered = Object.entries(data || {}).filter(([, req]) => req && req.mentorUid === uid);
+                const filtered = Object.entries(data || {}).filter(([, req]) => req && req.mentorUid === uid && req.requestSource !== 'mentor_to_mentor');
 
                 const rows = await Promise.all(filtered.map(async ([reqId, req]) => {
                     const studentUid = req.studentUid || '';
@@ -2589,9 +2897,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderMentorAppointments() {
         const entries = Object.entries(mentorAppointments || {});
+        const now = Date.now();
         const pending = entries.filter(([, item]) => String(item.status || '').toLowerCase() === 'pending')
             .sort(([, a], [, b]) => appointmentSortTime(a) - appointmentSortTime(b));
-        const upcoming = entries.filter(([, item]) => String(item.status || '').toLowerCase() === 'accepted')
+        const upcoming = entries.filter(([, item]) => String(item.status || '').toLowerCase() === 'accepted' && isFutureAppointment(item, now))
             .sort(([, a], [, b]) => appointmentSortTime(a) - appointmentSortTime(b));
         const completed = entries.filter(([, item]) => String(item.status || '').toLowerCase() === 'completed')
             .sort(([, a], [, b]) => appointmentSortTime(b) - appointmentSortTime(a));
@@ -3456,6 +3765,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="modal-row"><strong>Interest Area:</strong> <span id="modal-interest"></span></div>
                 <div class="modal-row"><strong>Future Goal:</strong> <span id="modal-goal"></span></div>
                 <div class="modal-row"><strong>Learning Mode:</strong> <span id="modal-learning-mode"></span></div>
+                <div class="modal-row"><strong>Pathway Preference:</strong> <span id="modal-pathway-preference"></span></div>
+                <div class="modal-row"><strong>Enjoyed Activities:</strong> <span id="modal-enjoyed-activities"></span></div>
+                <div class="modal-row"><strong>Talents:</strong> <span id="modal-talents"></span></div>
                 <div class="modal-row"><strong>Skills:</strong> <span id="modal-skills"></span></div>
                 <div class="modal-row"><strong>Request Message:</strong> <span id="modal-message"></span></div>
                 <div class="modal-row"><strong>Latest Pathway Match:</strong> <span id="modal-pathway-result"></span></div>
@@ -3472,11 +3784,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('modal-interest').textContent = req.interestArea || studentData.interestArea || studentData.interest || userData.interestArea || latestResult.interestArea || latestResult.interests?.interestAreas?.[0] || 'N/A';
         document.getElementById('modal-goal').textContent = req.futureGoal || studentData.futureGoal || studentData.goal || userData.futureGoal || latestResult.futureGoal || latestResult.goals?.dreamCareer || 'N/A';
         document.getElementById('modal-learning-mode').textContent = studentData.learningMode || userData.learningMode || latestResult.learningMode || latestResult.learningPreferences?.learningMode || 'N/A';
-        document.getElementById('modal-skills').textContent = displayVal(req.skills || studentData.skills || userData.skills || latestResult.skills || latestResult.skillsAndStrengths?.skills || 'N/A');
-                    <div class="modal-row"><strong>Pathway Preference:</strong> <span><span style="text-transform: capitalize;">${escapeHtml(req.pathwayPreference || 'N/A')}</span></span></div>
-                    ${req.enjoyedActivities ? `<div class="modal-row full-width"><strong>Enjoyed Activities:</strong> <div style="margin-top:0.25rem;">${escapeHtml(req.enjoyedActivities)}</div></div>` : ''}
-                    ${req.talentsList ? `<div class="modal-row full-width"><strong>Talents:</strong> <div style="margin-top:0.25rem;">${escapeHtml(req.talentsList)}</div></div>` : ''}
-        document.getElementById('modal-message').textContent = req.message || 'N/A';
+        document.getElementById('modal-pathway-preference').textContent = req.pathwayPreference || studentData.pathwayPreference || latestResult.pathwayPreference || 'N/A';
+        document.getElementById('modal-enjoyed-activities').textContent = displayVal(req.enjoyedActivities || studentData.enjoyedActivities || 'N/A');
+        document.getElementById('modal-talents').textContent = displayVal(req.talentsList || studentData.talents || studentData.specificTalent || 'N/A');
+        document.getElementById('modal-skills').textContent = displayVal(req.skills || studentData.skills || userData.skills || latestResult.skills || latestResult.skillsAndStrengths?.skills || 'N/A');        document.getElementById('modal-message').textContent = req.message || 'N/A';
         document.getElementById('modal-pathway-result').textContent = Object.keys(latestResult || {}).length ? `${latestResult.pathway || latestResult.recommendedPathway || 'Recommended pathway unavailable'} (${displayVal(latestResult.pathwayScore || latestResult.score || 'N/A')})` : 'No pathway result available yet.';
         document.getElementById('modal-requested-at').textContent = formatSupportDate(req.createdAt);
 

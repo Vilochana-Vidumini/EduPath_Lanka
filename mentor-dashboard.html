@@ -40,7 +40,9 @@
             <li><a href="#dashboard-overview" data-section="dashboard-overview" class="active" title="Dashboard"><i class="fas fa-table-cells-large"></i><span class="sidebar-label">Dashboard</span></a></li>
             <li class="mentor-complete-profile-nav"><a href="#complete-profile" data-section="complete-profile" title="Complete Mentor Profile"><i class="fas fa-clipboard-check"></i><span class="sidebar-label">Complete Profile</span></a></li>
             <li><a href="#my-profile" data-section="my-profile" title="My Profile"><i class="fas fa-user-tie"></i><span class="sidebar-label">My Profile</span></a></li>
+            <li><a href="mentor-learning.html" title="My Learning"><i class="fas fa-graduation-cap"></i><span class="sidebar-label">My Learning</span></a></li>
             <li><a href="#requests" data-section="requests" title="Student Requests"><i class="fas fa-user-plus"></i><span class="sidebar-label">Student Requests</span> <span class="badge badge-warning" id="req-count">0</span></a></li>
+            <li><a href="#learning-requests" data-section="learning-requests" title="Incoming Learning Requests"><i class="fas fa-user-graduate"></i><span class="sidebar-label">Learning Requests</span> <span class="badge badge-warning" id="learning-req-count">0</span></a></li>
             <li><a href="#accepted" data-section="accepted" title="My Mentees"><i class="fas fa-user-check"></i><span class="sidebar-label">My Mentees</span></a></li>
             <li><a href="#messages" data-section="messages" title="Messages"><i class="fas fa-comments"></i><span class="sidebar-label">Messages</span></a></li>
             <li><a href="#rejected" data-section="rejected" title="Closed Requests"><i class="fas fa-user-times"></i><span class="sidebar-label">Closed Requests</span></a></li>
@@ -63,6 +65,7 @@
                 <h2 class="page-title mentor-topbar-title">Mentor Dashboard</h2>
             </div>
             <div class="topbar-right dashboard-topbar-actions">
+                <a href="mentor-learning.html" class="btn btn-outline mentor-learning-switch"><i class="fas fa-graduation-cap" aria-hidden="true"></i> Switch to My Learning</a>
                 <div class="mentor-date-time" aria-label="Current date and time">
                     <span class="date-time-item"><i class="fas fa-calendar-days" aria-hidden="true"></i><span id="mentor-dashboard-date">Today</span></span>
                     <span class="date-time-divider" aria-hidden="true"></span>
@@ -86,7 +89,7 @@
                                 <div class="mentor-home-intro">
                                     <span class="mentor-home-eyebrow">Welcome back,</span>
                                     <div class="mentor-home-name-row">
-                                        <h1 id="mentor-home-name">Mentor <span class="mentor-home-wave" aria-hidden="true">👋</span></h1>
+                                        <h1 id="mentor-home-name">Mentor <span class="mentor-home-wave" aria-hidden="true">&#128075;</span></h1>
                                     </div>
                                     <p id="mentor-home-message">Your guidance can shape a student's future.</p>
                                 </div>
@@ -339,7 +342,17 @@
                         <fieldset>
                             <legend>Personal Information</legend>
                             <div class="grid-form">
-                                <div class="form-group"><label>Profile Photo URL *</label><input id="mentor-app-photoURL" class="form-control" type="text" placeholder="images/Mentor-Kasunperera.png"></div>
+                                <div class="form-group">
+                                    <label>Profile Photo URL *</label>
+                                    <div class="image-input-container">
+                                        <input id="mentor-app-photoURL" class="image-url-input form-control" type="url" placeholder="images/Mentor-Kasunperera.png">
+                                        <small class="helper-text">Paste a public image link. GitHub raw image links are supported.</small>
+                                        <div class="image-url-preview-card">
+                                            <img class="image-url-preview" src="" style="display:none;" alt="Preview">
+                                            <span class="image-url-error" style="display:none;"></span>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="form-group"><label>Full Name *</label><input id="mentor-app-fullName" class="form-control" type="text"></div>
                                 <div class="form-group"><label>Email</label><input id="mentor-app-email" class="form-control" type="email" readonly></div>
                                 <div class="form-group"><label>Phone *</label><input id="mentor-app-phone" class="form-control" type="tel"></div>
@@ -450,6 +463,30 @@
                 </div>
             </section>
 
+            <section id="learning-requests" class="dashboard-section content-section">
+                <div class="section-header">
+                    <h2>Learning Requests</h2>
+                    <p class="section-desc">Review requests from other mentors who are seeking guidance for their academic studies, research, professional growth, career development, or mentoring skills.</p>
+                </div>
+                <div class="table-responsive">
+                    <table class="table w-100 align-middle">
+                        <thead>
+                            <tr>
+                                <th>Mentor Learner</th>
+                                <th>Guidance Purpose</th>
+                                <th>Academic / Professional Level</th>
+                                <th>Topic / Study Area</th>
+                                <th>Requested Date</th>
+                                <th>Status</th>
+                                <th class="text-end" style="min-width: 250px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="learning-requests-grid">
+                            <tr><td colspan="7" class="text-muted text-center p-4">Loading learning requests...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
             <!-- 5. Accepted Students -->
             <section id="accepted" class="dashboard-section content-section">
                 <div class="section-header">
@@ -500,6 +537,72 @@
                         <div class="modal-row"><strong>Request Message:</strong> <span id="modal-message"></span></div>
                         <div class="modal-row"><strong>Latest Pathway Match:</strong> <span id="modal-pathway-result"></span></div>
                         <div class="modal-row"><strong>Requested On:</strong> <span id="modal-requested-at"></span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Learning Request Details Modal -->
+            <div id="learning-request-detail-modal" class="modal-overlay hidden" aria-hidden="true">
+                <div class="modal-card request-modal-card" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h3 id="lr-modal-title">Learning Request Details</h3>
+                        <button type="button" class="modal-close" id="lr-modal-close-btn" aria-label="Close">&times;</button>
+                    </div>
+                    
+                    <div class="modal-body" id="lr-modal-body" style="max-height: 70vh; overflow-y: auto;">
+                        <div class="mentor-learner-summary" style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #dfe7f3;">
+                            <img id="lr-modal-avatar" src="images/avatar-placeholder.png" alt="Avatar" class="rounded-circle" style="width: 50px; height: 50px; object-fit: cover;">
+                            <div>
+                                <h4 id="lr-modal-name" style="margin: 0; color: #0f1b3d; font-size: 1.1rem;"></h4>
+                                <small class="text-muted" style="font-size: 0.85rem;" id="lr-modal-subtitle">Mentor account &middot; Seeking guidance</small>
+                            </div>
+                        </div>
+
+                        <section style="margin-bottom: 20px;">
+                            <h4 style="font-size: 1rem; color: #0f1b3d; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Mentor Details</h4>
+                            <div class="modal-row"><strong>Email:</strong> <span id="lr-modal-email"></span></div>
+                            <div class="modal-row"><strong>Phone:</strong> <span id="lr-modal-phone"></span></div>
+                            <div class="modal-row"><strong>Mentor Type:</strong> <span id="lr-modal-type"></span></div>
+                            <div class="modal-row"><strong>Position:</strong> <span id="lr-modal-position"></span></div>
+                            <div class="modal-row"><strong>Organization:</strong> <span id="lr-modal-org"></span></div>
+                        </section>
+
+                        <section style="margin-bottom: 20px;">
+                            <h4 style="font-size: 1rem; color: #0f1b3d; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Guidance Request</h4>
+                            <div class="modal-row"><strong>Guidance Purpose:</strong> <span id="lr-modal-purpose"></span></div>
+                            <div class="modal-row"><strong>Academic / Professional Level:</strong> <span id="lr-modal-level"></span></div>
+                            <div class="modal-row"><strong>Topic / Study Area:</strong> <span id="lr-modal-area"></span></div>
+                            <div class="modal-row"><strong>Research Area:</strong> <span id="lr-modal-research"></span></div>
+                            <div class="modal-row"><strong>Current Challenge:</strong> <span id="lr-modal-challenge"></span></div>
+                            <div class="modal-row"><strong>Learning Goal:</strong> <span id="lr-modal-goal"></span></div>
+                        </section>
+
+                        <section style="margin-bottom: 20px;">
+                            <h4 style="font-size: 1rem; color: #0f1b3d; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Preferences</h4>
+                            <div class="modal-row"><strong>Preferred Mode:</strong> <span id="lr-modal-mode"></span></div>
+                            <div class="modal-row"><strong>Session Type:</strong> <span id="lr-modal-session"></span></div>
+                            <div class="modal-row"><strong>Preferred Days:</strong> <span id="lr-modal-days"></span></div>
+                            <div class="modal-row"><strong>Preferred Time:</strong> <span id="lr-modal-time"></span></div>
+                            <div class="modal-row"><strong>Duration:</strong> <span id="lr-modal-duration"></span></div>
+                        </section>
+
+                        <section style="margin-bottom: 20px;">
+                            <h4 style="font-size: 1rem; color: #0f1b3d; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Request Status</h4>
+                            <div class="modal-row"><strong>Status:</strong> <span id="lr-modal-status"></span></div>
+                            <div class="modal-row"><strong>Requested On:</strong> <span id="lr-modal-date"></span></div>
+                            <div class="modal-row"><strong>Responded On:</strong> <span id="lr-modal-responded"></span></div>
+                        </section>
+
+                        <section>
+                            <h4 style="font-size: 1rem; color: #0f1b3d; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px;">Message</h4>
+                            <div id="lr-modal-message" style="background: #f8f9fc; padding: 10px; border-radius: 6px; font-size: 0.9rem; color: #536783;"></div>
+                        </section>
+                    </div>
+
+                    <div class="modal-actions" id="lr-modal-actions" style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                        <button class="btn btn-outline" id="lr-modal-close-action-btn">Close</button>
+                        <button class="btn btn-danger" id="lr-modal-reject-btn">Reject Request</button>
+                        <button class="btn btn-success" id="lr-modal-accept-btn">Accept Request</button>
                     </div>
                 </div>
             </div>
@@ -784,9 +887,12 @@
 
 
 
+    <!-- Firebase Script Loader -->
     <script type="module" src="theme.js"></script>
+    <script src="image-utils.js"></script>
+    <script type="module" src="firebase-config.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="mentor-dashboard.js?v=20260705-profile-loading-fix"></script>
+    <script type="module" src="mentor-dashboard.js?v=20260718-next-session-fix"></script>
 </body>
 </html>

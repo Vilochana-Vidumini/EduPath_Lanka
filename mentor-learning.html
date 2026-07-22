@@ -114,10 +114,16 @@
             <div class="topbar-left">
                 <button type="button" class="sidebar-toggle topbar-sidebar-toggle" id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar"><i class="fas fa-bars"></i></button>
                 <div>
-                    <h2 class="page-title mentor-topbar-title">My Learning</h2>
+                    <div><h2 class="page-title mentor-topbar-title">My Learning</h2><p class="text-muted" style="margin:2px 0 0;">Use your mentor account to request guidance from other mentors for your studies, research, career growth, professional development, or mentoring skills.</p></div>
                 </div>
             </div>
             <div class="topbar-right dashboard-topbar-actions">
+                <a href="mentor-dashboard.html" class="btn btn-primary"><i class="fas fa-chalkboard-user" aria-hidden="true"></i> Switch to Mentor Mode</a>
+                <div class="mentor-date-time" aria-label="Current date and time">
+                    <span class="date-time-item"><i class="fas fa-calendar-days" aria-hidden="true"></i><span id="mentor-learning-date">Today</span></span>
+                    <span class="date-time-divider" aria-hidden="true"></span>
+                    <time class="date-time-item" id="mentor-learning-time" datetime=""><i class="fas fa-clock" aria-hidden="true"></i><span id="mentor-learning-time-text">--:--</span></time>
+                </div>
                 <div class="user-profile">
                     <div class="avatar"><i class="fas fa-user-graduate"></i></div>
                     <span class="user-name" id="top-user-name">Loading...</span>
@@ -264,11 +270,10 @@
             <section id="section-find-mentor" class="learning-section" data-learning-section="find-mentor">
                 <div class="learning-section-header">
                     <div>
-                        <h1>Find a Mentor</h1>
-                        <p>Request mentorship from another approved EduPath mentor.</p>
+                        <h1>All Approved Mentors</h1>
+                        <p>Browse every available EduPath mentor and choose who you want to learn from.</p>
                     </div>
                 </div>
-                <div class="learning-filter-toolbar" id="mentors-filter-bar"></div>
                 <div id="available-mentors-grid" class="learning-list stacked"></div>
             </section>
 
@@ -417,14 +422,16 @@
             <form id="learning-request-form" class="learning-form" novalidate>
                 <input type="hidden" id="request-target-mentor-uid">
                 <div class="form-grid">
-                    <label>Mentorship Topic<input id="request-topic" class="form-control" required maxlength="150" placeholder="Academic research, final-year project..."><small id="request-topic-error" class="field-error"></small></label>
-                    <label>Guidance Category<select id="request-category" class="form-control" required><option value="">Select category</option><option>Academic Research</option><option>Research Methodology</option><option>Academic Writing</option><option>Final Year Project</option><option>Postgraduate Study</option><option>Technical Skill Development</option><option>Career Planning</option><option>Industry Knowledge</option><option>Scholarship Guidance</option><option>Entrepreneurship</option><option>Interview Preparation</option></select><small id="request-category-error" class="field-error"></small></label>
+                    <label>Guidance Purpose<select id="request-purpose" class="form-control" required><option value="">Select purpose</option><option>Academic Study Guidance</option><option>Research / Thesis Guidance</option><option>Undergraduate Support</option><option>Master's / Postgraduate Support</option><option>PhD Research Guidance</option><option>Career Development</option><option>Professional Skill Development</option><option>Mentoring Skills Improvement</option><option>Other</option></select><small id="request-purpose-error" class="field-error"></small></label>
+                    <label>Academic / Professional Level<select id="request-level" class="form-control"><option value="">Select level (optional)</option><option>Undergraduate</option><option>Master's</option><option>PhD</option><option>Professional Certification</option><option>Self-learning</option><option>Other</option></select><small id="request-level-error" class="field-error"></small></label>
+                    <label>Research / Study Area<input id="request-study-area" class="form-control" required maxlength="150" placeholder="e.g., Computer Science, AI, Business..."><small id="request-study-area-error" class="field-error"></small></label>
+                    <label class="full-width">Current Challenge<textarea id="request-challenge" class="form-control" rows="2" placeholder="What are you currently struggling with? (Optional)"></textarea><small id="request-challenge-error" class="field-error"></small></label>
                     <label class="full-width">Learning Goal<textarea id="request-goal" class="form-control" rows="3" required placeholder="Describe what you want to achieve..."></textarea><small id="request-goal-error" class="field-error"></small></label>
-                    <label class="full-width">Request Message<textarea id="request-message" class="form-control" rows="4" required placeholder="Introduce yourself and explain the support you need..."></textarea><small id="request-message-error" class="field-error"></small></label>
+                    <label class="full-width">Message to Mentor<textarea id="request-message" class="form-control" rows="4" required placeholder="Introduce yourself and explain the support you need..."></textarea><small id="request-message-error" class="field-error"></small></label>
                     <label>Preferred Mode<select id="request-mode" class="form-control" required><option value="">Select mode</option><option>Online</option><option>Physical</option><option>Hybrid</option></select><small id="request-mode-error" class="field-error"></small></label>
-                    <label>Session Duration<input id="request-duration" class="form-control" type="number" min="15" max="240" step="15" value="60"><small id="request-duration-error" class="field-error"></small></label>
-                    <label>Preferred Days<input id="request-days" class="form-control" placeholder="Weekends, weekday evenings"></label>
-                    <label>Urgency<select id="request-urgency" class="form-control"><option value="normal">Normal</option><option value="soon">Soon</option><option value="urgent">Urgent</option></select></label>
+                    <label>Preferred Session Type<select id="request-session-type" class="form-control" required><option value="">Select session type</option><option>One-time guidance</option><option>Short-term mentorship</option><option>Long-term mentorship</option><option>Research review</option><option>Career guidance session</option></select><small id="request-session-type-error" class="field-error"></small></label>
+                    <label>Session Duration (mins)<input id="request-duration" class="form-control" type="number" min="15" max="240" step="15" value="60"><small id="request-duration-error" class="field-error"></small></label>
+                    <label>Preferred Days<input id="request-days" class="form-control" placeholder="e.g., Weekends, weekday evenings"></label>
                 </div>
                 <div class="modal-actions"><button class="btn btn-outline" type="button" data-close-request-modal>Cancel</button><button class="btn btn-primary" id="submit-learning-request-btn" type="submit">Send Request</button></div>
             </form>
@@ -434,6 +441,6 @@
     <script type="module" src="theme.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
     <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="mentor-learning.js?v=20260705-mentor-learning-redesign"></script>
+    <script type="module" src="mentor-learning.js?v=20260718-restored-clock"></script>
 </body>
 </html>

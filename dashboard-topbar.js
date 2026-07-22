@@ -24,8 +24,8 @@ export function ensureDashboardTopbarLayout() {
             clock.className = 'dashboard-clock-card';
             clock.innerHTML = `
                 <span class="dashboard-greeting" id="dashboard-greeting">Good Day, User</span>
-                <span class="dashboard-date" id="dashboard-date">Today</span>
-                <time class="dashboard-live-clock" id="dashboard-live-clock" datetime="">--:--:--</time>
+                <span class="dashboard-date" id="dashboard-date"><span class="dashboard-meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M7 2v3M17 2v3M3.5 9h17M5.5 4h13a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/></svg></span><span class="dashboard-meta-value">Today</span></span>
+                <time class="dashboard-live-clock" id="dashboard-live-clock" datetime=""><span class="dashboard-meta-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><span class="dashboard-meta-value">--:--:--</span></time>
             `;
         }
         clock.classList.add('topbar-clock-card');
@@ -212,7 +212,8 @@ function updateDashboardClock() {
     const greeting = getTimeGreeting(now.getHours());
     if (greetingEl) greetingEl.textContent = `${greeting}, ${dashboardGreetingName}`;
     if (dateEl) {
-        dateEl.textContent = now.toLocaleDateString(undefined, {
+        const dateValue = dateEl.querySelector(".dashboard-meta-value") || dateEl;
+        dateValue.textContent = now.toLocaleDateString(undefined, {
             weekday: 'long',
             day: '2-digit',
             month: 'long',
@@ -220,7 +221,8 @@ function updateDashboardClock() {
         });
     }
     if (clockEl) {
-        clockEl.textContent = now.toLocaleTimeString(undefined, {
+        const clockValue = clockEl.querySelector(".dashboard-meta-value") || clockEl;
+        clockValue.textContent = now.toLocaleTimeString(undefined, {
             hour: '2-digit',
             minute: '2-digit'
         });

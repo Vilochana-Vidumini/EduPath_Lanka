@@ -33,7 +33,7 @@ export function getDashboardDestination(role) {
 
 export function getProfileDestination(role) {
     const destinations = {
-        student: "profile.html",
+        student: "student-dashboard.html#personal-profile-section",
         mentor: "mentor-dashboard.html#my-profile",
         admin: "profile.html",
         institute: "institute-dashboard.html#profile"

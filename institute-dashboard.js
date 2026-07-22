@@ -40,8 +40,28 @@ const DISTRICT_PROVINCES = {
     "ratnapura": "Sabaragamuwa", "kegalle": "Sabaragamuwa"
 };
 
+const normalizedImageValue = (id) => {
+    let val = value(id);
+    if (window.EduPathImageUtils) {
+        val = window.EduPathImageUtils.normalizeImageUrl(val);
+    }
+    return val;
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     initDashboardSidebar();
+    
+    if (window.EduPathImageUtils) {
+        ['profileLogo', 'courseImage', 'schol-image-url', 'event-image-url'].forEach(id => {
+            const input = document.getElementById(id);
+            const container = input ? input.closest('.image-input-container') : null;
+            const errorElement = container ? container.querySelector('.image-url-error') : null;
+            if (input && container) {
+                window.EduPathImageUtils.previewImageFromUrl(input, container, errorElement);
+            }
+        });
+    }
+
     wireUi();
     onAuthStateChanged(auth, initDashboard);
 });
@@ -59,15 +79,36 @@ async function initDashboard(user) {
         return;
     }
 
+    if (!state.user.instituteId) {
+        const institutesSnap = await get(ref(database, 'institutes'));
+        const allInstitutes = institutesSnap.val() || {};
+        let foundInstitute = null;
+        
+        for (const [id, inst] of Object.entries(allInstitutes)) {
+            if (inst.ownerUid === state.uid || inst.representativeUid === state.uid || inst.uid === state.uid || id === state.uid) {
+                foundInstitute = { id, ...inst };
+                break;
+            }
+        }
+        
+        if (foundInstitute) {
+            state.user.instituteId = foundInstitute.id;
+            state.user.instituteName = foundInstitute.instituteName || foundInstitute.name || foundInstitute.title || "";
+            state.user.instituteOnboardingCompleted = true;
+            
+            await update(ref(database, `users/${state.uid}`), {
+                instituteId: state.user.instituteId,
+                instituteName: state.user.instituteName,
+                instituteOnboardingCompleted: true
+            });
+        }
+    }
+
     // Initialize clock, notifications, and theme settings from shared dashboard layout
     ensureDashboardTopbarLayout();
     initDashboardNotifications(user.uid, "institute");
 
     bindRealtimeData();
-
-    // Wire hash route routing
-    handleHashRoute();
-    window.addEventListener("hashchange", handleHashRoute);
 }
 
 function wireUi() {
@@ -86,46 +127,6 @@ function wireUi() {
     // Auth & Profile
     document.getElementById("logout-btn-sidebar")?.addEventListener("click", logout);
     document.getElementById("profile-form")?.addEventListener("submit", saveProfile);
-
-    // Profile Logo File Upload & FileReader Preview
-    const logoFileInput = document.getElementById("profileLogoFile");
-    const logoHiddenInput = document.getElementById("profileLogo");
-    const logoPreviewImg = document.getElementById("logo-preview-img");
-    const logoPreviewPlaceholder = document.getElementById("logo-preview-placeholder");
-
-    logoFileInput?.addEventListener("change", (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const allowedTypes = ["image/png", "image/jpeg", "image/jpg"];
-        if (!allowedTypes.includes(file.type)) {
-            toast("Please select a valid image file (PNG, JPG, or JPEG).");
-            logoFileInput.value = "";
-            return;
-        }
-
-        if (file.size > 2 * 1024 * 1024) {
-            toast("Logo image size should not exceed 2MB.");
-            logoFileInput.value = "";
-            return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const base64Data = event.target.result;
-            if (logoHiddenInput) {
-                logoHiddenInput.value = base64Data;
-            }
-            if (logoPreviewImg) {
-                logoPreviewImg.src = base64Data;
-                logoPreviewImg.classList.remove("hidden");
-            }
-            if (logoPreviewPlaceholder) {
-                logoPreviewPlaceholder.classList.add("hidden");
-            }
-        };
-        reader.readAsDataURL(file);
-    });
 
     // Courses Action Handles
     document.getElementById("open-add-course-btn")?.addEventListener("click", () => {
@@ -158,36 +159,18 @@ function wireUi() {
         renderCourses();
     });
 
-    // Inquiries Filters
-    document.getElementById("inquiry-status-filter-main")?.addEventListener("change", (e) => {
-        state.inquiryStatus = e.target.value;
-        renderInquiries();
-    });
+
 
     // Support Chat
     document.getElementById("institute-support-form")?.addEventListener("submit", sendInstituteSupportMessage);
 
     // Scholarships
-    document.getElementById("open-add-schol-btn")?.addEventListener("click", () => openAddScholarship());
-    document.getElementById("quick-add-schol-btn")?.addEventListener("click", () => openAddScholarship());
-    document.getElementById("action-create-schol")?.addEventListener("click", () => openAddScholarship());
-    document.getElementById("cancel-schol-btn")?.addEventListener("click", () => showSection("scholarships-section"));
+    document.getElementById("open-add-schol-btn")?.addEventListener("click", () => openScholModal());
+    document.getElementById("quick-add-schol-btn")?.addEventListener("click", () => openScholModal());
+    document.getElementById("action-create-schol")?.addEventListener("click", () => openScholModal());
+    document.getElementById("close-schol-modal")?.addEventListener("click", () => closeScholModal());
+    document.getElementById("btn-cancel-schol")?.addEventListener("click", () => closeScholModal());
     document.getElementById("schol-form")?.addEventListener("submit", saveScholarship);
-
-    // Scholarship Form Image URL Preview Handler
-    document.getElementById("schol-image-url")?.addEventListener("input", (e) => {
-        const url = e.target.value.trim();
-        const previewBox = document.getElementById("schol-image-preview");
-        if (previewBox) {
-            if (url) {
-                previewBox.style.backgroundImage = `url('${url}')`;
-                previewBox.querySelector("span").textContent = "";
-            } else {
-                previewBox.style.backgroundImage = "";
-                previewBox.querySelector("span").textContent = "Scholarship Image preview";
-            }
-        }
-    });
     document.getElementById("schol-search")?.addEventListener("input", (e) => {
         state.scholSearch = e.target.value.toLowerCase();
         renderScholarships();
@@ -195,6 +178,17 @@ function wireUi() {
     document.getElementById("schol-status-filter")?.addEventListener("change", (e) => {
         state.scholStatus = e.target.value;
         renderScholarships();
+    });
+
+    // Profile View/Edit Toggle
+    document.getElementById("edit-institute-profile-btn")?.addEventListener("click", () => {
+        document.getElementById("profile-section")?.setAttribute("data-editing-profile", "true");
+        document.getElementById("edit-institute-profile-btn").style.display = "none";
+    });
+    document.getElementById("cancel-profile-btn")?.addEventListener("click", () => {
+        document.getElementById("profile-section")?.removeAttribute("data-editing-profile");
+        document.getElementById("edit-institute-profile-btn").style.display = "inline-block";
+        renderProfile();
     });
 
     // Events
@@ -205,25 +199,7 @@ function wireUi() {
     document.getElementById("btn-cancel-event")?.addEventListener("click", () => closeEventModal());
     document.getElementById("event-form")?.addEventListener("submit", saveEvent);
 
-    // Applications search/filters
-    document.getElementById("app-search")?.addEventListener("input", (e) => {
-        state.appSearch = e.target.value.toLowerCase();
-        renderApplications();
-    });
-    document.getElementById("app-status-filter")?.addEventListener("change", (e) => {
-        state.appStatus = e.target.value;
-        renderApplications();
-    });
 
-    // Detailed Drawer close
-    document.getElementById("close-details-drawer")?.addEventListener("click", () => {
-        document.getElementById("details-drawer").classList.add("hidden");
-    });
-
-    // Reports Generation
-    document.getElementById("generate-report-btn")?.addEventListener("click", compileReport);
-    document.getElementById("download-excel-btn")?.addEventListener("click", exportCSVReport);
-    document.getElementById("download-pdf-btn")?.addEventListener("click", () => window.print());
 
     // Notifications Center
     document.getElementById("clear-notifications-btn")?.addEventListener("click", clearAllNotifications);
@@ -244,17 +220,22 @@ function wireUi() {
         if (query) {
             state.courseSearch = query;
             state.scholSearch = query;
-            state.appSearch = query;
             renderCourses();
             renderScholarships();
-            renderApplications();
         }
     });
 }
 
 function bindRealtimeData() {
+    // Keep the user and institute approval records synchronized in the UI.
+    onValue(ref(database, `users/${state.uid}`), (snapshot) => {
+        state.user = { ...state.user, ...(snapshot.val() || {}) };
+        renderIdentity();
+        enforceInstituteApproval();
+    });
     // 1. Institute Info
-    onValue(ref(database, `institutes/${state.uid}`), (snapshot) => {
+    const instKey = state.user.instituteId || state.uid;
+    onValue(ref(database, `institutes/${instKey}`), (snapshot) => {
         state.institute = snapshot.val() || {};
         renderProfile();
         renderIdentity();
@@ -276,16 +257,9 @@ function bindRealtimeData() {
         renderCourses();
         renderStats();
         renderCoursePerformance();
-        renderAnalytics();
     });
 
-    // 3. Inquiries
-    onValue(query(ref(database, "courseInquiries"), orderByChild("instituteUid"), equalTo(state.uid)), (snapshot) => {
-        state.inquiries = snapshot.val() || {};
-        renderInquiries();
-        renderRecentInquiries();
-        renderStats();
-    });
+
 
     // 4. Chat support with admin
     onValue(ref(database, `conversations/${supportConversationId(state.uid)}`), (snapshot) => {
@@ -306,7 +280,6 @@ function bindRealtimeData() {
         state.scholarships = filtered;
         renderScholarships();
         renderStats();
-        renderAnalytics();
     });
 
     // 6. Events
@@ -323,28 +296,7 @@ function bindRealtimeData() {
         renderStats();
     });
 
-    // 7. Student Applications
-    onValue(ref(database, "courseApplications"), (snapshot) => {
-        const allApps = snapshot.val() || {};
-        const instituteApps = {};
-        Object.entries(allApps).forEach(([studentUid, studentApps]) => {
-            Object.entries(studentApps).forEach(([courseId, app]) => {
-                if (app.instituteUid === state.uid) {
-                    instituteApps[`${studentUid}_${courseId}`] = {
-                        studentUid,
-                        courseId,
-                        ...app
-                    };
-                }
-            });
-        });
-        state.applications = instituteApps;
-        renderApplications();
-        renderRecentApplications();
-        renderStats();
-        renderCoursePerformance();
-        renderAnalytics();
-    });
+
 
     // 8. Notifications
     onValue(ref(database, `notifications/${state.uid}`), (snapshot) => {
@@ -354,7 +306,7 @@ function bindRealtimeData() {
 }
 
 function showSection(sectionId) {
-    if (!isInstituteApproved() && !["dashboard-section", "support-section", "settings-section", "profile-section", "add-course-section", "add-scholarship-section"].includes(sectionId)) {
+    if (!isInstituteApproved() && !["dashboard-section", "support-section", "settings-section", "profile-section", "add-course-section"].includes(sectionId)) {
         toast("Your institute profile is pending review. This section is locked until approved.");
         sectionId = "dashboard-section";
     }
@@ -369,16 +321,11 @@ function showSection(sectionId) {
     });
 
     const titles = {
-        "dashboard-section": ["Institute Dashboard", ""],
+        "dashboard-section": ["Dashboard Workspace", "Manage your courses, scholarship lists, events and enquiries."],
         "courses-section": ["My Courses Catalog", "Configure, edit, publish, or suspend courses from public searches."],
         "add-course-section": ["Course Setup Spec", "Add detailed course modules, criteria, intake schedules, and images."],
         "scholarships-section": ["Scholarships Registry", "Promote institution funding scopes, full tuitions, and criteria."],
-        "add-scholarship-section": ["Scholarship Setup Spec", "Add detailed scholarship criteria, support types, intake schedules, and images."],
         "events-section": ["Upcoming Campus Events", "Host Open Days, webinars, local career seminars, and workshops."],
-        "applications-section": ["Student Enrolments", "Review qualifications, contact details, and respond to incoming students."],
-        "inquiries-section": ["Course Inquiry Inbox", "Maintain and respond to incoming student academic enquiries."],
-        "analytics-section": ["Dashboard Analytics", "Evaluate application monthly statistics, catalog views, and reach."],
-        "reports-section": ["Academic Reports Compiler", "Generate printable summary reports and export CSV spreadsheets."],
         "notifications-section": ["Notification Center", "View alerts regarding course approvals and student messages."],
         "support-section": ["Chat with Admin", "Direct contact chat channel to EduPath Lanka platform support admins."],
         "settings-section": ["Workspace Preferences", "Adjust platform displays, styling variables, and account info."]
@@ -386,65 +333,22 @@ function showSection(sectionId) {
 
     const [title, subtitle] = titles[sectionId] || titles["dashboard-section"];
     text("page-title", title);
-    
-    const subtitleEl = document.getElementById("page-subtitle");
-    if (subtitleEl) {
-        subtitleEl.textContent = subtitle;
-        subtitleEl.style.display = subtitle ? "block" : "none";
-    }
-
-    // Update URL hash without triggering hashchange event
-    const hashMapping = {
-        "dashboard-section": "overview",
-        "profile-section": "profile",
-        "courses-section": "courses",
-        "add-course-section": "add-course",
-        "scholarships-section": "scholarships",
-        "add-scholarship-section": "add-scholarship",
-        "events-section": "events",
-        "applications-section": "applications",
-        "inquiries-section": "inquiries",
-        "analytics-section": "analytics",
-        "reports-section": "reports",
-        "notifications-section": "notifications",
-        "support-section": "chat-admin",
-        "settings-section": "settings"
-    };
-    const targetHash = hashMapping[sectionId] ? `#${hashMapping[sectionId]}` : "";
-    if (window.location.hash !== targetHash) {
-        history.replaceState(null, null, targetHash || " ");
-    }
+    text("page-subtitle", subtitle);
 
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
-function handleHashRoute() {
-    const hash = window.location.hash;
-    const mapping = {
-        "#overview": "dashboard-section",
-        "#profile": "profile-section",
-        "#courses": "courses-section",
-        "#add-course": "add-course-section",
-        "#scholarships": "scholarships-section",
-        "#add-scholarship": "add-scholarship-section",
-        "#events": "events-section",
-        "#applications": "applications-section",
-        "#inquiries": "inquiries-section",
-        "#analytics": "analytics-section",
-        "#reports": "reports-section",
-        "#notifications": "notifications-section",
-        "#chat-admin": "support-section",
-        "#settings": "settings-section"
-    };
-    const sectionId = mapping[hash] || "dashboard-section";
-    showSection(sectionId);
-}
-
 function renderIdentity() {
-    const name = state.institute.instituteName || state.user.fullName || "Institute";
+    const isCompleted = state.user.instituteOnboardingCompleted;
+    const name = state.institute.instituteName || state.user.instituteName || (isCompleted ? "Institute" : "Institute Setup Required");
 
     updateDashboardGreetingName(name);
-    text("welcome-name", name);
+    text("welcome-name", isCompleted ? name : "Complete Your Institute Profile");
+    
+    if (!isCompleted) {
+        text("welcome-subtitle", "Add your official institute details to submit your profile for admin review.");
+    }
+
     text("top-user-name", name.split(" ")[0]);
 
     updateSidebarUser({
@@ -452,6 +356,13 @@ function renderIdentity() {
         role: "Institute",
         photoURL: state.institute.logoURL || ""
     });
+
+    const repName = state.user.fullName || "";
+    const repSpan = document.getElementById("sidebar-user-rep");
+    if (repSpan && repName) {
+        repSpan.textContent = `Representative: ${repName}`;
+        repSpan.classList.remove("hidden");
+    }
 
     const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
     const logoCircle = document.getElementById("welcome-logo-circle");
@@ -473,49 +384,23 @@ function renderIdentity() {
             topbarAvatar.innerHTML = `<i class="fas fa-user"></i>`;
         }
     }
-
-    // Also update auth-nav dropdown if it has hydrated the topbar
-    const dropdownTrigger = document.getElementById("ep-user-dropdown-trigger");
-    if (dropdownTrigger) {
-        let avatarImgEl = dropdownTrigger.querySelector(".ep-avatar-img");
-        if (state.institute.logoURL) {
-            if (avatarImgEl && avatarImgEl.tagName === "IMG") {
-                avatarImgEl.src = state.institute.logoURL;
-            } else if (avatarImgEl) {
-                const newImg = document.createElement("img");
-                newImg.className = "ep-avatar-img";
-                newImg.src = state.institute.logoURL;
-                newImg.alt = name;
-                avatarImgEl.replaceWith(newImg);
-            }
-        } else {
-            if (avatarImgEl && avatarImgEl.tagName === "DIV") {
-                avatarImgEl.textContent = initials;
-            } else if (avatarImgEl) {
-                const newDiv = document.createElement("div");
-                newDiv.className = "ep-avatar-img";
-                newDiv.textContent = initials;
-                avatarImgEl.replaceWith(newDiv);
-            }
-        }
-        
-        const avatarNameEl = dropdownTrigger.querySelector(".ep-avatar-name");
-        if (avatarNameEl) {
-            avatarNameEl.textContent = name.split(" ")[0];
-        }
-
-        const dropdownUsername = document.querySelector(".ep-dropdown-username");
-        if (dropdownUsername) {
-            dropdownUsername.textContent = name;
-        }
-    }
 }
 
 function enforceInstituteApproval() {
-    const approved = isInstituteApproved();
-    document.getElementById("approval-notice")?.classList.toggle("hidden", approved);
+    const isCompleted = state.user.instituteOnboardingCompleted;
+    document.getElementById("onboarding-notice")?.classList.toggle("hidden", isCompleted);
 
-    const statusText = state.institute.verificationStatus || state.institute.status || state.user.accountStatus || "Pending";
+    const approved = isInstituteApproved();
+    document.getElementById("approval-notice")?.classList.toggle("hidden", approved || !isCompleted);
+
+    const actionBtns = ["quick-add-course-btn", "quick-add-schol-btn", "quick-add-event-btn", "open-add-course-btn", "open-add-schol-btn", "open-add-event-btn", "action-create-course", "action-create-schol", "action-create-event"];
+    actionBtns.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) btn.disabled = !isCompleted;
+    });
+
+    const statuses = [state.institute.verificationStatus, state.institute.approvalStatus, state.institute.status, state.user.instituteStatus].map(normalize).filter(Boolean); if (!statuses.length && state.user.accountStatus) statuses.push(normalize(state.user.accountStatus));
+    const statusText = statuses.includes("approved") || statuses.includes("active") ? "Approved" : statuses[0] || "Pending";
     const badge = document.getElementById("approval-badge");
     if (badge) {
         badge.textContent = statusText;
@@ -541,25 +426,20 @@ function enforceInstituteApproval() {
 }
 
 function isInstituteApproved() {
-    const status = normalize(state.institute.verificationStatus || state.institute.status || state.user.accountStatus);
-    return status === "approved" || status === "active";
+    const statuses = [state.institute.verificationStatus, state.institute.approvalStatus, state.institute.status, state.user.instituteStatus].map(normalize).filter(Boolean); if (!statuses.length && state.user.accountStatus) statuses.push(normalize(state.user.accountStatus));
+    return statuses.includes("approved") || statuses.includes("active");
 }
 
 function renderStats() {
     const courses = Object.values(state.courses);
-    const inquiries = Object.values(state.inquiries);
     const scholarships = Object.values(state.scholarships);
     const events = Object.values(state.events);
-    const applications = Object.values(state.applications);
 
     text("stat-total-courses", courses.length);
     text("stat-active-courses", courses.filter((c) => normalize(c.status) === "active").length);
     text("stat-pending-courses", courses.filter((c) => normalize(c.status) === "pending").length);
-    text("stat-total-applications", applications.length);
-    text("stat-accepted-students", applications.filter((a) => normalize(a.status || a.applyStatus) === "accepted").length);
     text("stat-scholarships", scholarships.length);
     text("stat-events", events.length);
-    text("stat-inquiries", inquiries.filter((i) => i.status === "New").length);
 
     // Monthly views pseudo-render or from institute data
     text("stat-profile-views", state.institute.monthlyViews || state.institute.profileViews || "180");
@@ -630,75 +510,149 @@ function getMissingProfileFields() {
     return missing;
 }
 
+// ----------------- PROFILE -----------------
 function renderProfile() {
-    setValue("profileInstituteName", state.institute.instituteName || state.user.fullName || "");
-    setValue("profilePhone", state.institute.phone || state.user.phone || "");
-    setValue("profileAddress", state.institute.address || "");
-    setValue("profileDistrict", state.institute.district || "");
-    setValue("profileProvince", state.institute.province || "");
-    setValue("profileWebsite", state.institute.websiteURL || "");
-    setValue("profileFacebook", state.institute.facebookPage || "");
-    setValue("profileLinkedIn", state.institute.linkedinPage || "");
-    
-    const logoURL = state.institute.logoURL || state.user.photoURL || "";
-    setValue("profileLogo", logoURL);
-    
-    const logoPreviewImg = document.getElementById("logo-preview-img");
-    const logoPreviewPlaceholder = document.getElementById("logo-preview-placeholder");
-    if (logoPreviewImg && logoPreviewPlaceholder) {
-        if (logoURL) {
-            logoPreviewImg.src = logoURL;
-            logoPreviewImg.classList.remove("hidden");
-            logoPreviewPlaceholder.classList.add("hidden");
-        } else {
-            logoPreviewImg.src = "";
-            logoPreviewImg.classList.add("hidden");
-            const name = state.institute.instituteName || state.user.fullName || "Institute";
-            const initials = name.split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
-            logoPreviewPlaceholder.textContent = initials || "IN";
-            logoPreviewPlaceholder.classList.remove("hidden");
-        }
+    if (state.user.instituteOnboardingCompleted && !document.getElementById("profile-section")?.hasAttribute("data-editing-profile")) {
+        document.getElementById("profile-section")?.removeAttribute("data-editing-profile");
+        const editBtn = document.getElementById("edit-institute-profile-btn");
+        if (editBtn) editBtn.style.display = "inline-block";
+    } else if (!state.user.instituteOnboardingCompleted) {
+        document.getElementById("profile-section")?.setAttribute("data-editing-profile", "true");
+        const editBtn = document.getElementById("edit-institute-profile-btn");
+        if (editBtn) editBtn.style.display = "none";
     }
 
-    setValue("profileDescription", state.institute.description || "");
-    setValue("profileRegNumber", state.institute.regNumber || "");
+    setValue("repName", state.user.fullName || "");
+    setValue("repEmail", state.user.email || "");
+    setValue("repPhone", state.user.phone || "");
+    setValue("repDesignation", state.institute.representativeDesignation || state.user.designation || "");
+
+    setValue("profileInstituteName", state.institute.instituteName || state.institute.name || "");
+    setValue("profileType", state.institute.instituteType || "");
+    setValue("profilePhone", state.institute.contactPhone || state.institute.phone || "");
+    setValue("profileAddress", state.institute.streetAddress || state.institute.address || "");
+    setValue("profileDistrict", state.institute.district || "");
+    setValue("profileProvince", state.institute.province || "");
+    setValue("profileWebsite", state.institute.websiteUrl || state.institute.websiteURL || "");
+    setValue("profileFacebook", state.institute.facebookPage || "");
+    setValue("profileLinkedIn", state.institute.linkedInPage || state.institute.linkedinPage || "");
+    setValue("profileLogo", state.institute.instituteLogoUrl || state.institute.logoURL || "");
+    setValue("profileDescription", state.institute.instituteDescription || state.institute.description || "");
+    setValue("profileRegNumber", state.institute.governmentRegistrationNumber || state.institute.regNumber || "");
     setValue("profileEstablished", state.institute.establishedYear || "");
-    setValue("profileAccreditation", state.institute.accreditation || "");
-    setValue("profileFacilities", state.institute.facilities || "");
-    setValue("profileEmail", state.institute.email || state.user.email || "");
+    setValue("profileAccreditation", state.institute.accreditationDetails || state.institute.accreditation || "");
+    
+    let facilities = state.institute.facilitiesAvailable || state.institute.facilities || [];
+    if (Array.isArray(facilities)) facilities = facilities.join(", ");
+    setValue("profileFacilities", facilities);
+    
+    setValue("profileEmail", state.institute.officialEmail || state.institute.email || "");
 }
 
 async function saveProfile(event) {
     event.preventDefault();
-    const data = {
+    const btn = document.getElementById("save-profile-btn") || event.submitter;
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Saving Profile...`;
+    }
+
+    const instKey = state.user.instituteId || state.uid;
+
+    let facilities = value("profileFacilities").split(',').map(f => f.trim()).filter(Boolean);
+
+    const instituteData = {
         instituteName: value("profileInstituteName"),
-        phone: value("profilePhone"),
-        address: value("profileAddress"),
+        instituteType: value("profileType"),
+        contactPhone: value("profilePhone"),
+        streetAddress: value("profileAddress"),
         district: value("profileDistrict"),
         province: value("profileProvince"),
-        websiteURL: value("profileWebsite"),
+        websiteUrl: value("profileWebsite"),
         facebookPage: value("profileFacebook"),
-        linkedinPage: value("profileLinkedIn"),
-        logoURL: value("profileLogo"),
-        description: value("profileDescription"),
-        regNumber: value("profileRegNumber"),
+        linkedInPage: value("profileLinkedIn"),
+        instituteLogoUrl: normalizedImageValue("profileLogo"),
+        instituteDescription: value("profileDescription"),
+        governmentRegistrationNumber: value("profileRegNumber"),
         establishedYear: value("profileEstablished"),
-        accreditation: value("profileAccreditation"),
-        facilities: value("profileFacilities"),
-        email: value("profileEmail"),
+        accreditationDetails: value("profileAccreditation"),
+        facilitiesAvailable: facilities.length > 0 ? facilities : null,
+        officialEmail: value("profileEmail"),
+        
+        representativeName: value("repName"),
+        representativeEmail: value("repEmail"),
+        representativePhone: value("repPhone"),
+        representativeDesignation: value("repDesignation"),
+
+        approvalStatus: "pending",
+        status: "pending",
+        publicVisibility: false,
+        ownerUid: state.uid,
+        updatedAt: serverTimestamp()
+    };
+    
+    // Fallbacks for older dashboard usages
+    instituteData.name = instituteData.instituteName;
+    instituteData.phone = instituteData.contactPhone;
+    instituteData.address = instituteData.streetAddress;
+    instituteData.description = instituteData.instituteDescription;
+    instituteData.logoURL = instituteData.instituteLogoUrl;
+    instituteData.facilities = facilities.length > 0 ? facilities : null;
+
+    const repData = {
+        representativeName: value("repName"),
+        representativeEmail: value("repEmail"),
+        representativePhone: value("repPhone"),
+        representativeDesignation: value("repDesignation"),
+        instituteId: instKey,
+        onboardingCompleted: true,
         updatedAt: serverTimestamp()
     };
 
-    await Promise.all([
-        update(ref(database, `institutes/${state.uid}`), data),
-        update(ref(database, `users/${state.uid}`), {
-            fullName: data.instituteName,
-            phone: data.phone,
-            photoURL: data.logoURL,
-            updatedAt: serverTimestamp()
-        })
-    ]);
-    toast("Institute profile updated successfully.");
+    const userData = {
+        fullName: value("repName"),
+        phone: value("repPhone"),
+        instituteName: instituteData.instituteName,
+        instituteId: instKey,
+        instituteOnboardingCompleted: true,
+        approvalStatus: "pending",
+        accountStatus: "pending",
+        updatedAt: serverTimestamp()
+    };
+
+    try {
+        const notifRef = push(ref(database, 'notifications/admin'));
+        const notificationPayload = {
+            title: 'New Institute Approval Request',
+            body: `${userData.instituteName} has submitted their profile for admin approval.`,
+            type: 'INSTITUTE_APPROVAL',
+            relatedId: instKey,
+            createdAt: serverTimestamp(),
+            isRead: false
+        };
+
+        await Promise.all([
+            update(ref(database, `institutes/${instKey}`), instituteData),
+            update(ref(database, `users/${state.uid}`), userData),
+            update(ref(database, `instituteRepresentatives/${state.uid}`), repData),
+            update(notifRef, notificationPayload)
+        ]);
+        toast("Institute profile submitted for admin approval.", "success");
+        state.user.instituteOnboardingCompleted = true;
+        enforceInstituteApproval();
+        renderIdentity();
+        document.getElementById("profile-section")?.removeAttribute("data-editing-profile");
+        const editBtn = document.getElementById("edit-institute-profile-btn");
+        if (editBtn) editBtn.style.display = "inline-block";
+    } catch (e) {
+        toast("Could not submit institute profile. Please try again.", "error");
+        console.error(e);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-save"></i> Save & Submit for Admin Approval`;
+        }
+    }
 }
 
 // ----------------- COURSES -----------------
@@ -778,7 +732,7 @@ async function saveCourse(event) {
         entryRequirements: value("entryRequirements"),
         contactPhone: value("contactNumber"),
         contactNumber: value("contactNumber"),
-        imageURL: value("courseImage") || "images/course-placeholder.png",
+        imageURL: normalizedImageValue("courseImage") || "images/course-placeholder.png",
         sourceType: "institute",
         status: editingId ? (
             ["active", "rejected"].includes(normalize(state.courses[editingId]?.status)) ? "pending" : (state.courses[editingId]?.status || "pending")
@@ -856,24 +810,20 @@ function resetCourseForm() {
 }
 
 // ----------------- SCHOLARSHIPS -----------------
-function openAddScholarship(scholId = "") {
+function openScholModal(scholId = "") {
+    const modal = document.getElementById("schol-modal");
+    if (!modal) return;
+    modal.classList.remove("hidden");
+
     const form = document.getElementById("schol-form");
     form.reset();
     setValue("editing-schol-id", "");
-    text("schol-form-title", "Add Scholarship");
-    
-    // reset image preview
-    const previewBox = document.getElementById("schol-image-preview");
-    if (previewBox) {
-        previewBox.style.backgroundImage = "";
-        const placeholderSpan = previewBox.querySelector("span");
-        if (placeholderSpan) placeholderSpan.textContent = "Scholarship Image preview";
-    }
+    text("schol-modal-title", "Publish Scholarship Scheme");
 
     if (scholId) {
         const s = state.scholarships[scholId];
         if (!s) return;
-        text("schol-form-title", "Edit Scholarship");
+        text("schol-modal-title", "Edit Scholarship Scheme");
         setValue("editing-schol-id", scholId);
         setValue("schol-name", s.scholarshipName || s.name || "");
         setValue("schol-provider", s.provider || "");
@@ -890,19 +840,11 @@ function openAddScholarship(scholId = "") {
         setValue("schol-image-url", s.imageURL || "");
         setValue("schol-description", s.description || "");
         setValue("schol-eligibility", s.eligibility || "");
-        setValue("schol-status", s.status || "draft");
-
-        // Set image preview background if image exists
-        if (s.imageURL && previewBox) {
-            previewBox.style.backgroundImage = `url('${s.imageURL}')`;
-            const placeholderSpan = previewBox.querySelector("span");
-            if (placeholderSpan) placeholderSpan.textContent = "";
-        }
-    } else {
-        setValue("schol-status", "draft");
     }
+}
 
-    showSection("add-scholarship-section");
+function closeScholModal() {
+    document.getElementById("schol-modal").classList.add("hidden");
 }
 
 async function saveScholarship(event) {
@@ -931,8 +873,10 @@ async function saveScholarship(event) {
         applyLink: value("schol-apply-link") || "",
         contactEmail: value("schol-contact-email") || "",
         contactPhone: value("schol-contact-phone") || "",
-        imageURL: value("schol-image-url") || "images/schol-placeholder.png",
-        status: value("schol-status") || "draft",
+        imageURL: normalizedImageValue("schol-image-url") || "images/schol-placeholder.png",
+        status: editingId ? (
+            ["active", "rejected"].includes(normalize(state.scholarships[editingId]?.status)) ? "pending" : (state.scholarships[editingId]?.status || "pending")
+        ) : "pending",
         updatedAt: serverTimestamp()
     };
 
@@ -941,8 +885,8 @@ async function saveScholarship(event) {
     await set(ref(database, `scholarships/${id}`), payload);
     await logActivity(editingId ? "scholarship_updated" : "scholarship_created", `${editingId ? "Updated" : "Created"} scholarship ${payload.scholarshipName}`, id);
 
-    showSection("scholarships-section");
-    toast("Scholarship saved successfully.");
+    closeScholModal();
+    toast("Scholarship scheme saved successfully. Awaiting Admin activation.");
 }
 
 function renderScholarships() {
@@ -950,35 +894,15 @@ function renderScholarships() {
     if (!container) return;
 
     let rows = Object.values(state.scholarships);
-    
-    // Filter rows based on search search text and selected filter category
-    const todayStr = new Date().toISOString().split("T")[0];
-
     rows = rows.filter((s) => {
         const haystack = [s.scholarshipName, s.provider, s.category, s.description].join(" ").toLowerCase();
         const matchesSearch = haystack.includes(state.scholSearch);
-        
-        const deadlinePassed = s.deadline ? s.deadline < todayStr : false;
-        const statusNorm = normalize(s.status || "draft");
-
-        const isActive = statusNorm === "active" && !deadlinePassed;
-        const isPending = statusNorm === "pending" || statusNorm === "pending approval" || statusNorm === "pending_approval";
-        const isExpired = statusNorm === "expired" || (statusNorm === "active" && deadlinePassed);
-
-        let matchesStatus = true;
-        if (state.scholStatus === "active") {
-            matchesStatus = isActive;
-        } else if (state.scholStatus === "pending") {
-            matchesStatus = isPending;
-        } else if (state.scholStatus === "expired") {
-            matchesStatus = isExpired;
-        }
-
+        const matchesStatus = state.scholStatus === "all" || normalize(s.status || "pending") === state.scholStatus;
         return matchesSearch && matchesStatus;
     });
 
     if (!rows.length) {
-        container.innerHTML = `<tr><td colspan="6" class="text-center muted">No scholarships match the selected criteria.</td></tr>`;
+        container.innerHTML = `<tr><td colspan="6" class="text-center muted">No scholarships have been added yet.</td></tr>`;
         return;
     }
 
@@ -986,8 +910,8 @@ function renderScholarships() {
         return `
             <tr>
                 <td><strong>${esc(s.scholarshipName)}</strong><br><span class="muted">${esc(s.provider)}</span></td>
-                <td><span class="badge badge-cyan">${esc(s.category)}</span></td>
-                <td><strong>${esc(s.supportType)} (${esc(s.amount)})</strong></td>
+                <td><span class="badge badge-cyan">${esc(s.supportType)}</span></td>
+                <td><strong>${esc(s.amount)}</strong></td>
                 <td>${esc(s.deadline || "-")}</td>
                 <td>${getStatusBadge(s.status)}</td>
                 <td>${getTableActions("schol", s.scholarshipId, s.status)}</td>
@@ -995,7 +919,7 @@ function renderScholarships() {
         `;
     }).join("");
 
-    container.querySelectorAll("[data-edit-schol]").forEach((btn) => btn.addEventListener("click", () => openAddScholarship(btn.dataset.editSchol)));
+    container.querySelectorAll("[data-edit-schol]").forEach((btn) => btn.addEventListener("click", () => openScholModal(btn.dataset.editSchol)));
     container.querySelectorAll("[data-delete-schol]").forEach((btn) => btn.addEventListener("click", () => deleteScholarship(btn.dataset.deleteSchol)));
     container.querySelectorAll("[data-view-schol]").forEach((btn) => btn.addEventListener("click", () => viewScholarshipDetails(btn.dataset.viewSchol)));
     container.querySelectorAll("[data-view-reason-schol]").forEach((btn) => btn.addEventListener("click", () => viewRejectionReason("scholarship", btn.dataset.viewReasonSchol)));
@@ -1059,11 +983,9 @@ async function saveEvent(event) {
         time: value("event-time"),
         location: value("event-location"),
         registrationLink: value("event-registration-link") || "",
-        imageURL: value("event-image-url") || "images/event-placeholder.png",
+        imageURL: normalizedImageValue("event-image-url") || "images/event-placeholder.png",
         description: value("event-description"),
-        status: editingId ? (
-            ["active", "rejected"].includes(normalize(state.events[editingId]?.status)) ? "pending" : (state.events[editingId]?.status || "pending")
-        ) : "pending",
+        status: "active",
         updatedAt: serverTimestamp()
     };
 
@@ -1073,7 +995,7 @@ async function saveEvent(event) {
     await logActivity(editingId ? "event_updated" : "event_created", `${editingId ? "Updated" : "Scheduled"} event: ${payload.title}`, id);
 
     closeEventModal();
-    toast("Event scheduled successfully. Awaiting Admin activation.");
+    toast("Event scheduled and live for student calendars.");
 }
 
 function renderEvents() {
@@ -1113,304 +1035,7 @@ async function deleteEvent(id) {
 }
 
 
-// ----------------- STUDENT APPLICATIONS -----------------
-function renderApplications() {
-    const container = document.getElementById("applications-table-body");
-    if (!container) return;
 
-    let rows = Object.values(state.applications);
-    rows = rows.filter((app) => {
-        const studentName = app.studentName || "";
-        const courseName = app.courseName || "";
-        const qualification = app.qualification || app.qualificationLevel || "";
-        const haystack = [studentName, courseName, qualification].join(" ").toLowerCase();
-
-        const matchesSearch = haystack.includes(state.appSearch);
-        const status = normalize(app.status || app.applyStatus || "pending");
-        const matchesStatus = state.appStatus === "all" || status === state.appStatus;
-        return matchesSearch && matchesStatus;
-    });
-
-    if (!rows.length) {
-        container.innerHTML = `<tr><td colspan="6" class="text-center muted">No student applications found.</td></tr>`;
-        return;
-    }
-
-    container.innerHTML = rows.map((app) => {
-        const key = `${app.studentUid}_${app.courseId}`;
-        const status = normalize(app.status || app.applyStatus || "pending");
-        return `
-            <tr>
-                <td><strong>${esc(app.studentName)}</strong><br><span class="muted">${esc(app.email || "-")}</span></td>
-                <td><strong>${esc(app.courseName)}</strong></td>
-                <td>${esc(app.qualification || app.qualificationLevel || "GCE A/L")}</td>
-                <td>${formatDate(app.appliedAt || app.createdAt)}</td>
-                <td><span class="badge badge-${status}">${esc(app.status || app.applyStatus || "Pending")}</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn btn-sm btn-light" data-view-app="${escAttr(key)}">View Details</button>
-                        <button class="btn btn-sm btn-green" data-action-app="${escAttr(key)}" data-status="accepted">Accept</button>
-                        <button class="btn btn-sm btn-danger" data-action-app="${escAttr(key)}" data-status="rejected">Reject</button>
-                        <button class="btn btn-sm btn-light" data-action-app="${escAttr(key)}" data-status="shortlisted">Shortlist</button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join("");
-
-    container.querySelectorAll("[data-view-app]").forEach((btn) => btn.addEventListener("click", () => viewApplicationDetails(btn.dataset.viewApp)));
-    container.querySelectorAll("[data-action-app]").forEach((btn) => {
-        btn.addEventListener("click", () => updateApplicationStatus(btn.dataset.actionApp, btn.dataset.status));
-    });
-}
-
-function renderRecentApplications() {
-    const container = document.getElementById("recent-applications-table-body");
-    if (!container) return;
-
-    const rows = Object.values(state.applications).slice(-5).reverse();
-    if (!rows.length) {
-        container.innerHTML = `<tr><td colspan="5" class="text-center muted">No applications received yet.</td></tr>`;
-        return;
-    }
-
-    container.innerHTML = rows.map((app) => {
-        const key = `${app.studentUid}_${app.courseId}`;
-        const status = normalize(app.status || app.applyStatus || "pending");
-        return `
-            <tr>
-                <td><strong>${esc(app.studentName)}</strong></td>
-                <td>${esc(app.courseName)}</td>
-                <td>${formatDate(app.appliedAt || app.createdAt)}</td>
-                <td><span class="badge badge-${status}">${esc(app.status || app.applyStatus || "Pending")}</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn btn-sm btn-light" data-view-app="${escAttr(key)}"><i class="fas fa-eye"></i></button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join("");
-
-    container.querySelectorAll("[data-view-app]").forEach((btn) => btn.addEventListener("click", () => viewApplicationDetails(btn.dataset.viewApp)));
-}
-
-function viewApplicationDetails(key) {
-    const app = state.applications[key];
-    if (!app) return;
-
-    const content = document.getElementById("details-drawer-content");
-    const footer = document.getElementById("details-drawer-footer");
-
-    content.innerHTML = `
-        <div class="drawer-detail-section">
-            <h4>Student Name</h4>
-            <p>${esc(app.studentName)}</p>
-        </div>
-        <div class="drawer-detail-section">
-            <h4>Email & Phone</h4>
-            <p>${esc(app.email || "-")} / ${esc(app.phone || "-")}</p>
-        </div>
-        <div class="drawer-detail-section">
-            <h4>Applied Course</h4>
-            <p>${esc(app.courseName)}</p>
-        </div>
-        <div class="drawer-detail-section">
-            <h4>Prior Qualifications</h4>
-            <p>${esc(app.qualification || app.qualificationLevel || "GCE A/L")}</p>
-        </div>
-        <div class="drawer-detail-section">
-            <h4>Detailed Marks / Subject Results</h4>
-            <div class="message-block">${esc(app.results || app.marks || "No subjects details provided.")}</div>
-        </div>
-        <div class="drawer-detail-section">
-            <h4>Applicant Comments / Message</h4>
-            <div class="message-block">${esc(app.message || "No comment.")}</div>
-        </div>
-        <div class="drawer-detail-section">
-            <h4>Application Date</h4>
-            <p>${formatDate(app.appliedAt || app.createdAt)}</p>
-        </div>
-        <div class="drawer-detail-section">
-            <h4>Current Review Status</h4>
-            <p><span class="badge badge-${normalize(app.status || app.applyStatus || 'pending')}">${esc(app.status || app.applyStatus || 'Pending')}</span></p>
-        </div>
-    `;
-
-    footer.innerHTML = `
-        <button class="btn btn-light" id="drawer-close-btn">Close</button>
-        <button class="btn btn-danger" id="drawer-reject-btn">Reject</button>
-        <button class="btn btn-light" id="drawer-short-btn">Shortlist</button>
-        <button class="btn btn-green" id="drawer-accept-btn">Accept Enrolment</button>
-    `;
-
-    document.getElementById("details-drawer").classList.remove("hidden");
-
-    document.getElementById("drawer-close-btn")?.addEventListener("click", () => {
-        document.getElementById("details-drawer").classList.add("hidden");
-    });
-    document.getElementById("drawer-reject-btn")?.addEventListener("click", () => {
-        updateApplicationStatus(key, "rejected");
-        document.getElementById("details-drawer").classList.add("hidden");
-    });
-    document.getElementById("drawer-short-btn")?.addEventListener("click", () => {
-        updateApplicationStatus(key, "shortlisted");
-        document.getElementById("details-drawer").classList.add("hidden");
-    });
-    document.getElementById("drawer-accept-btn")?.addEventListener("click", () => {
-        updateApplicationStatus(key, "accepted");
-        document.getElementById("details-drawer").classList.add("hidden");
-    });
-}
-
-async function updateApplicationStatus(key, status) {
-    const app = state.applications[key];
-    if (!app) return;
-
-    // Write application status update to both applications node and student's saved courses trackers
-    const updates = {};
-    updates[`courseApplications/${app.studentUid}/${app.courseId}/status`] = status;
-    updates[`courseApplications/${app.studentUid}/${app.courseId}/applyStatus`] = status;
-    updates[`courseApplications/${app.studentUid}/${app.courseId}/updatedAt`] = serverTimestamp();
-
-    // Keep savedCourses path in student records in sync if it exists
-    updates[`savedCourses/${app.studentUid}/${app.courseId}/applyStatus`] = status;
-
-    await update(ref(database), updates);
-    await logActivity(`application_${status}`, `Marked application from ${app.studentName} for course ${app.courseName} as ${status}`, app.courseId);
-
-    // Notify the student dynamically using standard notification nodes
-    const notifRef = push(ref(database, `notifications/${app.studentUid}`));
-    await set(notifRef, {
-        notificationId: notifRef.key,
-        title: `Course Enrolment Status Update`,
-        message: `Your application to "${app.courseName}" has been updated to: ${status.toUpperCase()} by ${state.institute.instituteName || "the institute"}.`,
-        type: "application_update",
-        relatedEntityId: app.courseId,
-        isRead: false,
-        createdAt: serverTimestamp()
-    });
-
-    toast(`Application marked as ${status}. Student notified.`);
-}
-
-
-// ----------------- STUDENT INQUIRIES -----------------
-function renderInquiries() {
-    const container = document.getElementById("inquiries-table-body");
-    if (!container) return;
-
-    let rows = Object.values(state.inquiries).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-    rows = rows.filter((row) => state.inquiryStatus === "all" || row.status === state.inquiryStatus);
-
-    if (!rows.length) {
-        container.innerHTML = `<tr><td colspan="5" class="text-center muted">No inquiries found.</td></tr>`;
-        return;
-    }
-
-    container.innerHTML = rows.map((row) => {
-        const date = formatDate(row.createdAt);
-        return `
-            <tr>
-                <td><strong>${esc(row.studentName)}</strong><br><span class="muted">${esc(row.email || "-")} / ${esc(row.phone || "-")}</span></td>
-                <td><strong>${esc(row.courseName)}</strong></td>
-                <td><p class="muted" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;">${esc(row.message)}</p></td>
-                <td>${date}</td>
-                <td>
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <select data-inq-status="${escAttr(row.inquiryId)}">
-                            <option ${row.status === "New" ? "selected" : ""}>New</option>
-                            <option ${row.status === "Contacted" ? "selected" : ""}>Contacted</option>
-                            <option ${row.status === "Closed" ? "selected" : ""}>Closed</option>
-                        </select>
-                        <button class="btn btn-sm btn-light" data-reply-inq="${escAttr(row.inquiryId)}"><i class="fas fa-reply"></i></button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }).join("");
-
-    container.querySelectorAll("[data-inq-status]").forEach((select) => {
-        select.addEventListener("change", () => updateInquiryStatus(select.dataset.inqStatus, select.value));
-    });
-    container.querySelectorAll("[data-reply-inq]").forEach((btn) => {
-        btn.addEventListener("click", () => openInquiryReplyBox(btn.dataset.replyInq));
-    });
-}
-
-function renderRecentInquiries() {
-    const container = document.getElementById("recent-inquiries-list");
-    if (!container) return;
-
-    const rows = Object.values(state.inquiries).filter((i) => i.status === "New").slice(-4).reverse();
-    if (!rows.length) {
-        container.innerHTML = `<div class="list-item text-center muted">No unanswered inquiries.</div>`;
-        return;
-    }
-
-    container.innerHTML = rows.map((row) => `
-        <div class="list-item">
-            <div class="list-content">
-                <h4>${esc(row.studentName)} asked about ${esc(row.courseName)}</h4>
-                <p class="muted">${esc(row.message)}</p>
-            </div>
-            <button class="btn btn-sm btn-light" data-reply-inq="${escAttr(row.inquiryId)}"><i class="fas fa-reply"></i></button>
-        </div>
-    `).join("");
-
-    container.querySelectorAll("[data-reply-inq]").forEach((btn) => {
-        btn.addEventListener("click", () => openInquiryReplyBox(btn.dataset.replyInq));
-    });
-}
-
-async function updateInquiryStatus(inquiryId, status) {
-    await update(ref(database, `courseInquiries/${inquiryId}`), {
-        status,
-        updatedAt: serverTimestamp()
-    });
-    toast("Inquiry status updated.");
-}
-
-function openInquiryReplyBox(inquiryId) {
-    const inq = state.inquiries[inquiryId];
-    if (!inq) return;
-
-    // Quick inline modal reply prompt
-    const replyText = prompt(`Reply to ${inq.studentName}'s inquiry:\n"${inq.message}"`);
-    if (replyText === null || !replyText.trim()) return;
-
-    submitInquiryReply(inquiryId, replyText.trim());
-}
-
-async function submitInquiryReply(inquiryId, replyMessage) {
-    const inq = state.inquiries[inquiryId];
-    if (!inq) return;
-
-    // Send reply via email or log/notify student in Firebase
-    await update(ref(database, `courseInquiries/${inquiryId}`), {
-        status: "Contacted",
-        reply: replyMessage,
-        repliedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-    });
-
-    // Write a notification to student
-    if (inq.studentUid || inq.uid) {
-        const sUid = inq.studentUid || inq.uid;
-        const notifRef = push(ref(database, `notifications/${sUid}`));
-        await set(notifRef, {
-            notificationId: notifRef.key,
-            title: `Reply to your Course Inquiry`,
-            message: `${state.institute.instituteName || "The Institute"} replied: "${replyMessage.slice(0, 80)}..."`,
-            type: "inquiry_reply",
-            relatedEntityId: inq.courseId,
-            isRead: false,
-            createdAt: serverTimestamp()
-        });
-    }
-
-    toast("Reply registered. Student notified.");
-}
 
 
 // ----------------- CHAT WITH ADMIN -----------------
@@ -1589,7 +1214,6 @@ function renderCoursePerformance(tab = "views") {
     if (!container) return;
 
     const courses = Object.values(state.courses);
-    const applications = Object.values(state.applications);
 
     let rowsHtml = "";
 
@@ -1606,26 +1230,6 @@ function renderCoursePerformance(tab = "views") {
                         <p class="muted">${esc(c.level)} · ${esc(c.category)}</p>
                     </div>
                     <div style="font-weight: 850; font-size:1.1rem; color:var(--primary);">${Number(c.profileViews || c.views || 0).toLocaleString()} <span style="font-size:0.75rem;font-weight:600;color:var(--theme-muted)">Views</span></div>
-                </div>
-            `).join("");
-        }
-    } else if (tab === "applications") {
-        // Group application count per courseId
-        const counts = {};
-        applications.forEach((app) => {
-            counts[app.courseId] = (counts[app.courseId] || 0) + 1;
-        });
-        const sorted = [...courses].sort((a, b) => (counts[b.courseId] || 0) - (counts[a.courseId] || 0)).slice(0, 5);
-        if (!sorted.length) {
-            rowsHtml = `<div class="list-item text-center muted">No applications received yet.</div>`;
-        } else {
-            rowsHtml = sorted.map((c) => `
-                <div class="list-item">
-                    <div class="list-content">
-                        <h4>${esc(c.courseTitle)}</h4>
-                        <p class="muted">${esc(c.level)} · ${esc(c.category)}</p>
-                    </div>
-                    <div style="font-weight: 850; font-size:1.1rem; color:var(--secondary);">${counts[c.courseId] || 0} <span style="font-size:0.75rem;font-weight:600;color:var(--theme-muted)">Applicants</span></div>
                 </div>
             `).join("");
         }
@@ -1651,542 +1255,6 @@ function renderCoursePerformance(tab = "views") {
 
     container.innerHTML = rowsHtml;
 }
-
-
-// ----------------- NATIVE SVG ANALYTICS CHARTS -----------------
-function renderAnalytics() {
-    renderApplicationsTrendChart();
-    renderCoursePopularityChart();
-    renderStudentInterestsDonut();
-    renderProfileVisitorsChart();
-    renderProvinceDistributionChart();
-}
-
-function renderApplicationsTrendChart() {
-    const container = document.getElementById("chart-applications-trend");
-    if (!container) return;
-
-    // Group student applications by last 6 months
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const now = new Date();
-    const last6 = Array.from({ length: 6 }, (_, i) => {
-        const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
-        return { monthIndex: d.getMonth(), year: d.getFullYear(), label: `${months[d.getMonth()]} ${d.getFullYear()}` };
-    });
-
-    const apps = Object.values(state.applications);
-    const dataPoints = last6.map((m) => {
-        return apps.filter((app) => {
-            const date = new Date(getTimeValue(app.appliedAt || app.createdAt));
-            return date.getMonth() === m.monthIndex && date.getFullYear() === m.year;
-        }).length;
-    });
-
-    const maxVal = Math.max(5, ...dataPoints);
-    const chartWidth = 500;
-    const chartHeight = 180;
-    const padding = 30;
-
-    const points = dataPoints.map((val, index) => {
-        const x = padding + index * ((chartWidth - padding * 2) / 5);
-        const y = chartHeight - padding - (val / maxVal) * (chartHeight - padding * 2);
-        return { x, y, val };
-    });
-
-    const path = points.map((p, i) => `${i ? 'L' : 'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
-    const area = `${path} L ${points[points.length - 1].x} ${chartHeight - padding} L ${points[0].x} ${chartHeight - padding} Z`;
-
-    container.innerHTML = `
-        <svg viewBox="0 0 ${chartWidth} ${chartHeight}" style="width:100%;height:100%;">
-            <!-- Grids -->
-            ${Array.from({ length: 4 }).map((_, i) => {
-        const y = padding + i * ((chartHeight - padding * 2) / 3);
-        const val = Math.round(maxVal - i * (maxVal / 3));
-        return `
-                    <line class="chart-grid-line" x1="${padding}" y1="${y}" x2="${chartWidth - padding}" y2="${y}"></line>
-                    <text class="chart-text-label" x="${padding - 8}" y="${y + 4}" text-anchor="end">${val}</text>
-                `;
-    }).join("")}
-
-            <!-- Areas & Lines -->
-            <path d="${area}" fill="var(--primary)" opacity="0.08"></path>
-            <path d="${path}" fill="none" stroke="var(--primary)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-
-            <!-- Dots -->
-            ${points.map((p, i) => `
-                <circle cx="${p.x}" cy="${p.y}" r="5" fill="var(--primary)"></circle>
-                <circle cx="${p.x}" cy="${p.y}" r="8" fill="var(--primary)" opacity="0" style="cursor:pointer;" title="Applications: ${p.val}">
-                    <title>${p.val} Applications</title>
-                </circle>
-            `).join("")}
-
-            <!-- X Axis Labels -->
-            ${last6.map((m, i) => `
-                <text class="chart-text-label" x="${padding + i * ((chartWidth - padding * 2) / 5)}" y="${chartHeight - 8}" text-anchor="middle">${m.label}</text>
-            `).join("")}
-        </svg>
-    `;
-}
-
-function renderCoursePopularityChart() {
-    const container = document.getElementById("chart-course-popularity");
-    if (!container) return;
-
-    const courses = Object.values(state.courses);
-    const applications = Object.values(state.applications);
-    const counts = {};
-    applications.forEach((a) => { counts[a.courseId] = (counts[a.courseId] || 0) + 1; });
-
-    // Sort courses by count
-    const sorted = [...courses].sort((a, b) => (counts[b.courseId] || 0) - (counts[a.courseId] || 0)).slice(0, 5);
-    const maxVal = Math.max(4, ...sorted.map((c) => counts[c.courseId] || 0));
-
-    const chartWidth = 400;
-    const chartHeight = 200;
-    const rowHeight = 35;
-    const paddingLeft = 140;
-    const paddingRight = 40;
-
-    container.innerHTML = `
-        <svg viewBox="0 0 ${chartWidth} ${chartHeight}">
-            ${sorted.map((c, i) => {
-        const count = counts[c.courseId] || 0;
-        const barWidth = count > 0 ? (count / maxVal) * (chartWidth - paddingLeft - paddingRight) : 5;
-        const y = 15 + i * rowHeight;
-        const title = c.courseTitle || c.courseName;
-        return `
-                    <text class="chart-text-label" x="${paddingLeft - 10}" y="${y + 14}" text-anchor="end" style="font-weight:700;">
-                        ${esc(title.length > 18 ? title.slice(0, 16) + "..." : title)}
-                    </text>
-                    <rect x="${paddingLeft}" y="${y}" width="${barWidth}" height="20" rx="4" fill="url(#blueGrad)" class="donut-segment"></rect>
-                    <text class="chart-text-label" x="${paddingLeft + barWidth + 8}" y="${y + 14}" font-weight="800" fill="var(--primary)">${count}</text>
-                `;
-    }).join("")}
-            <defs>
-                <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="var(--primary)" />
-                    <stop offset="100%" stop-color="#60a5fa" />
-                </linearGradient>
-            </defs>
-        </svg>
-    `;
-}
-
-function renderStudentInterestsDonut() {
-    const container = document.getElementById("chart-student-interests");
-    if (!container) return;
-
-    const apps = Object.values(state.applications);
-    const categoriesMap = {};
-    apps.forEach((a) => {
-        const cat = a.category || "General";
-        categoriesMap[cat] = (categoriesMap[cat] || 0) + 1;
-    });
-
-    const entries = Object.entries(categoriesMap).sort((a, b) => b[1] - a[1]).slice(0, 4);
-    const total = apps.length || 1;
-
-    const chartWidth = 320;
-    const chartHeight = 220;
-    const cx = 110;
-    const cy = 110;
-    const radius = 70;
-    const innerRadius = 45;
-
-    let accumulatedAngle = 0;
-    const colors = ["#2563eb", "#14b8a6", "#ea580c", "#7c3aed"];
-
-    const paths = entries.map(([label, val], index) => {
-        const pct = val / total;
-        const angle = pct * 360;
-        const start = accumulatedAngle;
-        const end = accumulatedAngle + angle;
-        accumulatedAngle = end;
-
-        const pathData = getDonutPath(cx, cy, radius, innerRadius, start, end);
-        return { pathData, label, val, color: colors[index % colors.length] };
-    });
-
-    container.innerHTML = `
-        <svg viewBox="0 0 ${chartWidth} ${chartHeight}">
-            ${paths.map((p) => `
-                <path d="${p.pathData}" fill="${p.color}" class="donut-segment">
-                    <title>${p.label}: ${p.val}</title>
-                </path>
-            `).join("")}
-
-            <!-- Center text -->
-            <circle cx="${cx}" cy="${cy}" r="${innerRadius - 2}" fill="var(--theme-surface)"></circle>
-            <text x="${cx}" y="${cy - 4}" text-anchor="middle" font-weight="850" font-size="12" fill="var(--theme-text)">TOTAL</text>
-            <text x="${cx}" y="${cy + 12}" text-anchor="middle" font-weight="900" font-size="16" fill="var(--primary)">${apps.length}</text>
-
-            <!-- Legends -->
-            ${paths.map((p, i) => `
-                <rect x="200" y="${20 + i * 24}" width="12" height="12" rx="2" fill="${p.color}"></rect>
-                <text class="chart-text-label" x="218" y="${30 + i * 24}" font-weight="700">
-                    ${esc(p.label.slice(0, 12))} (${Math.round((p.val / total) * 100)}%)
-                </text>
-            `).join("")}
-        </svg>
-    `;
-}
-
-function renderProfileVisitorsChart() {
-    const container = document.getElementById("chart-visitors-trend");
-    if (!container) return;
-
-    // Direct profile visitors last 6 months trend
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const now = new Date();
-    const dataPoints = [80, 110, 95, 140, 165, Number(state.institute.monthlyViews || state.institute.profileViews || 180)];
-
-    const maxVal = Math.max(200, ...dataPoints);
-    const chartWidth = 360;
-    const chartHeight = 180;
-    const padding = 26;
-
-    const points = dataPoints.map((val, index) => {
-        const x = padding + index * ((chartWidth - padding * 2) / 5);
-        const y = chartHeight - padding - (val / maxVal) * (chartHeight - padding * 2);
-        return { x, y, val, month: months[new Date(now.getFullYear(), now.getMonth() - (5 - index)).getMonth()] };
-    });
-
-    const path = points.map((p, i) => `${i ? 'L' : 'M'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
-    const area = `${path} L ${points[points.length - 1].x} ${chartHeight - padding} L ${points[0].x} ${chartHeight - padding} Z`;
-
-    container.innerHTML = `
-        <svg viewBox="0 0 ${chartWidth} ${chartHeight}">
-            <!-- Grids -->
-            ${Array.from({ length: 3 }).map((_, i) => {
-        const y = padding + i * ((chartHeight - padding * 2) / 2);
-        const val = Math.round(maxVal - i * (maxVal / 2));
-        return `
-                    <line class="chart-grid-line" x1="${padding}" y1="${y}" x2="${chartWidth - padding}" y2="${y}"></line>
-                    <text class="chart-text-label" x="${padding - 6}" y="${y + 3}" text-anchor="end">${val}</text>
-                `;
-    }).join("")}
-
-            <path d="${area}" fill="#14b8a6" opacity="0.08"></path>
-            <path d="${path}" fill="none" stroke="#14b8a6" stroke-width="2.5" stroke-linecap="round"></path>
-
-            ${points.map((p) => `
-                <circle cx="${p.x}" cy="${p.y}" r="4" fill="#14b8a6"></circle>
-                <circle cx="${p.x}" cy="${p.y}" r="8" fill="#14b8a6" opacity="0" style="cursor:pointer;">
-                    <title>${p.val} Visitors</title>
-                </circle>
-            `).join("")}
-
-            ${points.map((p) => `
-                <text class="chart-text-label" x="${p.x}" y="${chartHeight - 6}" text-anchor="middle">${p.month}</text>
-            `).join("")}
-        </svg>
-    `;
-}
-
-function renderProvinceDistributionChart() {
-    const container = document.getElementById("chart-province-distribution");
-    if (!container) return;
-
-    const apps = Object.values(state.applications);
-    const provinceMap = { "Western": 0, "Central": 0, "Southern": 0, "Northern": 0, "Eastern": 0, "Other": 0 };
-
-    apps.forEach((app) => {
-        const dist = normalize(app.district || "");
-        const prov = DISTRICT_PROVINCES[dist] || "Other";
-        if (prov in provinceMap) provinceMap[prov] += 1;
-        else provinceMap["Other"] += 1;
-    });
-
-    const entries = Object.entries(provinceMap).sort((a, b) => b[1] - a[1]);
-    const maxVal = Math.max(3, ...entries.map((e) => e[1]));
-
-    const chartWidth = 320;
-    const chartHeight = 180;
-    const colWidth = 30;
-    const colGap = 16;
-    const padding = 26;
-
-    container.innerHTML = `
-        <svg viewBox="0 0 ${chartWidth} ${chartHeight}">
-            ${entries.map(([label, val], i) => {
-        const colHeight = (val / maxVal) * (chartHeight - padding * 2);
-        const x = padding + i * (colWidth + colGap);
-        const y = chartHeight - padding - colHeight;
-        return `
-                    <rect x="${x}" y="${y}" width="${colWidth}" height="${colHeight}" rx="4" fill="url(#tealGrad)" class="donut-segment"></rect>
-                    <text class="chart-text-label" x="${x + colWidth / 2}" y="${y - 6}" text-anchor="middle" font-weight="800" fill="var(--secondary)">${val}</text>
-                    <text class="chart-text-label" x="${x + colWidth / 2}" y="${chartHeight - 6}" text-anchor="middle" font-size="8">${label.slice(0, 4)}</text>
-                `;
-    }).join("")}
-            <defs>
-                <linearGradient id="tealGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-                    <stop offset="0%" stop-color="#14b8a6" />
-                    <stop offset="100%" stop-color="#2dd4bf" />
-                </linearGradient>
-            </defs>
-        </svg>
-    `;
-}
-
-
-// ----------------- REPORTS GENERATION CENTER -----------------
-let compiledReportData = [];
-let compiledReportSubject = "";
-
-function compileReport() {
-    const subject = value("report-subject");
-    const startInput = value("report-start-date");
-    const endInput = value("report-end-date");
-
-    const startVal = startInput ? new Date(startInput).getTime() : 0;
-    const endVal = endInput ? new Date(endInput).getTime() : Infinity;
-
-    const dataWindow = document.getElementById("report-data-window");
-    const titleEl = document.getElementById("report-preview-title");
-
-    let html = "";
-    compiledReportData = [];
-    compiledReportSubject = subject;
-
-    const companyName = state.institute.instituteName || state.user.fullName || "Institute";
-
-    if (subject === "courses") {
-        titleEl.textContent = `${companyName} - Academic Course Spec Report`;
-        const list = Object.values(state.courses).filter((c) => {
-            const time = getTimeValue(c.createdAt || c.updatedAt);
-            return time >= startVal && time <= endVal;
-        });
-
-        compiledReportData = list.map((c) => ({
-            "Course Title": c.courseTitle,
-            "Category": c.category,
-            "Level": c.level,
-            "Mode": c.type,
-            "Fee": c.fee,
-            "Status": c.status
-        }));
-
-        html = `
-            <div class="report-header-print">
-                <h2>EduPath Lanka - Course Catalogue Report</h2>
-                <p><strong>Institution:</strong> ${companyName}</p>
-                <p><strong>Generated Date:</strong> ${new Date().toLocaleDateString()}</p>
-                <p><strong>Filter Scope:</strong> ${startInput || "Beginning"} to ${endInput || "Today"}</p>
-            </div>
-            <table class="compact-table">
-                <thead>
-                    <tr><th>Course Spec</th><th>Category</th><th>Level</th><th>Type</th><th>Tuition Fee</th><th>Approval Status</th></tr>
-                </thead>
-                <tbody>
-                    ${list.map((c) => `
-                        <tr>
-                            <td><strong>${esc(c.courseTitle)}</strong></td>
-                            <td>${esc(c.category)}</td>
-                            <td>${esc(c.level)}</td>
-                            <td>${esc(c.type)}</td>
-                            <td>${esc(c.fee)}</td>
-                            <td><span class="badge badge-${normalize(c.status)}">${c.status}</span></td>
-                        </tr>
-                    `).join("")}
-                    ${!list.length ? '<tr><td colspan="6" class="text-center">No record matched filter criteria.</td></tr>' : ''}
-                </tbody>
-            </table>
-        `;
-    } else if (subject === "applications") {
-        titleEl.textContent = `${companyName} - Incoming Student Enrolment Report`;
-        const list = Object.values(state.applications).filter((a) => {
-            const time = getTimeValue(a.appliedAt || a.createdAt);
-            return time >= startVal && time <= endVal;
-        });
-
-        compiledReportData = list.map((a) => ({
-            "Applicant": a.studentName,
-            "Email": a.email,
-            "Course Applied": a.courseName,
-            "Date": formatDate(a.appliedAt),
-            "Status": a.status
-        }));
-
-        html = `
-            <div class="report-header-print">
-                <h2>EduPath Lanka - Enrolment Registrations Summary</h2>
-                <p><strong>Institution:</strong> ${companyName}</p>
-                <p><strong>Generated Date:</strong> ${new Date().toLocaleDateString()}</p>
-                <p><strong>Filter Scope:</strong> ${startInput || "Beginning"} to ${endInput || "Today"}</p>
-            </div>
-            <table class="compact-table">
-                <thead>
-                    <tr><th>Applicant Name</th><th>Contact Details</th><th>Applied Degree / Course</th><th>Applied Date</th><th>Processing Status</th></tr>
-                </thead>
-                <tbody>
-                    ${list.map((a) => `
-                        <tr>
-                            <td><strong>${esc(a.studentName)}</strong></td>
-                            <td>${esc(a.email || "-")} / ${esc(a.phone || "-")}</td>
-                            <td>${esc(a.courseName)}</td>
-                            <td>${formatDate(a.appliedAt)}</td>
-                            <td><span class="badge badge-${normalize(a.status)}">${a.status}</span></td>
-                        </tr>
-                    `).join("")}
-                    ${!list.length ? '<tr><td colspan="5" class="text-center">No record matched filter criteria.</td></tr>' : ''}
-                </tbody>
-            </table>
-        `;
-    } else if (subject === "scholarships") {
-        titleEl.textContent = `${companyName} - Scholarship Program Allocation Report`;
-        const list = Object.values(state.scholarships).filter((s) => {
-            const time = getTimeValue(s.createdAt || s.updatedAt);
-            return time >= startVal && time <= endVal;
-        });
-
-        compiledReportData = list.map((s) => ({
-            "Scholarship Scheme": s.scholarshipName,
-            "Scope": s.supportType,
-            "Value": s.amount,
-            "Deadline": s.deadline,
-            "Status": s.status
-        }));
-
-        html = `
-            <div class="report-header-print">
-                <h2>EduPath Lanka - Scholarship Allocations Catalogue</h2>
-                <p><strong>Institution:</strong> ${companyName}</p>
-                <p><strong>Generated Date:</strong> ${new Date().toLocaleDateString()}</p>
-            </div>
-            <table class="compact-table">
-                <thead>
-                    <tr><th>Scheme Title</th><th>Cover Type</th><th>Value Scope</th><th>Application Deadline</th><th>Activation</th></tr>
-                </thead>
-                <tbody>
-                    ${list.map((s) => `
-                        <tr>
-                            <td><strong>${esc(s.scholarshipName)}</strong></td>
-                            <td>${esc(s.supportType)}</td>
-                            <td>${esc(s.amount)}</td>
-                            <td>${esc(s.deadline)}</td>
-                            <td><span class="badge badge-${normalize(s.status)}">${s.status}</span></td>
-                        </tr>
-                    `).join("")}
-                    ${!list.length ? '<tr><td colspan="5" class="text-center">No record matched.</td></tr>' : ''}
-                </tbody>
-            </table>
-        `;
-    } else if (subject === "students") {
-        titleEl.textContent = `${companyName} - Student Registrations Index`;
-        // Unique student records from inquiries and applications
-        const studentsSet = new Map();
-        Object.values(state.applications).forEach((a) => {
-            studentsSet.set(a.studentUid, { name: a.studentName, email: a.email, phone: a.phone });
-        });
-        Object.values(state.inquiries).forEach((i) => {
-            if (i.studentUid) {
-                studentsSet.set(i.studentUid, { name: i.studentName, email: i.email, phone: i.phone });
-            }
-        });
-
-        const list = Array.from(studentsSet.values());
-        compiledReportData = list.map((s) => ({
-            "Student Name": s.name,
-            "Email Address": s.email,
-            "Contact Phone": s.phone
-        }));
-
-        html = `
-            <div class="report-header-print">
-                <h2>EduPath Lanka - Registered Contacts Index</h2>
-                <p><strong>Institution:</strong> ${companyName}</p>
-                <p><strong>Generated Date:</strong> ${new Date().toLocaleDateString()}</p>
-            </div>
-            <table class="compact-table">
-                <thead>
-                    <tr><th>Registered Student Name</th><th>Email Address</th><th>Contact Phone</th></tr>
-                </thead>
-                <tbody>
-                    ${list.map((s) => `
-                        <tr>
-                            <td><strong>${esc(s.name)}</strong></td>
-                            <td>${esc(s.email || "-")}</td>
-                            <td>${esc(s.phone || "-")}</td>
-                        </tr>
-                    `).join("")}
-                    ${!list.length ? '<tr><td colspan="3" class="text-center">No student logs registered.</td></tr>' : ''}
-                </tbody>
-            </table>
-        `;
-    } else if (subject === "monthly") {
-        titleEl.textContent = `${companyName} - Monthly General Workspace Summary`;
-        const totalCourses = Object.keys(state.courses).length;
-        const totalApps = Object.keys(state.applications).length;
-        const totalInqs = Object.keys(state.inquiries).length;
-        const totalSchols = Object.keys(state.scholarships).length;
-        const totalEvents = Object.keys(state.events).length;
-
-        compiledReportData = [
-            { "Metric Summary": "Total Course specifications cataloged", "Value Count": totalCourses },
-            { "Metric Summary": "Total Student Applications received", "Value Count": totalApps },
-            { "Metric Summary": "Total Student Inquiries", "Value Count": totalInqs },
-            { "Metric Summary": "Total Scholarship allocations listed", "Value Count": totalSchols },
-            { "Metric Summary": "Total Campus Events scheduled", "Value Count": totalEvents }
-        ];
-
-        html = `
-            <div class="report-header-print">
-                <h2>EduPath Lanka - Monthly Workspace Summary Report</h2>
-                <p><strong>Institution:</strong> ${companyName}</p>
-                <p><strong>Report Compile Date:</strong> ${new Date().toLocaleDateString()}</p>
-            </div>
-            <table class="compact-table" style="max-width:500px;margin:0 auto;">
-                <thead>
-                    <tr><th>Workspace Activity Metric</th><th>Value Count</th></tr>
-                </thead>
-                <tbody>
-                    <tr><td>Total Course Catalogue entries</td><td><strong>${totalCourses}</strong></td></tr>
-                    <tr><td>Total Enrolment Applications received</td><td><strong>${totalApps}</strong></td></tr>
-                    <tr><td>Total Course Inquiries answered</td><td><strong>${totalInqs}</strong></td></tr>
-                    <tr><td>Scholarship allocations listed</td><td><strong>${totalSchols}</strong></td></tr>
-                    <tr><td>Upcoming campus events scheduled</td><td><strong>${totalEvents}</strong></td></tr>
-                </tbody>
-            </table>
-        `;
-    }
-
-    if (dataWindow) {
-        dataWindow.innerHTML = html;
-        document.getElementById("report-preview-panel").classList.remove("hidden");
-    }
-}
-
-function exportCSVReport() {
-    if (!compiledReportData.length) return toast("No report data loaded to compile CSV.");
-
-    // Construct CSV text block
-    const headers = Object.keys(compiledReportData[0]);
-    const csvRows = [];
-    csvRows.push(headers.join(","));
-
-    compiledReportData.forEach((row) => {
-        const values = headers.map((header) => {
-            const val = String(row[header] || "");
-            const escaped = val.replace(/"/g, '\\"');
-            return `"${escaped}"`;
-        });
-        csvRows.push(values.join(","));
-    });
-
-    const csvContent = csvRows.join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const filename = `${compiledReportSubject}_report_${new Date().toISOString().slice(0, 10)}.csv`;
-
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    toast("CSV spreadsheet download initiated.");
-}
-
 
 // ----------------- AUXILIARY LOGS & UTILS -----------------
 async function logout() {
@@ -2257,10 +1325,6 @@ function getStatusBadge(status) {
         return `<span class="badge badge-success">Approved</span>`;
     } else if (s === "rejected") {
         return `<span class="badge badge-danger">Rejected</span>`;
-    } else if (s === "expired") {
-        return `<span class="badge badge-secondary" style="background:#64748b;color:#ffffff;">Expired</span>`;
-    } else if (s === "draft") {
-        return `<span class="badge badge-secondary" style="background:#94a3b8;color:#ffffff;">Draft</span>`;
     } else {
         return `<span class="badge badge-warning">Pending Approval</span>`;
     }
@@ -2280,12 +1344,6 @@ function getTableActions(type, id, status) {
             <div class="table-actions">
                 <button class="btn btn-sm btn-light" data-view-reason-${type}="${escAttr(id)}"><i class="fas fa-circle-exclamation text-danger"></i> View Reason</button>
                 <button class="btn btn-sm btn-light" data-edit-${type}="${escAttr(id)}"><i class="fas fa-repeat"></i> Edit & Resubmit</button>
-            </div>
-        `;
-    } else if (s === "expired") {
-        return `
-            <div class="table-actions">
-                <button class="btn btn-sm btn-light" data-view-${type}="${escAttr(id)}"><i class="fas fa-eye"></i> View</button>
             </div>
         `;
     } else {

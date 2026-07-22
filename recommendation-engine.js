@@ -1,540 +1,83 @@
-// recommendation-engine.js
-import { normalizeList } from "./mentorship-utils.js";
-
-// Utility helpers for normalization
-export function normalize(value) {
-    if (typeof value === "boolean") return value;
-    if (value === undefined || value === null) return "";
-    return String(value).trim().toLowerCase();
+﻿// EduPath Lanka shared recommendation engine — deterministic, explainable, Firebase-independent.
+export const safeLower = (v) => v == null ? "" : String(v).trim().toLowerCase();
+export const normalize = safeLower;
+export const normalizeText = safeLower;
+export function normalizeList(v) {
+    if (v == null || v === "") return [];
+    const list = Array.isArray(v) ? v : typeof v === "object" ? Object.values(v) : String(v).split(/[,;|\n]/);
+    return [...new Set(list.flatMap(x => x && typeof x === "object" ? normalizeList(x) : String(x || "").trim() ? [String(x).trim()] : []))];
 }
-
-export function includesAny(target, searchKeys) {
-    if (!target || !searchKeys) return false;
-    const targetArray = Array.isArray(target) ? target : normalizeList(target);
-    const searchArray = Array.isArray(searchKeys) ? searchKeys : normalizeList(searchKeys);
-    if (!targetArray.length || !searchArray.length) return false;
-    const tString = targetArray.map(normalize).join(" ");
-    return searchArray.some(key => key && tString.includes(normalize(key)));
+export const normalizeBoolean = (v) => typeof v === "boolean" ? v : ["true","yes","1","needed","required"].includes(safeLower(v));
+export function normalizeNumber(v, fallback = 0) { const n = Number(String(v ?? "").replace(/[^0-9.-]/g,"")); return Number.isFinite(n) ? n : fallback; }
+export function normalizeMoney(v, fallback = Infinity) { return v == null || v === "" ? fallback : normalizeNumber(v, fallback); }
+export function normalizeDate(v) { if (!v) return 0; if (typeof v === "number") return v; if (v?.seconds) return v.seconds * 1000; const n = Date.parse(v); return Number.isNaN(n) ? 0 : n; }
+export function hasValue(v) { return Array.isArray(v) ? v.some(hasValue) : v && typeof v === "object" ? Object.values(v).some(hasValue) : v != null && String(v).trim() !== ""; }
+export const getFirstNonEmpty = (...v) => v.find(hasValue) ?? "";
+const tokens = (v) => normalizeList(v).map(safeLower).filter(Boolean);
+export function containsAny(source, targets) { const a=tokens(source), b=tokens(targets); return a.some(x => b.some(y => x.includes(y)||y.includes(x))); }
+export const includesAny = containsAny;
+export function scoreTextMatch(source, targets) { const s=tokens(source).join(" "), t=tokens(targets); return !s||!t.length?0:t.filter(x=>s.includes(x)).length/t.length; }
+export function scoreListMatch(source, targets) { const t=tokens(targets); return !t.length?0:t.filter(x=>containsAny(source,[x])).length/t.length; }
+const merge=(...v)=>[...new Set(v.flatMap(normalizeList).filter(Boolean))];
+export function dedupeById(items, keys=["id","courseId","scholarshipId","mentorUid","instituteId","opportunityId"]) { const seen=new Set(); return (items||[]).filter(x=>{const id=keys.map(k=>x?.[k]).find(Boolean); if(!id||seen.has(id))return false; seen.add(id); return true;}); }
+export function getMatchLevel(s){return s>=80?"Excellent Match":s>=60?"Good Match":s>=40?"Possible Match":"Explore Option";}
+const eligibilityRank={eligible:4,possible:3,more_information_needed:2,not_eligible:1};
+export function sortByRecommendationScore(items,{deadlineKey="deadline",ratingKey="rating"}={}) { return [...(items||[])].sort((a,b)=>(b.matchScore||0)-(a.matchScore||0)||(eligibilityRank[b.eligibilityStatus]||0)-(eligibilityRank[a.eligibilityStatus]||0)||deadlineValue(a[deadlineKey])-deadlineValue(b[deadlineKey])||normalizeNumber(b[ratingKey])-normalizeNumber(a[ratingKey])||normalizeDate(b.updatedAt||b.createdAt)-normalizeDate(a.updatedAt||a.createdAt)); }
+function deadlineValue(v){const t=normalizeDate(v);return t>=Date.now()?t:Number.MAX_SAFE_INTEGER;}
+function active(item={},kind="content") { if(item.publicVisibility===false||item.archived===true)return false; const s=safeLower(item.approvalStatus||item.status||"active").replace(/[ _-]/g,""); if(!["active","approved","published","open","visible"].includes(s))return false; if(kind==="mentor"&&["suspended","inactive","disabled","rejected"].includes(safeLower(item.accountStatus)))return false; const d=normalizeDate(item.deadline||item.applicationDeadline||item.closingDate); return !d||d>=Date.now()||normalizeBoolean(item.ongoing)||containsAny([item.status,item.deadline],["ongoing","rolling"]); }
+function pathValue(v){const p=safeLower(v).replace(/[ -]/g,"_");return ["academic","talent","combined","undecided","academic_improvement"].includes(p)?p:"undecided";}
+export function normalizeTalentProfile(p={}) { return {talentCategories:merge(p.categoryId,p.talentCategoryId,p.talentCategories,p.talentCategory,p.primaryTalentCategory,p.category,p.arts,p.sports),talentTypes:merge(p.talentTypes,p.talentType,p.type,p.talents),specificSkills:merge(p.specificSkills,p.specificTalent,p.specificSkill,p.skill),skillLevels:merge(p.skillLevels,p.skillLevel,p.trainingLevel),achievements:merge(p.achievements,p.highestAchievement,p.awardsAndRecognitions),preferredOpportunities:merge(p.preferredOpportunities,p.talentOpportunityPreferences,p.preferredTrainingModes),preferredLocations:merge(p.preferredLocations,p.location),preferredModes:merge(p.preferredModes,p.preferredTrainingModes,p.trainingMode),talentGoals:merge(p.talentGoals,p.goal),experienceYears:normalizeNumber(p.yearsOfExperience||p.experienceYears),portfolio:getFirstNonEmpty(p.portfolioLink,p.portfolio,p.videoShowcaseLink)}; }
+export function normalizeDiscoveryProfile(p={}) { return {interests:merge(p.interests,p.hobbies,p.enjoyedActivities,p.enjoyedSubjects,p.favoriteSubjects),preferredRoles:merge(p.preferredRoles,p.roles),workEnvironment:getFirstNonEmpty(p.workEnvironment,p.workEnv,p.preferredWorkStyle),skillsToExplore:merge(p.skillsToExplore,p.confidenceAreas,p.personalityTraits)}; }
+export function buildStudentRecommendationProfile(i={}) {
+ const user=i.user||{}, student=i.student||i.studentProfile||{}, personal=i.personal||i.personalProfile||{}, academic=i.academic||i.learningProfile||i.academicProfile||{}, tr=i.talent||i.talentProfile||{}, dr=i.discovery||i.discoveryProfile||{}, r=i.pathwayResult||i.latestPathwayResult||{};
+ const pathwayPreference=pathValue(getFirstNonEmpty(student.pathwayPreference,student.futurePath,r.pathwayPreference,r.futurePath)); const talent=normalizeTalentProfile(tr), discovery=normalizeDiscoveryProfile(dr);
+ const academicCategoryIds=merge(student.academicCategoryId,student.academicCategoryIds,academic.academicCategoryId,academic.academicCategoryIds,r.academicCategoryId,r.academicCategoryIds); const academicCategoryTitles=merge(student.academicCategoryTitle,student.academicCategoryTitles,academic.academicCategoryTitle,academic.academicCategoryTitles,r.academicCategoryTitle,r.academicCategoryTitles); const courseCategoryIds=merge(student.courseCategoryId,student.courseCategoryIds,academic.courseCategoryId,academic.courseCategoryIds,r.courseCategoryId,r.courseCategoryIds); const scholarshipCategoryIds=merge(student.scholarshipCategoryId,student.scholarshipCategoryIds,academic.scholarshipCategoryId,academic.scholarshipCategoryIds,r.scholarshipCategoryId,r.scholarshipCategoryIds); const explicitTalentCategoryIds=merge(tr.categoryId,tr.talentCategoryId,tr.talentCategoryIds,tr.categoryIds); const talentCategoryTitles=merge(tr.categoryTitle,tr.talentCategoryTitle,tr.talentCategoryTitles,tr.primaryTalentCategory,tr.talentCategory); const academicInterests=merge(academicCategoryTitles,r.interests?.interestAreas,r.interestArea,academic.preferredFields,academic.interests,academic.subjectInterests,student.interestArea); const talentInterests=merge(talentCategoryTitles,talent.talentTypes,talent.specificSkills,talent.talentGoals);
+ const useAcademic=["academic","combined","academic_improvement"].includes(pathwayPreference),useTalent=["talent","combined"].includes(pathwayPreference)||(pathwayPreference==="academic"&&talentInterests.length>0),useDiscovery=pathwayPreference==="undecided";
+ const interestAreas=useTalent&&!useAcademic?talentInterests:useTalent&&useAcademic?merge(academicInterests,talentInterests):useDiscovery?merge(discovery.interests,discovery.preferredRoles,academicInterests,talentInterests):academicInterests;
+ return {uid:i.uid||user.uid||student.uid||"",pathwayPreference,mode:pathwayPreference,personal,academic,talent,discovery,useAcademic,useTalent,useDiscovery,age:normalizeNumber(getFirstNonEmpty(personal.age,student.age,r.age)),educationLevel:getFirstNonEmpty(academic.currentEducationLevel,academic.educationLevel,student.educationLevel,r.educationLevel),currentEducationLevel:getFirstNonEmpty(academic.currentEducationLevel,academic.educationLevel,student.educationLevel,r.educationLevel),qualification:getFirstNonEmpty(academic.currentQualification,academic.qualification),alStream:getFirstNonEmpty(academic.alStream,academic.examStream,academic.stream,student.examStream,r.academicBackground?.alStream),alResults:getFirstNonEmpty(academic.alResults,student.resultStatus,r.alResults),interestAreas,preferredFields:interestAreas,academicCategoryIds,academicCategoryTitles,courseCategoryIds,scholarshipCategoryIds,academicInterests,talentInterests,careerGoals:merge(r.goals?.futurePreference,r.goals?.dreamCareer,r.futureGoal,academic.careerGoals,student.futureGoal,discovery.preferredRoles,talent.talentGoals),skillsToImprove:merge(r.skillsAndStrengths?.skills,r.skills,academic.skillsToImprove,student.skills,talent.specificSkills),preferredCourseLevels:merge(academic.preferredCourseLevels),preferredStudyModes:merge(academic.preferredStudyModes,academic.learningMode,student.learningMode,r.learningPreferences?.learningMode),preferredLocations:merge(personal.district,personal.city,academic.preferredLocations,student.district,student.preferredDistrict,r.learningPreferences?.preferredDistricts),preferredLanguages:merge(personal.preferredLanguages,academic.preferredLanguages,r.basicProfile?.preferredLanguage),budgetMin:normalizeMoney(academic.budgetMin,0),budgetMax:normalizeMoney(getFirstNonEmpty(academic.budgetMax,r.budgetRange),Infinity),financialSupportNeeded:normalizeBoolean(getFirstNonEmpty(academic.financialSupportNeeded,student.financialSupport,r.supportNeeds?.financialSupport)),preferredCountries:merge(academic.preferredCountries),supportNeeded:merge(r.supportNeeds?.supportNeeded,academic.supportNeeded,tr.supportNeededTalent),talentCategoryIds:explicitTalentCategoryIds.length?explicitTalentCategoryIds:talent.talentCategories,talentCategoryTitles,talentCategories:explicitTalentCategoryIds.length?explicitTalentCategoryIds:talent.talentCategories,talentTypes:talent.talentTypes,specificSkills:talent.specificSkills,skillLevels:talent.skillLevels,talentOpportunityPreferences:talent.preferredOpportunities};
 }
+export function normalizeStudentProfile(r={},s={}){return buildStudentRecommendationProfile({studentProfile:s,pathwayResult:r});}
+export function getLearnerRecommendationProfile({userRole,studentProfile,learningProfile,pathwayResult,talentProfile,discoveryProfile,personalProfile,user}) { return buildStudentRecommendationProfile({studentProfile:{...(userRole==="mentor"?{pathwayPreference:"academic"}:{}),...studentProfile},learningProfile,pathwayResult,talentProfile,discoveryProfile,personalProfile,user}); }
+function state(){return{score:0,reasons:[],matchedFields:[],missing:[],eligibility:"eligible"};}
+function add(s,pts,ok,reason,field=""){if(!ok)return;s.score+=pts;if(reason)s.reasons.push(reason);if(field)s.matchedFields.push(field);}
+function finish(item,idKey,id,s,extra={}){const matchScore=Math.max(0,Math.min(100,Math.round(s.score)));return{...item,[idKey]:id,matchScore,matchLevel:getMatchLevel(matchScore),matchReasons:s.reasons.length?s.reasons:["Explore this option while completing your profile."],recommendationReason:s.reasons[0]||"Explore this option while completing your profile.",matchedFields:[...new Set(s.matchedFields)],missingRequirements:[...new Set(s.missing)],eligibilityStatus:s.eligibility,...extra};}
+const practical=["dance","dancing","music","art","drawing","design","sport","craft","acting","theatre","performance","vocational","practical","workshop","entrepreneur","business","marketing","leadership","communication","event"];
+const improvement=["foundation","certificate","vocational","beginner","o/l","a/l","english","ict","literacy","support"];
+const explore=["beginner","foundation","introduction","career","explore","general","youth","skills"];
+export function scoreCourseRecommendation(p,c={},id=c.courseId||c.id){const s=state(),text=[c.academicCategoryId,c.courseCategoryId,c.academicCategoryTitle,c.courseCategoryTitle,c.courseName,c.name,c.category,c.subcategory,c.description,c.skillsCovered,c.matchingKeywords,c.careerOpportunities,c.qualificationLevel],path=p.pathwayPreference,fields=path==="talent"?p.talentInterests:path==="combined"?merge(p.academicCategoryIds,p.academicInterests,p.talentInterests):merge(p.academicCategoryIds,p.interestAreas),fr=scoreListMatch(text,fields),cr=scoreListMatch(text,p.careerGoals),sr=scoreListMatch([c.skillsCovered,c.description,c.category],p.skillsToImprove);
+ if(path==="talent"){const tr=scoreListMatch(text,merge(p.talentInterests,p.specificSkills));add(s,50*tr,tr>0,"Matches your talent or practical skill interests","talent");add(s,20,containsAny(text,practical),"Provides practical, vocational, creative, or business skill development","practical");add(s,10,containsAny(text,["beginner","all levels",...p.skillLevels]),"Accessible for your current skill level","level");}
+ else if(path==="combined"){const ar=scoreListMatch(text,merge(p.academicInterests,p.careerGoals)),tr=scoreListMatch(text,merge(p.talentInterests,p.specificSkills));add(s,70*Math.max(ar,cr),ar>0||cr>0,"Supports your academic interest or career goal","academic");add(s,30*tr,tr>0,"Also connects with your talent and skill profile","talent");}
+ else if(path==="academic_improvement"){add(s,45,containsAny(text,improvement),"Supports foundation or academic improvement","improvement");add(s,20*sr,sr>0,"Builds a skill you want to improve","skills");}
+ else if(path==="undecided"){add(s,35,containsAny(text,explore),"A beginner-friendly option for exploring your interests","exploration");add(s,25*Math.max(fr,sr),fr>0||sr>0,"Connects with an interest or skill you mentioned","interest");}
+ else {add(s,25*fr,fr>0,"Matches your preferred academic field","field");add(s,20*cr,cr>0,"Supports your career goal","career");add(s,15*sr,sr>0,"Develops a skill you want to improve","skills");add(s,15,!p.educationLevel||containsAny([c.eligibility,c.minimumEducationLevel,c.qualificationLevel,c.educationLevel],[p.educationLevel]),"Suitable for your education level","education");}
+ add(s,10,!p.preferredStudyModes.length||containsAny([c.mode,c.learningMode,c.type],p.preferredStudyModes),"Available in your preferred study mode","mode");add(s,5,!p.preferredLocations.length||containsAny([c.district,c.location,c.mode],p.preferredLocations),"Fits your location preference","location");add(s,5,normalizeMoney(c.feeAmount||c.fee,0)<=p.budgetMax,"Fits your stated budget","budget");add(s,5,!p.preferredLanguages.length||containsAny(c.language||c.languages,p.preferredLanguages),"Available in a preferred language","language");if(c.minimumEducationLevel&&!p.educationLevel){s.eligibility="more_information_needed";s.missing.push("Add education level to confirm eligibility");}const directCategoryMatch=containsAny([c.academicCategoryId,c.courseCategoryId],[...p.academicCategoryIds,...p.courseCategoryIds])||containsAny([c.relatedTalentCategoryIds,c.talentCategoryId],p.talentCategoryIds),contentRelevance=directCategoryMatch||(path==="talent"?scoreListMatch(text,merge(p.talentInterests,p.specificSkills))>0:path==="combined"?scoreListMatch(text,merge(p.academicInterests,p.careerGoals,p.talentInterests,p.specificSkills))>0:path==="undecided"?containsAny(text,merge(explore,p.interestAreas,p.discovery.interests)):scoreListMatch(text,merge(p.academicCategoryIds,p.academicCategoryTitles,p.academicInterests,p.careerGoals,p.skillsToImprove))>0);if(!contentRelevance&&path!=="undecided"){s.score=Math.min(20,s.score);s.reasons=["Excluded because no academic, course, talent, career, or skill relevance was found"];s.matchedFields=[];}const r=finish(c,"courseId",id,s,{courseName:c.courseName||c.name||"Untitled Course",instituteName:c.instituteName||c.institute||"Institute not specified",hasCategoryRelevance:contentRelevance,included:(path==="undecided"?s.score>=20:contentRelevance&&s.score>=40),exclusionReason:contentRelevance?"":"Excluded because no category relevance was found"});debugRecommendationLog("Course",id,r);return r;}
+export function recommendCourses(p,obj){return sortByRecommendationScore(dedupeById(Object.entries(obj||{}).filter(([,x])=>active(x,"course")).map(([id,x])=>scoreCourseRecommendation(p,x,id)))).filter(x=>p.pathwayPreference==="undecided"?x.matchScore>=20:x.matchScore>=40);}
 
-export function hasValue(value) {
-    if (Array.isArray(value)) return value.length > 0 && value.some(Boolean);
-    return value !== undefined && value !== null && String(value).trim() !== "";
+export function scoreScholarshipRecommendation(p,x={},id=x.scholarshipId||x.id){const s=state(),text=[x.scholarshipCategoryId,x.relatedAcademicCategoryIds,x.relatedTalentCategoryIds,x.scholarshipName,x.name,x.category,x.type,x.description,x.matchingKeywords,x.eligibility,x.eligibleFields,x.supportType],study=containsAny([x.educationLevel,x.studyLevel,x.qualificationLevel,x.eligibility],[p.educationLevel]),fr=scoreListMatch(text,merge(p.academicCategoryIds,p.interestAreas)),tr=scoreListMatch(text,merge(p.talentInterests,p.talentCategories,p.specificSkills,["arts","talent","sports"]));s.eligibility="possible";add(s,35,containsAny(x.relatedAcademicCategoryIds,p.academicCategoryIds)||containsAny(x.relatedTalentCategoryIds,p.talentCategories),"Directly matches a related academic or talent category","categoryId");add(s,20,study,"Matches your study level","studyLevel");add(s,20*(p.pathwayPreference==="talent"?tr:Math.max(fr,tr*.7)),fr>0||tr>0,p.pathwayPreference==="talent"?"Matches your talent category or skill":"Matches your field or talent profile","field");add(s,15,containsAny([x.eligibility,x.qualificationLevel],[p.alStream,p.alResults,p.qualification]),"Matches your academic background","academicEligibility");add(s,15,tr>0&&(p.talent.achievements.length>0||!containsAny(x.eligibility,["award","achievement","portfolio"])),"Supports your talent or achievement profile","talentEligibility");add(s,10,p.financialSupportNeeded&&containsAny(text,["financial","need","bursary","tuition","full","partial"]),"Matches your financial support need","financialNeed");add(s,5,!p.preferredLocations.length||containsAny([x.district,x.country,x.coverage],p.preferredLocations),"Available in your preferred area","location");add(s,5,!normalizeDate(x.deadline)||normalizeDate(x.deadline)>=Date.now(),"Application deadline is active","deadline");add(s,5*scoreListMatch(text,p.careerGoals),containsAny(text,p.careerGoals),"Supports your career goal","career");add(s,5,!p.preferredLanguages.length||containsAny(x.language||x.languages,p.preferredLanguages),"Available in a preferred language","language");if(containsAny(x.eligibility,["a/l","advanced level"])&&!p.alResults){s.eligibility="more_information_needed";s.missing.push("Add your A/L results to check full eligibility");}else if(study||fr>0||tr>0||p.financialSupportNeeded)s.eligibility="eligible";const categoryRelevant=containsAny(x.scholarshipCategoryId,p.scholarshipCategoryIds)||containsAny(x.relatedAcademicCategoryIds,p.academicCategoryIds)||containsAny(x.relatedTalentCategoryIds,p.talentCategoryIds)||fr>0||tr>0||containsAny(text,p.careerGoals);if(!categoryRelevant&&p.pathwayPreference!=="undecided"){s.score=Math.min(20,s.score);s.reasons=["Excluded because no scholarship, academic, talent, or career category relevance was found"];s.matchedFields=[];}const r=finish(x,"scholarshipId",id,s,{scholarshipName:x.scholarshipName||x.name||"Scholarship",provider:x.provider||"Provider not specified",warningNotes:s.missing,hasCategoryRelevance:categoryRelevant,included:(p.pathwayPreference==="undecided"?s.score>=20:categoryRelevant&&s.score>=40),exclusionReason:categoryRelevant?"":"Excluded because no category relevance was found"});debugRecommendationLog("Scholarship",id,r);return r;}
+export function recommendScholarships(p,obj){return sortByRecommendationScore(dedupeById(Object.entries(obj||{}).filter(([,x])=>active(x,"scholarship")).map(([id,x])=>scoreScholarshipRecommendation(p,x,id)))).filter(x=>x.eligibilityStatus!=="not_eligible"&&(p.pathwayPreference==="undecided"?x.matchScore>=20:x.hasCategoryRelevance&&x.matchScore>=40));}
+
+const mentorBusinessTerms=["business","management","business management","entrepreneur","entrepreneurship","marketing","human resource","hrm","operations management","project management","business analytics","finance","accounting","leadership","administration","commerce","economics","digital marketing","event management"];
+const mentorDanceTerms=["dance","dancing","performing arts","kandyan dancing","traditional dancing","modern dance","choreography","stage performance","creative arts","arts mentor","dance coach"];
+function expandMentorTerms(values){const result=merge(values);if(mentorTermRatio(result,mentorBusinessTerms)>0)result.push(...mentorBusinessTerms);if(mentorTermRatio(result,mentorDanceTerms)>0)result.push(...mentorDanceTerms);return [...new Set(result)];}
+function mentorTermRatio(source,targets){const corpus=" "+tokens(source).join(" ").replace(/[^a-z0-9/+]+/g," ").replace(/\s+/g," ").trim()+" ",terms=tokens(targets);if(corpus==="  "||!terms.length)return 0;const matched=terms.filter(term=>{const clean=term.replace(/[^a-z0-9/+]+/g," ").replace(/\s+/g," ").trim();return clean&&corpus.includes(" "+clean+" ");});return matched.length/terms.length;}
+function mentorRelevanceParts(p,m={}){const academicCorpus=[m.expertiseCategoryIds,m.relatedAcademicCategoryIds,m.field,m.expertise,m.specialization,m.mentoringField,m.role,m.currentRole,m.profession,m.organization,m.bio,m.shortBio,m.mentorType,m.professionalTypes,m.guidanceAreas,m.supportAreas,m.supportedFields,m.skills,m.tags],talentCorpus=[m.expertiseCategoryIds,m.relatedTalentCategoryIds,m.field,m.expertise,m.specialization,m.mentoringField,m.role,m.currentRole,m.profession,m.bio,m.shortBio,m.mentorType,m.professionalTypes,m.guidanceAreas,m.supportAreas,m.supportedTalentCategories,m.supportedTalentTypes,m.skills,m.tags],guidanceCorpus=[m.guidanceAreas,m.supportAreas,m.mentorType,m.skills,m.tags],academicTargets=expandMentorTerms(merge(p.academicCategoryIds,p.academicInterests,p.careerGoals,p.skillsToImprove,p.supportNeeded,p.pathwayPreference==="academic_improvement"?["study guidance","career guidance","pathway guidance","foundation","vocational","o/l","a/l","english","ict"]:[],p.careerGoals.length?["career guidance","career planning"]:[])),talentTargets=expandMentorTerms(merge(p.talentCategories,p.talentTypes,p.specificSkills,p.talentInterests,p.talent.talentGoals,p.talentOpportunityPreferences)),discoveryTargets=expandMentorTerms(merge(p.discovery.interests,p.discovery.preferredRoles,p.discovery.skillsToExplore,["career guidance","pathway guidance","career discovery"])),guidanceTargets=expandMentorTerms(merge(academicTargets,talentTargets,discoveryTargets,p.supportNeeded,p.skillsToImprove)),careerTargets=expandMentorTerms(p.careerGoals);return{academicRatio:mentorTermRatio(academicCorpus,academicTargets),talentRatio:mentorTermRatio(talentCorpus,talentTargets),discoveryRatio:mentorTermRatio(academicCorpus,discoveryTargets),guidanceRatio:mentorTermRatio(guidanceCorpus,guidanceTargets),careerRatio:mentorTermRatio(academicCorpus,careerTargets),mentorField:getFirstNonEmpty(m.field,m.expertise,m.specialization,m.mentoringField),mentorRole:getFirstNonEmpty(m.role,m.currentRole,m.profession),academicTargets,talentTargets,guidanceTargets,careerTargets,academicCorpus,talentCorpus,guidanceCorpus};}
+export function matchesAcademicMentorRelevance(p,m){const x=mentorRelevanceParts(p,m);return x.academicRatio>0||x.guidanceRatio>0||x.careerRatio>0;}
+export function matchesTalentMentorRelevance(p,m){return mentorRelevanceParts(p,m).talentRatio>0;}
+export function matchesDiscoveryMentorRelevance(p,m){return mentorRelevanceParts(p,m).discoveryRatio>0;}
+export function hasMeaningfulMentorRelevance(p,m){const x=mentorRelevanceParts(p,m),academic=x.academicRatio>0||x.guidanceRatio>0||x.careerRatio>0,talent=x.talentRatio>0,discovery=x.discoveryRatio>0;return["academic","academic_improvement"].includes(p.pathwayPreference)?academic:p.pathwayPreference==="talent"?talent:p.pathwayPreference==="combined"?academic||talent:p.pathwayPreference==="undecided"?academic||talent||discovery:academic||talent;}
+function weightedRelevant(max,ratio){return ratio>0?max*(.7+.3*Math.min(1,ratio)):0;}
+export function scoreMentorRecommendation(p,m={},id=m.mentorUid||m.uid||m.id){const s=state(),x=mentorRelevanceParts(p,m),path=p.pathwayPreference,academicRelevant=x.academicRatio>0,talentRelevant=x.talentRatio>0,guidanceRelevant=x.guidanceRatio>0,careerRelevant=x.careerRatio>0,discoveryRelevant=x.discoveryRatio>0,meaningful=path==="talent"?talentRelevant:path==="combined"?academicRelevant||talentRelevant||guidanceRelevant||careerRelevant:["academic","academic_improvement"].includes(path)?academicRelevant||guidanceRelevant||careerRelevant:path==="undecided"?academicRelevant||talentRelevant||guidanceRelevant||careerRelevant||discoveryRelevant:academicRelevant||talentRelevant,academicScore=weightedRelevant(35,x.academicRatio),talentScore=weightedRelevant(25,x.talentRatio),guidanceScore=weightedRelevant(15,x.guidanceRatio),careerGoalScore=weightedRelevant(10,x.careerRatio);const categoryIdMatch=containsAny(m.relatedAcademicCategoryIds,p.academicCategoryIds)||containsAny(m.relatedTalentCategoryIds,p.talentCategories);add(s,30,categoryIdMatch,"Directly matches your academic or talent category","categoryId");add(s,academicScore,academicRelevant,"Matches your academic field, skills, or professional interests","academicRelevance");add(s,talentScore,talentRelevant,"Matches your talent or specific skill","talentRelevance");add(s,guidanceScore,guidanceRelevant,"Can guide needs that you identified","guidanceRelevance");add(s,careerGoalScore,careerRelevant,"Supports your stated career goal","careerGoal");if(path==="undecided")add(s,Math.min(15,weightedRelevant(15,x.discoveryRatio)),discoveryRelevant,"Matches an interest you want to explore","discoveryRelevance");let genericScore=0;const pathMatch=meaningful&&containsAny([m.mentorType,m.guidanceAreas,m.supportAreas,m.tags],[path,...(path==="combined"?["academic","talent","career","coach"]:[])]);if(pathMatch)genericScore+=5;const levelMatch=!p.educationLevel||containsAny(m.supportedStudentLevels||m.studentLevelsSupported,[p.educationLevel])||containsAny(m.supportedSkillLevels,p.skillLevels);if(levelMatch)genericScore+=4;const languageMatch=!p.preferredLanguages.length||containsAny(m.languages||m.language||m.preferredLanguages,p.preferredLanguages);if(languageMatch)genericScore+=3;const accessMatch=(!p.preferredStudyModes.length||containsAny([m.mentoringModes,m.mentoringMode,m.availability],p.preferredStudyModes))&&(!p.preferredLocations.length||containsAny([m.location,m.district,m.availability],p.preferredLocations));if(accessMatch)genericScore+=3;if(meaningful)add(s,genericScore,genericScore>0,"Also fits your level or mentoring preferences","genericFit");else{s.score=Math.min(15,genericScore);s.reasons=[`No strong match with ${merge(p.academicInterests,p.talentInterests,p.careerGoals).slice(0,3).join(" or ")||"your current interests"}`];s.matchedFields=[];}const included=meaningful&&s.score>=40,r=finish(m,"mentorUid",id,s,{mentorName:m.fullName||m.name||"Mentor",mentorField:x.mentorField||"General guidance",mentorType:m.mentorType||"Mentor",availabilityNote:m.availableTime||m.availableDays||m.availabilityStatus||"Check availability",hasMeaningfulRelevance:meaningful,included,exclusionReason:included?"":meaningful?"Relevant, but below the 40% recommendation threshold":s.reasons[0],academicRelevanceScore:Math.round(academicScore),talentRelevanceScore:Math.round(talentScore),guidanceScore:Math.round(guidanceScore),careerGoalScore:Math.round(careerGoalScore),genericScore:Math.round(genericScore),debugBreakdown:{mentorName:m.fullName||m.name||"Mentor",mentorId:id,field:x.mentorField,role:x.mentorRole,studentInterest:p.academicInterests,studentTalent:p.talentInterests,academicTargets:x.academicTargets,talentTargets:x.talentTargets,academicCorpus:x.academicCorpus,guidanceCorpus:x.guidanceCorpus,academicRelevance:Math.round(academicScore),talentRelevance:Math.round(talentScore),guidanceScore:Math.round(guidanceScore),careerGoalScore:Math.round(careerGoalScore),genericScore:Math.round(genericScore),finalScore:Math.round(meaningful?s.score:Math.min(15,genericScore)),included,exclusionReason:included?"":meaningful?"Relevant, but below the 40% recommendation threshold":s.reasons[0]}});debugRecommendationLog("Mentor",id,r);return r;}
+export function recommendMentors(p,obj,currentUid){return sortByRecommendationScore(dedupeById(Object.entries(obj||{}).filter(([id,x])=>id!==currentUid&&active(x,"mentor")&&safeLower(x.approvalStatus||x.status)==="approved"&&x.publicVisibility===true&&x.mentoringEnabled!==false).map(([id,x])=>scoreMentorRecommendation(p,x,id))),{ratingKey:"rating"}).filter(x=>x.hasMeaningfulRelevance===true&&x.matchScore>=40);}
+export function scoreTalentOpportunityRecommendation(p,o={},id=o.opportunityId||o.id){
+ const s=state(),studentCategories=merge(p.talentCategories,p.talent?.talentCategories),categoryIdMatch=Boolean(o.categoryId)&&tokens(studentCategories).includes(safeLower(o.categoryId)),categoryText=[o.categoryTitle,o.category,o.mainType],talentText=[o.subCategory,o.talentTypes,o.matchingKeywords,o.title,o.description],categoryRatio=scoreListMatch(categoryText,studentCategories),talentRatio=scoreListMatch(talentText,merge(p.talentTypes,p.specificSkills)),keywordRatio=scoreListMatch(o.matchingKeywords,p.talentInterests),hasTalentRelevance=categoryIdMatch||categoryRatio>0||talentRatio>0||keywordRatio>0;
+ s.eligibility="possible";add(s,40,categoryIdMatch,"Exactly matches your talent category","categoryId");add(s,30*categoryRatio,!categoryIdMatch&&categoryRatio>0,"Matches your talent category","category");add(s,25*Math.max(talentRatio,keywordRatio),talentRatio>0||keywordRatio>0,"Matches your talent type, skill, or keywords","talentType");add(s,15,!hasValue(o.eligibleSkillLevels)||containsAny(o.eligibleSkillLevels,["Any",...p.skillLevels]),"Suitable for your skill level","level");add(s,10,!p.talentOpportunityPreferences.length||containsAny(o.opportunityType,p.talentOpportunityPreferences),"Matches an opportunity type you prefer","preference");add(s,5,!p.preferredLocations.length||containsAny([o.location,o.district],p.preferredLocations),"Available in a preferred location","location");add(s,5,!p.talent.preferredModes.length||containsAny(o.mode,p.talent.preferredModes),"Matches your preferred mode","mode");
+ if(!hasTalentRelevance){s.score=0;s.reasons=["Does not match your selected talent category or skills"];s.matchedFields=[];s.eligibility="not_eligible";}else if(!p.talentInterests.length){s.eligibility="more_information_needed";s.missing.push("Add talent details for a more accurate match");}else s.eligibility="eligible";
+ const r=finish(o,"opportunityId",id,s,{opportunityName:o.title||o.name||"Opportunity",categoryTitle:o.categoryTitle||o.category||"Talent",applicationUrl:o.applicationUrl||o.applicationLink||o.applyLink||"",imageURL:o.imageURL||o.imagePath||"",hasTalentRelevance});debugRecommendationLog("Talent Opportunity",id,r);return r;
 }
+export function recommendTalentOpportunities(p,obj){if(p.pathwayPreference==="academic"&&!p.talentInterests.length)return[];return sortByRecommendationScore(dedupeById(Object.entries(obj||{}).filter(([,x])=>active(x,"opportunity")&&x.publicVisibility!==false).map(([id,x])=>scoreTalentOpportunityRecommendation(p,x,id)))).filter(x=>x.hasTalentRelevance&&(p.pathwayPreference==="undecided"?x.matchScore>=20:x.matchScore>=40));}
 
-function normalizeLearningProfile(profile = {}) {
-    return {
-        currentEducationLevel: profile.currentEducationLevel || "",
-        educationLevel: profile.currentEducationLevel || "",
-        qualification: profile.currentQualification || "",
-        alStream: profile.academicResults?.alStream || "",
-        interestAreas: profile.preferredFields || [],
-        careerGoals: profile.careerGoals || [],
-        researchInterests: profile.researchInterests || [],
-        skillsToImprove: profile.skillsToImprove || [],
-        preferredCourseLevels: profile.preferredCourseLevels || [],
-        preferredStudyModes: profile.preferredStudyModes || [],
-        preferredLanguages: profile.preferredLanguages || [],
-        preferredLocations: profile.preferredLocations || [],
-        budgetMin: Number(profile.budgetMin || 0),
-        budgetMax: Number(profile.budgetMax || Infinity),
-        financialSupportNeeded: profile.financialSupportNeeded === true,
-        preferredDurationMonths: Number(profile.preferredDurationMonths || 12),
-        preferredScholarshipLevels: profile.preferredScholarshipLevels || [],
-        preferredCountries: profile.preferredCountries || [],
-        supportNeeded: profile.supportNeeded || [],
-        preferredMentorFields: profile.preferredMentorFields || [],
-        preferredMentorType: profile.preferredMentorType || [],
-        preferredMentoringModes: profile.preferredMentoringModes || [],
-        preferredSessionDuration: Number(profile.preferredSessionDuration || 60)
-    };
-}
+export function scoreInstituteRecommendation(p,i={},id=i.instituteId||i.id,courses={},opps={},scholarships={}){const s=state(),name=safeLower(i.name||i.instituteName),directAcademic=containsAny(i.relatedAcademicCategoryIds,p.academicCategoryIds),directTalent=containsAny(i.relatedTalentCategoryIds,p.talentCategoryIds),categoryTextMatch=containsAny([i.providerCategoryTitle,i.name,i.instituteName,i.description],merge(p.academicCategoryTitles,p.academicInterests,p.talentCategoryTitles,p.talentInterests)),categoryRelevant=directAcademic||directTalent||categoryTextMatch,courseSubset=Object.fromEntries(Object.entries(courses||{}).filter(([,c])=>c.instituteId===id||safeLower(c.instituteName||c.institute)===name)),oppSubset=Object.fromEntries(Object.entries(opps||{}).filter(([,o])=>o.instituteId===id||safeLower(o.provider)===name)),mc=recommendCourses(p,courseSubset).filter(x=>x.matchScore>=40),mo=recommendTalentOpportunities(p,oppSubset).filter(x=>x.matchScore>=40);add(s,35,directAcademic||directTalent,"Directly matches your academic or talent category","categoryId");add(s,20,categoryTextMatch&&!directAcademic&&!directTalent,"Matches an institute or provider category relevant to your profile","providerCategory");add(s,Math.min(35,mc.length*12),mc.length>0,"Offers courses that match your profile","courses");add(s,Math.min(20,mo.length*10),mo.length>0,"Offers matching talent or practical programs","talentPrograms");add(s,15,!p.preferredLocations.length||containsAny([i.district,i.location,i.country],p.preferredLocations),"Available in a preferred location","location");add(s,10,!p.preferredStudyModes.length||containsAny([i.availableModes,i.studyModes],p.preferredStudyModes),"Supports your preferred study mode","mode");add(s,10,Object.values(scholarships||{}).some(x=>x.instituteId===id||safeLower(x.provider)===name),"Offers scholarships or student support","support");add(s,5,hasValue(i.accreditation||i.recognition||i.verificationStatus),"Recognition or accreditation is recorded","recognition");add(s,5,!p.preferredLanguages.length||containsAny(i.languages,p.preferredLanguages),"Supports a preferred language","language");const meaningful=categoryRelevant||mc.length>0||mo.length>0;if(!meaningful&&p.pathwayPreference!=="undecided"){s.score=Math.min(20,s.score);s.reasons=["Excluded because no related category, course, or opportunity match was found"];s.matchedFields=[];}const r=finish(i,"instituteId",id,s,{matchingCourseCount:mc.length,matchingOpportunityCount:mo.length,hasCategoryRelevance:meaningful,included:(p.pathwayPreference==="undecided"?s.score>=20:meaningful&&s.score>=40),exclusionReason:meaningful?"":"Excluded because no category relevance was found"});debugRecommendationLog("Institute",id,r);return r;}
+export function recommendInstitutes(p,obj,courses={},opps={},scholarships={}){return sortByRecommendationScore(dedupeById(Object.entries(obj||{}).filter(([,x])=>active(x,"institute")).map(([id,x])=>scoreInstituteRecommendation(p,x,id,courses,opps,scholarships)))).filter(x=>p.pathwayPreference==="undecided"?x.matchScore>=20:x.matchScore>=40);}
 
-export function normalizeStudentProfile(result = {}, student = {}) {
-    return {
-        currentEducationLevel: result.basicProfile?.currentEducationLevel || result.educationLevel || student.educationLevel || "",
-        educationLevel: result.educationLevel || result.basicProfile?.currentEducationLevel || student.educationLevel || "",
-        alStream: result.academicBackground?.alStream || result.examStream || "",
-        interestAreas: result.interests?.interestAreas || normalizeList(result.interestArea || student.interestArea),
-        careerGoals: result.goals?.futurePreference || [result.goals?.dreamCareer || result.futureGoal || student.futureGoal],
-        researchInterests: [],
-        skillsToImprove: result.skillsAndStrengths?.skills || normalizeList(result.skills || student.skills),
-        preferredCourseLevels: [],
-        preferredStudyModes: result.learningPreferences?.learningMode || result.learningMode || student.learningMode ? [result.learningPreferences?.learningMode || result.learningMode || student.learningMode] : [],
-        preferredLanguages: result.basicProfile?.preferredLanguage || result.learningPreferences?.preferredLanguage ? [result.basicProfile?.preferredLanguage || result.learningPreferences?.preferredLanguage] : [],
-        preferredLocations: result.learningPreferences?.preferredDistricts || normalizeList(result.preferredDistrict || student.preferredDistrict || student.district),
-        budgetMin: 0,
-        budgetMax: Number(result.supportNeeds?.budgetRange || result.budgetRange || Infinity),
-        financialSupportNeeded: !!(result.supportNeeds?.financialSupport || result.financialSupport || student.financialSupport),
-        preferredDurationMonths: Number(result.learningPreferences?.courseDuration || 12),
-        preferredScholarshipLevels: [],
-        preferredCountries: [],
-        supportNeeded: result.supportNeeds?.supportNeeded || [],
-        preferredMentorFields: [],
-        preferredMentorType: [],
-        preferredMentoringModes: [],
-        preferredSessionDuration: 60
-    };
-}
-
-export function getLearnerRecommendationProfile({ userRole, studentProfile, learningProfile, pathwayResult, talentProfile, discoveryProfile }) {
-    if (userRole === "mentor" && learningProfile) {
-        return normalizeLearningProfile(learningProfile);
-    }
-    return buildStudentRecommendationProfile({
-        studentProfile: { ...studentProfile, ...pathwayResult },
-        learningProfile,
-        talentProfile,
-        discoveryProfile
-    });
-}
-
-export function normalizeTalentProfile(profile = {}) {
-    return {
-        talents: profile.talents || [],
-        achievements: profile.achievements || [],
-        preferredOpportunities: profile.preferredOpportunities || [],
-        preferredLocations: profile.preferredLocations || [],
-        preferredModes: profile.preferredModes || [],
-        availability: profile.availability || []
-    };
-}
-
-export function normalizeDiscoveryProfile(profile = {}) {
-    return {
-        enjoyedActivities: profile.enjoyedActivities || [],
-        preferredWorkStyle: profile.preferredWorkStyle || "",
-        practicalPreference: profile.practicalPreference || "",
-        favoriteSubjects: profile.favoriteSubjects || [],
-        interests: profile.interests || [],
-        workEnvironment: profile.workEnvironment || "",
-        confidenceAreas: profile.confidenceAreas || [],
-        skillsToExplore: profile.skillsToExplore || []
-    };
-}
-
-export function buildStudentRecommendationProfile({ studentProfile = {}, learningProfile = {}, talentProfile = {}, discoveryProfile = {} }) {
-    const mode = studentProfile.pathwayPreference || "undecided";
-    
-    return {
-        mode,
-        useAcademicProfile: mode === "academic" || mode === "combined",
-        useTalentProfile: mode === "talent" || mode === "combined",
-        useDiscoveryProfile: mode === "undecided",
-        
-        academic: normalizeStudentProfile({}, learningProfile && Object.keys(learningProfile).length > 0 ? learningProfile : studentProfile),
-        talent: normalizeTalentProfile(talentProfile),
-        discovery: normalizeDiscoveryProfile(discoveryProfile),
-        
-        // Include flat properties for backward compatibility with existing recommendation functions
-        ...normalizeStudentProfile({}, studentProfile)
-    };
-}
-
-// ----------------------------------------------------------------------
-// RECOMMENDATION PIPELINE LOGIC
-// ----------------------------------------------------------------------
-
-function isActiveVisibility(status, publicVisibility) {
-    const s = normalize(status);
-    if (!["active", "published"].includes(s)) return false;
-    if (publicVisibility === false) return false;
-    return true;
-}
-
-// COURSE RECOMMENDATIONS
-export function recommendCourses(profile, coursesObj) {
-    const courses = Object.entries(coursesObj || {}).map(([id, data]) => ({ courseId: id, ...data }));
-    
-    // Stage 1: Visibility
-    const visible = courses.filter(c => isActiveVisibility(c.status, c.publicVisibility) && !c.archived);
-    
-    // Stage 2, 3, 4: Eligibility, Scoring, Reason generation
-    const recommendations = visible.map(course => {
-        let score = 0;
-        const reasons = [];
-        const missing = [];
-        let eligible = true;
-
-        // Eligibility (Mandatory Checks) - example simple checking
-        if (course.minimumEducationLevel && profile.currentEducationLevel && normalize(course.minimumEducationLevel) !== normalize(profile.currentEducationLevel)) { // In real app, order levels
-            eligible = false;
-            missing.push(`Requires ${course.minimumEducationLevel}`);
-        }
-        
-        if (eligible) {
-            // Field Match: 25
-            if (includesAny([course.category, course.subcategory, course.description, course.skillsCovered, course.careerOpportunities], profile.interestAreas)) {
-                score += 25;
-                reasons.push("Matches your preferred field");
-            }
-            // Career Goal Match: 20
-            if (includesAny([course.careerOpportunities, course.description, course.category], profile.careerGoals)) {
-                score += 20;
-                reasons.push("Supports your career goal");
-            }
-            // Qualification Match: 15
-            if (includesAny([course.qualificationLevel, course.educationLevel], [profile.currentEducationLevel, ...profile.preferredCourseLevels])) {
-                score += 15;
-                reasons.push("Suitable for your current qualification");
-            }
-            // Skill Development Match: 15
-            if (includesAny([course.skillsCovered, course.description], profile.skillsToImprove)) {
-                score += 15;
-                reasons.push("Develops your target skills");
-            }
-            // Study Mode Match: 10
-            if (includesAny(course.mode || course.learningMode, profile.preferredStudyModes)) {
-                score += 10;
-                reasons.push("Available in your preferred study mode");
-            }
-            // Budget Match: 5
-            const fee = Number(course.feeAmount || course.fee || 0);
-            if (fee <= profile.budgetMax) {
-                score += 5;
-                reasons.push("Fits your budget");
-            }
-            // Language Match: 5
-            if (includesAny(course.language, profile.preferredLanguages)) {
-                score += 5;
-                reasons.push("Available in your preferred language");
-            }
-            // Location Match: 5
-            if (includesAny([course.district, course.location], profile.preferredLocations)) {
-                score += 5;
-                reasons.push("Available in your preferred location");
-            }
-        }
-
-        const matchScore = Math.min(100, Math.round(score));
-        let matchLevel = "";
-        if (matchScore >= 85) matchLevel = "Excellent Match";
-        else if (matchScore >= 70) matchLevel = "Strong Match";
-        else if (matchScore >= 55) matchLevel = "Good Match";
-        else if (matchScore >= 40) matchLevel = "Possible Match";
-        else matchLevel = "Low Match";
-
-        return {
-            ...course,
-            courseName: course.courseName || course.name || "Untitled Course",
-            instituteName: course.instituteName || course.institute || "Institute not specified",
-            matchScore,
-            matchLevel,
-            matchReasons: reasons.length ? reasons : ["Useful alternative based on your pathway."],
-            missingRequirements: missing,
-            eligibilityStatus: eligible ? "eligible" : "ineligible"
-        };
-    });
-
-    // Sort: score desc
-    return recommendations.filter(r => r.eligibilityStatus === "eligible").sort((a, b) => b.matchScore - a.matchScore);
-}
-
-// SCHOLARSHIP RECOMMENDATIONS
-export function recommendScholarships(profile, scholarshipsObj) {
-    const scholarships = Object.entries(scholarshipsObj || {}).map(([id, data]) => ({ scholarshipId: id, ...data }));
-    
-    const visible = scholarships.filter(s => isActiveVisibility(s.status, s.publicVisibility) && !s.archived && (!s.deadline || new Date(s.deadline) >= new Date()));
-
-    const recommendations = visible.map(scholarship => {
-        let score = 0;
-        const reasons = [];
-        const missing = [];
-        let eligible = true;
-
-        // Eligibility (Mandatory Checks)
-        if (scholarship.minimumAge && profile.age && profile.age < scholarship.minimumAge) { eligible = false; missing.push("Does not meet minimum age."); }
-        if (scholarship.country && profile.preferredCountries && profile.preferredCountries.length > 0 && !includesAny(scholarship.country, profile.preferredCountries)) { eligible = false; missing.push("Country not preferred."); }
-
-        if (eligible) {
-            // Study Level Match: 25
-            if (includesAny([scholarship.educationLevel, scholarship.studyLevel, scholarship.qualificationLevel, scholarship.eligibleEducationLevels, scholarship.eligibleStudyLevels], [profile.currentEducationLevel, ...profile.preferredScholarshipLevels])) {
-                score += 25;
-                reasons.push("You meet the study-level requirement");
-            }
-            // Field Match: 25
-            if (includesAny([scholarship.category, scholarship.eligibleFields, scholarship.description], profile.interestAreas)) {
-                score += 25;
-                reasons.push("Matches your preferred field");
-            }
-            // Academic Match: 20
-            if (includesAny([scholarship.qualificationLevel, scholarship.eligibility], [profile.alStream, profile.qualification])) {
-                score += 20;
-                reasons.push("Matches your academic background");
-            }
-            // Financial Need Match: 15
-            if (profile.financialSupportNeeded && includesAny([scholarship.supportType, scholarship.description, scholarship.fundingCoverage], ["bursary", "financial aid", "scholarship", "free", "monthly support", "tuition support"])) {
-                score += 15;
-                reasons.push("Matches your financial support needs");
-            }
-            // Country Match: 5
-            if (includesAny(scholarship.country, profile.preferredCountries)) {
-                score += 5;
-                reasons.push("Available in preferred country");
-            }
-            // Career Goal Match: 5
-            if (includesAny([scholarship.category, scholarship.description], profile.careerGoals)) {
-                score += 5;
-                reasons.push("Aligns with career goals");
-            }
-            // Achievement Match: 5
-            if (includesAny(scholarship.achievementRequirements, profile.skillsToImprove)) { // approximation
-                score += 5;
-            }
-        }
-
-        const matchScore = Math.min(100, Math.round(score));
-        let matchLevel = matchScore >= 85 ? "Excellent Match" : matchScore >= 70 ? "Strong Match" : matchScore >= 55 ? "Good Match" : matchScore >= 40 ? "Possible Match" : "Low Match";
-
-        return {
-            ...scholarship,
-            scholarshipName: scholarship.scholarshipName || scholarship.name || "Scholarship",
-            provider: scholarship.provider || "Provider not specified",
-            matchScore,
-            matchLevel,
-            matchReasons: reasons.length ? reasons : ["Review eligibility and provider details."],
-            missingRequirements: missing,
-            eligibilityStatus: eligible ? "eligible" : "ineligible"
-        };
-    });
-
-    return recommendations.filter(r => r.eligibilityStatus === "eligible").sort((a, b) => b.matchScore - a.matchScore);
-}
-
-// INSTITUTE RECOMMENDATIONS
-export function recommendInstitutes(profile, institutesObj, coursesObj) {
-    const institutes = Object.entries(institutesObj || {}).map(([id, data]) => ({ instituteId: id, ...data }));
-    const courses = Object.entries(coursesObj || {}).map(([id, data]) => ({ courseId: id, ...data }));
-    
-    const visible = institutes.filter(i => isActiveVisibility(i.status, i.publicVisibility));
-
-    const recommendations = visible.map(institute => {
-        let score = 0;
-        const reasons = [];
-        const missing = [];
-        let eligible = true;
-        
-        const matchingCourses = courses.filter(c => c.instituteId === institute.instituteId && includesAny([c.category, c.subcategory, c.description], profile.interestAreas));
-
-        if (eligible) {
-            // Matching Courses: 35
-            if (matchingCourses.length > 0) {
-                score += Math.min(35, matchingCourses.length * 10);
-                reasons.push("Offers multiple matching courses");
-            }
-            // Field Match: 20
-            if (includesAny(institute.specialties || institute.description || institute.categories, profile.interestAreas)) {
-                score += 20;
-                reasons.push("Specializes in your preferred field");
-            }
-            // Location Match: 15
-            if (includesAny([institute.district, institute.location, institute.country], profile.preferredLocations)) {
-                score += 15;
-                reasons.push("Available in your preferred location");
-            }
-            // Study Mode Match: 10
-            if (includesAny([institute.availableModes, institute.studyModes], profile.preferredStudyModes)) {
-                score += 10;
-                reasons.push("Supports your study mode");
-            }
-            // Budget Compatibility: 10
-            score += 10; // Approximation if missing data
-            // Recognition or Accreditation: 5
-            if (hasValue(institute.accreditation) || hasValue(institute.recognition)) {
-                score += 5;
-                reasons.push("Recognized/Accredited institute");
-            }
-            // Language Match: 5
-            if (includesAny(institute.languages, profile.preferredLanguages)) {
-                score += 5;
-            }
-        }
-
-        const matchScore = Math.min(100, Math.round(score));
-        let matchLevel = matchScore >= 85 ? "Excellent Match" : matchScore >= 70 ? "Strong Match" : matchScore >= 55 ? "Good Match" : matchScore >= 40 ? "Possible Match" : "Low Match";
-
-        return {
-            ...institute,
-            matchingCourseCount: matchingCourses.length,
-            matchScore,
-            matchLevel,
-            matchReasons: reasons,
-            missingRequirements: missing,
-            eligibilityStatus: eligible ? "eligible" : "ineligible"
-        };
-    });
-
-    return recommendations.filter(r => r.eligibilityStatus === "eligible").sort((a, b) => b.matchScore - a.matchScore);
-}
-
-// MENTOR RECOMMENDATIONS
-export function recommendMentors(profile, mentorsObj, currentUid) {
-    const mentors = Object.entries(mentorsObj || {}).map(([id, data]) => ({ uid: id, ...data }));
-    
-    // Mandatory filters: approved, active, public, mentoring enabled, not suspended, not full capacity, not current user
-    const visible = mentors.filter(m => 
-        (normalize(m.approvalStatus || m.status) === "approved") && 
-        m.publicVisibility === true && 
-        m.mentoringEnabled === true && 
-        m.uid !== currentUid
-    );
-
-    const recommendations = visible.map(mentor => {
-        let score = 0;
-        const reasons = [];
-        const missing = [];
-        let eligible = true;
-
-        if (eligible) {
-            // Expertise Match: 30
-            if (includesAny([mentor.field, mentor.expertise, mentor.mentoringField, mentor.shortBio, mentor.bio], profile.interestAreas || profile.preferredMentorFields)) {
-                score += 30;
-                reasons.push("Matches your research interest");
-            }
-            // Guidance Area Match: 20
-            if (includesAny(mentor.guidanceAreas, profile.supportNeeded)) {
-                score += 20;
-                reasons.push("Supports your required guidance areas");
-            }
-            // Research or Topic Match: 15
-            if (includesAny([mentor.shortBio, mentor.bio, mentor.expertise], profile.researchInterests)) {
-                score += 15;
-                reasons.push("Aligns with your research topics");
-            }
-            // Supported Education Level: 10
-            if (includesAny(mentor.supportedStudentLevels || mentor.studentLevelsSupported, [profile.currentEducationLevel])) {
-                score += 10;
-                reasons.push(`Supports ${profile.currentEducationLevel || "your"} learners`);
-            }
-            // Language Match: 10
-            if (includesAny(mentor.languages || mentor.language || mentor.preferredLanguage || mentor.preferredLanguages, profile.preferredLanguages)) {
-                score += 10;
-                reasons.push("Communicates in your preferred language");
-            }
-            // Mentoring Mode Match: 5
-            if (includesAny(mentor.mentoringMode || mentor.availability, profile.preferredMentoringModes)) {
-                score += 5;
-                reasons.push("Matches your mentoring mode");
-            }
-            // Availability Match: 5
-            score += 5; // Standard default
-
-            // Rating: 3, Capacity: 2
-            score += 5;
-        }
-
-        const matchScore = Math.min(100, Math.round(score));
-        let matchLevel = matchScore >= 85 ? "Excellent Match" : matchScore >= 70 ? "Strong Match" : matchScore >= 55 ? "Good Match" : matchScore >= 40 ? "Possible Match" : "Low Match";
-
-        return {
-            ...mentor,
-            mentorName: mentor.fullName || "Mentor",
-            mentorField: mentor.field || mentor.expertise || mentor.mentoringField || "N/A",
-            mentorType: mentor.mentorType || "Mentor",
-            matchScore,
-            matchLevel,
-            matchReasons: reasons.length ? reasons : ["Approved mentor available for guidance."],
-            missingRequirements: missing,
-            eligibilityStatus: eligible ? "eligible" : "ineligible"
-        };
-    });
-
-    return recommendations.filter(r => r.eligibilityStatus === "eligible").sort((a, b) => b.matchScore - a.matchScore);
-}
-
-// TALENT OPPORTUNITY RECOMMENDATIONS
-export function recommendTalentOpportunities(profile, opportunitiesObj) {
-    const opportunities = Object.entries(opportunitiesObj || {}).map(([id, data]) => ({ opportunityId: id, ...data }));
-    
-    // Stage 1: Visibility
-    const visible = opportunities.filter(o => isActiveVisibility(o.status, o.publicVisibility) && (!o.deadline || new Date(o.deadline) >= new Date()));
-    
-    // Stage 2, 3, 4: Eligibility, Scoring, Reason generation
-    const recommendations = visible.map(opp => {
-        let score = 0;
-        const reasons = [];
-        const missing = [];
-        let eligible = "eligible"; // 'eligible', 'ineligible', 'unknown'
-
-        // Check age eligibility
-        if (opp.eligibleAgeMin && profile.age && profile.age < opp.eligibleAgeMin) {
-            eligible = "ineligible";
-            missing.push("Does not meet minimum age.");
-        }
-        if (opp.eligibleAgeMax && profile.age && profile.age > opp.eligibleAgeMax) {
-            eligible = "ineligible";
-            missing.push("Exceeds maximum age.");
-        }
-
-        if (eligible !== "ineligible") {
-            const talents = profile.talent?.talents || [];
-            const talentCategories = talents.map(t => t.category);
-            const talentSkills = talents.map(t => t.skill);
-
-            // Talent Match: 30
-            if (includesAny([opp.category, opp.subCategory], talentCategories) || includesAny(opp.title, talentSkills)) {
-                score += 30;
-                reasons.push("Matches your talent category");
-            }
-
-            // Skill Level Match: 20
-            if (opp.eligibleSkillLevels && opp.eligibleSkillLevels.length > 0) {
-                const userSkillLevels = talents.map(t => t.skillLevel);
-                if (includesAny(opp.eligibleSkillLevels, userSkillLevels)) {
-                    score += 20;
-                    reasons.push("Matches your skill level");
-                }
-            } else {
-                score += 20; // Default if not specified
-            }
-
-            // Achievement Match: 15
-            score += 15; // approximation
-
-            // Opportunity Preference: 10
-            if (includesAny(opp.opportunityType, profile.talent?.preferredOpportunities)) {
-                score += 10;
-                reasons.push("Matches preferred opportunity type");
-            }
-
-            // Location Match: 10
-            if (includesAny(opp.location, profile.talent?.preferredLocations)) {
-                score += 10;
-                reasons.push("Available in your preferred location");
-            }
-
-            // Age Eligibility: 5
-            score += 5;
-            
-            // Availability Match: 5
-            score += 5;
-
-            // Mode Match: 5
-            if (includesAny(opp.mode, profile.talent?.preferredModes)) {
-                score += 5;
-                reasons.push("Matches preferred mode");
-            }
-        }
-
-        const matchScore = Math.min(100, Math.round(score));
-        let matchLevel = "";
-        if (matchScore >= 85) matchLevel = "Excellent Match";
-        else if (matchScore >= 70) matchLevel = "Strong Match";
-        else if (matchScore >= 55) matchLevel = "Good Match";
-        else if (matchScore >= 40) matchLevel = "Possible Match";
-        else matchLevel = "Explore Option";
-
-        return {
-            ...opp,
-            opportunityName: opp.title || "Untitled Opportunity",
-            matchScore,
-            matchLevel,
-            matchReasons: reasons.length ? reasons : ["Explore this talent opportunity."],
-            missingRequirements: missing,
-            eligibilityStatus: eligible
-        };
-    });
-
-    // Sort: score desc
-    return recommendations.filter(r => r.eligibilityStatus !== "ineligible").sort((a, b) => b.matchScore - a.matchScore);
-}
+export function debugRecommendationLog(type,id,data){try{if(globalThis.localStorage?.getItem("debugRecommendations")!=="true")return;console.groupCollapsed(`[Recommendation Debug] ${type} ${id}`);console.log({...(data.debugBreakdown||{}),score:data.matchScore,matchLevel:data.matchLevel,eligibilityStatus:data.eligibilityStatus,matchedFields:data.matchedFields,reasons:data.matchReasons,missingData:data.missingRequirements});console.groupEnd();}catch(_){}}
+export function debugStudentProfile(profile){try{if(globalThis.localStorage?.getItem("debugRecommendations")==="true")console.log("[Recommendation Debug] Normalized student profile",profile);}catch(_){}}

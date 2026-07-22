@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Institute Profile | EduPath Lanka</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="institute-onboarding.css">
+</head>
+<body class="onboarding-page">
+    <nav class="onboarding-nav">
+        <div class="brand-mark">
+            <img src="images/edupath-logo-transparent.png" alt="EduPath Lanka">
+            <span>EduPath <strong>Lanka</strong></span>
+        </div>
+        <button id="logout-btn" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </nav>
+
+    <main class="onboarding-main">
+        <div class="onboarding-header">
+            <h1>Complete Your Institute Profile</h1>
+            <p>Add the official details of your institute, academy or training center. These details will be reviewed by EduPath Lanka administrators before becoming public.</p>
+        </div>
+
+        <div class="onboarding-container">
+            <!-- Representative Card -->
+            <div class="representative-card">
+                <div class="rep-icon"><i class="fas fa-user-tie"></i></div>
+                <div class="rep-details">
+                    <span class="rep-label">Representative Account</span>
+                    <strong id="rep-name">Loading...</strong>
+                    <span id="rep-email"></span>
+                    <span id="rep-phone"></span>
+                </div>
+            </div>
+
+            <!-- Onboarding Form -->
+            <form id="institute-onboarding-form" novalidate>
+                <div id="alert-message" class="alert hidden"></div>
+
+                <!-- Section: Basic Details -->
+                <fieldset class="form-section">
+                    <legend>Basic Institute Details</legend>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="instituteName">Institute Name *</label>
+                            <input type="text" id="instituteName" required class="form-input">
+                        </div>
+                        <div class="input-group">
+                            <label for="shortName">Short Name <span class="optional">(optional)</span></label>
+                            <input type="text" id="shortName" class="form-input">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="instituteType">Institute Type *</label>
+                            <select id="instituteType" required class="form-input">
+                                <option value="">Select Type</option>
+                                <option value="University">University</option>
+                                <option value="Private Institute">Private Institute</option>
+                                <option value="Vocational Training Center">Vocational Training Center</option>
+                                <option value="Professional Body">Professional Body</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label for="registrationNumber">Registration Number <span class="optional">(optional)</span></label>
+                            <input type="text" id="registrationNumber" class="form-input">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="description">Description *</label>
+                        <textarea id="description" rows="4" required class="form-input"></textarea>
+                    </div>
+                </fieldset>
+
+                <!-- Section: Official Contact -->
+                <fieldset class="form-section">
+                    <legend>Official Contact</legend>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="officialEmail">Official Email *</label>
+                            <input type="email" id="officialEmail" required class="form-input">
+                        </div>
+                        <div class="input-group">
+                            <label for="officialPhone">Official Phone *</label>
+                            <input type="tel" id="officialPhone" required class="form-input">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label for="website">Website <span class="optional">(optional)</span></label>
+                        <input type="url" id="website" class="form-input" placeholder="https://">
+                    </div>
+                </fieldset>
+
+                <!-- Section: Location -->
+                <fieldset class="form-section">
+                    <legend>Location</legend>
+                    <div class="input-group">
+                        <label for="address">Address *</label>
+                        <input type="text" id="address" required class="form-input">
+                    </div>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="district">District *</label>
+                            <input type="text" id="district" required class="form-input">
+                        </div>
+                        <div class="input-group">
+                            <label for="city">City *</label>
+                            <input type="text" id="city" required class="form-input">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="province">Province *</label>
+                            <input type="text" id="province" required class="form-input">
+                        </div>
+                        <div class="input-group">
+                            <label for="country">Country *</label>
+                            <input type="text" id="country" required class="form-input" value="Sri Lanka">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Section: Programs and Services -->
+                <fieldset class="form-section">
+                    <legend>Programs and Services</legend>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="programTypes">Program Types * (comma separated)</label>
+                            <input type="text" id="programTypes" required class="form-input" placeholder="e.g. Degrees, Diplomas, Certificates">
+                        </div>
+                        <div class="input-group">
+                            <label for="categories">Academic / Training Categories * (comma separated)</label>
+                            <input type="text" id="categories" required class="form-input" placeholder="e.g. IT, Business, Engineering">
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="studyModes">Study Modes * (comma separated)</label>
+                            <input type="text" id="studyModes" required class="form-input" placeholder="e.g. Online, Full-time, Part-time">
+                        </div>
+                        <div class="input-group">
+                            <label for="languages">Languages * (comma separated)</label>
+                            <input type="text" id="languages" required class="form-input" placeholder="e.g. English, Sinhala">
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Section: Media -->
+                <fieldset class="form-section">
+                    <legend>Media</legend>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="logoUrl">Logo URL <span class="optional">(optional)</span></label>
+                            <div class="image-input-container">
+                                <input type="url" id="logoUrl" class="image-url-input form-input" placeholder="https://">
+                                <small class="helper-text">Paste a public image link. GitHub raw image links are supported.</small>
+                                <div class="image-url-preview-card">
+                                    <img class="image-url-preview" src="" style="display:none;" alt="Preview">
+                                    <span class="image-url-error" style="display:none;"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label for="coverImageUrl">Cover Image URL <span class="optional">(optional)</span></label>
+                            <div class="image-input-container">
+                                <input type="url" id="coverImageUrl" class="image-url-input form-input" placeholder="https://">
+                                <small class="helper-text">Paste a public image link. GitHub raw image links are supported.</small>
+                                <div class="image-url-preview-card">
+                                    <img class="image-url-preview" src="" style="display:none;" alt="Preview">
+                                    <span class="image-url-error" style="display:none;"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <!-- Section: Visibility -->
+                <fieldset class="form-section visibility-section">
+                    <legend>Visibility</legend>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="publicVisibility" checked>
+                        <span>Request Public Visibility (Show in public directory)</span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="showOnHomePage" checked>
+                        <span>Request Feature on Home Page</span>
+                    </label>
+                </fieldset>
+
+                <!-- Section: Verification -->
+                <fieldset class="form-section verification-section">
+                    <legend>Verification</legend>
+                    <div class="input-group">
+                        <label for="representativeDesignation">Representative Designation / Role *</label>
+                        <input type="text" id="representativeDesignation" required class="form-input" placeholder="e.g. Director, Marketing Manager">
+                    </div>
+                    <label class="checkbox-label auth-confirm">
+                        <input type="checkbox" id="authConfirm" required>
+                        <span>I confirm that I am authorized to register this institute and all provided information is accurate.</span>
+                    </label>
+                </fieldset>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-submit" id="submit-btn">
+                        <span>Submit for Admin Approval</span>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script src="image-utils.js"></script>
+    <script type="module" src="institute-onboarding.js"></script>
+</body>
+</html>

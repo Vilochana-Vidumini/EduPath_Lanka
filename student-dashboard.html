@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="theme.css?v=20260624-mentor-calendar-redesign">
-    <link rel="stylesheet" href="student-dashboard.css?v=20260624-image-path-fix">
+    <link rel="stylesheet" href="student-dashboard.css?v=20260718-topbar-icons-v2">
 </head>
 <body class="student-dashboard-page">
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
@@ -33,38 +33,38 @@
         </a>
         <ul class="sidebar-links flat-sidebar-links">
             <li class="sidebar-section-label"><span>MAIN</span></li>
-            <li><a href="#overview" data-section="overview-section" class="active" aria-current="page" title="Dashboard"><i class="fas fa-house" aria-hidden="true"></i><span class="sidebar-label">Dashboard</span></a></li>
+            <li><a href="#overview" data-section="overview-section" class="student-nav-item active" aria-current="page" title="Dashboard"><i class="fas fa-house" aria-hidden="true"></i><span class="sidebar-label">Dashboard</span></a></li>
 
             <li class="sidebar-section-label"><span>MY FUTURE</span></li>
-            <li><a href="#pathway" data-section="pathway-section" title="Future Path"><i class="fas fa-compass" aria-hidden="true"></i><span class="sidebar-label">Future Path</span></a></li>
-            <li><a href="profile.html#personal" title="Personal Profile"><i class="fas fa-user" aria-hidden="true"></i><span class="sidebar-label">Personal Profile</span></a></li>
-            <li><a href="profile.html#academic" title="Academic Profile"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span class="sidebar-label">Academic Profile</span></a></li>
-            <li><a href="profile.html#talent" title="Talent Profile"><i class="fas fa-star" aria-hidden="true"></i><span class="sidebar-label">Talent Profile</span></a></li>
-            <li><a href="profile.html#discovery" title="Discovery Profile"><i class="fas fa-search" aria-hidden="true"></i><span class="sidebar-label">Discovery Profile</span></a></li>
+            <li><a href="#pathway" data-section="pathway-section" class="student-nav-item" title="Future Path"><i class="fas fa-compass" aria-hidden="true"></i><span class="sidebar-label">Future Path</span></a></li>
 
-            <li class="sidebar-section-label"><span>EXPLORE</span></li>
-            <li><a href="#recommended-courses" data-section="recommended-courses-section" title="Courses"><i class="fas fa-book-open" aria-hidden="true"></i><span class="sidebar-label">Courses</span></a></li>
-            <li><a href="#scholarships" data-section="scholarships-section" title="Scholarships"><i class="fas fa-award" aria-hidden="true"></i><span class="sidebar-label">Scholarships</span></a></li>
-            <li><a href="institutes.html" title="Institutes"><i class="fas fa-university" aria-hidden="true"></i><span class="sidebar-label">Institutes</span></a></li>
-            <li><a href="#mentors" data-section="mentors-section" title="Mentors"><i class="fas fa-user-group" aria-hidden="true"></i><span class="sidebar-label">Mentors</span></a></li>
-            <li><a href="talent-opportunities.html#arts" title="Arts Opportunities"><i class="fas fa-palette" aria-hidden="true"></i><span class="sidebar-label">Arts Opportunities</span></a></li>
-            <li><a href="talent-opportunities.html#sports" title="Sports Opportunities"><i class="fas fa-running" aria-hidden="true"></i><span class="sidebar-label">Sports Opportunities</span></a></li>
+            <li class="sidebar-section-label"><span>MY PROFILE</span></li>
+            <li><a href="#personal-profile" data-section="personal-profile-section" class="student-nav-item" title="Personal Profile"><i class="fas fa-user" aria-hidden="true"></i><span class="sidebar-label">Personal Profile</span></a></li>
+            <li><a id="nav-academic-profile" href="#academic-profile" data-section="academic-profile-section" class="student-nav-item" title="Academic Profile"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span class="sidebar-label">Academic Profile</span></a></li>
+            <li><a id="nav-talent-profile" href="#talent-profile" data-section="talent-profile-section" class="student-nav-item" title="Talent Profile"><i class="fas fa-star" aria-hidden="true"></i><span class="sidebar-label">Talent Profile</span></a></li>
+            <li><a id="nav-discovery-profile" href="#discovery-profile" data-section="discovery-profile-section" class="student-nav-item" title="Discovery Profile"><i class="fas fa-search" aria-hidden="true"></i><span class="sidebar-label">Discovery Profile</span></a></li>
+
+            <div id="dynamic-recommendations-sidebar">
+                <!-- Dynamically populated by student-dashboard.js -->
+            </div>
+
+            
 
             <li class="sidebar-section-label"><span>MY JOURNEY</span></li>
-            <li><a href="#saved-courses" data-section="saved-courses-section" title="Saved Opportunities"><i class="fas fa-bookmark" aria-hidden="true"></i><span class="sidebar-label">Saved Opportunities</span></a></li>
-            <li><a href="#applied-scholarships" data-section="applied-scholarships-section" title="Applications"><i class="fas fa-paper-plane" aria-hidden="true"></i><span class="sidebar-label">Applications</span></a></li>
-            <li><a href="#mentor-requests" data-section="mentor-requests-section" title="Mentor Requests"><i class="fas fa-envelope-open-text" aria-hidden="true"></i><span class="sidebar-label">Mentor Requests</span></a></li>
-            <li><a href="#connected-mentors" data-section="connected-mentors-section" title="Connected Mentors"><i class="fas fa-hands-helping" aria-hidden="true"></i><span class="sidebar-label">Connected Mentors</span></a></li>
-            <li><a href="#mentor-sessions" data-section="mentor-sessions-section" title="Appointments"><i class="fas fa-calendar-check" aria-hidden="true"></i><span class="sidebar-label">Appointments</span></a></li>
-            <li><a href="#mentor-messages" data-section="mentor-messages-section" title="Messages"><i class="fas fa-message" aria-hidden="true"></i><span class="sidebar-label">Messages</span><span class="nav-badge" id="sidebar-unread-message-count"></span></a></li>
-            <li><a href="#skills" data-section="skills-section" title="Learning Goals"><i class="fas fa-bullseye" aria-hidden="true"></i><span class="sidebar-label">Learning Goals</span></a></li>
-            <li><a href="#mentor-sessions" data-section="mentor-sessions-section" title="Reviews Submitted"><i class="fas fa-star-half-alt" aria-hidden="true"></i><span class="sidebar-label">Reviews Submitted</span></a></li>
+            <li><a href="#saved-opportunities" data-section="saved-opportunities-section" class="student-nav-item" title="Saved Opportunities"><i class="fas fa-bookmark" aria-hidden="true"></i><span class="sidebar-label">Saved Opportunities</span></a></li>
+            <li><a href="#applied-scholarships" data-section="applied-scholarships-section" class="student-nav-item" title="Applications"><i class="fas fa-paper-plane" aria-hidden="true"></i><span class="sidebar-label">Applications</span></a></li>
+            <li><a href="#mentor-requests" data-section="mentor-requests-section" class="student-nav-item" title="Mentor Requests"><i class="fas fa-envelope-open-text" aria-hidden="true"></i><span class="sidebar-label">Mentor Requests</span></a></li>
+            <li><a href="#connected-mentors" data-section="connected-mentors-section" class="student-nav-item" title="Connected Mentors"><i class="fas fa-hands-helping" aria-hidden="true"></i><span class="sidebar-label">Connected Mentors</span></a></li>
+            <li><a href="#mentor-sessions" data-section="mentor-sessions-section" class="student-nav-item" title="Appointments"><i class="fas fa-calendar-check" aria-hidden="true"></i><span class="sidebar-label">Appointments</span></a></li>
+            <li><a href="#mentor-messages" data-section="mentor-messages-section" class="student-nav-item" title="Messages"><i class="fas fa-message" aria-hidden="true"></i><span class="sidebar-label">Messages</span><span class="nav-badge" id="sidebar-unread-message-count"></span></a></li>
+            <li><a href="#skills" data-section="skills-section" class="student-nav-item" title="Learning Goals"><i class="fas fa-bullseye" aria-hidden="true"></i><span class="sidebar-label">Learning Goals</span></a></li>
+            <li><a href="#mentor-sessions" data-section="mentor-sessions-section" class="student-nav-item" title="Reviews Submitted"><i class="fas fa-star-half-alt" aria-hidden="true"></i><span class="sidebar-label">Reviews Submitted</span></a></li>
 
             <li class="sidebar-section-label"><span>GENERAL</span></li>
-            <li><a href="#notifications" data-section="notifications-section" title="Notifications"><i class="fas fa-bell" aria-hidden="true"></i><span class="sidebar-label">Notifications</span><span class="nav-badge" id="sidebar-notification-count"></span></a></li>
-            <li><a href="profile.html#security" title="Account and Security"><i class="fas fa-shield-alt" aria-hidden="true"></i><span class="sidebar-label">Account and Security</span></a></li>
-            <li><a href="index.html" title="Public Home"><i class="fas fa-house-user" aria-hidden="true"></i><span class="sidebar-label">Public Home</span></a></li>
-            <li><a href="#" id="logout-btn-sidebar" class="text-danger" title="Logout"><i class="fas fa-right-from-bracket" aria-hidden="true"></i><span class="sidebar-label">Logout</span></a></li>
+            <li><a href="#notifications" data-section="notifications-section" class="student-nav-item" title="Notifications"><i class="fas fa-bell" aria-hidden="true"></i><span class="sidebar-label">Notifications</span><span class="nav-badge" id="sidebar-notification-count"></span></a></li>
+            <li><a href="profile.html#security" class="student-nav-item" title="Account & Security"><i class="fas fa-shield-alt" aria-hidden="true"></i><span class="sidebar-label">Account & Security</span></a></li>
+            <li><a href="index.html" class="student-nav-item" title="Public Home"><i class="fas fa-house-user" aria-hidden="true"></i><span class="sidebar-label">Public Home</span></a></li>
+            <li><a href="#" id="logout-btn-sidebar" class="student-nav-item text-danger" title="Logout"><i class="fas fa-right-from-bracket" aria-hidden="true"></i><span class="sidebar-label">Logout</span></a></li>
         </ul>
         <a href="#support" data-section="support-section" class="sidebar-support-link dashboard-jump" title="Contact Support">
             <i class="fas fa-headset" aria-hidden="true"></i>
@@ -117,16 +117,35 @@
                         <div class="student-hero-illustration">
                             <img src="images/student-dashboard-group.png" alt="Students learning together">
                         </div>
-                        <div class="welcome-avatar" id="welcome-avatar"><span>ST</span></div>
+                    </div>
+                </section>
+                
+                <div id="dynamic-recommendation-summary">
+                    <!-- Populated by JS renderPersonalizedRecommendations -->
+                </div>
+
+                <section class="student-current-path-card glass reveal-card" id="student-current-path-card" aria-live="polite">
+                    <div class="path-card-icon" id="student-current-path-icon"><i class="fas fa-compass" aria-hidden="true"></i></div>
+                    <div class="path-card-left">
+                        <span class="path-label">Current Future Path</span>
+                        <h3 id="student-current-path-title">Loading your path...</h3>
+                        <p id="student-current-path-desc">Your dashboard will adapt to your selected direction.</p>
+                    </div>
+                    <div class="path-card-right">
+                        <span id="student-current-path-badge" class="path-badge undecided">Undecided</span>
+                        <button type="button" id="edit-student-path-btn" class="btn btn-outline dashboard-jump" data-section="pathway-section">
+                            <i class="fas fa-pen" aria-hidden="true"></i> <span id="edit-student-path-label">Update Path</span>
+                        </button>
                     </div>
                 </section>
 
-                <section class="student-kpi-grid">
+                <section class="student-kpi-grid" id="student-path-kpis">
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-blue"><i class="fas fa-user-check"></i></div><div class="stat-info"><h4>Profile Completion</h4><h2 id="overview-profile-completion-stat">0%</h2><p id="overview-profile-status">Getting started</p></div></article>
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-purple"><i class="fas fa-route"></i></div><div class="stat-info"><h4>Pathway Results</h4><h2 id="pathway-results-stat">0</h2><p>Latest pathway ready</p></div></article>
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-cyan"><i class="fas fa-bookmark"></i></div><div class="stat-info"><h4>Saved Courses</h4><h2 id="saved-courses-stat">0</h2><p>Shortlisted options</p></div></article>
-                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-orange"><i class="fas fa-user-clock"></i></div><div class="stat-info"><h4>Mentor Requests</h4><h2 id="mentor-requests-stat">0</h2><p>Guidance status</p></div></article>
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-green"><i class="fas fa-award"></i></div><div class="stat-info"><h4>Saved Scholarships</h4><h2 id="saved-scholarships-stat">0</h2><p>Funding options</p></div></article>
+                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-purple"><i class="fas fa-star"></i></div><div class="stat-info"><h4>Saved Opportunities</h4><h2 id="saved-opportunities-stat">0</h2><p>Talent & Extracurricular</p></div></article>
+                    <article class="student-kpi-card reveal-card"><div class="stat-icon bg-orange"><i class="fas fa-user-clock"></i></div><div class="stat-info"><h4>Mentor Requests</h4><h2 id="mentor-requests-stat">0</h2><p>Guidance status</p></div></article>
                     <article class="student-kpi-card reveal-card"><div class="stat-icon bg-pink"><i class="fas fa-envelope"></i></div><div class="stat-info"><h4>Unread Messages</h4><h2 id="unread-messages-stat">0</h2><p>Messages and alerts</p></div></article>
                 </section>
 
@@ -145,6 +164,14 @@
                     <article class="best-matches-card glass reveal-card">
                         <div class="card-heading"><div><h3><i class="fas fa-medal text-success"></i> Best Matches for You</h3><p>Top course, scholarship, and mentor picks</p></div><button class="btn btn-outline btn-sm dashboard-jump" data-section="recommended-courses-section">View All</button></div>
                         <div id="overview-best-matches" class="overview-match-grid"></div>
+                    </article>
+                    <article class="extended-recommendation-card glass reveal-card">
+                        <div class="card-heading"><div><h3><i class="fas fa-building-columns text-primary"></i> Suggested Institutes</h3><p>Institutes with matching courses and programs</p></div><a class="btn btn-outline btn-sm" href="institutes.html">View All</a></div>
+                        <div id="overview-institute-recommendations" class="extended-rec-list"></div>
+                    </article>
+                    <article class="extended-recommendation-card glass reveal-card">
+                        <div class="card-heading"><div><h3><i class="fas fa-star text-warning"></i> Talent-Based Opportunities</h3><p>Workshops, competitions, training, and performance options</p></div><a class="btn btn-outline btn-sm" href="talent-opportunities.html">View All</a></div>
+                        <div id="overview-talent-recommendations" class="extended-rec-list"></div>
                     </article>
                     <article class="skill-growth-card glass reveal-card">
                         <div class="card-heading"><div><h3><i class="fas fa-chart-line text-primary"></i> Skill Growth</h3></div><button class="btn btn-outline btn-sm dashboard-jump" data-section="skills-section">View All</button></div>
@@ -194,6 +221,28 @@
 
             <section id="pathway-section" class="dashboard-section">
                 <div class="section-header">
+                    <h2>Future Path</h2>
+                    <p class="text-muted">Select how you want to build your future. This determines your dashboard experience.</p>
+                </div>
+                <div class="glass-card mb-3">
+                    <form id="future-path-form">
+                        <div class="form-grid">
+                            <div class="form-group w-full">
+                                <label class="pathway-radio-label"><input type="radio" name="pathwayPreference" value="academic" required> <strong>Academic:</strong> Through education and qualifications</label>
+                                <label class="pathway-radio-label"><input type="radio" name="pathwayPreference" value="talent"> <strong>Talent:</strong> Through arts, sports, and practical skills</label>
+                                <label class="pathway-radio-label"><input type="radio" name="pathwayPreference" value="combined"> <strong>Combined:</strong> Through both education and talents</label>
+                                <label class="pathway-radio-label"><input type="radio" name="pathwayPreference" value="undecided"> <strong>Undecided:</strong> I want to explore my options</label>
+                                <label class="pathway-radio-label"><input type="radio" name="pathwayPreference" value="academic_improvement"> <strong>Academic Improvement:</strong> Build foundation, English, ICT, or study skills</label>
+                            </div>
+                        </div>
+                        <div class="section-actions mt-3" style="align-items: center;">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Path</button>
+                            <span class="text-muted text-sm ml-2" style="margin-left: 1rem;">Last updated: <span id="pathway-last-updated">Never</span></span>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="section-header mt-3">
                     <h2>My Pathway Summary</h2>
                     <span class="badge badge-primary">Future Path Score: <span id="res-score">--</span>%</span>
                 </div>
@@ -206,6 +255,465 @@
                 <div class="section-header"><h2>My Pathway History</h2></div>
                 <div id="pathway-history-list" class="timeline-list">
                     <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading pathway history...</p></div>
+                </div>
+            </section>
+
+            <section id="personal-profile-section" class="dashboard-section">
+                <div class="section-header">
+                    <div>
+                        <h2>Personal Profile</h2>
+                        <p class="text-muted" style="margin-top: 5px;">Who are you? Tell us about yourself and how we can reach you.</p>
+                    </div>
+                    <span class="badge badge-primary">Completeness: <span id="personal-completeness">0</span>%</span>
+                </div>
+                <div class="glass-card mb-3" style="padding: 2rem;">
+                    <form id="personal-profile-form">
+                        <div class="form-group" style="grid-column: 1 / -1; margin-bottom: 1.5rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Profile Photo URL</label>
+                            <div class="image-input-container mt-2">
+                                <input id="personal-avatar-url" class="image-url-input form-control" type="url" placeholder="https://example.com/image.png" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <small class="text-sm text-muted" style="display:block; margin-top: 5px;">Paste a public image link. GitHub raw image links are supported.</small>
+                                <div class="image-url-preview-card" style="margin-top: 10px; display: none;">
+                                    <img class="image-url-preview" src="" style="display:none; max-width: 150px; border-radius: 8px; border: 1px solid var(--border-color);" alt="Preview">
+                                    <span class="image-url-error" style="display:none; color: var(--danger-color);"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                            <div class="form-group">
+                                <label for="field-personal-fullName" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Full Name</label>
+                                <input type="text" id="field-personal-fullName" name="fullName" class="form-input" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-displayName" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Display Name</label>
+                                <input type="text" id="field-personal-displayName" name="displayName" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-email" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email (Read-only)</label>
+                                <input type="email" id="field-personal-email" name="email" class="form-input" readonly style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); background: rgba(0,0,0,0.05);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-phone" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Phone</label>
+                                <input type="tel" id="field-personal-phone" name="phone" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-whatsapp" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">WhatsApp (Optional)</label>
+                                <input type="tel" id="field-personal-whatsapp" name="whatsapp" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-dateOfBirth" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Date of Birth</label>
+                                <input type="date" id="field-personal-dateOfBirth" name="dateOfBirth" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-age" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Age</label>
+                                <input type="number" id="field-personal-age" name="age" class="form-input" min="5" max="100" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-gender" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Gender (Optional)</label>
+                                <select id="field-personal-gender" name="gender" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                    <option value="Prefer not to say">Prefer not to say</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-district" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">District</label>
+                                <input type="text" id="field-personal-district" name="district" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-city" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">City</label>
+                                <input type="text" id="field-personal-city" name="city" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-personal-address" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Address (Optional)</label>
+                                <input type="text" id="field-personal-address" name="address" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-personal-preferredLanguages" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Preferred Languages (Comma separated)</label>
+                                <input type="text" id="field-personal-preferredLanguages" name="preferredLanguages" class="form-input" placeholder="e.g. Sinhala, English" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-personal-bio" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Bio</label>
+                                <textarea id="field-personal-bio" name="bio" class="form-input" maxlength="500" placeholder="Tell us about yourself..." style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color); min-height: 80px;"></textarea>
+                                <div class="text-sm text-muted mt-1 text-right"><span id="personal-bio-count">0</span> / 500</div>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-guardianName" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Parent/Guardian Name (Optional)</label>
+                                <input type="text" id="field-personal-guardianName" name="guardianName" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-guardianPhone" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Parent/Guardian Phone (Optional)</label>
+                                <input type="tel" id="field-personal-guardianPhone" name="guardianPhone" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-personal-emergencyContact" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Emergency Contact (Optional)</label>
+                                <input type="tel" id="field-personal-emergencyContact" name="emergencyContact" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                        </div>
+                        <div class="section-actions mt-3" style="align-items: center; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Personal Profile</button>
+                            <span class="text-muted text-sm ml-2" style="margin-left: 1rem;">Last updated: <span id="personal-last-updated">Never</span></span>
+                        </div>
+                    </form>
+                </div>
+                <div class="glass-card mb-3" style="padding: 2rem;">
+                    <h3>Change Password</h3>
+                    <p class="text-sm text-muted mb-3" style="margin-bottom: 1.5rem;">Update your account password securely.</p>
+                    <form id="personal-password-form">
+                        <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-password-current" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Current Password</label>
+                                <input type="password" id="field-password-current" class="form-input" required style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-password-new" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">New Password</label>
+                                <input type="password" id="field-password-new" class="form-input" required minlength="8" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-password-confirm" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Confirm New Password</label>
+                                <input type="password" id="field-password-confirm" class="form-input" required minlength="8" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                        </div>
+                        <div class="section-actions mt-3" style="align-items: center; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-outline" id="save-password-btn"><i class="fas fa-key"></i> Update Password</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section id="academic-profile-section" class="dashboard-section">
+                <div class="section-header">
+                    <div>
+                        <h2>Academic Profile</h2>
+                        <p class="text-muted" style="margin-top: 5px;">What education-based path suits you?</p>
+                    </div>
+                    <span class="badge badge-primary">Completeness: <span id="academic-completeness">0</span>%</span>
+                </div>
+                <div class="glass-card mb-3" style="padding: 2rem;">
+                    <form id="academic-profile-form">
+                        <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                            <!-- Current Education -->
+                            <div class="form-group full-width" style="grid-column: 1 / -1; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                <h3>Current Education</h3>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-currentEducationLevel" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Current Education Level</label>
+                                <select id="field-academic-currentEducationLevel" name="currentEducationLevel" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <option value="">Select Level</option>
+                                    <option value="After O/L">After O/L</option>
+                                    <option value="Currently doing A/L">Currently doing A/L</option>
+                                    <option value="After A/L">After A/L</option>
+                                    <option value="Undergraduate">Undergraduate</option>
+                                    <option value="Diploma / Certificate Student">Diploma / Certificate Student</option>
+                                    <option value="Job Seeker">Job Seeker</option>
+                                    <option value="Working and Want to Upskill">Working and Want to Upskill</option>
+                                    <option value="Not Sure">Not Sure</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-highestCompletedEducation" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Highest Completed Education</label>
+                                <input type="text" id="field-academic-highestCompletedEducation" name="highestCompletedEducation" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-currentInstitution" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Current School / Institute</label>
+                                <input type="text" id="field-academic-currentInstitution" name="currentInstitution" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-currentQualification" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Current Qualification</label>
+                                <input type="text" id="field-academic-currentQualification" name="currentQualification" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-currentGrade" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Current Grade / Year</label>
+                                <input type="text" id="field-academic-currentGrade" name="currentGrade" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+
+                            <!-- O/L Details -->
+                            <div class="form-group full-width" style="grid-column: 1 / -1; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                <h3>O/L Details</h3>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-olYear" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">O/L Year</label>
+                                <input type="text" id="field-academic-olYear" name="olYear" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-olResults" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">O/L Results Summary</label>
+                                <input type="text" id="field-academic-olResults" name="olResults" class="form-input" placeholder="e.g. 5A, 2B, 1C" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-academic-olSubjects" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">O/L Subjects</label>
+                                <input type="text" id="field-academic-olSubjects" name="olSubjects" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+
+                            <!-- A/L Details -->
+                            <div class="form-group full-width" style="grid-column: 1 / -1; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                <h3>A/L Details</h3>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-alStream" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">A/L Stream</label>
+                                <input type="text" id="field-academic-alStream" name="alStream" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-alYear" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">A/L Year</label>
+                                <input type="text" id="field-academic-alYear" name="alYear" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-alResults" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">A/L Results Summary</label>
+                                <input type="text" id="field-academic-alResults" name="alResults" class="form-input" placeholder="e.g. A, B, C" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-zScore" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Z-Score (Optional)</label>
+                                <input type="text" id="field-academic-zScore" name="zScore" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-districtRank" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">District Rank (Optional)</label>
+                                <input type="text" id="field-academic-districtRank" name="districtRank" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-academic-alSubjects" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">A/L Subjects</label>
+                                <input type="text" id="field-academic-alSubjects" name="alSubjects" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+
+                            <!-- Other Qualifications -->
+                            <div class="form-group full-width" style="grid-column: 1 / -1; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                <h3>Other Qualifications</h3>
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-academic-otherQualifications" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Diplomas, Certificates & Courses</label>
+                                <textarea id="field-academic-otherQualifications" name="otherQualifications" class="form-input" rows="2" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);"></textarea>
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-academic-academicAchievements" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Academic Achievements</label>
+                                <textarea id="field-academic-academicAchievements" name="academicAchievements" class="form-input" rows="2" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);"></textarea>
+                            </div>
+
+                            <!-- Study Interests -->
+                            <div class="form-group full-width" style="grid-column: 1 / -1; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                <h3>Study Interests</h3>
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-academic-academicCategoryId" style="display:block;margin-bottom:.5rem;font-weight:500;">Primary Academic Category</label><select id="field-academic-academicCategoryId" class="form-input" style="width:100%;padding:.75rem;border-radius:8px;border:1px solid var(--border-color);"><option value="">Select Academic Category</option></select></div><div class="form-group full-width" style="grid-column:1 / -1;">
+                                <label for="field-academic-preferredFields" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Preferred Study Fields</label>
+                                <input type="text" id="field-academic-preferredFields" name="preferredFields" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-academic-careerGoals" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Career Goals</label>
+                                <input type="text" id="field-academic-careerGoals" name="careerGoals" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-academic-skillsToImprove" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Skills to Improve</label>
+                                <input type="text" id="field-academic-skillsToImprove" name="skillsToImprove" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-preferredCourseLevels" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Preferred Course Levels</label>
+                                <input type="text" id="field-academic-preferredCourseLevels" name="preferredCourseLevels" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+
+                            <!-- Study Preferences -->
+                            <div class="form-group full-width" style="grid-column: 1 / -1; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                <h3>Study Preferences</h3>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-preferredStudyModes" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Preferred Study Modes</label>
+                                <input type="text" id="field-academic-preferredStudyModes" name="preferredStudyModes" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-preferredLocations" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Preferred Locations</label>
+                                <input type="text" id="field-academic-preferredLocations" name="preferredLocations" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-budgetMin" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Minimum Budget</label>
+                                <input type="text" id="field-academic-budgetMin" name="budgetMin" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-budgetMax" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Maximum Budget</label>
+                                <input type="text" id="field-academic-budgetMax" name="budgetMax" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-financialSupportNeeded" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Financial Support Needed?</label>
+                                <input type="text" id="field-academic-financialSupportNeeded" name="financialSupportNeeded" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-preferredDuration" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Preferred Course Duration</label>
+                                <input type="text" id="field-academic-preferredDuration" name="preferredDuration" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-academic-willingToStudyAbroad" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Willing to Study Abroad?</label>
+                                <input type="text" id="field-academic-willingToStudyAbroad" name="willingToStudyAbroad" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-academic-preferredCountries" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Preferred Countries (If studying abroad)</label>
+                                <input type="text" id="field-academic-preferredCountries" name="preferredCountries" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                        </div>
+                        <div class="section-actions mt-3" style="align-items: center; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Academic Profile</button>
+                            <span class="text-muted text-sm ml-2" style="margin-left: 1rem;">Last updated: <span id="academic-last-updated">Never</span></span>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section id="talent-profile-section" class="dashboard-section">
+                <div class="section-header">
+                    <div>
+                        <h2>Talent Profile</h2>
+                        <p class="text-muted" style="margin-top: 5px;">What arts, sports, or practical-skill path suits you?</p>
+                    </div>
+                    <span class="badge badge-primary">Completeness: <span id="talent-completeness">0</span>%</span>
+                </div>
+                <div class="glass-card mb-3" style="padding: 2rem;">
+                    <form id="talent-profile-form">
+                        <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                            <!-- Talent Path Status -->
+                            <div class="form-group full-width" style="grid-column: 1 / -1; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                <h3>Talent Path Status</h3>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-talent-talentPathStatus" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Talent Path Status</label>
+                                <input type="text" id="field-talent-talentPathStatus" name="talentPathStatus" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-talent-primaryTalentCategory" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Primary Talent Category</label>
+                                <select id="field-talent-primaryTalentCategory" name="primaryTalentCategory" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);"><option value="">Select Talent Category</option></select>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-talent-specificTalent" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Specific Skill/Sport/Art</label>
+                                <input type="text" id="field-talent-specificTalent" name="specificTalent" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+
+                            <!-- Talent Details -->
+                            <div class="form-group full-width" style="grid-column: 1 / -1; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                <h3>Talent Details</h3>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-talent-trainingLevel" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Training Level</label>
+                                <select id="field-talent-trainingLevel" name="trainingLevel" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <option value="">Select Level</option>
+                                    <option value="Beginner">Beginner</option>
+                                    <option value="Intermediate">Intermediate</option>
+                                    <option value="Advanced">Advanced</option>
+                                    <option value="Professional">Professional</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-talent-yearsOfExperience" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Years of Experience</label>
+                                <input type="number" id="field-talent-yearsOfExperience" name="yearsOfExperience" class="form-input" min="0" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-talent-currentCoachOrAcademy" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Current Coach or Academy</label>
+                                <input type="text" id="field-talent-currentCoachOrAcademy" name="currentCoachOrAcademy" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+
+                            <!-- Achievements -->
+                            <div class="form-group full-width" style="grid-column: 1 / -1; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                <h3>Achievements</h3>
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-talent-highestAchievement" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Highest Achievement</label>
+                                <textarea id="field-talent-highestAchievement" name="highestAchievement" class="form-input" rows="2" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);"></textarea>
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-talent-awardsAndRecognitions" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Awards and Recognitions</label>
+                                <textarea id="field-talent-awardsAndRecognitions" name="awardsAndRecognitions" class="form-input" rows="3" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);"></textarea>
+                            </div>
+
+                            <!-- Portfolio -->
+                            <div class="form-group full-width" style="grid-column: 1 / -1; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                <h3>Portfolio</h3>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-talent-portfolioLink" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Portfolio Link</label>
+                                <input type="url" id="field-talent-portfolioLink" name="portfolioLink" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-talent-videoShowcaseLink" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Video Showcase Link</label>
+                                <input type="url" id="field-talent-videoShowcaseLink" name="videoShowcaseLink" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+
+                            <!-- Talent Preferences -->
+                            <div class="form-group full-width" style="grid-column: 1 / -1; margin-top: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                <h3>Talent Preferences</h3>
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-talent-talentGoals" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Talent Goals</label>
+                                <input type="text" id="field-talent-talentGoals" name="talentGoals" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-talent-supportNeededTalent" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Support Needed</label>
+                                <input type="text" id="field-talent-supportNeededTalent" name="supportNeededTalent" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-talent-preferredTrainingModes" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Preferred Training Modes</label>
+                                <input type="text" id="field-talent-preferredTrainingModes" name="preferredTrainingModes" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-talent-willingToRelocateForTraining" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Willing to Relocate for Training?</label>
+                                <input type="text" id="field-talent-willingToRelocateForTraining" name="willingToRelocateForTraining" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                        </div>
+                        <div class="section-actions mt-3" style="align-items: center; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Talent Profile</button>
+                            <span class="text-muted text-sm ml-2" style="margin-left: 1rem;">Last updated: <span id="talent-last-updated">Never</span></span>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section id="discovery-profile-section" class="dashboard-section">
+                <div class="section-header">
+                    <div>
+                        <h2>Discovery Profile</h2>
+                        <p class="text-muted" style="margin-top: 5px;">What should we recommend when you're not sure about your future path?</p>
+                    </div>
+                    <span class="badge badge-primary">Completeness: <span id="discovery-completeness">0</span>%</span>
+                </div>
+                <div class="glass-card mb-3" style="padding: 2rem;">
+                    <form id="discovery-profile-form">
+                        <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-discovery-hobbies" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Hobbies</label>
+                                <input type="text" id="field-discovery-hobbies" name="hobbies" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-discovery-personalityTraits" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Personality Traits</label>
+                                <input type="text" id="field-discovery-personalityTraits" name="personalityTraits" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group">
+                                <label for="field-discovery-workEnv" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Work Environment Preference</label>
+                                <select id="field-discovery-workEnv" name="workEnv" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <option value="">Select Preference</option>
+                                    <option value="Office/Desk">Office/Desk</option>
+                                    <option value="Outdoors">Outdoors</option>
+                                    <option value="Remote/Home">Remote/Home</option>
+                                    <option value="Workshop/Lab">Workshop/Lab</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="field-discovery-preferredRoles" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Preferred Roles</label>
+                                <select id="field-discovery-preferredRoles" name="preferredRoles" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <option value="">Select Role Type</option>
+                                    <option value="Leader">Leader</option>
+                                    <option value="Team Player">Team Player</option>
+                                    <option value="Independent Contributor">Independent Contributor</option>
+                                </select>
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-discovery-enjoyedSubjects" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Subjects You Enjoy Most</label>
+                                <input type="text" id="field-discovery-enjoyedSubjects" name="enjoyedSubjects" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                            <div class="form-group full-width" style="grid-column: 1 / -1;">
+                                <label for="field-discovery-hatedSubjects" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Subjects You Hate</label>
+                                <input type="text" id="field-discovery-hatedSubjects" name="hatedSubjects" class="form-input" style="width: 100%; padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            </div>
+                        </div>
+                        <div class="section-actions mt-3" style="align-items: center; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Discovery Profile</button>
+                            <span class="text-muted text-sm ml-2" style="margin-left: 1rem;">Last updated: <span id="discovery-last-updated">Never</span></span>
+                        </div>
+                    </form>
                 </div>
             </section>
 
@@ -225,6 +733,49 @@
                 </div>
                 <div id="courses-list" class="cards-grid">
                     <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading courses...</p></div>
+                </div>
+            </section>
+
+            
+            <section id="talent-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Talent Path Recommendations</h2></div>
+                <div class="list-card glass">
+                    <div class="empty-state"><p>Check your specialized talent recommendations.</p></div>
+                </div>
+            </section>
+
+            <section id="talent-opportunities-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Talent Opportunities</h2></div>
+                <div id="talent-opportunities-recommendations-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading talent opportunities...</p></div>
+                </div>
+            </section>
+
+            <section id="talent-mentors-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Talent Mentors & Coaches</h2></div>
+                <div id="talent-mentors-recommendations-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading mentors...</p></div>
+                </div>
+            </section>
+
+            <section id="skill-courses-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Skill Courses</h2></div>
+                <div id="skill-courses-recommendations-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading skill courses...</p></div>
+                </div>
+            </section>
+
+            <section id="talent-scholarships-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Talent Scholarships</h2></div>
+                <div id="talent-scholarships-recommendations-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading talent scholarships...</p></div>
+                </div>
+            </section>
+
+            <section id="talent-institutes-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2>My Institutes & Academies</h2></div>
+                <div id="talent-institutes-recommendations-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading institutes...</p></div>
                 </div>
             </section>
 
@@ -279,6 +830,13 @@
                 </div>
             </section>
 
+            <section id="saved-opportunities-section" class="dashboard-section">
+                <div class="section-header"><h2>Saved Opportunities</h2></div>
+                <div id="saved-opportunities-list" class="cards-grid">
+                    <div class="empty-state glass"><i class="fas fa-inbox"></i><p>You have not saved any talent opportunities yet.</p></div>
+                </div>
+            </section>
+
             <section id="applied-scholarships-section" class="dashboard-section">
                 <div class="section-header"><h2>Applied Scholarships / Progress</h2></div>
                 <div class="section-tabs">
@@ -292,7 +850,7 @@
             </section>
 
             <section id="mentors-section" class="dashboard-section">
-                <div class="section-header"><h2>Mentors I Can Connect With</h2></div>
+                <div class="section-header"><h2>Mentors I Can Connect With</h2><a class="btn btn-outline" href="mentors.html"><i class="fas fa-users" aria-hidden="true"></i> See Other Mentors</a></div>
                 <div class="section-tabs">
                     <button type="button" class="active dashboard-jump" data-section="mentors-section">Find Mentors</button>
                     <button type="button" class="dashboard-jump" data-section="mentor-requests-section">My Requests</button>
@@ -302,6 +860,27 @@
                     <div class="empty-state glass"><i class="fas fa-spinner fa-spin"></i><p>Loading mentors...</p></div>
                 </div>
             </section>
+
+            <section id="recommended-institutes-section" class="dashboard-section">
+                <div class="section-header"><h2 id="recommended-institutes-title">My Suggested Institutes</h2></div>
+                <div id="recommended-institutes-list" class="cards-grid"></div>
+            </section>
+
+            <section id="recommended-talent-opportunities-section" class="dashboard-section">
+                <div class="section-header"><h2 id="recommended-talent-opportunities-title">My Talent Opportunities</h2></div>
+                <div id="recommended-talent-opportunities-list" class="cards-grid"></div>
+            </section>
+
+            <section id="combined-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2 id="combined-recommendations-title">My Academic + Talent Recommendations</h2></div>
+                <div id="combined-recommendations-list"></div>
+            </section>
+
+            <section id="explore-recommendations-section" class="dashboard-section">
+                <div class="section-header"><h2 id="explore-recommendations-title">Explore Suggestions for You</h2></div>
+                <div id="explore-recommendations-list" class="cards-grid"></div>
+            </section>
+
 
             <section id="mentor-requests-section" class="dashboard-section">
                 <div class="section-header"><h2>My Mentor Requests</h2></div>
@@ -480,6 +1059,14 @@
                             <p>Complete a short discovery process to explore suitable options.</p>
                         </div>
                     </label>
+                    <label class="pathway-option">
+                        <input type="radio" name="pathwayPreference" value="academic_improvement">
+                        <div class="pathway-option-content">
+                            <i class="fas fa-arrow-trend-up"></i>
+                            <h4>Improve my academic foundation first</h4>
+                            <p>Find foundation, English, ICT, study support, financial aid, and guidance.</p>
+                        </div>
+                    </label>
                 </div>
                 <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 12px; justify-content: flex-end;">
                     <button type="button" class="btn btn-outline" id="skip-pathway-btn">Skip for Now</button>
@@ -491,7 +1078,7 @@
 
     <script type="module" src="theme.js"></script>
     <script type="module" src="auth-nav.js?v=20260614-brand"></script>
-    <script type="module" src="dashboard-topbar.js"></script>
-    <script type="module" src="student-dashboard.js?v=20260624-mentor-application"></script>
+    <script type="module" src="dashboard-topbar.js?v=20260718-topbar-icons"></script>
+    <script type="module" src="student-dashboard.js?v=20260720-talent-path-fix-v2"></script>
 </body>
 </html>

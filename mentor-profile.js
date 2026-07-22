@@ -90,6 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (studentSnap.exists()) {
                             currentStudentData = studentSnap.val();
                         }
+                    } else if (currentUserType === 'mentor') {
+                        const mentorUserSnap = await get(ref(database, 'mentors/' + user.uid));
+                        if (mentorUserSnap.exists()) {
+                            currentStudentData = mentorUserSnap.val();
+                        }
                     }
                 }
             } catch (error) {
@@ -585,13 +590,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (connectCardDesc) {
                 connectCardDesc.textContent = "You are viewing this profile as an administrator. You can view their registration details or manage approval status from the admin dashboard.";
             }
-        } else if (currentUserType === 'mentor') {
+        } else if (mentorProfile.loginEnabled === false || mentorProfile.isManualProfile === true) {
+            const buttons = `<a href="contact.html?subject=${encodeURIComponent(`Guidance request for ${mentorProfile.fullName || 'manual mentor'}`)}" class="btn btn-primary"><i class="fas fa-headset"></i> Request Guidance / Contact Admin</a><a href="mentors.html" class="btn btn-outline"><i class="fas fa-users"></i> View Other Mentors</a>`;
+            heroActions.innerHTML = buttons;
+            connectionActions.innerHTML = buttons;
+            if (connectCardDesc) connectCardDesc.textContent = "This mentor profile is managed by EduPath Lanka. Contact the admin team to arrange guidance; direct messaging and mentor login are not available.";        } else if (currentUserType === 'mentor') {
             // Logged in Mentor (other) State
-            const btns = `<button type="button" class="btn btn-primary" disabled><i class="fas fa-user-tie"></i> View Public Profile</button>`;
+            const btns = `<a class="btn btn-primary" href="mentor-learning.html?mentor=${encodeURIComponent(mentorUid)}#find-mentor"><i class="fas fa-paper-plane"></i> Request Mentorship</a><a class="btn btn-outline" href="mentor-learning.html"><i class="fas fa-graduation-cap"></i> Open My Learning</a>`;
             heroActions.innerHTML = btns;
             connectionActions.innerHTML = btns;
             if (connectCardDesc) {
-                connectCardDesc.textContent = "Only students can connect with this mentor. You are logged in as a mentor.";
+                connectCardDesc.textContent = "Request mentorship from this approved mentor while keeping your own mentor profile active.";
             }
         } else if (currentUserType === 'student') {
             // Logged in Student State
@@ -724,8 +733,8 @@ document.addEventListener('DOMContentLoaded', () => {
         requestForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            if (!currentUser || currentUserType !== 'student') {
-                showToast("Only logged in students can submit requests.", "error");
+            if (!currentUser || !['student', 'mentor'].includes(currentUserType)) {
+                showToast("Only logged in students or mentors can submit requests.", "error");
                 return;
             }
 
@@ -791,11 +800,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const payload = {
                     requestId: requestId,
                     studentUid: currentUser.uid,
-                    studentName: currentStudentData?.fullName || currentUserData?.fullName || currentUser.displayName || 'Student',
+                    studentName: currentStudentData?.fullName || currentUserData?.fullName || currentUser.displayName || (currentUserType === 'mentor' ? 'Mentor' : 'Student'),
                     studentEmail: currentUserData?.email || currentUser.email || '',
                     studentPhone: currentStudentData?.phone || currentUserData?.phone || '',
-                    educationLevel: currentStudentData?.educationLevel || currentStudentData?.education || '',
-                    interestArea: currentStudentData?.interestArea || currentStudentData?.interest || '',
+                    educationLevel: currentStudentData?.educationLevel || currentStudentData?.education || currentStudentData?.expertise || '',
+                    interestArea: currentStudentData?.interestArea || currentStudentData?.interest || currentStudentData?.industry || '',
                     futureGoal: goal,
                     mentorUid: mentorUid,
                     mentorName: mentorProfile.fullName || 'Mentor',
@@ -818,9 +827,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     targetUserUid: mentorUid,
                     targetRole: 'mentor',
                     senderUid: currentUser.uid,
-                    senderRole: 'student',
+                    senderRole: currentUserType,
                     type: 'mentorship_request_received',
-                    title: 'New student mentor request',
+                    title: `New ${currentUserType === 'mentor' ? 'mentor' : 'student'} mentor request`,
                     message: `${payload.studentName} requested your mentorship.`,
                     messagePreview: `New request from ${payload.studentName}`,
                     relatedEntityType: 'mentorRequest',

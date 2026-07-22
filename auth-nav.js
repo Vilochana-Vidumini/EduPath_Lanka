@@ -65,44 +65,59 @@ export function preserveThemeOnClear() {
 
 const AUTH_PANEL_LINKS = {
     student: [
-        { href: getDashboardDestination('student'), icon: 'fa-tachometer-alt', label: 'My Dashboard' },
-        { href: getProfileDestination('student'), icon: 'fa-user', label: 'My Profile' },
-        { href: 'pathway.html', icon: 'fa-route', label: 'Pathway Finder' },
-        { href: 'student-dashboard.html#pathway-history', icon: 'fa-poll-h', label: 'My Results' },
-        { href: 'courses.html', icon: 'fa-book-open', label: 'Courses' },
-        { href: 'scholarships.html', icon: 'fa-hand-holding-usd', label: 'Scholarships' },
-        { href: 'talent-opportunities.html', icon: 'fa-star', label: 'Talent Opportunities' },
-        { href: 'mentors.html', icon: 'fa-chalkboard-teacher', label: 'Mentors' },
-        { href: getPublicHomeDestination(), icon: 'fa-home', label: 'Public Home' },
+        { href: 'student-dashboard.html#overview', icon: 'fa-table-cells-large', label: 'Dashboard' },
+        { href: 'student-dashboard.html#personal-profile', icon: 'fa-user', label: 'Personal Profile' },
+        { href: 'student-dashboard.html#academic-profile', icon: 'fa-graduation-cap', label: 'Academic Profile' },
+        { href: 'student-dashboard.html#talent-profile', icon: 'fa-star', label: 'Talent Profile' },
+        { href: 'student-dashboard.html#pathway', icon: 'fa-route', label: 'Future Path' },
+        { href: 'student-dashboard.html#courses', icon: 'fa-book-open', label: 'Courses' },
+        { href: 'student-dashboard.html#scholarships', icon: 'fa-award', label: 'Scholarships' },
+        { href: 'student-dashboard.html#mentors', icon: 'fa-user-group', label: 'Mentors' },
+        { href: 'student-dashboard.html#mentor-requests', icon: 'fa-envelope-open-text', label: 'Mentor Requests' },
+        { href: 'student-dashboard.html#connected-mentors', icon: 'fa-hands-helping', label: 'Connected Mentors' },
+        { href: 'student-dashboard.html#mentor-sessions', icon: 'fa-calendar-check', label: 'Appointments' },
+        { href: 'student-dashboard.html#mentor-messages', icon: 'fa-message', label: 'Messages' },
+        { href: getPublicHomeDestination(), icon: 'fa-house', label: 'Public Home' }
     ],
     mentor: [
-        { href: getDashboardDestination('mentor'), icon: 'fa-tachometer-alt', label: 'My Dashboard' },
-        { href: getProfileDestination('mentor'), icon: 'fa-user-tie', label: 'My Profile' },
+        { href: 'mentor-dashboard.html#dashboard-overview', icon: 'fa-table-cells-large', label: 'Dashboard' },
+        { href: 'mentor-dashboard.html#complete-profile', icon: 'fa-clipboard-check', label: 'Complete Profile' },
+        { href: 'mentor-dashboard.html#my-profile', icon: 'fa-user-tie', label: 'My Profile' },
+        { href: 'mentor-learning.html', icon: 'fa-graduation-cap', label: 'My Learning' },
         { href: 'mentor-dashboard.html#requests', icon: 'fa-user-plus', label: 'Student Requests' },
+        { href: 'mentor-dashboard.html#learning-requests', icon: 'fa-user-graduate', label: 'Learning Requests' },
+        { href: 'mentor-dashboard.html#accepted', icon: 'fa-user-check', label: 'My Mentees' },
+        { href: 'mentor-dashboard.html#messages', icon: 'fa-comments', label: 'Messages' },
+        { href: 'mentor-dashboard.html#rejected', icon: 'fa-user-times', label: 'Closed Requests' },
         { href: 'mentor-dashboard.html#availability', icon: 'fa-calendar-check', label: 'Availability' },
+        { href: 'mentor-dashboard.html#appointments', icon: 'fa-calendar-days', label: 'Appointments' },
+        { href: 'mentor-dashboard.html#ratings', icon: 'fa-star', label: 'Ratings & Reviews' },
         { href: 'mentor-dashboard.html#resources', icon: 'fa-book-reader', label: 'Guidance Resources' },
-        { href: getPublicHomeDestination(), icon: 'fa-home', label: 'Public Home' },
+        { href: 'mentor-dashboard.html#support', icon: 'fa-headset', label: 'Chat with Admin' },
+        { href: getPublicHomeDestination(), icon: 'fa-house', label: 'Public Home' }
     ],
     institute: [
-        { href: 'institute-dashboard.html', icon: 'fa-tachometer-alt', label: 'Dashboard' },
+        { href: 'institute-dashboard.html', icon: 'fa-table-cells-large', label: 'Dashboard' },
         { href: 'institute-dashboard.html#profile', icon: 'fa-building', label: 'Institute Profile' },
-        { href: 'institute-dashboard.html#courses', icon: 'fa-file-lines', label: 'Course Approvals' },
-        { href: 'institute-dashboard.html#submit-course', icon: 'fa-plus-circle', label: 'Submit Course' },
+        { href: 'institute-dashboard.html#courses', icon: 'fa-book-open', label: 'Courses' },
+        { href: 'institute-dashboard.html#submit-course', icon: 'fa-circle-plus', label: 'Submit Course' },
+        { href: 'institute-dashboard.html#scholarships', icon: 'fa-award', label: 'Scholarships' },
+        { href: 'institute-dashboard.html#applications', icon: 'fa-file-lines', label: 'Applications' },
         { href: 'institute-dashboard.html#support', icon: 'fa-headset', label: 'Admin Messages' },
-        { href: 'index.html', icon: 'fa-home', label: 'Home' },
+        { href: getPublicHomeDestination(), icon: 'fa-house', label: 'Public Home' }
     ],
     admin: [
-        { href: getDashboardDestination('admin'), icon: 'fa-tachometer-alt', label: 'My Dashboard' },
-        { href: getProfileDestination('admin'), icon: 'fa-user-shield', label: 'My Profile' },
-        { href: 'admin-dashboard.html#students', icon: 'fa-user-graduate', label: 'Manage Students' },
-        { href: 'admin-dashboard.html#mentors', icon: 'fa-chalkboard-teacher', label: 'Manage Mentors' },
-        { href: 'admin-dashboard.html#courses', icon: 'fa-book', label: 'Manage Courses' },
-        { href: 'admin-dashboard.html#scholarships', icon: 'fa-hand-holding-usd', label: 'Manage Scholarships' },
-        { href: 'admin-dashboard.html#reports', icon: 'fa-chart-bar', label: 'Reports' },
-        { href: getPublicHomeDestination(), icon: 'fa-home', label: 'Public Home' },
-    ],
+        { href: 'admin-dashboard.html', icon: 'fa-table-cells-large', label: 'Dashboard' },
+        { href: 'admin-dashboard.html#students', icon: 'fa-user-graduate', label: 'Students' },
+        { href: 'admin-dashboard.html#mentors', icon: 'fa-user-tie', label: 'Mentors' },
+        { href: 'admin-dashboard.html#institutes', icon: 'fa-building-columns', label: 'Institutes' },
+        { href: 'admin-dashboard.html#courses', icon: 'fa-book-open', label: 'Courses' },
+        { href: 'admin-dashboard.html#scholarships', icon: 'fa-award', label: 'Scholarships' },
+        { href: 'admin-dashboard.html#reports', icon: 'fa-chart-column', label: 'Reports' },
+        { href: 'admin-dashboard.html#messages', icon: 'fa-message', label: 'Messages' },
+        { href: getPublicHomeDestination(), icon: 'fa-house', label: 'Public Home' }
+    ]
 };
-
 function isDashboardPage() {
     const page = window.location.pathname.split('/').pop() || '';
     return page.includes('-dashboard.html');
@@ -122,7 +137,7 @@ function ensureAuthPanelShell() {
     panel.setAttribute('aria-hidden', 'true');
     panel.innerHTML = `
         <div class="ep-auth-panel-header">
-            <a href="index.html" class="logo">EduPath<span>Lanka</span></a>
+            <a href="index.html" class="logo ep-auth-panel-brand"><img src="images/edupath-logo-transparent.png" alt=""><span>EduPath <strong>Lanka</strong></span></a>
             <button type="button" class="ep-auth-panel-close" id="ep-auth-panel-close" aria-label="Close menu">
                 <i class="fas fa-times"></i>
             </button>
@@ -759,6 +774,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { href: 'courses.html', text: 'Courses' },
         { href: 'mentors.html', text: 'Mentors' },
         { href: 'scholarships.html', text: 'Scholarships' },
+        { href: 'talent-opportunities.html', text: 'Talent Opportunities' },
         { href: 'pathway.html', text: 'Pathway Finder' },
         { href: 'institutes.html', text: 'Institutes' }
     ];
@@ -768,34 +784,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderPublicDesktopNav() {
-        const exploreActive = ['courses.html', 'scholarships.html', 'institutes.html'].includes(page);
-        const guidanceActive = ['pathway.html', 'mentors.html'].includes(page);
-
+        const explorePages = ['courses.html', 'scholarships.html', 'mentors.html', 'institutes.html', 'talent-opportunities.html'];
+        const exploreActive = explorePages.includes(page);
         return `
             ${createNavItem('index.html', 'Home', page === 'index.html' || page === '')}
             <div class="nav-dropdown">
-                <button type="button" class="nav-dropdown-toggle ${exploreActive ? 'active' : ''}">
-                    Explore <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                </button>
+                <button type="button" class="nav-dropdown-toggle ${exploreActive ? 'active' : ''}">Explore <i class="fas fa-chevron-down" aria-hidden="true"></i></button>
                 <div class="nav-dropdown-menu">
-                    <a href="courses.html" class="${page === 'courses.html' ? 'active' : ''}"><i class="fas fa-book-open" aria-hidden="true"></i> Courses</a>
-                    <a href="scholarships.html" class="${page === 'scholarships.html' ? 'active' : ''}"><i class="fas fa-graduation-cap" aria-hidden="true"></i> Scholarships</a>
-                    <a href="institutes.html" class="${page === 'institutes.html' ? 'active' : ''}"><i class="fas fa-building-columns" aria-hidden="true"></i> Institutes</a>
+                    <a href="courses.html" class="${page === 'courses.html' ? 'active' : ''}"><i class="fas fa-book-open"></i> Courses</a>
+                    <a href="scholarships.html" class="${page === 'scholarships.html' ? 'active' : ''}"><i class="fas fa-graduation-cap"></i> Scholarships</a>
+                    <a href="mentors.html" class="${page === 'mentors.html' ? 'active' : ''}"><i class="fas fa-user-tie"></i> Mentors</a>
+                    <a href="institutes.html" class="${page === 'institutes.html' ? 'active' : ''}"><i class="fas fa-building-columns"></i> Institutes</a>
+                    <a href="talent-opportunities.html" class="${page === 'talent-opportunities.html' ? 'active' : ''}"><i class="fas fa-star"></i> Talent Opportunities</a>
                 </div>
             </div>
-            <div class="nav-dropdown">
-                <button type="button" class="nav-dropdown-toggle ${guidanceActive ? 'active' : ''}">
-                    Guidance <i class="fas fa-chevron-down" aria-hidden="true"></i>
-                </button>
-                <div class="nav-dropdown-menu">
-                    <a href="pathway.html" class="${page === 'pathway.html' ? 'active' : ''}"><i class="fas fa-compass" aria-hidden="true"></i> Pathway Finder</a>
-                    <a href="mentors.html" class="${page === 'mentors.html' ? 'active' : ''}"><i class="fas fa-user-tie" aria-hidden="true"></i> Mentors</a>
-                </div>
-            </div>
-            ${createNavItem('about.html', 'About Us', page === 'about.html')}
+            ${createNavItem('pathway.html', 'Pathway Finder', page === 'pathway.html')}
+            ${createNavItem('about.html', 'About', page === 'about.html')}
         `;
     }
-
     function renderNavLinks(linksObj) {
         if (navLinksContainer) {
             navLinksContainer.innerHTML = renderPublicDesktopNav();
@@ -857,11 +863,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (snapshot.exists()) {
                     const data = snapshot.val();
+                    photoURL = data.photoURL || photoURL;
                     const rawType = data.userType || data.role || 'student';
                     role = normalizeRole(rawType) || 'student';
                     currentUserType = role;
-                    fullName = data.fullName || fullName;
-                    photoURL = data.photoURL || photoURL;
+                    fullName = data.fullName || data.name || data.displayName || fullName;
+                }
+
+                if (typeof photoURL === 'string' && photoURL.includes('github.com') && photoURL.includes('/blob/')) {
+                    photoURL = photoURL.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
                 }
 
                 dashboardUrl = getDashboardDestination(role);
@@ -898,7 +908,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             <a href="${dashboardUrl}" class="ep-dropdown-item"><i class="fas fa-tachometer-alt"></i> My Dashboard</a>
                             <a href="${profileUrl}" class="ep-dropdown-item"><i class="fas fa-user"></i> My Profile</a>
-                            <a href="profile.html#security" class="ep-dropdown-item"><i class="fas fa-key"></i> Change Password</a>
+                            <a href="${profileUrl}" class="ep-dropdown-item"><i class="fas fa-key"></i> Change Password</a>
                             <a href="${getPublicHomeDestination()}" class="ep-dropdown-item"><i class="fas fa-house"></i> Public Home</a>
                             <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 4px 0;">
                             <a href="#" class="ep-dropdown-item text-danger" id="ep-dropdown-logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -1006,7 +1016,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function validateRoute(role) {
         const protectedRoutes = {
             'student-dashboard.html': 'student',
-            'pathway.html': 'student',
             'mentor-dashboard.html': 'mentor',
             'institute-dashboard.html': 'institute',
             'admin-dashboard.html': 'admin'

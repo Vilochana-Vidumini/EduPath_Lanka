@@ -1,0 +1,26 @@
+﻿{
+  "name": "edupath_lanka",
+  "version": "1.0.0",
+  "description": "",
+  "main": "about.js",
+  "scripts": {
+    "test": "npm run test:recommendations",
+    "test:recommendations": "node recommendation-test-helper.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vilochana-Vidumini/EduPath_Lanka.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Vilochana-Vidumini/EduPath_Lanka/issues"
+  },
+  "homepage": "https://github.com/Vilochana-Vidumini/EduPath_Lanka#readme",
+  "dependencies": {
+    "firebase": "^10.12.5"
+  }
+}
+

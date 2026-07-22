@@ -49,6 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function sanitizeImageURL(value, fallback = '', defaultLocalFolder = 'images') {
         const raw = String(value || '').trim();
+        if (window.EduPathImageUtils?.normalizeImageUrl) {
+            const normalized = window.EduPathImageUtils.normalizeImageUrl(raw);
+            if (normalized) return normalized;
+        }
         let url = raw.replace(/\\/g, '/');
         const imagesIndex = url.toLowerCase().lastIndexOf('/images/');
         if (imagesIndex >= 0) url = url.slice(imagesIndex + 1);
@@ -69,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getOpportunityImage(opportunity = {}) {
-        return sanitizeImageURL(opportunity.imageURL, 'images/course-placeholder.png', 'images');
+        return sanitizeImageURL(opportunity.imageURL || opportunity.imagePath, 'images/course-placeholder.png', 'images');
     }
 
     // --- Load Opportunities from Firebase ---
@@ -82,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 Object.entries(data).forEach(([id, opp]) => {
                     // Only show active opportunities
                     const status = String(opp.status || 'active').trim().toLowerCase();
-                    if (status === 'active') {
+                    if (status === 'active' && opp.publicVisibility !== false) {
                         allOpportunities.push({
                             id,
                             ...opp
@@ -223,7 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${opp.benefits ? `<div style="margin-bottom: 1.5rem;"><h4>Benefits/Prizes</h4><p>${escapeHtml(opp.benefits)}</p></div>` : ''}
 
                     <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                        ${opp.applyLink ? `<a href="${escapeHtml(opp.applyLink)}" target="_blank" class="btn btn-primary">Apply / Register Now</a>` : ''}
+                        ${(opp.applicationUrl || opp.applicationLink || opp.applyLink) ? `<a href="${escapeHtml(opp.applicationUrl || opp.applicationLink || opp.applyLink)}" target="_blank" class="btn btn-primary">Apply / Register Now</a>` : ''}
                         <button class="btn btn-secondary close-modal-btn">Close</button>
                     </div>
                 </div>

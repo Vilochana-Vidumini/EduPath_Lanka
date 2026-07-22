@@ -53,6 +53,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function sanitizeImageURL(value, fallback = '', defaultLocalFolder = 'images') {
         const raw = String(value || '').trim();
+        if (window.EduPathImageUtils?.normalizeImageUrl) {
+            const normalized = window.EduPathImageUtils.normalizeImageUrl(raw);
+            if (normalized) return normalized;
+        }
         let url = raw.replace(/\\/g, '/');
         const imagesIndex = url.toLowerCase().lastIndexOf('/images/');
         if (imagesIndex >= 0) url = url.slice(imagesIndex + 1);
@@ -104,7 +108,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let filtered = allCourses.filter(course => {
             // Category filter
-            const matchesCategory = activeCategory === 'all' || String(course.category || '').toLowerCase().includes(activeCategory);
+            const courseCategory = String(course.category || '').toLowerCase().trim();
+            let matchesCategory = false;
+            if (activeCategory === 'all') {
+                matchesCategory = true;
+            } else if (activeCategory === 'it') {
+                matchesCategory = courseCategory === 'it' || 
+                                  courseCategory.includes('information technology') || 
+                                  courseCategory.includes('software') || 
+                                  courseCategory.includes('web development') || 
+                                  courseCategory.includes('cyber') || 
+                                  courseCategory.includes('computer') || 
+                                  courseCategory.includes('data analytics') || 
+                                  courseCategory.includes('networking');
+            } else if (activeCategory === 'vocational') {
+                matchesCategory = courseCategory.includes('vocational') || 
+                                  courseCategory.includes('nvq') || 
+                                  courseCategory.includes('technical') || 
+                                  courseCategory.includes('engineering') || 
+                                  courseCategory.includes('mechanic') || 
+                                  courseCategory.includes('mechatronics') || 
+                                  courseCategory.includes('electric') || 
+                                  courseCategory.includes('plumb') || 
+                                  courseCategory.includes('carpentry');
+            } else if (activeCategory === 'business') {
+                matchesCategory = courseCategory.includes('business') || 
+                                  courseCategory.includes('marketing') || 
+                                  courseCategory.includes('management') || 
+                                  courseCategory.includes('finance') || 
+                                  courseCategory.includes('account') || 
+                                  courseCategory.includes('commerce');
+            } else if (activeCategory === 'creative') {
+                matchesCategory = courseCategory.includes('creative') || 
+                                  courseCategory.includes('design') || 
+                                  courseCategory.includes('art') || 
+                                  courseCategory.includes('media') || 
+                                  courseCategory.includes('photography') || 
+                                  courseCategory.includes('music') || 
+                                  courseCategory.includes('dance') || 
+                                  courseCategory.includes('fashion') || 
+                                  courseCategory.includes('humanities');
+            }
 
             // Search query filter
             const courseName = (course.courseName || course.courseTitle || course.name || '').toLowerCase();

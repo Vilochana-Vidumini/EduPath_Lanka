@@ -16,6 +16,8 @@ import {
     normalizeList
 } from "./validation.js";
 import { getDashboardDestination, normalizeRole } from "./shared-navigation.js";
+import { initDashboardSidebar, updateSidebarUser } from "./sidebar.js";
+import { ensureDashboardTopbarLayout } from "./dashboard-topbar.js";
 
 document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
@@ -159,6 +161,14 @@ document.addEventListener('DOMContentLoaded', () => {
             cachedUserData = userSnapshot.val();
             userRole = normalizeRole(cachedUserData.userType || 'student') || 'student';
             
+            // Initialize Dashboard Layout Components
+            ensureDashboardTopbarLayout();
+            initDashboardSidebar();
+            if (cachedUserData) {
+                updateSidebarUser({ fullName: cachedUserData.fullName || 'User', role: userRole, photoURL: cachedUserData.photoURL });
+            }
+
+            populateFormData();
             // Set dynamic sidebar back-link URL
             const backLink = document.getElementById('dashboard-back-link');
             if (backLink) {
@@ -167,16 +177,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Bind role specifics
             if (userRole === 'student') {
-                document.getElementById('student-specific-card').classList.remove('hidden');
-                document.getElementById('mentor-specific-card').classList.add('hidden');
-                
-                // Fetch student details
-                get(ref(database, 'students/' + uid)).then((roleSnap) => {
-                    cachedRoleData = roleSnap.exists() ? roleSnap.val() : {};
-                    populateFormData();
-                    calculateProfileStrength();
-                });
-
+                window.location.replace('student-dashboard.html#personal-profile-section');
+                return;
             } else if (userRole === 'mentor') {
                 document.getElementById('student-specific-card').classList.add('hidden');
                 document.getElementById('mentor-specific-card').classList.remove('hidden');
@@ -958,8 +960,21 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         if (!currentUser) return;
 
+        let newPhotoURL = document.getElementById('input-photoURL').value.trim();
+        if (window.EduPathImageUtils) {
+            newPhotoURL = window.EduPathImageUtils.normalizeImageUrl(newPhotoURL);
+        }
+
         const photoInput = document.getElementById('input-photoURL');
-        const photoError = validateImageUrl(photoInput.value, 'Profile photo URL');
+        let photoError = '';
+        if (newPhotoURL && window.EduPathImageUtils && !window.EduPathImageUtils.isValidImageUrl(newPhotoURL)) {
+            photoError = 'Please enter a valid public image URL. For GitHub images, use the raw image link.';
+        } else if (!newPhotoURL) {
+            photoError = '';
+        } else {
+            photoError = validateImageUrl(newPhotoURL, 'Profile photo URL');
+        }
+        
         showFieldError(photoInput, photoError);
         if (photoError) {
             showToast("Please enter a valid image URL.", "error");
@@ -971,7 +986,6 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
         submitBtn.disabled = true;
 
-        const newPhotoURL = document.getElementById('input-photoURL').value.trim();
         const now = Date.now();
 
         const batchUpdates = {};
@@ -1057,5 +1071,15 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             openPwdBtn?.click();
         }, 600);
+    }
+
+    // Initialize image live preview
+    if (window.EduPathImageUtils) {
+        const photoInput = document.getElementById('input-photoURL');
+        const previewContainer = photoInput ? photoInput.closest('.image-input-container') : null;
+        const errorElement = previewContainer ? previewContainer.querySelector('.image-url-error') : null;
+        if (photoInput && previewContainer) {
+            window.EduPathImageUtils.previewImageFromUrl(photoInput, previewContainer, errorElement);
+        }
     }
 });

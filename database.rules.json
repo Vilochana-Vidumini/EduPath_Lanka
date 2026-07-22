@@ -4,7 +4,12 @@
     ".write": false,
     "users": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
-      ".indexOn": ["userType", "role", "accountStatus", "email"],
+      ".indexOn": [
+        "userType",
+        "role",
+        "accountStatus",
+        "email"
+      ],
       "$uid": {
         ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
         ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
@@ -19,7 +24,10 @@
     },
     "mentors": {
       ".read": "(query.orderByChild == 'status' && query.equalTo == 'approved') || (auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin')",
-      ".indexOn": ["status", "approvalStatus"],
+      ".indexOn": [
+        "status",
+        "approvalStatus"
+      ],
       "$uid": {
         ".read": "data.child('status').val() == 'approved' || (auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin'))",
         ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.child('approvalStatus').val() == data.child('approvalStatus').val() || newData.child('approvalStatus').val() == 'draft' || newData.child('approvalStatus').val() == 'submitted' || (newData.child('approvalStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('applicationStatus').val() == data.child('applicationStatus').val() || newData.child('applicationStatus').val() == 'draft' || newData.child('applicationStatus').val() == 'submitted' || (newData.child('applicationStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('status').val() == data.child('status').val() || newData.child('status').val() == 'draft' || newData.child('status').val() == 'pending' || (newData.child('status').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('publicVisibility').val() == false || newData.child('publicVisibility').val() == data.child('publicVisibility').val() || (newData.child('publicVisibility').val() == true && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && (newData.child('mentoringEnabled').val() == false || newData.child('mentoringEnabled').val() == data.child('mentoringEnabled').val() || (newData.child('mentoringEnabled').val() == true && (data.child('approvalStatus').val() == 'approved' || data.child('status').val() == 'approved'))) && newData.child('approvedAt').val() == data.child('approvedAt').val() && newData.child('approvedBy').val() == data.child('approvedBy').val() && newData.child('rejectedAt').val() == data.child('rejectedAt').val() && newData.child('rejectedBy').val() == data.child('rejectedBy').val() && newData.child('rejectionReason').val() == data.child('rejectionReason').val()))",
@@ -57,7 +65,11 @@
     },
     "mentorApplications": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
-      ".indexOn": ["approvalStatus", "applicationStatus", "mentorUid"],
+      ".indexOn": [
+        "approvalStatus",
+        "applicationStatus",
+        "mentorUid"
+      ],
       "$uid": {
         ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
         ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || ($uid == auth.uid && (newData.child('approvalStatus').val() == data.child('approvalStatus').val() || newData.child('approvalStatus').val() == 'draft' || newData.child('approvalStatus').val() == 'submitted' || (newData.child('approvalStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('status').val() == 'approved'))) && (newData.child('applicationStatus').val() == data.child('applicationStatus').val() || newData.child('applicationStatus').val() == 'draft' || newData.child('applicationStatus').val() == 'submitted' || (newData.child('applicationStatus').val() == 'approved' && (data.child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('approvalStatus').val() == 'approved' || root.child('mentors').child($uid).child('status').val() == 'approved'))) && newData.child('approvedAt').val() == data.child('approvedAt').val() && newData.child('approvedBy').val() == data.child('approvedBy').val() && newData.child('rejectedAt').val() == data.child('rejectedAt').val() && newData.child('rejectedBy').val() == data.child('rejectedBy').val() && newData.child('rejectionReason').val() == data.child('rejectionReason').val()))",
@@ -109,10 +121,18 @@
         }
       }
     },
-    "institutes": {
+    "instituteRepresentatives": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
       "$uid": {
         ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "institutes": {
+      ".read": "auth != null || (query.orderByChild == 'publicVisibility' && query.equalTo == true)",
+      ".indexOn": ["publicVisibility"],
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin') || (data.child('publicVisibility').val() == true && (data.child('status').val() == 'active' || data.child('approvalStatus').val() == 'approved' || data.child('verificationStatus').val() == 'approved'))",
         ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
         "verificationStatus": {
           ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
@@ -143,7 +163,13 @@
     "courses": {
       ".read": true,
       ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
-      ".indexOn": ["instituteUid", "instituteId", "status", "category", "district"],
+      ".indexOn": [
+        "instituteUid",
+        "instituteId",
+        "status",
+        "category",
+        "district"
+      ],
       "$courseId": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (root.child('users').child(auth.uid).child('userType').val() == 'institute' && newData.child('instituteUid').val() == auth.uid && newData.child('status').val() != 'active' && (!data.exists() || data.child('instituteUid').val() == auth.uid)))"
       }
@@ -151,14 +177,22 @@
     "scholarships": {
       ".read": true,
       ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
-      ".indexOn": ["instituteUid", "instituteId", "status"],
+      ".indexOn": [
+        "instituteUid",
+        "instituteId",
+        "status"
+      ],
       "$scholarshipId": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (root.child('users').child(auth.uid).child('userType').val() == 'institute' && newData.child('instituteUid').val() == auth.uid && newData.child('status').val() != 'active' && (!data.exists() || data.child('instituteUid').val() == auth.uid)))"
       }
     },
     "events": {
       ".read": true,
-      ".indexOn": ["instituteUid", "instituteId", "status"],
+      ".indexOn": [
+        "instituteUid",
+        "instituteId",
+        "status"
+      ],
       "$eventId": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (root.child('users').child(auth.uid).child('userType').val() == 'institute' && newData.child('instituteUid').val() == auth.uid && (!data.exists() || data.child('instituteUid').val() == auth.uid)))"
       }
@@ -174,7 +208,11 @@
     },
     "courseSubmissions": {
       ".read": "auth != null",
-      ".indexOn": ["instituteUid", "adminReviewStatus", "submissionStatus"],
+      ".indexOn": [
+        "instituteUid",
+        "adminReviewStatus",
+        "submissionStatus"
+      ],
       "$submissionId": {
         ".read": "auth != null && (data.child('instituteUid').val() == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
         ".write": "auth != null && (newData.child('instituteUid').val() == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
@@ -200,7 +238,11 @@
     },
     "courseInquiries": {
       ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (query.orderByChild == 'instituteUid' && query.equalTo == auth.uid))",
-      ".indexOn": ["instituteUid", "courseId", "status"],
+      ".indexOn": [
+        "instituteUid",
+        "courseId",
+        "status"
+      ],
       "$inquiryId": {
         ".write": "(!data.exists() && newData.exists()) || (auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('instituteUid').val() == auth.uid))",
         ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('instituteUid').val() == auth.uid)"
@@ -226,7 +268,11 @@
     "mentorRequests": {
       ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (query.orderByChild == 'mentorUid' && (query.equalTo == auth.uid || root.child('studentMentors').child(auth.uid).child(query.equalTo).child('status').val() == 'connected')) || (query.orderByChild == 'studentUid' && query.equalTo == auth.uid))",
       ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
-      ".indexOn": ["studentUid", "mentorUid", "status"],
+      ".indexOn": [
+        "studentUid",
+        "mentorUid",
+        "status"
+      ],
       "$requestId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('studentUid').val() == auth.uid || data.child('mentorUid').val() == auth.uid)",
         ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (!data.exists() && newData.child('studentUid').val() == auth.uid) || data.child('studentUid').val() == auth.uid || data.child('mentorUid').val() == auth.uid)"
@@ -260,7 +306,9 @@
       }
     },
     "mentorAvailability": {
-      ".indexOn": ["mentorUid"],
+      ".indexOn": [
+        "mentorUid"
+      ],
       "$mentorUid": {
         ".read": "auth != null && ($mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin' || root.child('studentMentors').child(auth.uid).child($mentorUid).child('status').val() == 'connected')",
         ".write": "auth != null && ($mentorUid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
@@ -268,7 +316,12 @@
     },
     "mentorAppointments": {
       ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (query.orderByChild == 'mentorUid' && (query.equalTo == auth.uid || root.child('studentMentors').child(auth.uid).child(query.equalTo).child('status').val() == 'connected')) || (query.orderByChild == 'studentUid' && query.equalTo == auth.uid))",
-      ".indexOn": ["mentorUid", "studentUid", "status", "date"],
+      ".indexOn": [
+        "mentorUid",
+        "studentUid",
+        "status",
+        "date"
+      ],
       "$appointmentId": {
         ".read": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || data.child('mentorUid').val() == auth.uid || data.child('studentUid').val() == auth.uid)",
         ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || (!data.exists() && newData.child('appointmentId').val() == $appointmentId && newData.child('studentUid').val() == auth.uid && newData.child('status').val() == 'pending' && root.child('studentMentors').child(auth.uid).child(newData.child('mentorUid').val()).child('status').val() == 'connected') || (data.exists() && data.child('studentUid').val() == auth.uid && data.child('status').val() == 'pending' && newData.child('status').val() == 'cancelled') || (data.exists() && data.child('studentUid').val() == auth.uid && data.child('status').val() == 'completed' && newData.child('status').val() == 'completed' && newData.child('studentUid').val() == auth.uid && newData.child('mentorUid').val() == data.child('mentorUid').val() && newData.child('ratingSubmitted').val() == true) || (data.exists() && data.child('mentorUid').val() == auth.uid && newData.child('mentorUid').val() == auth.uid))"
@@ -318,7 +371,10 @@
     "guestMessages": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
       ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
-      ".indexOn": ["status", "createdAt"],
+      ".indexOn": [
+        "status",
+        "createdAt"
+      ],
       "$messageId": {
         ".write": "(auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin') || (!data.exists() && newData.exists())",
         ".validate": "(auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin') || (newData.hasChildren(['messageId', 'senderType', 'fullName', 'contactNumber', 'subject', 'message', 'sourcePage', 'status', 'priority', 'createdAt', 'updatedAt']) && newData.child('messageId').val() == $messageId && newData.child('senderType').val() == 'guest' && newData.child('fullName').isString() && newData.child('fullName').val().length >= 2 && newData.child('fullName').val().length <= 120 && newData.child('contactNumber').isString() && newData.child('contactNumber').val().matches(/^(0?7[0-9]{8}|\\+947[0-9]{8})$/) && (!newData.child('email').exists() || (newData.child('email').isString() && (newData.child('email').val() == '' || newData.child('email').val().matches(/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/)))) && newData.child('subject').isString() && newData.child('subject').val().length > 0 && newData.child('subject').val().length <= 120 && newData.child('message').isString() && newData.child('message').val().length >= 10 && newData.child('message').val().length <= 1000 && newData.child('sourcePage').isString() && newData.child('status').isString() && newData.child('status').val().matches(/^(new|read|in-progress|replied|closed|archived)$/) && newData.child('priority').val() == 'normal')"
@@ -330,7 +386,11 @@
     },
     "adminMessages": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
-      ".indexOn": ["senderUid", "status", "createdAt"],
+      ".indexOn": [
+        "senderUid",
+        "status",
+        "createdAt"
+      ],
       "$messageId": {
         ".write": "auth != null && (root.child('users').child(auth.uid).child('userType').val() == 'admin' || !data.exists() || data.child('senderUid').val() == auth.uid)"
       }
@@ -417,6 +477,27 @@
         ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
       }
     },
+    "studentProfiles": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "talentProfiles": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "discoveryProfiles": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
+      "$uid": {
+        ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
+        ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
     "savedOpportunities": {
       ".read": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'",
       "$uid": {
@@ -436,6 +517,99 @@
       "$uid": {
         ".read": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')",
         ".write": "auth != null && ($uid == auth.uid || root.child('users').child(auth.uid).child('userType').val() == 'admin')"
+      }
+    },
+    "academicCategories": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "courseCategories": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "scholarshipCategories": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "mentorExpertiseCategories": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "opportunityCategories": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "providerCategories": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "talentCategories": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "talentOpportunities": {
+      ".read": "auth != null || (query.orderByChild == 'publicVisibility' && query.equalTo == true)",
+      ".indexOn": ["publicVisibility"],
+      "$opportunityId": {
+        ".read": "data.child('publicVisibility').val() == true && data.child('status').val() == 'active'"
+      },
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "artsOpportunities": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "sportsOpportunities": {
+      ".read": true,
+      ".write": "auth != null && root.child('users').child(auth.uid).child('userType').val() == 'admin'"
+    },
+    "mentorshipRequests": {
+      ".read": "auth != null && ((query.orderByChild == 'requesterUid' && query.equalTo == auth.uid) || (query.orderByChild == 'targetMentorUid' && query.equalTo == auth.uid))",
+      ".indexOn": [
+        "requesterUid",
+        "targetMentorUid",
+        "status"
+      ],
+      "$requestId": {
+        ".read": "auth != null && (data.child('requesterUid').val() == auth.uid || data.child('targetMentorUid').val() == auth.uid)",
+        ".write": "auth != null && ((!data.exists() && newData.child('requesterUid').val() == auth.uid && newData.child('targetMentorUid').val() != auth.uid && (root.child('users').child(auth.uid).child('userType').val() == 'mentor' || root.child('users').child(auth.uid).child('role').val() == 'mentor') && (root.child('mentors').child(auth.uid).child('approvalStatus').val() == 'approved' || root.child('mentors').child(auth.uid).child('status').val() == 'approved') && (root.child('mentors').child(newData.child('targetMentorUid').val()).child('approvalStatus').val() == 'approved' || root.child('mentors').child(newData.child('targetMentorUid').val()).child('status').val() == 'approved') && newData.child('requestSource').val() == 'mentor_to_mentor' && newData.child('status').val() == 'pending') || (data.exists() && newData.child('requesterUid').val() == data.child('requesterUid').val() && newData.child('targetMentorUid').val() == data.child('targetMentorUid').val() && newData.child('requestSource').val() == data.child('requestSource').val() && newData.child('requesterAccountRole').val() == data.child('requesterAccountRole').val() && newData.child('requesterRelationshipRole').val() == data.child('requesterRelationshipRole').val() && newData.child('targetRelationshipRole').val() == data.child('targetRelationshipRole').val() && newData.child('topic').val() == data.child('topic').val() && newData.child('category').val() == data.child('category').val() && newData.child('goal').val() == data.child('goal').val() && newData.child('message').val() == data.child('message').val() && newData.child('createdAt').val() == data.child('createdAt').val() && ((data.child('requesterUid').val() == auth.uid && data.child('status').val() == 'pending' && (newData.child('status').val() == 'pending' || newData.child('status').val() == 'cancelled')) || (data.child('targetMentorUid').val() == auth.uid && data.child('status').val() == 'pending' && (newData.child('status').val() == 'accepted' || newData.child('status').val() == 'rejected')))))",
+        ".validate": "!newData.exists() || (newData.hasChildren(['requestId','requesterUid','requesterAccountRole','requesterRelationshipRole','targetMentorUid','targetRelationshipRole','topic','goal','message','requestSource','status','createdAt','updatedAt']) && newData.child('requestId').val() == $requestId && newData.child('requesterAccountRole').val() == 'mentor' && newData.child('requesterRelationshipRole').val() == 'mentee' && newData.child('targetRelationshipRole').val() == 'mentor' && newData.child('requestSource').val() == 'mentor_to_mentor' && newData.child('status').val().matches(/^(pending|accepted|rejected|cancelled)$/))"
+      }
+    },
+    "mentorshipConnections": {
+      ".read": "auth != null && ((query.orderByChild == 'mentorUid' && query.equalTo == auth.uid) || (query.orderByChild == 'menteeUid' && query.equalTo == auth.uid))",
+      ".indexOn": [
+        "mentorUid",
+        "menteeUid",
+        "status",
+        "requestId"
+      ],
+      "$connectionId": {
+        ".read": "auth != null && (data.child('mentorUid').val() == auth.uid || data.child('menteeUid').val() == auth.uid)",
+        ".write": "auth != null && ((!data.exists() && newData.child('mentorUid').val() == auth.uid && newData.child('menteeUid').val() != auth.uid && newData.child('connectionId').val() == $connectionId && newData.child('status').val() == 'active' && root.child('mentorshipRequests').child(newData.child('requestId').val()).child('targetMentorUid').val() == auth.uid && root.child('mentorshipRequests').child(newData.child('requestId').val()).child('status').val() == 'pending') || (data.exists() && (data.child('mentorUid').val() == auth.uid || data.child('menteeUid').val() == auth.uid) && newData.child('mentorUid').val() == data.child('mentorUid').val() && newData.child('menteeUid').val() == data.child('menteeUid').val() && newData.child('requestId').val() == data.child('requestId').val() && newData.child('connectionId').val() == data.child('connectionId').val() && newData.child('mentorRelationshipRole').val() == data.child('mentorRelationshipRole').val() && newData.child('menteeRelationshipRole').val() == data.child('menteeRelationshipRole').val() && newData.child('createdAt').val() == data.child('createdAt').val()))",
+        ".validate": "!newData.exists() || (newData.hasChildren(['connectionId','requestId','mentorUid','menteeUid','mentorRelationshipRole','menteeRelationshipRole','status','createdAt','updatedAt']) && newData.child('mentorRelationshipRole').val() == 'mentor' && newData.child('menteeRelationshipRole').val() == 'mentee' && newData.child('status').val().matches(/^(active|paused|ended)$/))"
+      }
+    },
+    "learningGoals": {
+      "$uid": {
+        ".read": "auth != null && $uid == auth.uid",
+        ".write": "auth != null && $uid == auth.uid",
+        "$goalId": {
+          ".validate": "!newData.exists() || (newData.child('goalId').val() == $goalId && newData.child('uid').val() == $uid && newData.hasChildren(['title','status','progress','createdAt','updatedAt']) && newData.child('status').val().matches(/^(active|completed|paused)$/) && newData.child('progress').isNumber() && newData.child('progress').val() >= 0 && newData.child('progress').val() <= 100)"
+        }
+      }
+    },
+    "mentorshipSessions": {
+      ".read": "auth != null && ((query.orderByChild == 'mentorUid' && query.equalTo == auth.uid) || (query.orderByChild == 'menteeUid' && query.equalTo == auth.uid))",
+      ".indexOn": [
+        "mentorUid",
+        "menteeUid",
+        "status",
+        "startDateTime"
+      ],
+      "$sessionId": {
+        ".read": "auth != null && (data.child('mentorUid').val() == auth.uid || data.child('menteeUid').val() == auth.uid)",
+        ".write": "auth != null && ((!data.exists() && (newData.child('mentorUid').val() == auth.uid || newData.child('menteeUid').val() == auth.uid)) || (data.exists() && (data.child('mentorUid').val() == auth.uid || data.child('menteeUid').val() == auth.uid) && newData.child('mentorUid').val() == data.child('mentorUid').val() && newData.child('menteeUid').val() == data.child('menteeUid').val()))"
       }
     }
   }

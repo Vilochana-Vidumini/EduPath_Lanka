@@ -1,4 +1,4 @@
-/* EduPath Lanka — Light / Dark theme (shared) */
+/* EduPath Lanka â€” Light / Dark theme (shared) */
 
 html[data-theme="light"],
 :root {
@@ -852,7 +852,7 @@ html[data-theme="dark"] .table-responsive table td {
     flex-shrink: 0;
 }
 
-/* Dashboard topbar — aligned icons */
+/* Dashboard topbar â€” aligned icons */
 .dashboard-topbar-actions,
 .topbar-right.dashboard-topbar-actions {
     display: flex;
@@ -1208,7 +1208,7 @@ html[data-theme="dark"] .cta-card h2 {
 }
 
 /* =========================================
-   Dashboard sidebar — collapse & shared
+   Dashboard sidebar â€” collapse & shared
    ========================================= */
 .sidebar-overlay {
     display: none;
@@ -1513,8 +1513,12 @@ html.sidebar-collapsed .main-content {
 }
 
 .ep-auth-panel-header .logo span {
-    color: var(--theme-primary);
+    color: var(--sidebar-text);
 }
+
+.ep-auth-panel-header .ep-auth-panel-brand { display: inline-flex; align-items: center; gap: 9px; }
+.ep-auth-panel-header .ep-auth-panel-brand img { width: 34px; height: 34px; object-fit: contain; }
+.ep-auth-panel-header .ep-auth-panel-brand strong { color: var(--theme-primary); }
 
 .ep-auth-panel-close {
     width: 36px;
@@ -7983,3 +7987,99 @@ button.verified-review-badge:focus-visible {
         width: 100%;
     }
 }
+
+/* ==========================================================================
+   Image URL Validation & Preview System
+   ========================================================================== */
+.image-input-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.image-url-input {
+    width: 100%;
+}
+.image-input-container .helper-text {
+    font-size: 0.85rem;
+    color: var(--ep-text-muted);
+}
+.image-url-preview-card {
+    border: 1px solid var(--ep-border);
+    border-radius: var(--ep-radius);
+    padding: 0.5rem;
+    background: var(--ep-bg-subtle);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    max-width: 300px;
+    margin-top: 0.5rem;
+}
+.image-url-preview-card.has-error {
+    border-color: var(--ep-danger);
+    background: rgba(220, 53, 69, 0.05);
+}
+.image-url-preview-card.has-success {
+    border-color: var(--ep-success);
+}
+.image-url-preview {
+    max-width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    border-radius: calc(var(--ep-radius) - 2px);
+}
+.image-url-error {
+    color: var(--ep-danger);
+    font-size: 0.85rem;
+    text-align: center;
+}
+.image-url-success {
+    color: var(--ep-success);
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+/* Global Image Placeholders */
+.image-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ep-bg-subtle);
+    color: var(--ep-text-muted);
+    font-size: 2rem;
+    font-weight: 600;
+    border-radius: var(--ep-radius);
+    border: 1px dashed var(--ep-border);
+}
+.image-placeholder.placeholder-student,
+.image-placeholder.placeholder-mentor {
+    border-radius: 50%;
+}
+.image-placeholder.placeholder-institute {
+    font-size: 3rem;
+}
+.image-placeholder i {
+    font-size: 3rem;
+    opacity: 0.5;
+}
+
+/* Copy URL Button */
+.copy-url-btn {
+    background: transparent;
+    border: 1px solid var(--ep-border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--ep-text-main);
+    transition: all 0.2s;
+}
+.copy-url-btn:hover {
+    background: var(--ep-bg-subtle);
+    border-color: var(--ep-text-muted);
+}
+
