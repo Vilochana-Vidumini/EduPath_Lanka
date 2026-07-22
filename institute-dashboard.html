@@ -45,13 +45,7 @@
             <li><a href="#scholarships" data-section="scholarships-section" title="Scholarships"><i class="fas fa-graduation-cap"></i><span class="sidebar-label">Scholarships</span></a></li>
             <li><a href="#events" data-section="events-section" title="Events"><i class="fas fa-calendar-alt"></i><span class="sidebar-label">Events</span></a></li>
 
-            <li class="sidebar-section-label"><span>STUDENT DATA</span></li>
-            <li><a href="#applications" data-section="applications-section" title="Student Applications"><i class="fas fa-user-graduate"></i><span class="sidebar-label">Student Applications</span></a></li>
-            <li><a href="#inquiries" data-section="inquiries-section" title="Student Inquiries"><i class="fas fa-envelope-open-text"></i><span class="sidebar-label">Student Inquiries</span></a></li>
 
-            <li class="sidebar-section-label"><span>REPORTS & ANALYTICS</span></li>
-            <li><a href="#analytics" data-section="analytics-section" title="Analytics"><i class="fas fa-chart-line"></i><span class="sidebar-label">Analytics</span></a></li>
-            <li><a href="#reports" data-section="reports-section" title="Reports"><i class="fas fa-file-invoice"></i><span class="sidebar-label">Reports</span></a></li>
 
             <li class="sidebar-section-label"><span>COMMUNICATION</span></li>
             <li><a href="#notifications" data-section="notifications-section" title="Notifications"><i class="fas fa-bell"></i><span class="sidebar-label">Notifications</span><span class="nav-badge hidden" id="sidebar-notification-count"></span></a></li>
@@ -168,22 +162,7 @@
                             <p>Courses under review</p>
                         </div>
                     </article>
-                    <article class="student-kpi-card reveal-card">
-                        <div class="stat-icon bg-purple"><i class="fas fa-user-graduate"></i></div>
-                        <div class="stat-info">
-                            <h4>Total Applications</h4>
-                            <h2 id="stat-total-applications">0</h2>
-                            <p>Course application forms</p>
-                        </div>
-                    </article>
-                    <article class="student-kpi-card reveal-card">
-                        <div class="stat-icon bg-pink"><i class="fas fa-user-check"></i></div>
-                        <div class="stat-info">
-                            <h4>Accepted Students</h4>
-                            <h2 id="stat-accepted-students">0</h2>
-                            <p>Successfully enrolled</p>
-                        </div>
-                    </article>
+
                     <article class="student-kpi-card reveal-card">
                         <div class="stat-icon bg-cyan"><i class="fas fa-graduation-cap"></i></div>
                         <div class="stat-info">
@@ -200,14 +179,7 @@
                             <p>Open Days & webinars</p>
                         </div>
                     </article>
-                    <article class="student-kpi-card reveal-card">
-                        <div class="stat-icon bg-orange"><i class="fas fa-envelope"></i></div>
-                        <div class="stat-info">
-                            <h4>Unread Messages</h4>
-                            <h2 id="stat-inquiries">0</h2>
-                            <p>Student questions</p>
-                        </div>
-                    </article>
+
                     <article class="student-kpi-card reveal-card">
                         <div class="stat-icon bg-green"><i class="fas fa-eye"></i></div>
                         <div class="stat-info">
@@ -231,9 +203,7 @@
                             <button class="btn btn-outline" id="action-create-course"><i class="fas fa-plus"></i> Create Course</button>
                             <button class="btn btn-outline" id="action-create-schol"><i class="fas fa-graduation-cap"></i> Create Scholarship</button>
                             <button class="btn btn-outline" id="action-create-event"><i class="fas fa-calendar-plus"></i> Create Event</button>
-                            <button class="btn btn-outline" data-section-jump="applications-section"><i class="fas fa-user-graduate"></i> View Applications</button>
                             <button class="btn btn-outline" data-section-jump="profile-section"><i class="fas fa-building"></i> Update Institute Profile</button>
-                            <button class="btn btn-outline" data-section-jump="reports-section"><i class="fas fa-file-pdf"></i> Download Reports</button>
                         </div>
                     </article>
 
@@ -263,43 +233,7 @@
                     </article>
                 </div>
 
-                <!-- Recent Activities Panels (Applications + Inquiries) -->
-                <div class="double-panel-grid">
-                    <article class="panel glass">
-                        <div class="panel-head">
-                            <h3><i class="fas fa-user-graduate text-primary"></i> Recent Applications</h3>
-                            <button class="btn btn-light btn-sm" data-section-jump="applications-section">View All</button>
-                        </div>
-                        <div class="responsive-table">
-                            <table class="compact-table">
-                                <thead>
-                                    <tr>
-                                        <th>Student</th>
-                                        <th>Course</th>
-                                        <th>Applied Date</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recent-applications-table-body">
-                                    <!-- Populated in JS -->
-                                    <tr><td colspan="5" class="text-center muted">Loading applications...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </article>
 
-                    <article class="panel glass">
-                        <div class="panel-head">
-                            <h3><i class="fas fa-envelope-open-text text-primary"></i> Recent Student Inquiries</h3>
-                            <button class="btn btn-light btn-sm" data-section-jump="inquiries-section">View All</button>
-                        </div>
-                        <div id="recent-inquiries-list" class="list-stack">
-                            <!-- Populated in JS -->
-                            <div class="list-item text-center muted">Loading inquiries...</div>
-                        </div>
-                    </article>
-                </div>
 
                 <!-- Course Performance Section -->
                 <div class="panel glass">
@@ -308,7 +242,6 @@
                     </div>
                     <div class="performance-tabs-row">
                         <button class="perf-tab-btn active" data-tab="views">Most Viewed Courses</button>
-                        <button class="perf-tab-btn" data-tab="applications">Most Applied Courses</button>
                         <button class="perf-tab-btn" data-tab="recent">Recently Published</button>
                     </div>
                     <div class="performance-tab-content active" id="perf-tab-views-content">
@@ -607,170 +540,7 @@
                 </div>
             </section>
 
-            <!-- SECTION 7: STUDENT APPLICATIONS -->
-            <section id="applications-section" class="dashboard-section">
-                <div class="panel glass">
-                    <div class="panel-head">
-                        <h3><i class="fas fa-user-graduate text-primary"></i> Student Enrolled Applications</h3>
-                    </div>
-                    <div class="toolbar-box">
-                        <div class="search-input-wrap">
-                            <i class="fas fa-search"></i>
-                            <input id="app-search" placeholder="Search applicants, courses, qualifications...">
-                        </div>
-                        <div class="filter-inputs-wrap">
-                            <select id="app-status-filter">
-                                <option value="all">All Applications</option>
-                                <option value="pending">Pending Review</option>
-                                <option value="shortlisted">Shortlisted</option>
-                                <option value="accepted">Accepted</option>
-                                <option value="rejected">Rejected</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="responsive-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Applicant Name</th>
-                                    <th>Applied Course</th>
-                                    <th>Qualification</th>
-                                    <th>Applied Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="applications-table-body">
-                                <!-- Populated in JS -->
-                                <tr><td colspan="6" class="text-center muted">Loading applications list...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
 
-            <!-- SECTION 8: STUDENT INQUIRIES -->
-            <section id="inquiries-section" class="dashboard-section">
-                <div class="panel glass">
-                    <div class="panel-head">
-                        <h3><i class="fas fa-envelope-open-text text-primary"></i> Course Inquiries Inbox</h3>
-                        <select id="inquiry-status-filter-main">
-                            <option value="all">All Inquiries</option>
-                            <option value="New">New / Unanswered</option>
-                            <option value="Contacted">Contacted</option>
-                            <option value="Closed">Closed</option>
-                        </select>
-                    </div>
-                    <div class="responsive-table">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Student Details</th>
-                                    <th>Course</th>
-                                    <th>Message</th>
-                                    <th>Date</th>
-                                    <th>Status / Reply</th>
-                                </tr>
-                            </thead>
-                            <tbody id="inquiries-table-body">
-                                <!-- Populated in JS -->
-                                <tr><td colspan="5" class="text-center muted">Loading inquiries list...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <!-- SECTION 9: ANALYTICS -->
-            <section id="analytics-section" class="dashboard-section">
-                <div class="charts-container-institute">
-                    <article class="chart-card-institute glass reveal-card">
-                        <div class="chart-card-header">
-                            <div>
-                                <h3>Applications Volume Trend</h3>
-                                <p>Monthly incoming registrations</p>
-                            </div>
-                        </div>
-                        <div id="chart-applications-trend" class="institute-svg-chart"></div>
-                    </article>
-
-                    <article class="chart-card-institute glass reveal-card">
-                        <div class="chart-card-header">
-                            <div>
-                                <h3>Course Popularity Chart</h3>
-                                <p>Applications per course catalog</p>
-                            </div>
-                        </div>
-                        <div id="chart-course-popularity" class="institute-svg-chart"></div>
-                    </article>
-
-                    <article class="chart-card-institute glass reveal-card">
-                        <div class="chart-card-header">
-                            <div>
-                                <h3>Student Interest Distribution</h3>
-                                <p>Popular subject categories</p>
-                            </div>
-                        </div>
-                        <div id="chart-student-interests" class="institute-svg-chart"></div>
-                    </article>
-
-                    <article class="chart-card-institute glass reveal-card">
-                        <div class="chart-card-header">
-                            <div>
-                                <h3>Monthly Profile Engagement</h3>
-                                <p>Direct visitors & views</p>
-                            </div>
-                        </div>
-                        <div id="chart-visitors-trend" class="institute-svg-chart"></div>
-                    </article>
-
-                    <article class="chart-card-institute glass reveal-card">
-                        <div class="chart-card-header">
-                            <div>
-                                <h3>Province Distribution</h3>
-                                <p>Applicant geographic origins</p>
-                            </div>
-                        </div>
-                        <div id="chart-province-distribution" class="institute-svg-chart"></div>
-                    </article>
-                </div>
-            </section>
-
-            <!-- SECTION 10: REPORTS -->
-            <section id="reports-section" class="dashboard-section">
-                <div class="panel glass report-setup-panel">
-                    <div class="panel-head">
-                        <h3><i class="fas fa-file-invoice text-primary"></i> Data Reports Center</h3>
-                    </div>
-                    <div class="report-controls-grid">
-                        <label>Report Subject Type
-                            <select id="report-subject">
-                                <option value="applications">Applications Report</option>
-                                <option value="courses">Course Catalogue Report</option>
-                                <option value="scholarships">Scholarship Report</option>
-                                <option value="students">Student Registrations List</option>
-                                <option value="monthly">Monthly Summary Report</option>
-                            </select>
-                        </label>
-                        <label>Start Date<input id="report-start-date" type="date"></label>
-                        <label>End Date<input id="report-end-date" type="date"></label>
-                        <button class="btn btn-primary" id="generate-report-btn"><i class="fas fa-arrows-rotate"></i> Compile Report</button>
-                    </div>
-                </div>
-
-                <div class="panel glass hidden" id="report-preview-panel">
-                    <div class="panel-head">
-                        <h3 id="report-preview-title">Report Title</h3>
-                        <div class="report-download-buttons">
-                            <button class="btn btn-light" id="download-excel-btn"><i class="fas fa-file-excel text-success"></i> Export CSV (Excel)</button>
-                            <button class="btn btn-light" id="download-pdf-btn"><i class="fas fa-print text-danger"></i> Print Report / Save PDF</button>
-                        </div>
-                    </div>
-                    <div class="report-content-window" id="report-data-window">
-                        <!-- Rendered Report Content -->
-                    </div>
-                </div>
-            </section>
 
             <!-- SECTION 11: NOTIFICATIONS -->
             <section id="notifications-section" class="dashboard-section">
@@ -954,21 +724,7 @@
         </div>
     </div>
 
-    <!-- POPUP VIEW APPLICATION DETAILS DRAWER -->
-    <div id="details-drawer" class="modal-overlay hidden">
-        <div class="modal-card glass drawer-card">
-            <div class="modal-header">
-                <h3>Student Enrolment Details</h3>
-                <button type="button" class="close-modal-btn" id="close-details-drawer"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="drawer-body" id="details-drawer-content">
-                <!-- Populated dynamically in JS -->
-            </div>
-            <div class="modal-footer" id="details-drawer-footer">
-                <!-- Action buttons -->
-            </div>
-        </div>
-    </div>
+
 
     <div id="toast" class="toast"></div>
 

@@ -108,7 +108,7 @@
                     <section class="admin-hero-card admin-hero admin-card">
                         <div class="admin-hero-main">
                             <span class="admin-hero-eyebrow">Platform Overview</span>
-                            <h1><span id="admin-greeting">Good Morning</span>, <span id="admin-first-name">Admin</span>! <span aria-hidden="true">ðŸ‘‹</span></h1>
+                            <h1><span id="admin-greeting">Good Morning</span>, <span id="admin-first-name">Admin</span>! <span aria-hidden="true">👋</span></h1>
                             <p>Here's what's happening on EduPath Lanka today.</p>
                             <div class="admin-hero-meta">
                                 <div class="admin-hero-meta-item"><i class="fas fa-calendar-day"></i><span id="admin-dashboard-date">Today</span></div>
@@ -411,7 +411,14 @@
                         <div class="form-group full-width"><label for="talent-opportunity-requirements">Requirements</label><textarea id="talent-opportunity-requirements" class="form-control" rows="2"></textarea></div>
                         <div class="form-group"><label for="talent-opportunity-keywords">Matching keywords</label><input id="talent-opportunity-keywords" class="form-control" placeholder="dance, performance, youth"></div>
                         <div class="form-group"><label for="talent-opportunity-talent-types">Related talent types</label><input id="talent-opportunity-talent-types" class="form-control" placeholder="Auto-filled; comma separated"></div>
-                        <div class="form-group"><label for="talent-opportunity-mentors">Related mentors</label><select id="talent-opportunity-mentors" class="form-control" multiple size="4"></select></div>
+                        <details class="form-group full-width" style="margin-top: 1rem; border: 1px solid var(--theme-border, #e2e8f0); padding: 1rem; border-radius: 8px;">
+                            <summary style="cursor: pointer; font-weight: 600;">Advanced Optional Details</summary>
+                            <div class="form-group" style="margin-top: 1rem;">
+                                <label for="talent-opportunity-mentors">Opportunity Coaches / Speakers</label>
+                                <small style="display: block; margin-bottom: 0.5rem; color: #64748b;">Only select mentors if they are officially conducting this opportunity.</small>
+                                <select id="talent-opportunity-mentors" class="form-control" multiple size="4"></select>
+                            </div>
+                        </details>
                         <div class="form-group"><label for="talent-opportunity-institute">Related institute / academy</label><select id="talent-opportunity-institute" class="form-control"><option value="">None</option></select></div>
                         <div class="form-group"><label for="talent-opportunity-link">Application URL</label><input id="talent-opportunity-link" type="url" class="form-control"></div>
                         <div class="form-group"><label for="talent-opportunity-image">Image path or URL</label><input id="talent-opportunity-image" class="form-control"></div>
